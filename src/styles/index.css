@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-poppins bg-light dark:bg-dark;
+  }
+}
+
+@layer components {
+  .gradient-bg {
+    @apply bg-gradient-to-r from-leftGradient to-rightGradient;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-leftGradient to-rightGradient inline-block text-transparent bg-clip-text;
+  }
+}
