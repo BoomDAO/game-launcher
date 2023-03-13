@@ -14,8 +14,10 @@
     "@dfinity/candid": "^0.15.4",
     "@dfinity/identity": "^0.15.4",
     "@dfinity/principal": "^0.15.4",
+    "i18next": "^22.4.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-i18next": "^12.2.0",
     "react-router-dom": "^6.9.0",
     "tailwind-merge": "^1.10.0",
     "vite-tsconfig-paths": "^4.0.5"

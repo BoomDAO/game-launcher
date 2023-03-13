@@ -3,8 +3,6 @@ import { NavLink } from "react-router-dom";
 import Button from "./Button";
 
 const Navigation = () => {
-  const [activePath, setActivePath] = React.useState("");
-
   const paths = [
     {
       name: "Browse games",
@@ -24,8 +22,6 @@ const Navigation = () => {
     },
   ];
 
-  console.log("activePath", activePath);
-
   return (
     <div className="flex items-center justify-between">
       <img src="/logo.png" width={164} alt="logo" />
@@ -33,10 +29,8 @@ const Navigation = () => {
       <nav className="space-x-4 uppercase text-sm">
         {paths.map(({ name, path }) => (
           <NavLink
-            className={({ isActive }) => {
-              if (isActive) setActivePath(path);
-              return isActive ? "gradient-text" : "";
-            }}
+            key={name}
+            className={({ isActive }) => (isActive ? "gradient-text" : "")}
             to={path}
           >
             {name}
