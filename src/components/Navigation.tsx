@@ -1,4 +1,3 @@
-import React from "react";
 import { NavLink } from "react-router-dom";
 import Button from "./Button";
 
@@ -38,7 +37,7 @@ const Navigation = () => {
         ))}
       </nav>
 
-      <Button>Login</Button>
+      <Button rightArrow>Login</Button>
     </div>
   );
 };

@@ -5,17 +5,23 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        blacktext: "#090909",
-        white: "#ffffff",
+        blackText: "#090909",
+        white: "#F6F6F6",
         leftGradient: "#FEA002",
         rightGradient: "#E73BCF",
-        light: "#F6F6F6",
         dark: "#33343F",
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],
       },
+      borderRadius: {
+        primary: "9999px",
+        card: "40px",
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require("@tailwindcss/aspect-ratio"),
+    require("@tailwindcss/forms"),
+  ],
 };
