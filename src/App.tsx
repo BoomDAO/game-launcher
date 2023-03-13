@@ -1,18 +1,23 @@
-import React from "react";
-import { AuthContextProvider, useAuth } from "@/context/authContext";
+import { AuthContextProvider } from "@/context/authContext";
+import Layout from "@/components/Layout";
+import { Route, Routes } from "react-router-dom";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Home from "./pages/Home";
+import UploadGame from "./pages/UploadGame";
+import NotFound from "./pages/NotFound";
 
 function App() {
-  const { login, logout, session } = useAuth();
-
-  console.log("session", session);
-
   return (
     <AuthContextProvider>
-      {session ? (
-        <button onClick={logout}>logout</button>
-      ) : (
-        <button onClick={login}>login</button>
-      )}
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="*" element={<NotFound />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/upload-game" element={<UploadGame />} />
+          </Route>
+        </Routes>
+      </Layout>
     </AuthContextProvider>
   );
 }
