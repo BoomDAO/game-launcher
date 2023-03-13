@@ -1,8 +1,8 @@
-import { nfidLogin } from "@/utils";
-import { Identity } from "@dfinity/agent";
-import { AuthClient } from "@dfinity/auth-client";
 // import { Principal } from "@dfinity/principal";
 import React from "react";
+import { Identity } from "@dfinity/agent";
+import { AuthClient } from "@dfinity/auth-client";
+import { nfidLogin } from "@/utils";
 
 interface Session {
   identity: Identity | null;

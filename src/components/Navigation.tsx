@@ -25,7 +25,7 @@ const Navigation = () => {
     <div className="flex items-center justify-between">
       <img src="/logo.png" width={164} alt="logo" />
 
-      <nav className="space-x-4 uppercase text-sm">
+      <nav className="space-x-4 text-sm uppercase">
         {paths.map(({ name, path }) => (
           <NavLink
             key={name}

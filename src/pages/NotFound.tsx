@@ -1,13 +1,13 @@
-import Button from "@/components/Button";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
+import Button from "@/components/Button";
 
 const NotFound = () => {
   const { t } = useTranslation();
 
   return (
     <div className="text-center">
-      <p className="text-3xl font-semibold gradient-text">404</p>
+      <p className="gradient-text text-3xl font-semibold">404</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">
         {t("404.heading")}
       </h1>

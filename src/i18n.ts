@@ -1,5 +1,5 @@
-import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
+import i18next from "i18next";
 import common from "./locale/en/common.json";
 
 const defaultNS = "common";
@@ -13,7 +13,7 @@ const resources = {
 declare module "i18next" {
   interface CustomTypeOptions {
     defaultNS: typeof defaultNS;
-    resources: typeof resources["en"];
+    resources: (typeof resources)["en"];
   }
 }
 

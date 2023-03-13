@@ -1,10 +1,10 @@
-import { AuthContextProvider } from "@/context/authContext";
-import Layout from "@/components/Layout";
 import { Route, Routes } from "react-router-dom";
+import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { AuthContextProvider } from "@/context/authContext";
 import Home from "./pages/Home";
-import UploadGame from "./pages/UploadGame";
 import NotFound from "./pages/NotFound";
+import UploadGame from "./pages/UploadGame";
 
 function App() {
   return (

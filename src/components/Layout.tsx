@@ -3,7 +3,7 @@ import Navigation from "./Navigation";
 
 const Layout = ({ children }: React.PropsWithChildren) => {
   return (
-    <div className="px-6 py-4 space-y-6">
+    <div className="space-y-6 px-6 py-4">
       <Navigation />
       {children}
     </div>
