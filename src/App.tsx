@@ -12,10 +12,12 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="*" element={<NotFound />} />
+
           <Route element={<ProtectedRoute />}>
             <Route path="/upload-game" element={<UploadGame />} />
           </Route>
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
     </AuthContextProvider>
