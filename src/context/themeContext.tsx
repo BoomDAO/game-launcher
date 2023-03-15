@@ -1,7 +1,16 @@
 import React from "react";
 
-export const useDarkMode = () => {
-  const [theme, setTheme] = React.useState("");
+type Theme = "light" | "dark";
+
+interface ThemeContext {
+  theme: Theme;
+  toggleTheme: () => void;
+}
+
+export const ThemeContext = React.createContext({} as ThemeContext);
+
+export const ThemeContextProvider = ({ children }: React.PropsWithChildren) => {
+  const [theme, setTheme] = React.useState<Theme>("light");
 
   React.useEffect(() => {
     const theme = JSON.parse(localStorage.getItem("theme")!);
@@ -32,5 +41,14 @@ export const useDarkMode = () => {
     }
   };
 
-  return { theme, toggleTheme };
+  const value = {
+    theme,
+    toggleTheme,
+  };
+
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 };
+
+export const useTheme = () => React.useContext(ThemeContext);

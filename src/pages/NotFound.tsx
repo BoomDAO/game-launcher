@@ -8,7 +8,7 @@ const NotFound = () => {
   return (
     <div className="text-center">
       <p className="gradient-text text-3xl font-semibold">404</p>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+      <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
         {t("404.heading")}
       </h1>
       <p className="mt-6 leading-7">{t("404.message")}</p>

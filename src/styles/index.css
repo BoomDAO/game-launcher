@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-white font-poppins text-black dark:bg-dark;
+    @apply bg-white font-poppins text-black dark:bg-dark dark:text-white;
   }
 }
 

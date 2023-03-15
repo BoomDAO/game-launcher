@@ -28,7 +28,7 @@ const Card = ({
   return (
     <div className="flex items-center justify-center">
       <div className="gradient-bg w-full rounded-card p-1">
-        <div className="h-full w-full rounded-card bg-white px-6 py-6">
+        <div className="h-full w-full rounded-card bg-white px-6 py-6 dark:bg-dark">
           <div className="mb-6 flex justify-between">
             <p className="text-2xl">{title}</p>
             {iconWithProps}

@@ -5,7 +5,7 @@ const data = Array.from({ length: 9 }).map((_, i) => ({
   title: `Game 0${i}`,
   image: "/banner.png",
   platform: "Browser",
-  canisterId: "r44we3-pqaaa-aaaap-aaosq-cai",
+  canisterId: `r44we3-pqaaa-aaaap-aaosq-cai${i}`,
 }));
 
 const Home = () => {
@@ -29,6 +29,7 @@ const Home = () => {
       <div className="grid gap-6 grid-auto-fit-xl">
         {data.map(({ canisterId, image, platform, title }) => (
           <Card
+            key={canisterId}
             icon={<ArrowUpRightIcon />}
             image={image}
             title={title}
