@@ -496,6 +496,11 @@
   resolved "https://registry.yarnpkg.com/@remix-run/router/-/router-1.4.0.tgz#74935d538e4df8893e47831a7aea362f295bcd39"
   integrity sha512-BJ9SxXux8zAg991UmT8slpwpsd31K1dHHbD3Ba4VzD+liLQ4WAMSxQp2d2ZPRPfN0jN2NPRowcSSoM7lCaF08Q==
 
+"@shrutibalasa/tailwind-grid-auto-fit@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@shrutibalasa/tailwind-grid-auto-fit/-/tailwind-grid-auto-fit-1.1.0.tgz#ff65531727c442856279f16614f6cb815b20429a"
+  integrity sha512-sh/Vmdz/xTVziUF9ZYDb5YpECApdK85KXSRIJY58GzmdUuum5QBE3jqDeNMjICEVaVOSrOnp+gqUWx8A9dmZjA==
+
 "@tailwindcss/aspect-ratio@^0.4.2":
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@tailwindcss/aspect-ratio/-/aspect-ratio-0.4.2.tgz#9ffd52fee8e3c8b20623ff0dcb29e5c21fb0a9ba"

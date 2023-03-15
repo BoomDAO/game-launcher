@@ -5,7 +5,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        blackText: "#090909",
+        black: "#090909",
         white: "#F6F6F6",
         leftGradient: "#FEA002",
         rightGradient: "#E73BCF",
@@ -23,5 +23,6 @@ module.exports = {
   plugins: [
     require("@tailwindcss/aspect-ratio"),
     require("@tailwindcss/forms"),
+    require("@shrutibalasa/tailwind-grid-auto-fit"),
   ],
 };

@@ -6,6 +6,10 @@
   "manage_NFTs": "Manage NFTs",
   "manage_payments": "Manage Payments",
 
+  "platform": "Platform",
+  "canister_id": "Canister Id",
+  "cycles": "Cycles",
+
   "404": {
     "heading": "Are you lost?",
     "message": "Sorry, we couldn’t find the page you’re looking for.",

@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply font-poppins bg-white dark:bg-dark text-blackText;
+    @apply bg-white font-poppins text-black dark:bg-dark;
   }
 }
 
@@ -14,6 +14,6 @@
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-leftGradient to-rightGradient inline-block text-transparent bg-clip-text;
+    @apply inline-block bg-gradient-to-r from-leftGradient to-rightGradient bg-clip-text text-transparent;
   }
 }
