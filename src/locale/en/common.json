@@ -1,4 +1,11 @@
 {
+  "login": "Login",
+  "login_via_nfid": "Login via NFID",
+  "browse_games": "Browse games",
+  "upload_games": "Upload Games",
+  "manage_NFTs": "Manage NFTs",
+  "manage_payments": "Manage Payments",
+
   "404": {
     "heading": "Are you lost?",
     "message": "Sorry, we couldn’t find the page you’re looking for.",
