@@ -19,7 +19,7 @@ interface AuthContext {
 export const AuthContext = React.createContext({} as AuthContext);
 
 export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [session, setSession] = React.useState<Session | null>(null);
 
   const assignSession = (authClient: AuthClient) => {
@@ -33,7 +33,6 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
 
   const checkAuth = async () => {
     try {
-      setIsLoading(true);
       const authClient = await AuthClient.create();
       const isAuthenticated = await authClient.isAuthenticated();
       if (!isAuthenticated) return;
