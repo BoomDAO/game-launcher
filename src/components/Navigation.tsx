@@ -36,7 +36,7 @@ const Navigation = () => {
   ];
 
   return (
-    <div className="flex items-center justify-between pb-8">
+    <div className="flex items-center justify-between">
       <img src={`/logo-${theme}.png`} width={164} alt="logo" />
 
       {session && (

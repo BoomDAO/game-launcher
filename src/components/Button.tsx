@@ -18,15 +18,17 @@ const Button = ({
     <button
       className={twMerge(
         "gradient-bg rounded-primary uppercase text-white",
-        rightArrow && "flex items-center gap-1",
-        size === "normal" && "px-6 py-2 text-sm",
-        size === "big" && "px-12 py-4 text-lg",
+        rightArrow && "flex items-center",
+        size === "normal" && "gap-1 px-6 py-2 text-sm",
+        size === "big" && "gap-2 px-12 py-4 text-lg",
         className,
       )}
       {...rest}
     >
       {children}
-      {rightArrow && <ArrowUpRightIcon className="w-5" />}
+      {rightArrow && (
+        <ArrowUpRightIcon className={size === "normal" ? "w-5" : "w-7"} />
+      )}
     </button>
   );
 };

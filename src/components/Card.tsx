@@ -9,7 +9,7 @@ interface CardProps {
   platform?: string;
   canisterId?: string;
   cycles?: string;
-  url?: string;
+  onClick?: () => void;
 }
 
 const Card = ({
@@ -19,19 +19,18 @@ const Card = ({
   platform,
   canisterId,
   cycles,
-  url = "#",
+  onClick,
 }: CardProps) => {
   const { t } = useTranslation();
 
   const iconWithProps = React.cloneElement(icon, {
-    className: "w-9 h-9 bg-black rounded-full text-white p-2",
+    className: "w-8 h-8 bg-black rounded-full text-white p-2",
   });
 
   return (
     <div className="flex items-center justify-center">
-      <a
-        href={url}
-        target="_blank"
+      <div
+        onClick={onClick}
         className="gradient-bg w-full cursor-pointer rounded-card p-1"
       >
         <div className="h-full w-full rounded-card bg-white px-6 py-6 dark:bg-dark">
@@ -69,7 +68,7 @@ const Card = ({
             )}
           </div>
         </div>
-      </a>
+      </div>
     </div>
   );
 };

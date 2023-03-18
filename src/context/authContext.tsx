@@ -32,15 +32,15 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   };
 
   const checkAuth = async () => {
-    setIsLoading(true);
-
     try {
+      setIsLoading(true);
       const authClient = await AuthClient.create();
       const isAuthenticated = await authClient.isAuthenticated();
       if (!isAuthenticated) return;
       assignSession(authClient);
     } catch (error) {
       console.log("err while checking auth", error);
+      setSession(null);
     } finally {
       setIsLoading(false);
     }

@@ -2,13 +2,14 @@ import { Route, Routes } from "react-router-dom";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthContextProvider } from "@/context/authContext";
+import { navPaths } from "@/shared";
 import { ThemeContextProvider } from "./context/themeContext";
 import Home from "./pages/Home";
 import ManageNfts from "./pages/ManageNfts";
 import ManagePayments from "./pages/ManagePayments";
 import NotFound from "./pages/NotFound";
 import UploadGames from "./pages/UploadGames";
-import { navPaths } from "./shared";
+import UploadUpdateGame from "./pages/UploadUpdateGame";
 
 function App() {
   return (
@@ -20,6 +21,10 @@ function App() {
 
             <Route element={<ProtectedRoute />}>
               <Route path={navPaths.upload_games} element={<UploadGames />} />
+              <Route
+                path={`${navPaths.upload_games}/:canisterId`}
+                element={<UploadUpdateGame />}
+              />
               <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
               <Route
                 path={navPaths.manage_payments}

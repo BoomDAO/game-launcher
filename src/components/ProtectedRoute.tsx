@@ -9,7 +9,11 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({
   redirectPath = navPaths.home,
 }: ProtectedRouteProps) => {
-  const { session } = useAuth();
+  const { session, isLoading } = useAuth();
+
+  console.log("isLoading", isLoading);
+
+  if (isLoading) return null;
 
   if (!session) return <Navigate to={redirectPath} replace />;
 

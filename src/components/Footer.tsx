@@ -2,7 +2,7 @@ import Divider from "./Divider";
 
 const Footer = () => {
   return (
-    <div className="pt-16">
+    <>
       <Divider className="mb-6" />
       <div className="flex justify-between">
         <p>COPYRIGHT © 2023 PLETHORA GAME PLATFORM. ALL RIGHTS RESERVED</p>
@@ -14,7 +14,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
