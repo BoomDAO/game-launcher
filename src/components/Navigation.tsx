@@ -14,7 +14,7 @@ const Navigation = () => {
   const { session, login, logout } = useAuth();
   const { theme } = useTheme();
 
-  const principal = "r44we3-pqaasd-asfasfa-asfasf-safas".slice(0, 10);
+  const principal = session?.address?.slice(0, 10);
 
   const paths = [
     {

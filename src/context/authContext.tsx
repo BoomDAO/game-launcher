@@ -1,4 +1,3 @@
-// import { Principal } from "@dfinity/principal";
 import React from "react";
 import { Identity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
@@ -24,10 +23,11 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
 
   const assignSession = (authClient: AuthClient) => {
     const identity = authClient.getIdentity();
+    const address = identity.getPrincipal().toString();
 
     setSession({
       identity,
-      address: "1234312312",
+      address,
     });
   };
 
