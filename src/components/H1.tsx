@@ -1,5 +1,5 @@
 import React from "react";
-import { twMerge } from "tailwind-merge";
+import { cx } from "@/utils";
 
 const H1 = ({
   children,
@@ -7,7 +7,7 @@ const H1 = ({
   ...rest
 }: React.HTMLAttributes<HTMLHeadingElement>) => {
   return (
-    <h1 className={twMerge("text-6xl", className)} {...rest}>
+    <h1 className={cx("text-6xl", className)} {...rest}>
       {children}
     </h1>
   );

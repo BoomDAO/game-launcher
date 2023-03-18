@@ -1,5 +1,5 @@
 import React from "react";
-import { twMerge } from "tailwind-merge";
+import { cx } from "@/utils";
 
 interface SpaceProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: "small" | "normal" | "medium" | "large";
@@ -8,7 +8,7 @@ interface SpaceProps extends React.HTMLAttributes<HTMLDivElement> {
 const Space = ({ size = "normal", className, ...rest }: SpaceProps) => {
   return (
     <div
-      className={twMerge(
+      className={cx(
         size === "small" && "pb-4",
         size === "normal" && "pb-8",
         size === "medium" && "pb-16",

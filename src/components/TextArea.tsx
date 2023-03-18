@@ -1,5 +1,5 @@
 import React from "react";
-import { twMerge } from "tailwind-merge";
+import { cx } from "@/utils";
 
 interface TextAreaProps extends React.InputHTMLAttributes<HTMLTextAreaElement> {
   rows?: number;
@@ -8,12 +8,7 @@ interface TextAreaProps extends React.InputHTMLAttributes<HTMLTextAreaElement> {
 const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ className, rows = 5, ...rest }, ref) => {
     return (
-      <textarea
-        ref={ref}
-        className={twMerge("", className)}
-        rows={rows}
-        {...rest}
-      />
+      <textarea ref={ref} className={cx("", className)} rows={rows} {...rest} />
     );
   },
 );

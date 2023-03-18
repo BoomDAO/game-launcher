@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
-import { twMerge } from "tailwind-merge";
+import { cx } from "@/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "normal" | "big";
@@ -16,11 +16,11 @@ const Button = ({
 }: ButtonProps) => {
   return (
     <button
-      className={twMerge(
+      className={cx(
         "gradient-bg rounded-primary uppercase text-white",
-        rightArrow && "flex items-center",
         size === "normal" && "gap-1 px-6 py-2 text-sm",
         size === "big" && "gap-2 px-12 py-4 text-lg",
+        rightArrow && "flex items-center",
         className,
       )}
       {...rest}
