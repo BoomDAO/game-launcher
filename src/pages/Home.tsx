@@ -14,7 +14,7 @@ const Home = () => {
       <img
         src="/banner.png"
         alt="banner"
-        className="h-96 w-full rounded-card object-cover"
+        className="h-96 w-full rounded-card object-cover shadow"
       />
 
       <h1 className="flex flex-wrap gap-3 pt-8 pb-16 text-[56px] font-semibold leading-none">

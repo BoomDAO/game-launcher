@@ -9,6 +9,7 @@ interface CardProps {
   platform?: string;
   canisterId?: string;
   cycles?: string;
+  url?: string;
 }
 
 const Card = ({
@@ -18,6 +19,7 @@ const Card = ({
   platform,
   canisterId,
   cycles,
+  url = "#",
 }: CardProps) => {
   const { t } = useTranslation();
 
@@ -27,7 +29,11 @@ const Card = ({
 
   return (
     <div className="flex items-center justify-center">
-      <div className="gradient-bg w-full rounded-card p-1">
+      <a
+        href={url}
+        target="_blank"
+        className="gradient-bg w-full cursor-pointer rounded-card p-1"
+      >
         <div className="h-full w-full rounded-card bg-white px-6 py-6 dark:bg-dark">
           <div className="mb-6 flex justify-between">
             <p className="text-2xl">{title}</p>
@@ -63,7 +69,7 @@ const Card = ({
             )}
           </div>
         </div>
-      </div>
+      </a>
     </div>
   );
 };

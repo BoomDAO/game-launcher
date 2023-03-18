@@ -23,7 +23,7 @@ const SideBar = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-white bg-opacity-60 transition-opacity" />
+          <div className="fixed inset-0 bg-white bg-opacity-60 transition-opacity dark:bg-dark dark:bg-opacity-60" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-hidden">
@@ -50,7 +50,7 @@ const SideBar = ({
                   >
                     <div className="absolute top-0 left-0 -ml-8 flex pt-4 pr-2 sm:-ml-10 sm:pr-4"></div>
                   </Transition.Child>
-                  <div className="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
+                  <div className="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl dark:bg-dark">
                     {children}
                   </div>
                 </Dialog.Panel>
