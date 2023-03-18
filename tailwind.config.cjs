@@ -15,8 +15,7 @@ module.exports = {
         poppins: ["Poppins", "sans-serif"],
       },
       borderRadius: {
-        primary: "9999px",
-        card: "40px",
+        primary: "40px",
       },
     },
   },

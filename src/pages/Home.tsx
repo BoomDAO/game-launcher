@@ -15,7 +15,7 @@ const Home = () => {
       <img
         src="/banner.png"
         alt="banner"
-        className="h-96 w-full rounded-card object-cover shadow"
+        className="h-96 w-full rounded-primary object-cover shadow"
       />
 
       <Space />

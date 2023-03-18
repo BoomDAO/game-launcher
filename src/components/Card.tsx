@@ -31,9 +31,9 @@ const Card = ({
     <div className="flex items-center justify-center">
       <div
         onClick={onClick}
-        className="gradient-bg w-full cursor-pointer rounded-card p-1"
+        className="gradient-bg w-full cursor-pointer rounded-primary p-1"
       >
-        <div className="h-full w-full rounded-card bg-white px-6 py-6 dark:bg-dark">
+        <div className="h-full w-full rounded-primary bg-white px-6 py-6 dark:bg-dark">
           <div className="mb-6 flex justify-between">
             <p className="text-2xl">{title}</p>
             {iconWithProps}
