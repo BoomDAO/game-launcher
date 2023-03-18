@@ -22,7 +22,8 @@
       "@/icons/*": ["src/icons/*"],
       "@/utils": ["src/utils/index.ts"],
       "@/types": ["src/types/index.ts"],
-      "@/hooks": ["src/hooks/index.ts"]
+      "@/hooks": ["src/hooks/index.ts"],
+      "@/shared": ["src/shared/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

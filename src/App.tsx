@@ -4,8 +4,11 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthContextProvider } from "@/context/authContext";
 import { ThemeContextProvider } from "./context/themeContext";
 import Home from "./pages/Home";
+import ManageNfts from "./pages/ManageNfts";
+import ManagePayments from "./pages/ManagePayments";
 import NotFound from "./pages/NotFound";
-import UploadGame from "./pages/UploadGame";
+import UploadGames from "./pages/UploadGames";
+import { navPaths } from "./shared";
 
 function App() {
   return (
@@ -13,10 +16,15 @@ function App() {
       <ThemeContextProvider>
         <Layout>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path={navPaths.home} element={<Home />} />
 
             <Route element={<ProtectedRoute />}>
-              <Route path="/upload-game" element={<UploadGame />} />
+              <Route path={navPaths.upload_games} element={<UploadGames />} />
+              <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
+              <Route
+                path={navPaths.manage_payments}
+                element={<ManagePayments />}
+              />
             </Route>
 
             <Route path="*" element={<NotFound />} />

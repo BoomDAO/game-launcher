@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/authContext";
 import { useTheme } from "@/context/themeContext";
+import { navPaths } from "@/shared";
 import Button from "./Button";
 import SideBar from "./SideBar";
 import ThemeSwitcher from "./ThemeSwitcher";
@@ -10,7 +11,7 @@ import ThemeSwitcher from "./ThemeSwitcher";
 const Navigation = () => {
   const [openSideBar, setOpenSideBar] = React.useState(false);
   const { t } = useTranslation();
-  const { session } = useAuth();
+  const { session, login, logout } = useAuth();
   const { theme } = useTheme();
 
   const principal = "r44we3-pqaasd-asfasfa-asfasf-safas".slice(0, 10);
@@ -18,23 +19,21 @@ const Navigation = () => {
   const paths = [
     {
       name: t("browse_games"),
-      path: "/",
+      path: navPaths.home,
     },
     {
       name: t("upload_games"),
-      path: "/upload-games",
+      path: navPaths.upload_games,
     },
     {
       name: t("manage_NFTs"),
-      path: "/manage-nfts",
+      path: navPaths.manage_nfts,
     },
     {
       name: t("manage_payments"),
-      path: "/manage-payments",
+      path: navPaths.manage_payments,
     },
   ];
-
-  console.log("theme", theme);
 
   return (
     <div className="flex items-center justify-between pb-8">
@@ -71,7 +70,15 @@ const Navigation = () => {
         </div>
       </div>
 
-      <SideBar open={openSideBar} setOpen={setOpenSideBar}></SideBar>
+      <SideBar open={openSideBar} setOpen={setOpenSideBar}>
+        <div className="p-6">
+          {session ? (
+            <Button onClick={logout}>Log out</Button>
+          ) : (
+            <Button onClick={login}>Log in</Button>
+          )}
+        </div>
+      </SideBar>
     </div>
   );
 };

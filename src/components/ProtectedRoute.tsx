@@ -1,11 +1,14 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/authContext";
+import { navPaths } from "@/shared";
 
 interface ProtectedRouteProps {
   redirectPath?: string;
 }
 
-const ProtectedRoute = ({ redirectPath = "/" }: ProtectedRouteProps) => {
+const ProtectedRoute = ({
+  redirectPath = navPaths.home,
+}: ProtectedRouteProps) => {
   const { session } = useAuth();
 
   if (!session) return <Navigate to={redirectPath} replace />;
