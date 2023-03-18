@@ -31,7 +31,7 @@ const Card = ({
     <div className="flex items-center justify-center">
       <div
         onClick={onClick}
-        className="gradient-bg w-full cursor-pointer rounded-primary p-1"
+        className="gradient-bg w-full cursor-pointer rounded-primary p-0.5"
       >
         <div className="h-full w-full rounded-primary bg-white px-6 py-6 dark:bg-dark">
           <div className="mb-6 flex justify-between">
