@@ -14,7 +14,6 @@ export const nfidLogin = async (authClient: AuthClient) => {
         `top=${window.screen.height / 2 - 705 / 2},` +
         `toolbar=0,location=0,menubar=0,width=525,height=705`,
       onSuccess: () => {
-        console.log("success");
         resolve(true);
       },
       onError: (err) => {
