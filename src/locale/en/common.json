@@ -12,6 +12,9 @@
 
   "upload_new_game": "Upload new game",
   "previously_uploaded_games": "Previously uploaded games",
+  "manage_game": "Manage game",
+  "game_name": "Game name",
+  "game_description": "Game description",
 
   "404": {
     "heading": "Are you lost?",

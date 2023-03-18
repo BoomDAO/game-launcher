@@ -6,6 +6,11 @@
   body {
     @apply bg-white font-poppins text-black dark:bg-dark dark:text-white;
   }
+
+  input,
+  textarea {
+    @apply w-full rounded-primary border border-black bg-transparent py-4 px-6 focus:border-rightGradient focus:outline-none focus:ring-0 dark:border-white dark:focus:border-leftGradient;
+  }
 }
 
 @layer components {
