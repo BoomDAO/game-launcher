@@ -9,16 +9,16 @@
 
   input,
   textarea {
-    @apply w-full rounded-primary border border-black bg-transparent py-4 px-6 focus:border-rightGradient focus:outline-none focus:ring-0 dark:border-white dark:focus:border-leftGradient;
+    @apply w-full rounded-primary border border-black bg-transparent py-4 px-6 focus:border-lightPrimary focus:outline-none focus:ring-0 dark:border-white dark:focus:border-darkPrimary;
   }
 }
 
 @layer components {
   .gradient-bg {
-    @apply bg-gradient-to-r from-leftGradient to-rightGradient;
+    @apply bg-gradient-to-r from-darkPrimary to-lightPrimary;
   }
 
   .gradient-text {
-    @apply inline-block bg-gradient-to-r from-leftGradient to-rightGradient bg-clip-text text-transparent;
+    @apply inline-block bg-gradient-to-r from-darkPrimary to-lightPrimary bg-clip-text text-transparent;
   }
 }

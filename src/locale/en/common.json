@@ -16,6 +16,7 @@
   "game_name": "Game name",
   "game_description": "Game description",
   "upload_game": "Upload game",
+  "update_game": "Update game",
 
   "cover_image_file": "Cover image file",
   "your_game_file": "Your game file",

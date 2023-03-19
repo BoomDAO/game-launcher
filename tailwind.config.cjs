@@ -7,8 +7,8 @@ module.exports = {
       colors: {
         black: "#090909",
         white: "#F6F6F6",
-        leftGradient: "#FEA002",
-        rightGradient: "#E73BCF",
+        darkPrimary: "#FEA002",
+        lightPrimary: "#E73BCF",
         dark: "#33343F",
       },
       fontFamily: {

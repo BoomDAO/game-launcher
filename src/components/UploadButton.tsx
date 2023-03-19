@@ -1,4 +1,5 @@
 import React from "react";
+import { cx } from "@/utils";
 import Button from "./Button";
 
 interface UploadButtonProps {
@@ -10,7 +11,7 @@ const UploadButton = ({
   placeholder = "Upload file",
   buttonText = "Upload file",
 }: UploadButtonProps) => {
-  const [uploadName, setUploadName] = React.useState(placeholder);
+  const [uploadName, setUploadName] = React.useState("");
 
   const hiddenFileInput = React.useRef<HTMLInputElement>(null);
 
@@ -27,7 +28,9 @@ const UploadButton = ({
 
   return (
     <div className="flex w-full items-center justify-between rounded-primary border border-black px-8 py-4 dark:border-white">
-      <div>{uploadName}</div>
+      <div className={cx(!uploadName && "text-gray-500")}>
+        {uploadName || placeholder}
+      </div>
       <Button onClick={handleClick}>{buttonText}</Button>
       <input
         type="file"
