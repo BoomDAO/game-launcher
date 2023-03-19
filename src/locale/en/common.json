@@ -15,6 +15,12 @@
   "manage_game": "Manage game",
   "game_name": "Game name",
   "game_description": "Game description",
+  "upload_game": "Upload game",
+
+  "cover_image_file": "Cover image file",
+  "your_game_file": "Your game file",
+  "choose_img": "Choose img",
+  "choose_file": "Choose file",
 
   "404": {
     "heading": "Are you lost?",
