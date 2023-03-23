@@ -11,7 +11,9 @@
   "cycles": "Cycles",
 
   "upload_new_game": "Upload new game",
+  "create_new_nft_collection": "Create new NFT collection",
   "previously_uploaded_games": "Previously uploaded games",
+  "previously_created_collections": "Previously created collections",
   "manage_game": "Manage game",
   "game_name": "Game name",
   "game_description": "Game description",
@@ -22,6 +24,11 @@
   "your_game_file": "Your game file",
   "choose_img": "Choose img",
   "choose_file": "Choose file",
+
+  "collection_name": "Collection name",
+  "collection_description": "Collection description",
+  "create_collection": "Create collection",
+  "create_new_collection": "Create new collection",
 
   "404": {
     "heading": "Are you lost?",

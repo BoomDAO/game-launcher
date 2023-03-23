@@ -27,7 +27,7 @@ const UploadButton = ({
   };
 
   return (
-    <div className="flex w-full items-center justify-between rounded-primary border border-black px-8 py-4 dark:border-white">
+    <div className="flex w-full items-center justify-between rounded-primary border border-black px-8 py-[0.63rem] dark:border-white">
       <div className={cx(!uploadName && "text-gray-500")}>
         {uploadName || placeholder}
       </div>
