@@ -30,6 +30,9 @@
   "create_collection": "Create collection",
   "create_new_collection": "Create new collection",
 
+  "deploy_payment_canister": "Deploy Payment Canister",
+  "manage_payments_msg": "By deploying and configuring this canister, you can let players in your game pay ICP to dynamically mint in-game NFTs. Please download our Unity template first to get started.",
+
   "404": {
     "heading": "Are you lost?",
     "message": "Sorry, we couldn’t find the page you’re looking for.",

@@ -11,7 +11,7 @@ const ManageNftsNew = () => {
   const { t } = useTranslation();
 
   return (
-    <div>
+    <>
       <Space size="medium" />
       <H1>{t("create_new_collection")}</H1>
       <Space size="medium" />
@@ -32,7 +32,7 @@ const ManageNftsNew = () => {
           </Button>
         </div>
       </Form>
-    </div>
+    </>
   );
 };
 

@@ -37,7 +37,7 @@ const UploadUpdateGame = () => {
   const button_text = newGame ? t("upload_game") : t("update_game");
 
   return (
-    <div>
+    <>
       <Space size="medium" />
       <H1>{heading}</H1>
       <Space size="medium" />
@@ -65,7 +65,7 @@ const UploadUpdateGame = () => {
           </Button>
         </div>
       </Form>
-    </div>
+    </>
   );
 };
 
