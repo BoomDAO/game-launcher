@@ -1,4 +1,5 @@
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
+import { useGetGames } from "@/api/games";
 import Card from "@/components/Card";
 import Space from "@/components/Space";
 
@@ -10,6 +11,10 @@ const data = Array.from({ length: 9 }).map((_, i) => ({
 }));
 
 const Home = () => {
+  const { data: games = [] } = useGetGames();
+
+  console.log("games", games);
+
   return (
     <>
       <img
@@ -32,15 +37,15 @@ const Home = () => {
       <Space size="medium" />
 
       <div className="grid gap-6 grid-auto-fit-xl">
-        {data.map(({ canisterId, image, platform, title }) => (
+        {games.map(({ canister_id, platform, name, url, image }) => (
           <Card
-            key={canisterId}
+            key={canister_id}
             icon={<ArrowUpRightIcon />}
             image={image}
-            title={title}
-            canisterId={canisterId}
+            title={name}
+            canisterId={canister_id}
             platform={platform}
-            onClick={() => window.open("#", "_blank")}
+            onClick={() => window.open(url, "_blank")}
           />
         ))}
       </div>

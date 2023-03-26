@@ -14,6 +14,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <script type="module">
+      /**
+       * @dfinity/agent requires this. Can be removed once it's fixed
+       */
+      import { Buffer } from "buffer";
+
+      window.global = window;
+      window.Buffer = Buffer;
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

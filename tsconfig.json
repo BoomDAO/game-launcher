@@ -20,11 +20,13 @@
       "@/components/*": ["src/components/*"],
       "@/context/*": ["src/context/*"],
       "@/icons/*": ["src/icons/*"],
+      "@/api/*": ["src/api/*"],
       "@/utils": ["src/utils/index.ts"],
       "@/types": ["src/types/index.ts"],
       "@/hooks": ["src/hooks/index.ts"],
       "@/shared": ["src/shared/index.ts"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts"],
+  "exclude": ["src/dids"]
 }
