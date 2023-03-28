@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/context/authContext";
-import Button from "./Button";
+import Button from "./ui/Button";
 
 const LoginButton = () => {
   const { t } = useTranslation();

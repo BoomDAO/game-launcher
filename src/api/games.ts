@@ -1,25 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useGameClient } from "@/hooks";
 import { CreateGame, Game } from "@/types";
-import { getActor } from "@/utils";
-// @ts-ignore
-import { idlFactory } from "../dids/ic_games.did.js";
-
-const canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
-
-const actor = await getActor(idlFactory, canisterId);
 
 export const queryKeys = {
   games: "games",
 };
 
 export const useGetGames = (page: number = 1) =>
-  useQuery(
-    [queryKeys.games],
-    async () => (await actor.get_all_asset_canisters(page)) as Game[],
-  );
+  useQuery([queryKeys.games], async () => {
+    const { actor, methods } = await useGameClient();
+    return (await actor[methods.get_all_games](page)) as Game[];
+  });
 
-export const useCreateGame = (payload: CreateGame) =>
-  useQuery(
-    [queryKeys.games],
-    async () => (await actor.create_game_canister()) as Game,
-  );
+export const useCreateGame = () =>
+  useMutation(async (payload: CreateGame) => {
+    const { actor, methods } = await useGameClient();
+
+    return await actor[methods.create_game](
+      payload.name,
+      payload.description,
+      payload.image,
+      payload.platform,
+    );
+  });

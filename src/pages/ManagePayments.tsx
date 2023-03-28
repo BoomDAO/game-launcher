@@ -1,8 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import Button from "@/components/Button";
-import Space from "@/components/Space";
+import Button from "@/components/ui/Button";
+import Space from "@/components/ui/Space";
 import { navPaths } from "@/shared";
 
 const ManagePayments = () => {

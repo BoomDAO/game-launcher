@@ -1,7 +1,8 @@
 import React from "react";
 import { cx } from "@/utils";
 
-interface TextAreaProps extends React.InputHTMLAttributes<HTMLTextAreaElement> {
+export interface TextAreaProps
+  extends React.InputHTMLAttributes<HTMLTextAreaElement> {
   rows?: number;
 }
 

@@ -3,7 +3,7 @@ import { useAuth } from "@/context/authContext";
 import Footer from "./Footer";
 import LogoLoader from "./LogoLoader";
 import Navigation from "./Navigation";
-import Space from "./Space";
+import Space from "./ui/Space";
 
 const Layout = ({ children }: React.PropsWithChildren) => {
   const { isLoading } = useAuth();

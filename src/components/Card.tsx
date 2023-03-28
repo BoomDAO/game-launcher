@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import Divider from "./Divider";
+import Divider from "./ui/Divider";
 
 interface CardProps {
   title: string;

@@ -4,9 +4,9 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/authContext";
 import { useTheme } from "@/context/themeContext";
 import { navPaths } from "@/shared";
-import Button from "./Button";
 import SideBar from "./SideBar";
 import ThemeSwitcher from "./ThemeSwitcher";
+import Button from "./ui/Button";
 
 const Navigation = () => {
   const [openSideBar, setOpenSideBar] = React.useState(false);

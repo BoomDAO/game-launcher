@@ -1,7 +1,7 @@
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 import { useGetGames } from "@/api/games";
 import Card from "@/components/Card";
-import Space from "@/components/Space";
+import Space from "@/components/ui/Space";
 
 const data = Array.from({ length: 9 }).map((_, i) => ({
   title: `Game 0${i}`,

@@ -1,3 +1,5 @@
+const colors = require("tailwindcss/colors");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -10,6 +12,8 @@ module.exports = {
         darkPrimary: "#FEA002",
         lightPrimary: "#E73BCF",
         dark: "#33343F",
+        error: colors.red[400],
+        success: colors.green[500],
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],

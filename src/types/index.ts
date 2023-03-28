@@ -1,5 +1,3 @@
-import { Principal } from "@dfinity/principal";
-
 export interface Game {
   url: string;
   name: string;
@@ -9,6 +7,5 @@ export interface Game {
   image: string;
 }
 
-export interface CreateGame extends Game {
-  principal: Principal;
-}
+export interface CreateGame
+  extends Pick<Game, "name" | "description" | "image" | "platform"> {}

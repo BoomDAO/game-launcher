@@ -19,6 +19,7 @@
     "@dfinity/principal": "^0.15.4",
     "@headlessui/react": "^1.7.13",
     "@heroicons/react": "^2.0.16",
+    "@hookform/resolvers": "^3.0.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.3",
     "@tanstack/react-query": "^4.28.0",
@@ -27,10 +28,13 @@
     "i18next": "^22.4.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.43.8",
+    "react-hot-toast": "^2.4.0",
     "react-i18next": "^12.2.0",
     "react-router-dom": "^6.9.0",
     "tailwind-merge": "^1.10.0",
-    "vite-tsconfig-paths": "^4.0.5"
+    "vite-tsconfig-paths": "^4.0.5",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@shrutibalasa/tailwind-grid-auto-fit": "^1.1.0",

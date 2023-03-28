@@ -1,21 +1,9 @@
-import { Actor, ActorSubclass, HttpAgent, Identity } from "@dfinity/agent";
-import { IDL } from "@dfinity/candid";
+import { HttpAgent, Identity } from "@dfinity/agent";
 import fetch from "cross-fetch";
 
-const getAgent = async () =>
+export const getPrivateAgent = async (identity: Identity) =>
   new HttpAgent({
     host: "https://ic0.app/",
     fetch,
+    identity,
   });
-
-export const getActor = async (
-  idlFactory: IDL.InterfaceFactory,
-  canisterId: string,
-) => {
-  const agent = await getAgent();
-
-  return Actor.createActor(idlFactory, {
-    agent,
-    canisterId,
-  });
-};

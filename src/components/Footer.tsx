@@ -1,4 +1,4 @@
-import Divider from "./Divider";
+import Divider from "./ui/Divider";
 
 const Footer = () => {
   return (

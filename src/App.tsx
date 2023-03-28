@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthContextProvider } from "@/context/authContext";
 import { navPaths } from "@/shared";
+import Toast from "./components/ui/Toast";
 import { ThemeContextProvider } from "./context/themeContext";
 import Home from "./pages/Home";
 import ManageNfts from "./pages/ManageNfts";
@@ -18,6 +19,7 @@ function App() {
     <AuthContextProvider>
       <ThemeContextProvider>
         <Layout>
+          <Toast />
           <Routes>
             <Route path={navPaths.home} element={<Home />} />
 

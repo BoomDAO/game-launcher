@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
-import Button from "@/components/Button";
+import Button from "@/components/ui/Button";
 
 const NotFound = () => {
   const { t } = useTranslation();

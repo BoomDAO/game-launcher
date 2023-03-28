@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
-import Button from "@/components/Button";
-import Form from "@/components/Form";
-import H1 from "@/components/H1";
-import Input from "@/components/Input";
-import Space from "@/components/Space";
-import TextArea from "@/components/TextArea";
-import UploadButton from "@/components/UploadButton";
+import Form from "@/components/form/Form";
+import Button from "@/components/ui/Button";
+import H1 from "@/components/ui/H1";
+import Input from "@/components/ui/Input";
+import Space from "@/components/ui/Space";
+import TextArea from "@/components/ui/TextArea";
+import UploadButton from "@/components/ui/UploadButton";
 
 const ManageNftsNew = () => {
   const { t } = useTranslation();
