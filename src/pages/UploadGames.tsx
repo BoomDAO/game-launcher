@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Cog8ToothIcon } from "@heroicons/react/20/solid";
+import { useGetUserGames } from "@/api/games";
 import Card from "@/components/Card";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
@@ -18,6 +19,8 @@ const data = Array.from({ length: 9 }).map((_, i) => ({
 const UploadGames = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const { data: games = [] } = useGetUserGames();
 
   return (
     <>
@@ -38,16 +41,16 @@ const UploadGames = () => {
       <Space size="medium" />
 
       <div className="grid gap-6 grid-auto-fit-xl">
-        {data.map(({ canisterId, image, platform, title, cycles }) => (
+        {games.map(({ canister_id, image, platform, name }) => (
           <Card
-            key={canisterId}
+            key={canister_id}
             icon={<Cog8ToothIcon />}
             image={image}
-            title={title}
-            canisterId={canisterId}
+            title={name}
+            canisterId={canister_id}
             platform={platform}
-            cycles={cycles}
-            onClick={() => navigate(`${navPaths.upload_games}/${canisterId}`)}
+            // cycles={cycles}
+            onClick={() => navigate(`${navPaths.upload_games}/${canister_id}`)}
           />
         ))}
       </div>

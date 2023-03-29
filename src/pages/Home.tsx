@@ -13,8 +13,6 @@ const data = Array.from({ length: 9 }).map((_, i) => ({
 const Home = () => {
   const { data: games = [] } = useGetGames();
 
-  console.log("games", games);
-
   return (
     <>
       <img

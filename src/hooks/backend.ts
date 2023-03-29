@@ -19,6 +19,7 @@ export const useGameClient = async () => {
     }),
     methods: {
       get_all_games: "get_all_asset_canisters",
+      get_user_games: "get_user_games",
       create_game: "create_game_canister",
     },
   };
