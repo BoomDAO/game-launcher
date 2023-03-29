@@ -39,7 +39,7 @@ const scheme = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   description: z.string().min(1, { message: "Description is required." }),
   platform: z.string(),
-  image: z.string(),
+  cover: z.string(),
   // platform: z.string().min(1, { message: "Platform is required." }),
   // image: z.string().min(1, { message: "Image is required." }),
 });
@@ -60,7 +60,7 @@ const UploadUpdateGame = () => {
       name: "",
       description: "",
       platform: "Browser",
-      image: "",
+      cover: "",
     },
     resolver: zodResolver(scheme),
   });

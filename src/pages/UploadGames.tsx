@@ -41,11 +41,11 @@ const UploadGames = () => {
       <Space size="medium" />
 
       <div className="grid gap-6 grid-auto-fit-xl">
-        {games.map(({ canister_id, image, platform, name }) => (
+        {games.map(({ canister_id, cover, platform, name }) => (
           <Card
             key={canister_id}
             icon={<Cog8ToothIcon />}
-            image={image}
+            image={cover}
             title={name}
             canisterId={canister_id}
             platform={platform}

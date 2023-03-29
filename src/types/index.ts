@@ -4,8 +4,8 @@ export interface Game {
   canister_id: string;
   description: string;
   platform: string;
-  image: string;
+  cover: string;
 }
 
 export interface CreateGame
-  extends Pick<Game, "name" | "description" | "image" | "platform"> {}
+  extends Pick<Game, "name" | "description" | "cover" | "platform"> {}

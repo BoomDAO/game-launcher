@@ -1,6 +1,8 @@
+import React from "react";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 import { useGetGames } from "@/api/games";
 import Card from "@/components/Card";
+import Pagination from "@/components/Pagination";
 import Space from "@/components/ui/Space";
 
 const data = Array.from({ length: 9 }).map((_, i) => ({
@@ -11,7 +13,8 @@ const data = Array.from({ length: 9 }).map((_, i) => ({
 }));
 
 const Home = () => {
-  const { data: games = [] } = useGetGames();
+  const [pageNumber, setPageNumber] = React.useState(1);
+  const { data: games = [] } = useGetGames(pageNumber - 1);
 
   return (
     <>
@@ -35,11 +38,11 @@ const Home = () => {
       <Space size="medium" />
 
       <div className="grid gap-6 grid-auto-fit-xl">
-        {games.map(({ canister_id, platform, name, url, image }) => (
+        {games.map(({ canister_id, platform, name, url, cover }) => (
           <Card
             key={canister_id}
             icon={<ArrowUpRightIcon />}
-            image={image}
+            image={cover}
             title={name}
             canisterId={canister_id}
             platform={platform}
@@ -47,6 +50,12 @@ const Home = () => {
           />
         ))}
       </div>
+
+      <Pagination
+        pageNumber={pageNumber}
+        setPageNumber={setPageNumber}
+        totalNumbers={2}
+      />
     </>
   );
 };
