@@ -37,11 +37,10 @@ const ManageNfts = () => {
       <Space size="medium" />
 
       <div className="grid gap-6 grid-auto-fit-xl">
-        {data.map(({ canisterId, image, title, cycles }) => (
+        {data.map(({ canisterId, title, cycles }) => (
           <Card
             key={canisterId}
             icon={<Cog8ToothIcon />}
-            image={image}
             title={title}
             canisterId={canisterId}
             cycles={cycles}

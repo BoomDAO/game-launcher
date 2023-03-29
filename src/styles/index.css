@@ -21,4 +21,8 @@
   .gradient-text {
     @apply inline-block bg-gradient-to-r from-darkPrimary to-lightPrimary bg-clip-text text-transparent;
   }
+
+  .form-error {
+    @apply border-error dark:border-error;
+  }
 }

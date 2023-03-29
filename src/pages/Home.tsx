@@ -1,8 +1,11 @@
 import React from "react";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
+import { NoSymbolIcon } from "@heroicons/react/20/solid";
 import { useGetGames } from "@/api/games";
 import Card from "@/components/Card";
 import Pagination from "@/components/Pagination";
+import Center from "@/components/ui/Center";
+import LogoLoader from "@/components/ui/LogoLoader";
 import Space from "@/components/ui/Space";
 
 const data = Array.from({ length: 9 }).map((_, i) => ({
@@ -14,7 +17,28 @@ const data = Array.from({ length: 9 }).map((_, i) => ({
 
 const Home = () => {
   const [pageNumber, setPageNumber] = React.useState(1);
-  const { data: games = [] } = useGetGames(pageNumber - 1);
+  const { data: games = [], isError, isFetching } = useGetGames(pageNumber - 1);
+
+  const displayLoading = (
+    <Center className="flex-col gap-2">
+      <LogoLoader />
+      <p>Loading games...</p>
+    </Center>
+  );
+
+  const displayError = (
+    <Center className="flex-col gap-2">
+      <NoSymbolIcon className="h-12 w-12" />
+      <p>Sorry something happend... try again later</p>
+    </Center>
+  );
+
+  const displayNoData = (
+    <Center className="flex-col gap-2">
+      <NoSymbolIcon className="h-12 w-12" />
+      <p>There was no games created yet...</p>
+    </Center>
+  );
 
   return (
     <>
@@ -37,25 +61,34 @@ const Home = () => {
 
       <Space size="medium" />
 
-      <div className="grid gap-6 grid-auto-fit-xl">
-        {games.map(({ canister_id, platform, name, url, cover }) => (
-          <Card
-            key={canister_id}
-            icon={<ArrowUpRightIcon />}
-            image={cover}
-            title={name}
-            canisterId={canister_id}
-            platform={platform}
-            onClick={() => window.open(url, "_blank")}
-          />
-        ))}
-      </div>
+      {isError ? (
+        displayError
+      ) : isFetching ? (
+        displayLoading
+      ) : data.length ? (
+        <>
+          <div className="grid gap-6 grid-auto-fit-xl">
+            {games.map(({ canister_id, platform, name, url }) => (
+              <Card
+                key={canister_id}
+                icon={<ArrowUpRightIcon />}
+                title={name}
+                canisterId={canister_id}
+                platform={platform}
+                onClick={() => window.open(url, "_blank")}
+              />
+            ))}
+          </div>
 
-      <Pagination
-        pageNumber={pageNumber}
-        setPageNumber={setPageNumber}
-        totalNumbers={2}
-      />
+          <Pagination
+            pageNumber={pageNumber}
+            setPageNumber={setPageNumber}
+            totalNumbers={2}
+          />
+        </>
+      ) : (
+        displayNoData
+      )}
     </>
   );
 };

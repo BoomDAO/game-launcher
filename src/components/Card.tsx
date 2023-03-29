@@ -1,11 +1,14 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { NoSymbolIcon } from "@heroicons/react/20/solid";
+import { useGetGameCover } from "@/api/games";
+import Center from "./ui/Center";
 import Divider from "./ui/Divider";
+import LogoLoader from "./ui/LogoLoader";
 
 interface CardProps {
   title: string;
   icon: React.ReactElement<React.SVGProps<SVGSVGElement>>;
-  image: string;
   platform?: string;
   canisterId?: string;
   cycles?: string;
@@ -15,7 +18,6 @@ interface CardProps {
 const Card = ({
   title,
   icon,
-  image,
   platform,
   canisterId,
   cycles,
@@ -23,12 +25,14 @@ const Card = ({
 }: CardProps) => {
   const { t } = useTranslation();
 
+  const { data: image, isLoading: loadingImage } = useGetGameCover(canisterId);
+
   const iconWithProps = React.cloneElement(icon, {
     className: "w-8 h-8 bg-black rounded-full text-white p-2",
   });
 
   return (
-    <div className="flex items-center justify-center">
+    <Center>
       <div
         onClick={onClick}
         className="gradient-bg w-full cursor-pointer rounded-primary p-0.5"
@@ -39,7 +43,25 @@ const Card = ({
             {iconWithProps}
           </div>
 
-          <img src={image} alt="game image" className="mb-4 w-full" />
+          <div className="mb-4 h-40">
+            {loadingImage ? (
+              <Center className="h-full flex-col gap-2">
+                <LogoLoader />
+                <p className="text-sm">Loading image...</p>
+              </Center>
+            ) : !image ? (
+              <Center className="h-full flex-col gap-2">
+                <NoSymbolIcon className="w-10" />
+                <p className="text-sm">No image found</p>
+              </Center>
+            ) : (
+              <img
+                src={image}
+                alt="game image"
+                className="h-40 w-full object-cover"
+              />
+            )}
+          </div>
 
           <div>
             {platform && (
@@ -69,7 +91,7 @@ const Card = ({
           </div>
         </div>
       </div>
-    </div>
+    </Center>
   );
 };
 

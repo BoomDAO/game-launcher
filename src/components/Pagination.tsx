@@ -53,6 +53,7 @@ const Pagination = ({
 
           return (
             <button
+              key={i}
               onClick={() => setPageNumber(page)}
               className={cx(
                 "inline-flex items-center rounded-primary px-4 py-2 text-sm font-medium leading-snug text-black hover:text-lightPrimary",

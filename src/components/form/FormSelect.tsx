@@ -4,33 +4,35 @@ import {
   useController,
 } from "react-hook-form";
 import { cx } from "@/utils";
-import TextArea, { TextAreaProps } from "../ui/TextArea";
+import Select, { SelectOption, SelectProps } from "../ui/Select";
 import FormErrorMessage from "./FormErrorMessage";
 import FormWrapper from "./FormWrapper";
 
-export type FormTextTextAreaProps<T extends FieldValues> = TextAreaProps &
+export type FormSelectInputProps<T extends FieldValues> = SelectProps &
   UseControllerProps<T>;
 
-const FormTextArea = <T extends FieldValues>({
+const FormSelect = <T extends FieldValues>({
   control,
   name,
   className,
+  onValueChange,
   ...rest
-}: FormTextTextAreaProps<T>) => {
+}: FormSelectInputProps<T>) => {
   const {
-    field,
+    field: { onChange: fieldChange, ...restField },
     fieldState: { error },
   } = useController({
     name,
     control,
   });
 
-  console.log("error", error);
+  const onChange = ({ value }: SelectOption) => fieldChange(value);
 
   return (
     <FormWrapper>
-      <TextArea
-        {...field}
+      <Select
+        {...restField}
+        onValueChange={onChange}
         className={cx(error && "border-error dark:border-error", className)}
         {...rest}
       />
@@ -40,4 +42,4 @@ const FormTextArea = <T extends FieldValues>({
   );
 };
 
-export default FormTextArea;
+export default FormSelect;

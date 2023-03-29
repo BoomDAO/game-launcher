@@ -21,6 +21,7 @@ export const useGameClient = async () => {
       get_all_games: "get_all_asset_canisters",
       get_user_games: "get_user_games",
       create_game: "create_game_canister",
+      get_game_cover: "get_game_cover",
     },
   };
 };

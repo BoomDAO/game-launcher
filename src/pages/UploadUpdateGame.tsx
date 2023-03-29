@@ -1,19 +1,19 @@
-import React from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useNavigation, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateGame } from "@/api/games";
 import Form from "@/components/form/Form";
+import FormSelect from "@/components/form/FormSelect";
 import FormTextArea from "@/components/form/FormTextArea";
 import FormTextInput from "@/components/form/FormTextInput";
+import FormUploadButton from "@/components/form/FormUploadButton";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
-import Select, { SelectOption } from "@/components/ui/Select";
+import { SelectOption } from "@/components/ui/Select";
 import Space from "@/components/ui/Space";
-import UploadButton from "@/components/ui/UploadButton";
 import { navPaths } from "@/shared";
 
 const game_types: SelectOption[] = [
@@ -38,10 +38,9 @@ const game_types: SelectOption[] = [
 const scheme = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   description: z.string().min(1, { message: "Description is required." }),
-  platform: z.string(),
-  cover: z.string(),
-  // platform: z.string().min(1, { message: "Platform is required." }),
-  // image: z.string().min(1, { message: "Image is required." }),
+  cover: z.string().min(1, { message: "Cover image is required." }),
+  platform: z.string().min(1, { message: "Platform is required." }),
+  game: z.string(),
 });
 
 type Form = z.infer<typeof scheme>;
@@ -51,25 +50,25 @@ const UploadUpdateGame = () => {
   const { canisterId } = useParams();
   const { t } = useTranslation();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Form>({
+  const { control, handleSubmit, watch } = useForm<Form>({
     defaultValues: {
       name: "",
       description: "",
       platform: "Browser",
       cover: "",
+      game: "",
     },
     resolver: zodResolver(scheme),
   });
 
-  const { mutate, isLoading } = useCreateGame();
+  const cover = watch("cover");
 
-  const onSubmit = (values: Form) => {
+  const { mutateAsync, isLoading } = useCreateGame();
+
+  const onSubmit = async (values: Form) => {
     console.log(values);
-    mutate(values, {
+
+    const data = await mutateAsync(values, {
       onError: (err) => {
         toast.error(
           "There was an error while creating new game. Please try again!",
@@ -81,6 +80,8 @@ const UploadUpdateGame = () => {
         navigate(navPaths.upload_games);
       },
     });
+
+    console.log("data", data);
   };
 
   const newGame = canisterId === "new";
@@ -94,8 +95,8 @@ const UploadUpdateGame = () => {
       <Space size="medium" />
 
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex w-full items-center gap-4">
-          <Select data={game_types} />
+        <div className="flex w-full flex-col gap-4 md:flex-row">
+          <FormSelect data={game_types} control={control} name="platform" />
 
           <FormTextInput
             placeholder={t("game_name")}
@@ -110,14 +111,23 @@ const UploadUpdateGame = () => {
           name="description"
         />
 
-        <div className="flex w-full items-center gap-4">
-          <UploadButton
-            buttonText={t("choose_img")}
-            placeholder={t("cover_image_file")}
-          />
-          <UploadButton
+        <div className="flex w-full flex-col gap-4 lg:flex-row">
+          <div className="flex w-full flex-col gap-6">
+            <FormUploadButton
+              buttonText={t("choose_img")}
+              placeholder={t("cover_image_file")}
+              imageUpload
+              control={control}
+              name="cover"
+            />
+            {cover && <img src={cover} alt="cover" className="w-full" />}
+          </div>
+
+          <FormUploadButton
             buttonText={t("choose_file")}
             placeholder={t("your_game_file")}
+            control={control}
+            name="game"
           />
         </div>
 
