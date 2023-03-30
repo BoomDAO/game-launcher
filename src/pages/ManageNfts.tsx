@@ -43,7 +43,7 @@ const ManageNfts = () => {
             icon={<Cog8ToothIcon />}
             title={title}
             canisterId={canisterId}
-            cycles={cycles}
+            showCycles
             onClick={() => navigate(`${navPaths.manage_nfts}/${canisterId}`)}
           />
         ))}

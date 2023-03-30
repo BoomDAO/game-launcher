@@ -29,7 +29,7 @@ function App() {
                 path={`${navPaths.upload_games}/:canisterId`}
                 element={<UploadUpdateGame />}
               />
-              <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
+              {/* <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
               <Route
                 path={`${navPaths.manage_nfts}/new`}
                 element={<ManageNftsNew />}
@@ -41,7 +41,7 @@ function App() {
               <Route
                 path={navPaths.manage_payments}
                 element={<ManagePayments />}
-              />
+              /> */}
             </Route>
 
             <Route path="*" element={<NotFound />} />

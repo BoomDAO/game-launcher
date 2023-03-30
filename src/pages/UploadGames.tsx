@@ -74,7 +74,7 @@ const UploadGames = () => {
                 title={name}
                 canisterId={canister_id}
                 platform={platform}
-                // cycles={cycles}
+                showCycles
                 onClick={() =>
                   navigate(`${navPaths.upload_games}/${canister_id}`)
                 }

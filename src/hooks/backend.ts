@@ -1,6 +1,6 @@
 import { Actor } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import { getPrivateAgent } from "@/utils";
+import { getAgent } from "@/utils";
 // @ts-ignore
 import { idlFactory as GameFactory } from "../dids/ic_games.did.js";
 
@@ -10,7 +10,7 @@ export const useGameClient = async () => {
   const authClient = await AuthClient.create();
   const identity = authClient.getIdentity();
 
-  const agent = await getPrivateAgent(identity);
+  const agent = await getAgent(identity);
 
   return {
     actor: Actor.createActor(GameFactory, {

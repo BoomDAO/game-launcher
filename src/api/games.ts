@@ -1,13 +1,18 @@
+import { Actor } from "@dfinity/agent";
 import { UseQueryResult, useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/authContext";
 import { useGameClient } from "@/hooks";
 import { CreateGame, Game } from "@/types";
+import { getAgent } from "@/utils";
+// @ts-ignore
+import { idlFactory as GameFactory } from "../dids/ic_games.did.js";
 
 export const queryKeys = {
   games: "games",
   games_total: "games_total",
   user_games: "user_games",
   game_cover: "game_cover",
+  cycle_balance: "cycle_balance",
 };
 
 export const useGetGamesCount = () =>
@@ -54,3 +59,24 @@ export const useCreateGame = () =>
       payload.platform,
     );
   });
+
+export const useGetCycleBalance = (
+  canisterId?: string,
+  showCycles?: boolean,
+): UseQueryResult<string> =>
+  useQuery(
+    [queryKeys.cycle_balance, canisterId],
+    async () => {
+      const agent = await getAgent();
+      const actor = Actor.createActor(GameFactory, {
+        agent,
+        canisterId: canisterId!,
+      });
+
+      const balance = Number(await actor.cycleBalance());
+      return `${(balance * 0.0000000000001).toFixed(2)}T`;
+    },
+    {
+      enabled: !!canisterId && !!showCycles,
+    },
+  );

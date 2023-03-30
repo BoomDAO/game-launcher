@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { NoSymbolIcon } from "@heroicons/react/20/solid";
-import { useGetGameCover } from "@/api/games";
+import { useGetCycleBalance, useGetGameCover } from "@/api/games";
 import Center from "./ui/Center";
 import Divider from "./ui/Divider";
 import LogoLoader from "./ui/LogoLoader";
@@ -11,7 +11,7 @@ interface CardProps {
   icon: React.ReactElement<React.SVGProps<SVGSVGElement>>;
   platform?: string;
   canisterId?: string;
-  cycles?: string;
+  showCycles?: boolean;
   onClick?: () => void;
 }
 
@@ -20,12 +20,13 @@ const Card = ({
   icon,
   platform,
   canisterId,
-  cycles,
+  showCycles,
   onClick,
 }: CardProps) => {
   const { t } = useTranslation();
 
   const { data: image, isLoading: loadingImage } = useGetGameCover(canisterId);
+  const { data: cycleBalance } = useGetCycleBalance(canisterId, showCycles);
 
   const iconWithProps = React.cloneElement(icon, {
     className: "w-8 h-8 bg-black rounded-full text-white p-2",
@@ -82,10 +83,10 @@ const Card = ({
               </div>
             )}
 
-            {cycles && (
+            {showCycles && (
               <div className="mt-4 flex items-center gap-2">
                 <p className="font-semibold">{t("cycles")}: </p>
-                <p>{cycles}</p>
+                <p>{cycleBalance || "0.00T"}</p>
               </div>
             )}
           </div>

@@ -25,8 +25,6 @@ const FormTextArea = <T extends FieldValues>({
     control,
   });
 
-  console.log("error", error);
-
   return (
     <FormWrapper>
       <TextArea
