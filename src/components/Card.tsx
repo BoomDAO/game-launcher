@@ -48,12 +48,12 @@ const Card = ({
             {loadingImage ? (
               <Center className="h-full flex-col gap-2">
                 <LogoLoader />
-                <p className="text-sm">Loading image...</p>
+                <p className="text-sm">{t("card.loading_image")}</p>
               </Center>
             ) : !image ? (
               <Center className="h-full flex-col gap-2">
                 <NoSymbolIcon className="w-10" />
-                <p className="text-sm">No image found</p>
+                <p className="text-sm">{t("card.no_image")}</p>
               </Center>
             ) : (
               <img
@@ -68,7 +68,7 @@ const Card = ({
             {platform && (
               <>
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold">{t("platform")}: </p>
+                  <p className="font-semibold">{t("card.platform")}: </p>
                   <p>{platform}</p>
                 </div>
 
@@ -78,14 +78,14 @@ const Card = ({
 
             {canisterId && (
               <div>
-                <p className="font-semibold">{t("canister_id")}: </p>
+                <p className="font-semibold">{t("card.canister_id")}: </p>
                 <p>{canisterId}</p>
               </div>
             )}
 
             {showCycles && (
               <div className="mt-4 flex items-center gap-2">
-                <p className="font-semibold">{t("cycles")}: </p>
+                <p className="font-semibold">{t("card.cycles")}: </p>
                 <p>{cycleBalance || "0.00T"}</p>
               </div>
             )}

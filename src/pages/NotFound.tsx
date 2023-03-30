@@ -9,12 +9,12 @@ const NotFound = () => {
     <div className="text-center">
       <p className="gradient-text text-3xl font-semibold">404</p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
-        {t("404.heading")}
+        {t("404.title")}
       </h1>
       <p className="mt-6 leading-7">{t("404.message")}</p>
       <div className="mt-10 flex items-center justify-center">
         <NavLink to="/">
-          <Button>{t("404.home_button")}</Button>
+          <Button>{t("404.button_home")}</Button>
         </NavLink>
       </div>
     </div>

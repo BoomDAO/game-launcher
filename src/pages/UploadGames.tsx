@@ -31,14 +31,21 @@ const UploadGames = () => {
   const displayLoading = (
     <Center className="flex-col gap-2">
       <LogoLoader />
-      <p>Loading games...</p>
+      <p>{t("upload_games.loading")}</p>
     </Center>
   );
 
   const displayError = (
     <Center className="flex-col gap-2">
       <NoSymbolIcon className="h-12 w-12" />
-      <p>Sorry something happend... try again later</p>
+      <p>{t("error")}</p>
+    </Center>
+  );
+
+  const displayNoData = (
+    <Center className="flex-col gap-2">
+      <NoSymbolIcon className="h-12 w-12" />
+      <p>{t("upload_games.no_games")}</p>
     </Center>
   );
 
@@ -51,12 +58,12 @@ const UploadGames = () => {
         rightArrow
         onClick={() => navigate(`${navPaths.upload_games}/new`)}
       >
-        {t("upload_new_game")}
+        {t("upload_games.button_upload")}
       </Button>
 
       <Space />
 
-      <H1>{t("previously_uploaded_games")}</H1>
+      <H1>{t("upload_games.title")}</H1>
 
       <Space size="medium" />
 
@@ -89,10 +96,7 @@ const UploadGames = () => {
           />
         </>
       ) : (
-        <Center className="flex-col gap-2">
-          <NoSymbolIcon className="h-12 w-12" />
-          <p>You have no games created yet...</p>
-        </Center>
+        displayNoData
       )}
     </>
   );

@@ -46,9 +46,11 @@ const scheme = z.object({
 type Form = z.infer<typeof scheme>;
 
 const UploadUpdateGame = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { canisterId } = useParams();
-  const { t } = useTranslation();
+
+  const newGame = canisterId === "new";
 
   const { control, handleSubmit, watch } = useForm<Form>({
     defaultValues: {
@@ -70,13 +72,11 @@ const UploadUpdateGame = () => {
 
     const data = await mutateAsync(values, {
       onError: (err) => {
-        toast.error(
-          "There was an error while creating new game. Please try again!",
-        );
+        toast.error(t("upload_games.error_create"));
         console.log("err", err);
       },
-      onSuccess: (canisterId) => {
-        toast.success(`Game with canisterId ${canisterId} was created.`);
+      onSuccess: () => {
+        toast.success(`Game was created.`);
         navigate(navPaths.upload_games);
       },
     });
@@ -84,9 +84,12 @@ const UploadUpdateGame = () => {
     console.log("data", data);
   };
 
-  const newGame = canisterId === "new";
-  const heading = newGame ? t("upload_new_game") : t("manage_game");
-  const button_text = newGame ? t("upload_game") : t("update_game");
+  const heading = newGame
+    ? t("upload_games.new.title")
+    : t("upload_games.update.title");
+  const button_text = newGame
+    ? t("upload_games.new.button")
+    : t("upload_games.update.button");
 
   return (
     <>
@@ -99,14 +102,14 @@ const UploadUpdateGame = () => {
           <FormSelect data={game_types} control={control} name="platform" />
 
           <FormTextInput
-            placeholder={t("game_name")}
+            placeholder={t("upload_games.input_name")}
             control={control}
             name="name"
           />
         </div>
 
         <FormTextArea
-          placeholder={t("game_description")}
+          placeholder={t("upload_games.input_description")}
           control={control}
           name="description"
         />
@@ -114,8 +117,8 @@ const UploadUpdateGame = () => {
         <div className="flex w-full flex-col gap-4 lg:flex-row">
           <div className="flex w-full flex-col gap-6">
             <FormUploadButton
-              buttonText={t("choose_img")}
-              placeholder={t("cover_image_file")}
+              buttonText={t("upload_games.button_cover_upload")}
+              placeholder={t("upload_games.placeholder_cover_upload")}
               imageUpload
               control={control}
               name="cover"
@@ -124,8 +127,8 @@ const UploadUpdateGame = () => {
           </div>
 
           <FormUploadButton
-            buttonText={t("choose_file")}
-            placeholder={t("your_game_file")}
+            buttonText={t("upload_games.button_game_upload")}
+            placeholder={t("upload_games.placeholder_game_upload")}
             control={control}
             name="game"
           />

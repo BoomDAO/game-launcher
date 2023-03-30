@@ -14,14 +14,14 @@ const ManagePayments = () => {
       <Space size="medium" />
 
       <div className="flex flex-col items-center justify-center gap-12 rounded-primary border border-black p-12 text-center dark:border-white">
-        <p className="text-xl">{t("manage_payments_msg")}</p>
+        <p className="text-xl">{t("manage_payments.text")}</p>
 
         <Button
           rightArrow
           size="big"
           onClick={() => navigate(`${navPaths.manage_payments}`)}
         >
-          {t("deploy_payment_canister")}
+          {t("manage_payments.button")}
         </Button>
       </div>
     </div>

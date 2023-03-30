@@ -13,22 +13,25 @@ const ManageNftsNew = () => {
   return (
     <>
       <Space size="medium" />
-      <H1>{t("create_new_collection")}</H1>
+      <H1>{t("manage_nfts.title")}</H1>
       <Space size="medium" />
 
       <Form>
         <div className="flex w-full items-center gap-4">
-          <Input placeholder={t("collection_name")} />
+          <Input placeholder={t("manage_nfts.input_name")} />
           <UploadButton
-            buttonText={t("choose_img")}
-            placeholder={t("cover_image_file")}
+            buttonText={t("manage_nfts.button_cover_upload")}
+            placeholder={t("manage_nfts.placeholder_cover_upload")}
           />
         </div>
-        <TextArea placeholder={t("collection_description")} className="" />
+        <TextArea
+          placeholder={t("manage_nfts.input_description")}
+          className=""
+        />
 
         <div>
           <Button rightArrow size="big" className="">
-            {t("create_collection")}
+            {t("manage_nfts.new.button")}
           </Button>
         </div>
       </Form>

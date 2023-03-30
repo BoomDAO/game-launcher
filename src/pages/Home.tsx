@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 import { NoSymbolIcon } from "@heroicons/react/20/solid";
 import { useGetGames, useGetGamesCount } from "@/api/games";
@@ -18,27 +19,29 @@ const data = Array.from({ length: 9 }).map((_, i) => ({
 
 const Home = () => {
   const [pageNumber, setPageNumber] = React.useState(1);
+  const { t } = useTranslation();
+
   const { data: games = [], isError, isLoading } = useGetGames(pageNumber);
   const { data: totalGames } = useGetGamesCount();
 
   const displayLoading = (
     <Center className="flex-col gap-2">
       <LogoLoader />
-      <p>Loading games...</p>
+      <p>{t("home.loading")}</p>
     </Center>
   );
 
   const displayError = (
     <Center className="flex-col gap-2">
       <NoSymbolIcon className="h-12 w-12" />
-      <p>Sorry something happend... try again later</p>
+      <p>{t("error")}</p>
     </Center>
   );
 
   const displayNoData = (
     <Center className="flex-col gap-2">
       <NoSymbolIcon className="h-12 w-12" />
-      <p>There was no games created yet...</p>
+      <p>{t("home.no_games")}</p>
     </Center>
   );
 
@@ -51,12 +54,12 @@ const Home = () => {
       />
       <Space />
       <h1 className="flex flex-wrap gap-3 text-[56px] font-semibold leading-none">
-        <span className="gradient-text">Games</span>
-        <span>hosted in</span>
-        <span className="gradient-text">smart contract canisters</span>
-        <span>on the</span>
-        <span className="gradient-text">ICP</span>
-        <span>blockchain</span>
+        <span className="gradient-text">{t("home.title.text_1")}</span>
+        <span>{t("home.title.text_2")}</span>
+        <span className="gradient-text">{t("home.title.text_3")}</span>
+        <span>{t("home.title.text_4")}</span>
+        <span className="gradient-text">{t("home.title.text_5")}</span>
+        <span>{t("home.title.text_6")}</span>
       </h1>
       <Space size="medium" />
       {isError ? (

@@ -18,19 +18,19 @@ const Navigation = () => {
 
   const paths = [
     {
-      name: t("browse_games"),
+      name: t("navigation.browse_games"),
       path: navPaths.home,
     },
     {
-      name: t("upload_games"),
+      name: t("navigation.upload_games"),
       path: navPaths.upload_games,
     },
     {
-      name: t("manage_NFTs"),
+      name: t("navigation.manage_NFTs"),
       path: navPaths.manage_nfts,
     },
     {
-      name: t("manage_payments"),
+      name: t("navigation.manage_payments"),
       path: navPaths.manage_payments,
     },
   ];
@@ -64,7 +64,7 @@ const Navigation = () => {
             >{`${principal}...`}</div>
           ) : (
             <Button rightArrow onClick={() => setOpenSideBar(true)}>
-              {t("login")}
+              {t("navigation.login")}
             </Button>
           )}
         </div>
@@ -73,9 +73,9 @@ const Navigation = () => {
       <SideBar open={openSideBar} setOpen={setOpenSideBar}>
         <div className="p-6">
           {session ? (
-            <Button onClick={logout}>Log out</Button>
+            <Button onClick={logout}>{t("navigation.logout")}</Button>
           ) : (
-            <Button onClick={login}>Log in</Button>
+            <Button onClick={login}>{t("navigation.login")}</Button>
           )}
         </div>
       </SideBar>

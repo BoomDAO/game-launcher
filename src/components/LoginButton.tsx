@@ -6,7 +6,7 @@ const LoginButton = () => {
   const { t } = useTranslation();
   const { login } = useAuth();
 
-  return <Button onClick={login}>{t("login_via_nfid")}</Button>;
+  return <Button onClick={login}>{t("button_login")}</Button>;
 };
 
 export default LoginButton;

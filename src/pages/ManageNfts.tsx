@@ -27,12 +27,12 @@ const ManageNfts = () => {
         rightArrow
         onClick={() => navigate(`${navPaths.manage_nfts}/new`)}
       >
-        {t("create_new_nft_collection")}
+        {t("manage_nfts.button")}
       </Button>
 
       <Space />
 
-      <H1>{t("previously_created_collections")}</H1>
+      <H1>{t("manage_nfts.title")}</H1>
 
       <Space size="medium" />
 
