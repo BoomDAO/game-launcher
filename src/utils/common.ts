@@ -15,3 +15,9 @@ export const convertToBase64 = (file: File): Promise<string> => {
     };
   });
 };
+
+export const getPaginationPages = (total?: number, max: number = 9) => {
+  if (!total) return 1;
+  const pages = total / max;
+  return Math.ceil(pages);
+};
