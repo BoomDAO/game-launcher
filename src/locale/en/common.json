@@ -68,7 +68,9 @@
 
     "update": {
       "title": "Manage game",
-      "button": "Update game"
+      "button": "Update game",
+      "loading": "Loading game...",
+      "error": "We did not found any game... :("
     }
   },
 

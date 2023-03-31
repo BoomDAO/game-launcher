@@ -1,12 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
-import { NoSymbolIcon } from "@heroicons/react/20/solid";
-import { useGetGames, useGetGamesCount } from "@/api/games";
+import { useGetGames, useGetTotalGames } from "@/api/games";
 import Card from "@/components/Card";
 import Pagination from "@/components/Pagination";
-import Center from "@/components/ui/Center";
-import LogoLoader from "@/components/ui/LogoLoader";
+import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Space from "@/components/ui/Space";
 import { getPaginationPages } from "@/utils";
 
@@ -22,28 +20,7 @@ const Home = () => {
   const { t } = useTranslation();
 
   const { data: games = [], isError, isLoading } = useGetGames(pageNumber);
-  const { data: totalGames } = useGetGamesCount();
-
-  const displayLoading = (
-    <Center className="flex-col gap-2">
-      <LogoLoader />
-      <p>{t("home.loading")}</p>
-    </Center>
-  );
-
-  const displayError = (
-    <Center className="flex-col gap-2">
-      <NoSymbolIcon className="h-12 w-12" />
-      <p>{t("error")}</p>
-    </Center>
-  );
-
-  const displayNoData = (
-    <Center className="flex-col gap-2">
-      <NoSymbolIcon className="h-12 w-12" />
-      <p>{t("home.no_games")}</p>
-    </Center>
-  );
+  const { data: totalGames } = useGetTotalGames();
 
   return (
     <>
@@ -62,10 +39,10 @@ const Home = () => {
         <span>{t("home.title.text_6")}</span>
       </h1>
       <Space size="medium" />
-      {isError ? (
-        displayError
-      ) : isLoading ? (
-        displayLoading
+      {isLoading ? (
+        <LoadingResult>{t("home.loading")}</LoadingResult>
+      ) : isError ? (
+        <ErrorResult>{t("error")}</ErrorResult>
       ) : data.length ? (
         <>
           <div className="grid gap-6 grid-auto-fit-xl">
@@ -88,7 +65,7 @@ const Home = () => {
           />
         </>
       ) : (
-        displayNoData
+        <NoDataResult>{t("home.no_games")}</NoDataResult>
       )}
     </>
   );

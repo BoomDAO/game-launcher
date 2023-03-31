@@ -1,14 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Cog8ToothIcon, NoSymbolIcon } from "@heroicons/react/20/solid";
-import { useGetUserGames } from "@/api/games";
+import { Cog8ToothIcon } from "@heroicons/react/20/solid";
+import { useGetTotalUserGames, useGetUserGames } from "@/api/games";
 import Card from "@/components/Card";
 import Pagination from "@/components/Pagination";
+import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Button from "@/components/ui/Button";
-import Center from "@/components/ui/Center";
 import H1 from "@/components/ui/H1";
-import LogoLoader from "@/components/ui/LogoLoader";
 import Space from "@/components/ui/Space";
 import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
@@ -27,27 +26,7 @@ const UploadGames = () => {
   const navigate = useNavigate();
 
   const { data: games = [], isLoading, isError } = useGetUserGames(pageNumber);
-
-  const displayLoading = (
-    <Center className="flex-col gap-2">
-      <LogoLoader />
-      <p>{t("upload_games.loading")}</p>
-    </Center>
-  );
-
-  const displayError = (
-    <Center className="flex-col gap-2">
-      <NoSymbolIcon className="h-12 w-12" />
-      <p>{t("error")}</p>
-    </Center>
-  );
-
-  const displayNoData = (
-    <Center className="flex-col gap-2">
-      <NoSymbolIcon className="h-12 w-12" />
-      <p>{t("upload_games.no_games")}</p>
-    </Center>
-  );
+  const { data: totalGames } = useGetTotalUserGames();
 
   return (
     <>
@@ -68,9 +47,9 @@ const UploadGames = () => {
       <Space size="medium" />
 
       {isLoading ? (
-        displayLoading
+        <LoadingResult>{t("upload_games.loading")}</LoadingResult>
       ) : isError ? (
-        displayError
+        <ErrorResult>{t("error")}</ErrorResult>
       ) : data.length ? (
         <>
           <div className="grid gap-6 grid-auto-fit-xl">
@@ -92,11 +71,11 @@ const UploadGames = () => {
           <Pagination
             pageNumber={pageNumber}
             setPageNumber={setPageNumber}
-            totalNumbers={getPaginationPages(12, 9)}
+            totalNumbers={getPaginationPages(totalGames, 9)}
           />
         </>
       ) : (
-        displayNoData
+        <NoDataResult>{t("upload_games.no_games")}</NoDataResult>
       )}
     </>
   );

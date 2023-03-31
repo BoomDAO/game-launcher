@@ -6,13 +6,10 @@ import { navPaths } from "@/shared";
 import Toast from "./components/ui/Toast";
 import { ThemeContextProvider } from "./context/themeContext";
 import Home from "./pages/Home";
-import ManageNfts from "./pages/ManageNfts";
-import ManageNftsNew from "./pages/ManageNftsNew";
-import ManageNftsUpdate from "./pages/ManageNftsUpdate";
-import ManagePayments from "./pages/ManagePayments";
 import NotFound from "./pages/NotFound";
 import UploadGames from "./pages/UploadGames";
-import UploadUpdateGame from "./pages/UploadUpdateGame";
+import CreateGame from "./pages/UploadGames/CreateGame";
+import UpdateGame from "./pages/UploadGames/UpdateGame";
 
 function App() {
   return (
@@ -26,8 +23,12 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path={navPaths.upload_games} element={<UploadGames />} />
               <Route
+                path={`${navPaths.upload_games}/create_game`}
+                element={<CreateGame />}
+              />
+              <Route
                 path={`${navPaths.upload_games}/:canisterId`}
-                element={<UploadUpdateGame />}
+                element={<UpdateGame />}
               />
               {/* <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
               <Route

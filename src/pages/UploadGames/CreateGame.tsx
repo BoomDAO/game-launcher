@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateGame } from "@/api/games";
@@ -12,47 +12,23 @@ import FormTextInput from "@/components/form/FormTextInput";
 import FormUploadButton from "@/components/form/FormUploadButton";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
-import { SelectOption } from "@/components/ui/Select";
 import Space from "@/components/ui/Space";
-import { navPaths } from "@/shared";
+import { gameDataScheme, navPaths, platform_types } from "@/shared";
 
-const game_types: SelectOption[] = [
-  {
-    label: "Browser",
-    value: "Browser",
-  },
-  {
-    label: "Android",
-    value: "Android",
-  },
-  {
-    label: "Mac",
-    value: "Mac",
-  },
-  {
-    label: "PC",
-    value: "PC",
-  },
-];
-
-const scheme = z.object({
-  name: z.string().min(1, { message: "Name is required." }),
-  description: z.string().min(1, { message: "Description is required." }),
-  cover: z.string().min(1, { message: "Cover image is required." }),
-  platform: z.string().min(1, { message: "Platform is required." }),
-  game: z.string(),
-});
+const scheme = z
+  .object({
+    cover: z.string().min(1, { message: "Cover image is required." }),
+    game: z.string().min(1, { message: "Game is required." }),
+  })
+  .extend(gameDataScheme);
 
 type Form = z.infer<typeof scheme>;
 
-const UploadUpdateGame = () => {
+const CreateGame = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { canisterId } = useParams();
 
-  const newGame = canisterId === "new";
-
-  const { control, handleSubmit, watch } = useForm<Form>({
+  const { control, handleSubmit, watch, reset } = useForm<Form>({
     defaultValues: {
       name: "",
       description: "",
@@ -65,7 +41,7 @@ const UploadUpdateGame = () => {
 
   const cover = watch("cover");
 
-  const { mutateAsync, isLoading } = useCreateGame();
+  const { mutateAsync, isLoading: isUploadingGameData } = useCreateGame();
 
   const onSubmit = async (values: Form) => {
     console.log(values);
@@ -76,7 +52,7 @@ const UploadUpdateGame = () => {
         console.log("err", err);
       },
       onSuccess: () => {
-        toast.success(`Game was created.`);
+        toast.success(t("upload_games.success_create"));
         navigate(navPaths.upload_games);
       },
     });
@@ -84,22 +60,15 @@ const UploadUpdateGame = () => {
     console.log("data", data);
   };
 
-  const heading = newGame
-    ? t("upload_games.new.title")
-    : t("upload_games.update.title");
-  const button_text = newGame
-    ? t("upload_games.new.button")
-    : t("upload_games.update.button");
-
   return (
     <>
       <Space size="medium" />
-      <H1>{heading}</H1>
+      <H1>{t("upload_games.new.title")}</H1>
       <Space size="medium" />
 
       <Form onSubmit={handleSubmit(onSubmit)}>
         <div className="flex w-full flex-col gap-4 md:flex-row">
-          <FormSelect data={game_types} control={control} name="platform" />
+          <FormSelect data={platform_types} control={control} name="platform" />
 
           <FormTextInput
             placeholder={t("upload_games.input_name")}
@@ -134,12 +103,12 @@ const UploadUpdateGame = () => {
           />
         </div>
 
-        <Button rightArrow size="big" isLoading={isLoading}>
-          {button_text}
+        <Button rightArrow size="big" isLoading={isUploadingGameData}>
+          {t("upload_games.new.button")}
         </Button>
       </Form>
     </>
   );
 };
 
-export default UploadUpdateGame;
+export default CreateGame;
