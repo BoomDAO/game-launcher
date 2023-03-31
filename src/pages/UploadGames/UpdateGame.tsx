@@ -1,8 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGetGame, useUpdateGameData } from "@/api/games";
@@ -28,7 +27,6 @@ type Form = z.infer<typeof scheme>;
 
 const UploadUpdateGame = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { canisterId } = useParams();
 
   const { data, isLoading: isLoadingGame, isError } = useGetGame(canisterId);

@@ -112,9 +112,10 @@ export const useCreateGame = () => {
       console.log("err", err);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [queryKeys.user_games] });
-      queryClient.invalidateQueries({ queryKey: [queryKeys.games_total] });
-      queryClient.invalidateQueries({
+      queryClient.refetchQueries({ queryKey: [queryKeys.games] });
+      queryClient.refetchQueries({ queryKey: [queryKeys.user_games] });
+      queryClient.refetchQueries({ queryKey: [queryKeys.games_total] });
+      queryClient.refetchQueries({
         queryKey: [queryKeys.games_user_total],
       });
       toast.success(t("upload_games.new.success_create"));
@@ -151,9 +152,10 @@ export const useUpdateGameData = () => {
       toast.error(t("upload_games.update.error_update"));
       console.log("err", err);
     },
-    onSuccess: async (id) => {
-      queryClient.invalidateQueries([queryKeys.user_games]);
-      queryClient.invalidateQueries([queryKeys.game, id]);
+    onSuccess: async (canister_id) => {
+      queryClient.refetchQueries({ queryKey: [queryKeys.games] });
+      queryClient.refetchQueries({ queryKey: [queryKeys.user_games] });
+      queryClient.invalidateQueries([queryKeys.game, canister_id]);
       toast.success(t("upload_games.update.success_update"));
       navigate(navPaths.upload_games);
     },

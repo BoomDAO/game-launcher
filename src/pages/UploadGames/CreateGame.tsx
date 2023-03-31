@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateGame } from "@/api/games";
@@ -17,7 +16,8 @@ import { gameDataScheme, platform_types } from "@/shared";
 const scheme = z
   .object({
     cover: z.string().min(1, { message: "Cover image is required." }),
-    game: z.string().min(1, { message: "Game is required." }),
+    // game: z.string().min(1, { message: "Game is required." }),
+    game: z.string(),
   })
   .extend(gameDataScheme);
 
@@ -25,7 +25,6 @@ type Form = z.infer<typeof scheme>;
 
 const CreateGame = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const { control, handleSubmit, watch, reset } = useForm<Form>({
     defaultValues: {
