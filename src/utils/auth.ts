@@ -25,3 +25,8 @@ export const nfidLogin = async (authClient: AuthClient) => {
 
   return authClient.getIdentity();
 };
+
+export const getAuthClient = async () =>
+  await AuthClient.create({
+    idleOptions: { idleTimeout: 1000 * 60 * 60 * 24 },
+  });

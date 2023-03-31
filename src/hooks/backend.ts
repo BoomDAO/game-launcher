@@ -1,14 +1,13 @@
 import { Actor } from "@dfinity/agent";
-import { AuthClient } from "@dfinity/auth-client";
-import { getAgent } from "@/utils";
+import { getAgent, getAuthClient } from "@/utils";
 // @ts-ignore
 import { idlFactory as GameFactory } from "../dids/ic_games.did.js";
 
 const game_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
 
 export const useGameClient = async () => {
-  const authClient = await AuthClient.create();
-  const identity = authClient.getIdentity();
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -26,6 +25,8 @@ export const useGameClient = async () => {
       get_users_total_games: "get_users_total_games",
 
       create_game: "create_game_canister",
+      update_game_data: "update_game_data",
+      update_game_cover: "update_game_cover",
     },
   };
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import { Identity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import { nfidLogin } from "@/utils";
+import { getAuthClient, nfidLogin } from "@/utils";
 
 interface Session {
   identity: Identity | null;
@@ -33,7 +33,7 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
 
   const checkAuth = async () => {
     try {
-      const authClient = await AuthClient.create();
+      const authClient = await getAuthClient();
       const isAuthenticated = await authClient.isAuthenticated();
       if (!isAuthenticated) return;
       assignSession(authClient);
@@ -50,17 +50,17 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   }, []);
 
   const logout = async () => {
-    const authClient = await AuthClient.create();
+    const authClient = await getAuthClient();
     await authClient.logout();
     setSession(null);
   };
 
   const login = async () => {
-    const authClient = await AuthClient.create();
+    const authClient = await getAuthClient();
     const isAuthenticated = await authClient.isAuthenticated();
     if (isAuthenticated) return assignSession(authClient);
 
-    await nfidLogin(authClient);
+    await nfidLogin(authClient!);
 
     return checkAuth();
   };

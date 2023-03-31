@@ -47,8 +47,6 @@
   },
 
   "upload_games": {
-    "error_create": "There was an error while creating new game. Please try again!",
-    "success_create": "Game was created.",
     "loading": "Loading games...",
     "title": "Previously uploaded games",
     "button_upload": "Upload new game",
@@ -63,14 +61,18 @@
 
     "new": {
       "title": "Upload new game",
-      "button": "Upload game"
+      "button": "Upload game",
+      "error_create": "There was an error while creating new game. Please try again!",
+      "success_create": "Game was created."
     },
 
     "update": {
       "title": "Manage game",
       "button": "Update game",
       "loading": "Loading game...",
-      "error": "We did not found any game... :("
+      "error": "We did not found any game... :(",
+      "error_update": "There was an error while updating game. Please try again!",
+      "success_update": "Game was updated."
     }
   },
 

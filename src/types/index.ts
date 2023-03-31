@@ -9,3 +9,8 @@ export interface Game {
 
 export interface CreateGame
   extends Pick<Game, "name" | "description" | "cover" | "platform"> {}
+
+export interface UpdateGameData
+  extends Pick<Game, "canister_id" | "name" | "description"> {
+  cover?: string;
+}

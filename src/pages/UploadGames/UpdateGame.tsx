@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useGetGame } from "@/api/games";
+import { useGetGame, useUpdateGameData } from "@/api/games";
 import { ErrorResult, LoadingResult } from "@/components/Results";
 import Form from "@/components/form/Form";
 import FormSelect from "@/components/form/FormSelect";
@@ -55,24 +55,10 @@ const UploadUpdateGame = () => {
     });
   }, [data]);
 
-  // const { mutateAsync, isLoading: isUploadGameData } = useCreateGame();
+  const { mutate, isLoading: isUploadingGameData } = useUpdateGameData();
 
-  const onSubmit = async (values: Form) => {
-    console.log(values);
-
-    // const data = await mutateAsync(values, {
-    //   onError: (err) => {
-    //     toast.error(t("upload_games.error_create"));
-    //     console.log("err", err);
-    //   },
-    //   onSuccess: () => {
-    //     toast.success(`Game was created.`);
-    //     navigate(navPaths.upload_games);
-    //   },
-    // });
-
-    // console.log("data", data);
-  };
+  const onSubmit = async (values: Form) =>
+    mutate({ canister_id: canisterId!, ...values });
 
   return (
     <>
@@ -126,7 +112,7 @@ const UploadUpdateGame = () => {
             />
           </div>
 
-          <Button rightArrow size="big" isLoading={false}>
+          <Button rightArrow size="big" isLoading={isUploadingGameData}>
             {t("upload_games.update.button")}
           </Button>
         </Form>

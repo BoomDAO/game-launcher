@@ -1,5 +1,4 @@
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,7 +12,7 @@ import FormUploadButton from "@/components/form/FormUploadButton";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
-import { gameDataScheme, navPaths, platform_types } from "@/shared";
+import { gameDataScheme, platform_types } from "@/shared";
 
 const scheme = z
   .object({
@@ -41,24 +40,9 @@ const CreateGame = () => {
 
   const cover = watch("cover");
 
-  const { mutateAsync, isLoading: isUploadingGameData } = useCreateGame();
+  const { mutate, isLoading: isUploadingGameData } = useCreateGame();
 
-  const onSubmit = async (values: Form) => {
-    console.log(values);
-
-    const data = await mutateAsync(values, {
-      onError: (err) => {
-        toast.error(t("upload_games.error_create"));
-        console.log("err", err);
-      },
-      onSuccess: () => {
-        toast.success(t("upload_games.success_create"));
-        navigate(navPaths.upload_games);
-      },
-    });
-
-    console.log("data", data);
-  };
+  const onSubmit = async (values: Form) => mutate(values);
 
   return (
     <>
