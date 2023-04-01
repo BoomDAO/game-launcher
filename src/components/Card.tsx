@@ -4,7 +4,7 @@ import { NoSymbolIcon } from "@heroicons/react/20/solid";
 import { useGetCycleBalance, useGetGameCover } from "@/api/deployer";
 import Center from "./ui/Center";
 import Divider from "./ui/Divider";
-import LogoLoader from "./ui/LogoLoader";
+import Loader from "./ui/Loader";
 
 interface CardProps {
   title: string;
@@ -47,7 +47,7 @@ const Card = ({
           <div className="mb-4 h-40">
             {loadingImage ? (
               <Center className="h-full flex-col gap-2">
-                <LogoLoader />
+                <Loader />
                 <p className="text-sm">{t("card.loading_image")}</p>
               </Center>
             ) : !image ? (

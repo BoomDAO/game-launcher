@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Cog8ToothIcon } from "@heroicons/react/20/solid";
 import { useGetTotalUserGames, useGetUserGames } from "@/api/deployer";
 import Card from "@/components/Card";
+import EmptyGameCard from "@/components/EmptyGameCard";
 import Pagination from "@/components/Pagination";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Button from "@/components/ui/Button";
@@ -52,7 +53,7 @@ const UploadGames = () => {
         <ErrorResult>{t("error")}</ErrorResult>
       ) : data.length ? (
         <>
-          <div className="grid gap-6 grid-auto-fit-xl">
+          <div className="grid-cols-card grid gap-6">
             {games.map(({ canister_id, platform, name }) => (
               <Card
                 key={canister_id}
@@ -66,6 +67,7 @@ const UploadGames = () => {
                 }
               />
             ))}
+            <EmptyGameCard length={games.length} />
           </div>
 
           <Pagination

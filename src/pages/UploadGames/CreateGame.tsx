@@ -70,6 +70,9 @@ const CreateGame = () => {
     useCreateGameSubmit();
 
   const onSubmit = async (values: Form) => {
+    setShowPrepare(false);
+    setDisableSubmit(false);
+
     const canister_id = await onSubmitGame({
       values,
       mutateData,
@@ -91,9 +94,11 @@ const CreateGame = () => {
           e.preventDefault();
           setShowPrepare(true);
           setDisableSubmit(true);
-          await new Promise((resolve) =>
-            setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 500),
-          );
+
+          await new Promise((resolve) => {
+            setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 1000);
+          });
+
           setShowPrepare(false);
           setDisableSubmit(false);
         }}
@@ -140,7 +145,7 @@ const CreateGame = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          {showPrepare && <PreparingForUpload />}
+          <PreparingForUpload show={showPrepare} />
 
           <UploadResult
             isLoading={{

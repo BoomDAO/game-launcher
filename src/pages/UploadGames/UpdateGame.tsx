@@ -93,13 +93,17 @@ const UpdateGame = () => {
   const { mutate: onSubmitGame, isLoading: isSubmitLoading } =
     useUpdateGameSubmit();
 
-  const onSubmit = async (values: Form) =>
+  const onSubmit = async (values: Form) => {
+    setShowPrepare(false);
+    setDisableSubmit(false);
+
     onSubmitGame({
       values: { canister_id: canisterId!, ...values },
       mutateData,
       mutateCover,
       mutateFiles,
     });
+  };
 
   return (
     <>
@@ -115,10 +119,10 @@ const UpdateGame = () => {
         <Form
           onSubmit={async (e) => {
             e.preventDefault();
-            setDisableSubmit(true);
             setShowPrepare(true);
+            setDisableSubmit(true);
             await new Promise((resolve) =>
-              setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 500),
+              setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 1000),
             );
             setShowPrepare(false);
             setDisableSubmit(false);
@@ -167,7 +171,7 @@ const UpdateGame = () => {
           </div>
 
           <div className="flex flex-col gap-2">
-            {showPrepare && <PreparingForUpload />}
+            <PreparingForUpload show={showPrepare} />
 
             <UploadResult
               isLoading={{

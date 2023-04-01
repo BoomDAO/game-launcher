@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 import { useGetGames, useGetTotalGames } from "@/api/deployer";
 import Card from "@/components/Card";
+import EmptyGameCard from "@/components/EmptyGameCard";
 import Pagination from "@/components/Pagination";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Space from "@/components/ui/Space";
@@ -45,7 +46,7 @@ const Home = () => {
         <ErrorResult>{t("error")}</ErrorResult>
       ) : data.length ? (
         <>
-          <div className="grid gap-6 grid-auto-fit-xl">
+          <div className="grid grid-cols-card gap-6">
             {games.map(({ canister_id, platform, name, url }) => (
               <Card
                 key={canister_id}
@@ -56,6 +57,7 @@ const Home = () => {
                 onClick={() => window.open(url, "_blank")}
               />
             ))}
+            <EmptyGameCard length={games.length} />
           </div>
 
           <Pagination

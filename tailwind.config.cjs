@@ -21,11 +21,13 @@ module.exports = {
       borderRadius: {
         primary: "40px",
       },
+      gridTemplateColumns: {
+        card: "repeat(auto-fit,minmax(324px,1fr))",
+      },
     },
   },
   plugins: [
     require("@tailwindcss/aspect-ratio"),
     require("@tailwindcss/forms"),
-    require("@shrutibalasa/tailwind-grid-auto-fit"),
   ],
 };

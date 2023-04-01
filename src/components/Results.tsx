@@ -6,7 +6,6 @@ import {
 } from "@heroicons/react/24/outline";
 import Center from "./ui/Center";
 import Loader from "./ui/Loader";
-import LogoLoader from "./ui/LogoLoader";
 
 type UploadResultState = {
   display: boolean;
@@ -37,7 +36,7 @@ const ErrorAlert = ({ children }: React.PropsWithChildren) => {
 export const LoadingResult = ({ children }: React.PropsWithChildren) => {
   return (
     <Center className="flex-col gap-2">
-      <LogoLoader />
+      <Loader />
       {children}
     </Center>
   );
@@ -61,12 +60,12 @@ export const ErrorResult = ({ children }: React.PropsWithChildren) => {
   );
 };
 
-export const PreparingForUpload = () => {
-  return (
+export const PreparingForUpload = ({ show }: { show: boolean }) => {
+  return show ? (
     <div className="flex items-center gap-2 ">
-      <Loader className="h-6 w-6" /> Preparing for upload...
+      <Loader /> Preparing for upload...
     </div>
-  );
+  ) : null;
 };
 
 export const UploadResult = ({

@@ -5,7 +5,7 @@ const Loader = ({ className }: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
       className={cx(
-        "h-5 w-5 animate-spin text-lightPrimary dark:text-darkPrimary",
+        "h-6 w-6 animate-spin text-lightPrimary dark:text-darkPrimary",
         className,
       )}
       xmlns="http://www.w3.org/2000/svg"
