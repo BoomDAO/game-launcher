@@ -1,9 +1,11 @@
 import { Actor } from "@dfinity/agent";
 import { getAgent, getAuthClient } from "@/utils";
 // @ts-ignore
+import { idlFactory as AssetFactory } from "../dids/asset.did.js";
+// @ts-ignore
 import { idlFactory as DeployerFactory } from "../dids/deployer.did.js";
 
-const game_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
+const deploy_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
 
 export const useGameClient = async () => {
   const authClient = await getAuthClient();
@@ -14,7 +16,7 @@ export const useGameClient = async () => {
   return {
     actor: Actor.createActor(DeployerFactory, {
       agent,
-      canisterId: game_canisterId,
+      canisterId: deploy_canisterId,
     }),
     methods: {
       get_all_games: "get_all_asset_canisters",
@@ -27,6 +29,26 @@ export const useGameClient = async () => {
       create_game: "create_game_canister",
       update_game_data: "update_game_data",
       update_game_cover: "update_game_cover",
+    },
+  };
+};
+
+export const useAssetClient = async (canister_id: string) => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(AssetFactory, {
+      agent,
+      canisterId: canister_id,
+    }),
+    methods: {
+      clear: "clear",
+      commit_asset_upload: "commit_asset_upload",
+      create_batch: "create_batch",
+      create_chunk: "create_chunk",
     },
   };
 };

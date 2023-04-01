@@ -4,8 +4,14 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useGetGame, useUpdateGameData } from "@/api/games";
-import { ErrorResult, LoadingResult } from "@/components/Results";
+import {
+  useGetGame,
+  useUpdateGameCover,
+  useUpdateGameData,
+  useUpdateGameFiles,
+  useUpdateGameSubmit,
+} from "@/api/deployer";
+import { ErrorResult, LoadingResult, UploadResult } from "@/components/Results";
 import Form from "@/components/form/Form";
 import FormSelect from "@/components/form/FormSelect";
 import FormTextArea from "@/components/form/FormTextArea";
@@ -15,17 +21,18 @@ import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 import { gameDataScheme, navPaths, platform_types } from "@/shared";
+import { GameFile } from "@/utils";
 
 const scheme = z
   .object({
     cover: z.string(),
-    game: z.string(),
+    game: z.custom<GameFile>().array(),
   })
   .extend(gameDataScheme);
 
 type Form = z.infer<typeof scheme>;
 
-const UploadUpdateGame = () => {
+const UpdateGame = () => {
   const { t } = useTranslation();
   const { canisterId } = useParams();
 
@@ -37,7 +44,7 @@ const UploadUpdateGame = () => {
       description: "",
       platform: "Browser",
       cover: "",
-      game: "",
+      game: [],
     },
     resolver: zodResolver(scheme),
   });
@@ -53,10 +60,34 @@ const UploadUpdateGame = () => {
     });
   }, [data]);
 
-  const { mutate, isLoading: isUploadingGameData } = useUpdateGameData();
+  const {
+    mutateAsync: mutateData,
+    isLoading: isDataLoading,
+    isError: isDataError,
+    isSuccess: isDataSuccess,
+  } = useUpdateGameData();
+  const {
+    mutateAsync: mutateCover,
+    isLoading: isCoverLoading,
+    isError: isCoverError,
+    isSuccess: isCoverSuccess,
+  } = useUpdateGameCover();
+  const {
+    mutateAsync: mutateFiles,
+    isLoading: isFilesLoading,
+    isError: isFilesError,
+    isSuccess: isFilesSuccess,
+  } = useUpdateGameFiles();
+
+  const { mutate: onSubmitGame } = useUpdateGameSubmit();
 
   const onSubmit = async (values: Form) =>
-    mutate({ canister_id: canisterId!, ...values });
+    onSubmitGame({
+      values: { canister_id: canisterId!, ...values },
+      mutateData,
+      mutateCover,
+      mutateFiles,
+    });
 
   return (
     <>
@@ -110,7 +141,55 @@ const UploadUpdateGame = () => {
             />
           </div>
 
-          <Button rightArrow size="big" isLoading={isUploadingGameData}>
+          <div className="flex flex-col gap-2">
+            <UploadResult
+              isLoading={{
+                display: isDataLoading,
+                text: "Uploading game data...",
+              }}
+              isError={{
+                display: isDataError,
+                text: "There was some error while updating data.",
+              }}
+              isSuccess={{ display: isDataSuccess, text: "Data were updated." }}
+            />
+
+            <UploadResult
+              isLoading={{
+                display: isCoverLoading,
+                text: "Uploading game cover...",
+              }}
+              isError={{
+                display: isCoverError,
+                text: "There was some error while updating cover.",
+              }}
+              isSuccess={{
+                display: isCoverSuccess,
+                text: "Cover were updated",
+              }}
+            />
+
+            <UploadResult
+              isLoading={{
+                display: isFilesLoading,
+                text: "Uploading game files... Please wait till finish.",
+              }}
+              isError={{
+                display: isFilesError,
+                text: "There was some error while updating files.",
+              }}
+              isSuccess={{
+                display: isFilesSuccess,
+                text: "Files were updated",
+              }}
+            />
+          </div>
+
+          <Button
+            rightArrow
+            size="big"
+            disabled={isDataLoading || isCoverLoading || isFilesLoading}
+          >
             {t("upload_games.update.button")}
           </Button>
         </Form>
@@ -119,4 +198,4 @@ const UploadUpdateGame = () => {
   );
 };
 
-export default UploadUpdateGame;
+export default UpdateGame;

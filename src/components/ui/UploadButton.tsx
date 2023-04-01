@@ -75,7 +75,7 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
           onChange={handleChange}
           className="hidden"
           /* @ts-expect-error */
-          webkitdirectory={uploadType !== "folder" ? "true" : "false"}
+          webkitdirectory={uploadType !== "image" ? "true" : undefined}
         />
       </div>
     );

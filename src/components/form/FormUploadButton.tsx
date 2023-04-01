@@ -27,10 +27,7 @@ const FormUploadButton = <T extends FieldValues>({
     control,
   });
 
-  const onChange = (file: GameFile[] | string) => {
-    if (uploadType === "image") return fieldChange(file);
-    return;
-  };
+  const onChange = (file: GameFile[] | string) => fieldChange(file);
 
   return (
     <FormWrapper>

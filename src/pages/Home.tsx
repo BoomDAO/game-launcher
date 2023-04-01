@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
-import { useGetGames, useGetTotalGames } from "@/api/games";
+import { useGetGames, useGetTotalGames } from "@/api/deployer";
 import Card from "@/components/Card";
 import Pagination from "@/components/Pagination";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";

@@ -11,8 +11,15 @@ import {
 import { useAuth } from "@/context/authContext";
 import { useGameClient } from "@/hooks";
 import { navPaths } from "@/shared";
-import { CreateGame, Game, UpdateGameData } from "@/types";
-import { getAgent } from "@/utils";
+import {
+  CreateGame,
+  Game,
+  UpdateGameCover,
+  UpdateGameData,
+  UpdateGameFiles,
+  UpdateGameSubmit,
+} from "@/types";
+import { getAgent, uploadGameFiles } from "@/utils";
 // @ts-ignore
 import { idlFactory as DeployerFactory } from "../dids/deployer.did.js";
 
@@ -100,12 +107,16 @@ export const useCreateGame = () => {
     mutationFn: async (payload: CreateGame) => {
       const { actor, methods } = await useGameClient();
 
-      return (await actor[methods.create_game](
+      const canisterId = (await actor[methods.create_game](
         payload.name,
         payload.description,
         payload.cover,
         payload.platform,
       )) as string;
+
+      await uploadGameFiles(canisterId, payload.game);
+
+      return canisterId;
     },
     onError: (err) => {
       toast.error(t("upload_games.new.error_create"));
@@ -124,12 +135,8 @@ export const useCreateGame = () => {
   });
 };
 
-export const useUpdateGameData = () => {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  return useMutation({
+export const useUpdateGameData = () =>
+  useMutation({
     mutationFn: async (payload: UpdateGameData) => {
       const { actor, methods } = await useGameClient();
 
@@ -139,28 +146,31 @@ export const useUpdateGameData = () => {
         payload.description,
       );
 
-      if (payload.cover) {
-        await actor[methods.update_game_cover](
-          payload.canister_id,
-          payload.cover,
-        );
-      }
+      return payload.canister_id;
+    },
+  });
+
+export const useUpdateGameCover = () =>
+  useMutation({
+    mutationFn: async (payload: UpdateGameCover) => {
+      const { actor, methods } = await useGameClient();
+
+      await actor[methods.update_game_cover](
+        payload.canister_id,
+        payload.cover,
+      );
 
       return payload.canister_id;
     },
-    onError: (err) => {
-      toast.error(t("upload_games.update.error_update"));
-      console.log("err", err);
-    },
-    onSuccess: async (canister_id) => {
-      queryClient.refetchQueries({ queryKey: [queryKeys.games] });
-      queryClient.refetchQueries({ queryKey: [queryKeys.user_games] });
-      queryClient.invalidateQueries([queryKeys.game, canister_id]);
-      toast.success(t("upload_games.update.success_update"));
-      navigate(navPaths.upload_games);
+  });
+
+export const useUpdateGameFiles = () =>
+  useMutation({
+    mutationFn: async (payload: UpdateGameFiles) => {
+      await uploadGameFiles(payload.canister_id, payload.game);
+      return payload.canister_id;
     },
   });
-};
 
 export const useGetCycleBalance = (
   canisterId?: string,
@@ -180,3 +190,66 @@ export const useGetCycleBalance = (
       return `${(balance * 0.0000000000001).toFixed(2)}T`;
     },
   });
+
+// Submit functions
+export const useUpdateGameSubmit = () => {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: async (payload: UpdateGameSubmit) => {
+      const { canister_id, cover, description, game, name } = payload.values;
+
+      const errors = [];
+
+      await payload.mutateData(
+        { description, canister_id, name },
+        {
+          onError: (err) => {
+            toast.error(t("upload_games.update.error_update"));
+            errors.push("Game data error");
+            console.log("err", err);
+          },
+        },
+      );
+
+      if (cover) {
+        await payload.mutateCover(
+          { canister_id, cover },
+          {
+            onError: (err) => {
+              toast.error(t("upload_games.update.error_update"));
+              errors.push("Game cover error");
+              console.log("err", err);
+            },
+          },
+        );
+      }
+
+      if (game.length) {
+        await payload.mutateFiles(
+          { canister_id, game },
+          {
+            onError: (err) => {
+              toast.error(t("upload_games.update.error_update"));
+              errors.push("Game cover error");
+              console.log("err", err);
+            },
+          },
+        );
+      }
+
+      return canister_id;
+    },
+    onSuccess: () => {
+      toast.success(t("upload_games.update.success_update"));
+      navigate(navPaths.upload_games);
+    },
+    onSettled: (canister_id) => {
+      queryClient.refetchQueries({ queryKey: [queryKeys.games] });
+      queryClient.refetchQueries({ queryKey: [queryKeys.user_games] });
+      queryClient.invalidateQueries([queryKeys.game, canister_id]);
+    },
+  });
+};

@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useCreateGame } from "@/api/games";
+import { useCreateGame } from "@/api/deployer";
 import Form from "@/components/form/Form";
 import FormSelect from "@/components/form/FormSelect";
 import FormTextArea from "@/components/form/FormTextArea";
@@ -27,7 +27,7 @@ type Form = z.infer<typeof scheme>;
 const CreateGame = () => {
   const { t } = useTranslation();
 
-  const { control, handleSubmit, watch, reset } = useForm<Form>({
+  const { control, handleSubmit, watch } = useForm<Form>({
     defaultValues: {
       name: "",
       description: "",
