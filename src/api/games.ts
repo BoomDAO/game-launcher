@@ -14,7 +14,7 @@ import { navPaths } from "@/shared";
 import { CreateGame, Game, UpdateGameData } from "@/types";
 import { getAgent } from "@/utils";
 // @ts-ignore
-import { idlFactory as GameFactory } from "../dids/ic_games.did.js";
+import { idlFactory as DeployerFactory } from "../dids/deployer.did.js";
 
 export const queryKeys = {
   games: "games",
@@ -171,7 +171,7 @@ export const useGetCycleBalance = (
     queryKey: [queryKeys.cycle_balance, canisterId],
     queryFn: async () => {
       const agent = await getAgent();
-      const actor = Actor.createActor(GameFactory, {
+      const actor = Actor.createActor(DeployerFactory, {
         agent,
         canisterId: canisterId!,
       });

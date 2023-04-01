@@ -58,7 +58,8 @@ const Pagination = ({
               className={cx(
                 "inline-flex items-center rounded-primary px-4 py-2 text-sm font-medium leading-snug text-black hover:text-lightPrimary",
                 "dark:text-white dark:hover:text-darkPrimary",
-                active && "bg-white text-lightPrimary dark:text-darkPrimary",
+                active &&
+                  "bg-gray-200 text-lightPrimary dark:bg-white dark:text-darkPrimary",
               )}
             >
               {i + 1}

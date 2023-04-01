@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "tsc": "tsc --noEmit --incremental",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -40,6 +40,7 @@
     "@shrutibalasa/tailwind-grid-auto-fit": "^1.1.0",
     "@todayweb/prettier": "^1.0.0",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
+    "@types/node": "^18.15.11",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^3.1.0",

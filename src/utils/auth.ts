@@ -1,4 +1,6 @@
+import { HttpAgent, Identity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
+import fetch from "cross-fetch";
 
 const APPLICATION_NAME = "IC_GAMES_DEPLOYER";
 const AUTH_PATH =
@@ -29,4 +31,11 @@ export const nfidLogin = async (authClient: AuthClient) => {
 export const getAuthClient = async () =>
   await AuthClient.create({
     idleOptions: { idleTimeout: 1000 * 60 * 60 * 24 },
+  });
+
+export const getAgent = async (identity?: Identity) =>
+  new HttpAgent({
+    host: "https://ic0.app/",
+    fetch,
+    identity,
   });

@@ -3,7 +3,7 @@ import {
   UseControllerProps,
   useController,
 } from "react-hook-form";
-import { cx } from "@/utils";
+import { GameFile, cx } from "@/utils";
 import UploadButton, { UploadButtonProps } from "../ui/UploadButton";
 import FormErrorMessage from "./FormErrorMessage";
 import FormWrapper from "./FormWrapper";
@@ -16,7 +16,7 @@ const FormUploadButton = <T extends FieldValues>({
   name,
   className,
   onUpload,
-  imageUpload,
+  uploadType = "image",
   ...rest
 }: FormUploadButtonProps<T>) => {
   const {
@@ -27,9 +27,9 @@ const FormUploadButton = <T extends FieldValues>({
     control,
   });
 
-  const onChange = (file: string | File) => {
-    if (!imageUpload) return;
-    fieldChange(file);
+  const onChange = (file: GameFile[] | string) => {
+    if (uploadType === "image") return fieldChange(file);
+    return;
   };
 
   return (
@@ -38,7 +38,7 @@ const FormUploadButton = <T extends FieldValues>({
         {...restField}
         className={cx(error && "border-error dark:border-error")}
         onUpload={onChange}
-        imageUpload={imageUpload}
+        uploadType={uploadType}
         {...rest}
       />
 

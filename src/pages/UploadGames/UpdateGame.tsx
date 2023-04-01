@@ -95,7 +95,6 @@ const UploadUpdateGame = () => {
               <FormUploadButton
                 buttonText={t("upload_games.button_cover_upload")}
                 placeholder={t("upload_games.placeholder_cover_upload")}
-                imageUpload
                 control={control}
                 name="cover"
               />
@@ -105,6 +104,7 @@ const UploadUpdateGame = () => {
             <FormUploadButton
               buttonText={t("upload_games.button_game_upload")}
               placeholder={t("upload_games.placeholder_game_upload")}
+              uploadType="folder"
               control={control}
               name="game"
             />

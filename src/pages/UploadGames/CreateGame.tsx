@@ -16,8 +16,9 @@ import { gameDataScheme, platform_types } from "@/shared";
 const scheme = z
   .object({
     cover: z.string().min(1, { message: "Cover image is required." }),
-    // game: z.string().min(1, { message: "Game is required." }),
-    game: z.string(),
+    game: z.any().array().nonempty({
+      message: "No files uploaded.",
+    }),
   })
   .extend(gameDataScheme);
 
@@ -32,7 +33,7 @@ const CreateGame = () => {
       description: "",
       platform: "Browser",
       cover: "",
-      game: "",
+      game: [],
     },
     resolver: zodResolver(scheme),
   });
@@ -71,7 +72,6 @@ const CreateGame = () => {
             <FormUploadButton
               buttonText={t("upload_games.button_cover_upload")}
               placeholder={t("upload_games.placeholder_cover_upload")}
-              imageUpload
               control={control}
               name="cover"
             />
@@ -81,6 +81,7 @@ const CreateGame = () => {
           <FormUploadButton
             buttonText={t("upload_games.button_game_upload")}
             placeholder={t("upload_games.placeholder_game_upload")}
+            uploadType="folder"
             control={control}
             name="game"
           />

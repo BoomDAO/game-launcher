@@ -1,7 +1,7 @@
 import { Actor } from "@dfinity/agent";
 import { getAgent, getAuthClient } from "@/utils";
 // @ts-ignore
-import { idlFactory as GameFactory } from "../dids/ic_games.did.js";
+import { idlFactory as DeployerFactory } from "../dids/deployer.did.js";
 
 const game_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
 
@@ -12,7 +12,7 @@ export const useGameClient = async () => {
   const agent = await getAgent(identity);
 
   return {
-    actor: Actor.createActor(GameFactory, {
+    actor: Actor.createActor(DeployerFactory, {
       agent,
       canisterId: game_canisterId,
     }),

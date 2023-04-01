@@ -1,12 +1,12 @@
 import React from "react";
-import { convertToBase64, cx } from "@/utils";
+import { GameFile, convertToBase64, cx, getGameFiles } from "@/utils";
 import Button from "./Button";
 
 export interface UploadButtonProps {
   placeholder?: string;
   buttonText?: string;
-  imageUpload?: boolean;
-  onUpload?: (file: File | string) => void;
+  uploadType?: "image" | "folder" | "zip";
+  onUpload?: (file: GameFile[] | string) => void;
   className?: string;
 }
 
@@ -15,7 +15,7 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
     {
       placeholder = "Upload file",
       buttonText = "Upload file",
-      imageUpload,
+      uploadType = "image",
       className,
       onUpload,
     },
@@ -33,14 +33,28 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
     };
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e?.target?.files?.[0];
-      if (!file) return;
-      setUploadName(file.name);
+      if (uploadType === "image") {
+        const file = e?.target?.files?.[0];
+        if (!file) return;
+        setUploadName(file.name);
+        const base64 = await convertToBase64(file);
+        onUpload && onUpload(base64);
+      }
 
-      let toReturn: File | string = file;
-      if (imageUpload) toReturn = await convertToBase64(file);
+      if (uploadType === "folder") {
+        const { files } = e.target;
+        if (!files?.length) return;
+        setUploadName(`${files?.length} files to upload`);
 
-      onUpload && onUpload(toReturn);
+        const gameFiles: GameFile[] = [];
+
+        for await (const file of files) {
+          const gameFile = await getGameFiles(file);
+          gameFiles.push(gameFile);
+        }
+
+        onUpload && onUpload(gameFiles);
+      }
     };
 
     return (
@@ -60,6 +74,8 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
           ref={hiddenFileInput}
           onChange={handleChange}
           className="hidden"
+          /* @ts-expect-error */
+          webkitdirectory={uploadType !== "folder" ? "true" : "false"}
         />
       </div>
     );
