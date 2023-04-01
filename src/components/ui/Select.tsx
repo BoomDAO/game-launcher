@@ -11,11 +11,19 @@ export interface SelectProps {
   className?: string;
   onValueChange?: (value: SelectOption) => void;
   value?: string | number;
+  disabled?: boolean;
 }
 
 const Select = React.forwardRef<HTMLElement, SelectProps>(
   (
-    { data, placeholder = "Choose option", className, onValueChange, value },
+    {
+      data,
+      placeholder = "Choose option",
+      className,
+      onValueChange,
+      value,
+      disabled,
+    },
     ref,
   ) => {
     const onChange = (value: SelectOption) => {
@@ -29,7 +37,12 @@ const Select = React.forwardRef<HTMLElement, SelectProps>(
     }, [value]);
 
     return (
-      <Listbox ref={ref} value={selected} onChange={onChange}>
+      <Listbox
+        ref={ref}
+        value={selected}
+        onChange={onChange}
+        disabled={disabled}
+      >
         {({ open }) => (
           <>
             <div className="relative w-full">

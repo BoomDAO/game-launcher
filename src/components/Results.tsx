@@ -10,14 +10,29 @@ import LogoLoader from "./ui/LogoLoader";
 
 type UploadResultState = {
   display: boolean;
-  text: string;
+  children: React.ReactNode;
 };
 
 interface UploadResultProps {
   isLoading: UploadResultState;
   isSuccess: UploadResultState;
-  isError: UploadResultState;
+  isError: UploadResultState & {
+    error?: unknown;
+  };
 }
+
+const ErrorAlert = ({ children }: React.PropsWithChildren) => {
+  return (
+    <div className="bg-error p-4">
+      <div className="flex">
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-white">Error message</h3>
+          <div className="mt-2 text-sm text-white">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const LoadingResult = ({ children }: React.PropsWithChildren) => {
   return (
@@ -46,6 +61,14 @@ export const ErrorResult = ({ children }: React.PropsWithChildren) => {
   );
 };
 
+export const PreparingForUpload = () => {
+  return (
+    <div className="flex items-center gap-2 ">
+      <Loader className="h-6 w-6" /> Preparing for upload...
+    </div>
+  );
+};
+
 export const UploadResult = ({
   isError,
   isLoading,
@@ -57,21 +80,27 @@ export const UploadResult = ({
 
   if (isLoading.display)
     return (
-      <div className="flex gap-2">
-        <Loader /> {isLoading.text}
+      <div className="flex items-center gap-2">
+        <Loader /> {isLoading.children}
       </div>
     );
 
   if (isError.display)
     return (
-      <div className="flex gap-2 text-error">
-        <ExclamationCircleIcon className="h-6 w-6" /> {isError.text}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 text-error ">
+          <ExclamationCircleIcon className="h-6 w-6" /> {isError.children}
+        </div>
+
+        {String(isError?.error) && (
+          <ErrorAlert>{String(isError.error)}</ErrorAlert>
+        )}
       </div>
     );
 
   return (
-    <div className="flex gap-2 text-success">
-      <CheckCircleIcon className="h-6 w-6" /> {isSuccess.text}
+    <div className="flex items-center gap-2 text-success ">
+      <CheckCircleIcon className="h-6 w-6" /> {isSuccess.children}
     </div>
   );
 };

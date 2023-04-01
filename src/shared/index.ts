@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { SelectOption } from "@/components/ui/Select";
 
+export const serverErrorMsg = "Something went wrong.";
+
 export const navPaths = {
   home: "/",
   upload_games: "/upload-games",

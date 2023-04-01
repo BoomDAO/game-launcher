@@ -11,7 +11,12 @@ import {
   useUpdateGameFiles,
   useUpdateGameSubmit,
 } from "@/api/deployer";
-import { ErrorResult, LoadingResult, UploadResult } from "@/components/Results";
+import {
+  ErrorResult,
+  LoadingResult,
+  PreparingForUpload,
+  UploadResult,
+} from "@/components/Results";
 import Form from "@/components/form/Form";
 import FormSelect from "@/components/form/FormSelect";
 import FormTextArea from "@/components/form/FormTextArea";
@@ -20,7 +25,7 @@ import FormUploadButton from "@/components/form/FormUploadButton";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
-import { gameDataScheme, navPaths, platform_types } from "@/shared";
+import { gameDataScheme, platform_types } from "@/shared";
 import { GameFile } from "@/utils";
 
 const scheme = z
@@ -33,6 +38,9 @@ const scheme = z
 type Form = z.infer<typeof scheme>;
 
 const UpdateGame = () => {
+  const [showPrepare, setShowPrepare] = React.useState(false);
+  const [disableSubmit, setDisableSubmit] = React.useState(false);
+
   const { t } = useTranslation();
   const { canisterId } = useParams();
 
@@ -65,21 +73,25 @@ const UpdateGame = () => {
     isLoading: isDataLoading,
     isError: isDataError,
     isSuccess: isDataSuccess,
+    error: dataError,
   } = useUpdateGameData();
   const {
     mutateAsync: mutateCover,
     isLoading: isCoverLoading,
     isError: isCoverError,
     isSuccess: isCoverSuccess,
+    error: coverError,
   } = useUpdateGameCover();
   const {
     mutateAsync: mutateFiles,
     isLoading: isFilesLoading,
     isError: isFilesError,
     isSuccess: isFilesSuccess,
+    error: filesError,
   } = useUpdateGameFiles();
 
-  const { mutate: onSubmitGame } = useUpdateGameSubmit();
+  const { mutate: onSubmitGame, isLoading: isSubmitLoading } =
+    useUpdateGameSubmit();
 
   const onSubmit = async (values: Form) =>
     onSubmitGame({
@@ -100,7 +112,18 @@ const UpdateGame = () => {
       ) : isError ? (
         <ErrorResult>{t("upload_games.update.error")}</ErrorResult>
       ) : (
-        <Form onSubmit={handleSubmit(onSubmit)}>
+        <Form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setDisableSubmit(true);
+            setShowPrepare(true);
+            await new Promise((resolve) =>
+              setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 500),
+            );
+            setShowPrepare(false);
+            setDisableSubmit(false);
+          }}
+        >
           <div className="flex w-full flex-col gap-4 md:flex-row">
             <FormSelect
               data={platform_types}
@@ -126,6 +149,7 @@ const UpdateGame = () => {
               <FormUploadButton
                 buttonText={t("upload_games.button_cover_upload")}
                 placeholder={t("upload_games.placeholder_cover_upload")}
+                setDisableSubmit={setDisableSubmit}
                 control={control}
                 name="cover"
               />
@@ -136,51 +160,60 @@ const UpdateGame = () => {
               buttonText={t("upload_games.button_game_upload")}
               placeholder={t("upload_games.placeholder_game_upload")}
               uploadType="folder"
+              setDisableSubmit={setDisableSubmit}
               control={control}
               name="game"
             />
           </div>
 
           <div className="flex flex-col gap-2">
+            {showPrepare && <PreparingForUpload />}
+
             <UploadResult
               isLoading={{
                 display: isDataLoading,
-                text: "Uploading game data...",
+                children: "Uploading game data...",
               }}
               isError={{
                 display: isDataError,
-                text: "There was some error while updating data.",
+                children: "There was some error while updating data.",
+                error: dataError,
               }}
-              isSuccess={{ display: isDataSuccess, text: "Data were updated." }}
+              isSuccess={{
+                display: isDataSuccess,
+                children: "Data were updated.",
+              }}
             />
 
             <UploadResult
               isLoading={{
                 display: isCoverLoading,
-                text: "Uploading game cover...",
+                children: "Uploading game cover...",
               }}
               isError={{
                 display: isCoverError,
-                text: "There was some error while updating cover.",
+                children: "There was some error while updating cover.",
+                error: coverError,
               }}
               isSuccess={{
                 display: isCoverSuccess,
-                text: "Cover were updated",
+                children: "Cover were updated",
               }}
             />
 
             <UploadResult
               isLoading={{
                 display: isFilesLoading,
-                text: "Uploading game files... Please wait till finish.",
+                children: "Uploading game files... Please wait till finish.",
               }}
               isError={{
                 display: isFilesError,
-                text: "There was some error while updating files.",
+                children: "There was some error while updating files.",
+                error: filesError,
               }}
               isSuccess={{
                 display: isFilesSuccess,
-                text: "Files were updated",
+                children: "Files were updated",
               }}
             />
           </div>
@@ -188,7 +221,7 @@ const UpdateGame = () => {
           <Button
             rightArrow
             size="big"
-            disabled={isDataLoading || isCoverLoading || isFilesLoading}
+            disabled={isSubmitLoading || disableSubmit}
           >
             {t("upload_games.update.button")}
           </Button>

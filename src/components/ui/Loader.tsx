@@ -5,7 +5,7 @@ const Loader = ({ className }: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
       className={cx(
-        "h-6 w-6 animate-spin text-lightPrimary dark:text-darkPrimary",
+        "h-5 w-5 animate-spin text-lightPrimary dark:text-darkPrimary",
         className,
       )}
       xmlns="http://www.w3.org/2000/svg"
@@ -18,7 +18,7 @@ const Loader = ({ className }: React.SVGProps<SVGSVGElement>) => {
         cy="12"
         r="10"
         stroke="currentColor"
-        stroke-width="4"
+        strokeWidth="4"
       ></circle>
       <path
         className="opacity-75"

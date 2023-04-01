@@ -8,6 +8,8 @@ export interface UploadButtonProps {
   uploadType?: "image" | "folder" | "zip";
   onUpload?: (file: GameFile[] | string) => void;
   className?: string;
+  disabled?: boolean;
+  setDisableSubmit?: (val: boolean) => void;
 }
 
 const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
@@ -18,12 +20,20 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
       uploadType = "image",
       className,
       onUpload,
+      disabled,
+      setDisableSubmit,
     },
     ref,
   ) => {
+    const [isLoading, setIsLoading] = React.useState(false);
     const [uploadName, setUploadName] = React.useState("");
 
     const hiddenFileInput = React.useRef<HTMLInputElement>(null);
+
+    const onLoading = (val: boolean) => {
+      setIsLoading(val);
+      setDisableSubmit && setDisableSubmit(val);
+    };
 
     const handleClick = (
       e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -33,6 +43,7 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
     };
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      onLoading(true);
       if (uploadType === "image") {
         const file = e?.target?.files?.[0];
         if (!file) return;
@@ -55,6 +66,8 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
 
         onUpload && onUpload(gameFiles);
       }
+
+      onLoading(false);
     };
 
     return (
@@ -68,12 +81,15 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
         <div className={cx(!uploadName && "text-gray-500")}>
           {uploadName || placeholder}
         </div>
-        <Button onClick={handleClick}>{buttonText}</Button>
+        <Button onClick={handleClick} disabled={disabled || isLoading}>
+          {isLoading ? "Uploading" : buttonText}
+        </Button>
         <input
           type="file"
           ref={hiddenFileInput}
           onChange={handleChange}
           className="hidden"
+          disabled={disabled}
           /* @ts-expect-error */
           webkitdirectory={uploadType !== "image" ? "true" : undefined}
         />

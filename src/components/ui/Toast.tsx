@@ -26,7 +26,7 @@ const Toast = () => {
         return (
           <div
             className={cx(
-              "flex w-full max-w-md items-center gap-4 rounded-primary bg-yellow-600 py-4 px-6 shadow-lg transition-all ease-in-out hover:bg-opacity-90",
+              "flex w-full max-w-md items-center gap-4 rounded-primary bg-yellow-500 py-4 px-6 text-white shadow-lg transition-all ease-in-out hover:bg-opacity-90",
               toast.type === "success" && "bg-success",
               toast.type === "error" && "bg-error",
             )}

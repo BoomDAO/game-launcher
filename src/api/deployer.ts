@@ -10,9 +10,11 @@ import {
 } from "@tanstack/react-query";
 import { useAuth } from "@/context/authContext";
 import { useGameClient } from "@/hooks";
-import { navPaths } from "@/shared";
+import { navPaths, serverErrorMsg } from "@/shared";
 import {
-  CreateGame,
+  CreateGameData,
+  CreateGameFiles,
+  CreateGameSubmit,
   Game,
   UpdateGameCover,
   UpdateGameData,
@@ -98,77 +100,99 @@ export const useGetUserGames = (page: number = 1): UseQueryResult<Game[]> => {
   });
 };
 
-export const useCreateGame = () => {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+export const useCreateGameData = () =>
+  useMutation({
+    mutationFn: async (payload: CreateGameData) => {
+      try {
+        const { actor, methods } = await useGameClient();
 
-  return useMutation({
-    mutationFn: async (payload: CreateGame) => {
-      const { actor, methods } = await useGameClient();
+        const canisterId = (await actor[methods.create_game](
+          payload.name,
+          payload.description,
+          payload.cover,
+          payload.platform,
+        )) as string;
 
-      const canisterId = (await actor[methods.create_game](
-        payload.name,
-        payload.description,
-        payload.cover,
-        payload.platform,
-      )) as string;
-
-      await uploadGameFiles(canisterId, payload.game);
-
-      return canisterId;
-    },
-    onError: (err) => {
-      toast.error(t("upload_games.new.error_create"));
-      console.log("err", err);
-    },
-    onSuccess: () => {
-      queryClient.refetchQueries({ queryKey: [queryKeys.games] });
-      queryClient.refetchQueries({ queryKey: [queryKeys.user_games] });
-      queryClient.refetchQueries({ queryKey: [queryKeys.games_total] });
-      queryClient.refetchQueries({
-        queryKey: [queryKeys.games_user_total],
-      });
-      toast.success(t("upload_games.new.success_create"));
-      navigate(navPaths.upload_games);
+        return canisterId;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
     },
   });
-};
+
+export const useCreateGameFiles = () =>
+  useMutation({
+    mutationFn: async (payload: CreateGameFiles) => {
+      try {
+        await uploadGameFiles(payload.canister_id, payload.game);
+        return payload.canister_id;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+  });
 
 export const useUpdateGameData = () =>
   useMutation({
     mutationFn: async (payload: UpdateGameData) => {
-      const { actor, methods } = await useGameClient();
+      try {
+        const { actor, methods } = await useGameClient();
 
-      await actor[methods.update_game_data](
-        payload.canister_id,
-        payload.name,
-        payload.description,
-      );
+        await actor[methods.update_game_data](
+          payload.canister_id,
+          payload.name,
+          payload.description,
+        );
 
-      return payload.canister_id;
+        return payload.canister_id;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
     },
   });
 
 export const useUpdateGameCover = () =>
   useMutation({
     mutationFn: async (payload: UpdateGameCover) => {
-      const { actor, methods } = await useGameClient();
+      try {
+        const { actor, methods } = await useGameClient();
 
-      await actor[methods.update_game_cover](
-        payload.canister_id,
-        payload.cover,
-      );
+        await actor[methods.update_game_cover](
+          payload.canister_id,
+          payload.cover,
+        );
 
-      return payload.canister_id;
+        return payload.canister_id;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
     },
   });
 
 export const useUpdateGameFiles = () =>
   useMutation({
     mutationFn: async (payload: UpdateGameFiles) => {
-      await uploadGameFiles(payload.canister_id, payload.game);
-      return payload.canister_id;
+      try {
+        await uploadGameFiles(payload.canister_id, payload.game);
+        return payload.canister_id;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
     },
   });
 
@@ -192,6 +216,54 @@ export const useGetCycleBalance = (
   });
 
 // Submit functions
+export const useCreateGameSubmit = () => {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: async (payload: CreateGameSubmit) => {
+      const { cover, description, game, name, platform } = payload.values;
+
+      let canister_id = payload.canisterId;
+
+      if (!canister_id) {
+        canister_id = await payload.mutateData(
+          { description, name, cover, platform },
+          {
+            onError: (err) => {
+              console.log("err", err);
+            },
+          },
+        );
+      }
+
+      await payload.mutateFiles(
+        { canister_id, game },
+        {
+          onError: (err) => {
+            console.log("err", err);
+          },
+        },
+      );
+
+      return canister_id;
+    },
+    onSuccess: () => {
+      toast.success(t("upload_games.update.success_update"));
+      navigate(navPaths.upload_games);
+    },
+    onSettled: () => {
+      queryClient.refetchQueries({ queryKey: [queryKeys.games] });
+      queryClient.refetchQueries({ queryKey: [queryKeys.user_games] });
+      queryClient.refetchQueries({ queryKey: [queryKeys.games_total] });
+      queryClient.refetchQueries({
+        queryKey: [queryKeys.games_user_total],
+      });
+    },
+  });
+};
+
 export const useUpdateGameSubmit = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -201,14 +273,10 @@ export const useUpdateGameSubmit = () => {
     mutationFn: async (payload: UpdateGameSubmit) => {
       const { canister_id, cover, description, game, name } = payload.values;
 
-      const errors = [];
-
       await payload.mutateData(
         { description, canister_id, name },
         {
           onError: (err) => {
-            toast.error(t("upload_games.update.error_update"));
-            errors.push("Game data error");
             console.log("err", err);
           },
         },
@@ -219,8 +287,6 @@ export const useUpdateGameSubmit = () => {
           { canister_id, cover },
           {
             onError: (err) => {
-              toast.error(t("upload_games.update.error_update"));
-              errors.push("Game cover error");
               console.log("err", err);
             },
           },
@@ -232,8 +298,6 @@ export const useUpdateGameSubmit = () => {
           { canister_id, game },
           {
             onError: (err) => {
-              toast.error(t("upload_games.update.error_update"));
-              errors.push("Game cover error");
               console.log("err", err);
             },
           },
