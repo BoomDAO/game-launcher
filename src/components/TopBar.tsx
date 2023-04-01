@@ -20,6 +20,8 @@ const TopBar = () => {
 
   const scrollY = useScrollPosition();
 
+  const openOrNotTop = (open: boolean) => scrollY > 0 || open;
+
   const principal = session?.address?.slice(0, 10);
 
   const paths = [
@@ -43,32 +45,45 @@ const TopBar = () => {
 
   return (
     <Disclosure as="nav">
-      {({ open }) => (
+      {({ open, close }) => (
         <div
           className={cx(
-            "fixed top-0 z-50 w-full transition-all duration-100 ease-in",
-            (scrollY > 0 || open) && "bg-white shadow",
+            "fixed top-0 z-50 w-full",
+            openOrNotTop(open) &&
+              "bg-white bg-opacity-95 shadow dark:bg-dark dark:bg-opacity-95",
           )}
         >
           <div className="mx-auto w-full max-w-screen-xl px-8 py-4">
             <div className="flex items-center justify-between">
-              <div className="relative mb-2 flex-shrink-0 cursor-pointer">
-                <img src={`/logo-${theme}.png`} width={164} alt="logo" />
+              <div className="relative mb-2 flex-shrink-0">
+                <img
+                  src={`/logo-${theme}.png`}
+                  width={164}
+                  alt="logo"
+                  className="hidden md:flex"
+                />
+                <img
+                  src={`/logo.svg`}
+                  width={42}
+                  alt="logo"
+                  className="md:hidden"
+                />
               </div>
               <div className="hidden sm:ml-6 md:block">
                 <div className="flex items-center gap-6">
                   <div className="hidden space-x-4 text-sm uppercase md:flex">
-                    {paths.map(({ name, path }) => (
-                      <NavLink
-                        key={name}
-                        className={({ isActive }) =>
-                          isActive ? "gradient-text" : ""
-                        }
-                        to={path}
-                      >
-                        {name}
-                      </NavLink>
-                    ))}
+                    {session &&
+                      paths.map(({ name, path }) => (
+                        <NavLink
+                          key={name}
+                          className={({ isActive }) =>
+                            isActive ? "gradient-text" : ""
+                          }
+                          to={path}
+                        >
+                          {name}
+                        </NavLink>
+                      ))}
                   </div>
                 </div>
               </div>
@@ -89,84 +104,82 @@ const TopBar = () => {
                   </div>
                 </div>
 
-                <ThemeSwitcher />
+                <ThemeSwitcher className="text-black dark:text-white" />
 
                 <SideBar open={openSideBar} setOpen={setOpenSideBar}>
                   <div className="p-6">
                     {session ? (
-                      <Button onClick={logout}>{t("navigation.logout")}</Button>
+                      <div className="space-y-4">
+                        <Button onClick={logout}>
+                          {t("navigation.logout")}
+                        </Button>
+                        <div className="space-y-1">
+                          <p className="font-semibold">Principal:</p>
+                          <div>{session.address}</div>
+                        </div>
+                      </div>
                     ) : (
-                      <Button onClick={login}>{t("navigation.login")}</Button>
+                      <div className="space-y-4">
+                        <Button onClick={login}>{t("navigation.login")}</Button>
+                        <div className="space-y-1">
+                          <p>Login to upload and manage games.</p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </SideBar>
 
-                <div className="-mr-2 flex gap-4 md:hidden">
-                  <Disclosure.Button className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 focus:outline-none focus:ring-0">
-                    <span className="sr-only">Open main menu</span>
-                    {open ? (
-                      <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
-                    ) : (
-                      <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
-                    )}
-                  </Disclosure.Button>
-                </div>
+                {session && (
+                  <div className="-mr-2 flex gap-4 md:hidden">
+                    <Disclosure.Button
+                      className={cx(
+                        "inline-flex items-center justify-center rounded-md p-2 text-black focus:outline-none focus:ring-0",
+                        "text-black dark:text-white",
+                      )}
+                    >
+                      <span className="sr-only">Open main menu</span>
+                      {open ? (
+                        <XMarkIcon
+                          className="block h-6 w-6"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Bars3Icon
+                          className="block h-6 w-6"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </Disclosure.Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           <Disclosure.Panel className="w-full max-w-screen-xl px-8 py-2 md:hidden">
             <div className="flex flex-col space-y-2 pt-2 pb-3 text-lg">
-              {paths.map(({ name, path }) => (
-                <Disclosure.Button key={name} as={"div"}>
-                  <NavLink
-                    key={name}
-                    className={({ isActive }) =>
-                      isActive ? "gradient-text" : ""
-                    }
-                    to={path}
-                  >
-                    {name}
-                  </NavLink>
-                </Disclosure.Button>
-              ))}
+              {session &&
+                paths.map(({ name, path }) => (
+                  <Disclosure.Button key={name} as={"div"}>
+                    <NavLink
+                      key={name}
+                      className={({ isActive }) =>
+                        isActive
+                          ? "gradient-text"
+                          : "text-black dark:text-white"
+                      }
+                      to={path}
+                      onClick={() => close()}
+                    >
+                      {name}
+                    </NavLink>
+                  </Disclosure.Button>
+                ))}
             </div>
           </Disclosure.Panel>
         </div>
       )}
     </Disclosure>
-
-    //   <img src={`/logo-${theme}.png`} width={164} alt="logo" />
-
-    //   {session && <Navigation />}
-
-    //   <div className="flex items-center gap-4">
-    //     <ThemeSwitcher />
-
-    //     <div className="max-w-[120px]">
-    //       {session ? (
-    //         <div
-    //           onClick={() => setOpenSideBar(true)}
-    //           className="gradient-text cursor-pointer"
-    //         >{`${principal}...`}</div>
-    //       ) : (
-    //         <Button rightArrow onClick={() => setOpenSideBar(true)}>
-    //           {t("navigation.login")}
-    //         </Button>
-    //       )}
-    //     </div>
-    //   </div>
-
-    //   <SideBar open={openSideBar} setOpen={setOpenSideBar}>
-    //     <div className="p-6">
-    //       {session ? (
-    //         <Button onClick={logout}>{t("navigation.logout")}</Button>
-    //       ) : (
-    //         <Button onClick={login}>{t("navigation.login")}</Button>
-    //       )}
-    //     </div>
-    //   </SideBar>
-    // </div>
   );
 };
 

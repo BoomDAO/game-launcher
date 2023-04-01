@@ -6,6 +6,7 @@ import Card from "@/components/Card";
 import EmptyGameCard from "@/components/EmptyGameCard";
 import Pagination from "@/components/Pagination";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
+import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 import { getPaginationPages } from "@/utils";
 
@@ -28,17 +29,17 @@ const Home = () => {
       <img
         src="/banner.png"
         alt="banner"
-        className="h-96 w-full rounded-primary object-cover shadow"
+        className="h-72 w-full rounded-primary object-cover shadow md:h-96"
       />
       <Space />
-      <h1 className="flex flex-wrap gap-3 text-[56px] font-semibold leading-none">
+      <H1 className="flex flex-wrap gap-3 font-semibold leading-none">
         <span className="gradient-text">{t("home.title.text_1")}</span>
         <span>{t("home.title.text_2")}</span>
         <span className="gradient-text">{t("home.title.text_3")}</span>
         <span>{t("home.title.text_4")}</span>
         <span className="gradient-text">{t("home.title.text_5")}</span>
         <span>{t("home.title.text_6")}</span>
-      </h1>
+      </H1>
       <Space size="medium" />
       {isLoading ? (
         <LoadingResult>{t("home.loading")}</LoadingResult>

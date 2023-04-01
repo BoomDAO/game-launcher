@@ -13,7 +13,7 @@ const SideBar = ({
 }: React.PropsWithChildren<SideBarProps>) => {
   return (
     <Transition.Root show={open} as={React.Fragment}>
-      <Dialog as="div" className="relative z-10" onClose={setOpen}>
+      <Dialog as="div" className="relative z-50" onClose={setOpen}>
         <Transition.Child
           as={React.Fragment}
           enter="ease-in-out duration-500"
