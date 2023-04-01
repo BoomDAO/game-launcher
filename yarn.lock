@@ -526,6 +526,11 @@
     "@tanstack/query-core" "4.27.0"
     use-sync-external-store "^1.2.0"
 
+"@todayweb/hooks@^0.0.6":
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/@todayweb/hooks/-/hooks-0.0.6.tgz#96ddb2a4378bf2966ce1dd8bafd2c4e30b5a648e"
+  integrity sha512-WNqLMggu6k8XmR24Sj9qEpMU7ECmRdsVs+xcBuoDvVWAaLUuO3rh/KBZAFo6MZdZx2/jmLlMm4GHyQjCYN+ngw==
+
 "@todayweb/prettier@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@todayweb/prettier/-/prettier-1.0.0.tgz#288333b9abd46eacc96165342803349ee9ad032a"

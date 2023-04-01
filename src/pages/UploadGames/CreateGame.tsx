@@ -96,7 +96,7 @@ const CreateGame = () => {
           setDisableSubmit(true);
 
           await new Promise((resolve) => {
-            setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 1000);
+            setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 500);
           });
 
           setShowPrepare(false);
