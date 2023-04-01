@@ -51,9 +51,9 @@ const UploadGames = () => {
         <LoadingResult>{t("upload_games.loading")}</LoadingResult>
       ) : isError ? (
         <ErrorResult>{t("error")}</ErrorResult>
-      ) : data.length ? (
+      ) : games.length ? (
         <>
-          <div className="grid-cols-card grid gap-6">
+          <div className="grid grid-cols-card gap-6">
             {games.map(({ canister_id, platform, name }) => (
               <Card
                 key={canister_id}
