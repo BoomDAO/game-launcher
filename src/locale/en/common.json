@@ -63,13 +63,15 @@
       "title": "Upload new game",
       "button": "Upload game",
 
-      "loadgin_game": "Creating game data...",
+      "success_update": "Game was created.",
+
+      "loading_game": "Uploading game data...",
       "error_game": "There was some error while creating data. Please try again!",
       "success_game": "Game data were saved.",
 
-      "loadgin_files": "Uploading game files... Please wait till finish.",
-      "error_files": "There was some error while updating files, but canister with data was created. Please try again!",
-      "success_files": "Files were created."
+      "loading_files": "Uploading game files... Please wait till finish.",
+      "error_files": "There was some error while uploading files, but game canister was created. Please try again!",
+      "success_files": "Game files were created."
     },
 
     "update": {
@@ -77,8 +79,20 @@
       "button": "Update game",
       "loading": "Loading game...",
       "error": "We did not found any game... :(",
-      "error_update": "There was an error while updating game. Please try again!",
-      "success_update": "Game was updated."
+
+      "success_update": "Game was updated.",
+
+      "loading_game": "Uploading game data...",
+      "error_game": "There was some error while uploading data. Please try again!",
+      "success_game": "Game data were updated.",
+
+      "loading_cover": "Uploading game cover...",
+      "error_cover": "There was some error while uploading cover. Please try again!",
+      "success_cover": "Game cover was updated.",
+
+      "loading_files": "Uploading game files... Please wait till finish.",
+      "error_files": "There was some error while uploading files. Please try again!",
+      "success_files": "Game files were updated."
     }
   },
 

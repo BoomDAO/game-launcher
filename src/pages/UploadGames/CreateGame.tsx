@@ -105,8 +105,6 @@ const CreateGame = () => {
     isPreparingUpload(false);
   };
 
-  console.log("canister_id", canisterId);
-
   return (
     <>
       <Space size="medium" />
@@ -166,7 +164,7 @@ const CreateGame = () => {
           <UploadResult
             isLoading={{
               display: isDataLoading,
-              children: t("upload_games.create.loadgin_game"),
+              children: t("upload_games.create.loading_game"),
             }}
             isError={{
               display: isDataError,
@@ -182,7 +180,7 @@ const CreateGame = () => {
           <UploadResult
             isLoading={{
               display: isFilesLoading,
-              children: t("upload_games.create.loadgin_files"),
+              children: t("upload_games.create.loading_files"),
             }}
             isError={{
               display: isFilesError,

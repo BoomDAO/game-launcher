@@ -251,7 +251,7 @@ export const useCreateGameUpload = () => {
       return canister_id;
     },
     onSuccess: () => {
-      toast.success(t("upload_games.update.success_update"));
+      toast.success(t("upload_games.create.success_update"));
       navigate(navPaths.upload_games);
     },
     onSettled: () => {

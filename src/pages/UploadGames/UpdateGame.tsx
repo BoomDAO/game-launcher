@@ -44,6 +44,11 @@ const UpdateGame = () => {
   const { t } = useTranslation();
   const { canisterId } = useParams();
 
+  const isPreparingUpload = (val: boolean) => {
+    setShowPrepare(val);
+    setDisableSubmit(val);
+  };
+
   const { data, isLoading: isLoadingGame, isError } = useGetGame(canisterId);
 
   const { control, handleSubmit, watch, reset } = useForm<Form>({
@@ -93,9 +98,8 @@ const UpdateGame = () => {
   const { mutate: onSubmitGame, isLoading: isSubmitLoading } =
     useUpdateGameSubmit();
 
-  const onSubmit = async (values: Form) => {
-    setShowPrepare(false);
-    setDisableSubmit(false);
+  const onUpload = async (values: Form) => {
+    isPreparingUpload(false);
 
     onSubmitGame({
       values: { canister_id: canisterId!, ...values },
@@ -103,6 +107,15 @@ const UpdateGame = () => {
       mutateCover,
       mutateFiles,
     });
+  };
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    isPreparingUpload(true);
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(handleSubmit(onUpload)(e)), 500);
+    });
+    isPreparingUpload(false);
   };
 
   return (
@@ -116,18 +129,7 @@ const UpdateGame = () => {
       ) : isError ? (
         <ErrorResult>{t("upload_games.update.error")}</ErrorResult>
       ) : (
-        <Form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setShowPrepare(true);
-            setDisableSubmit(true);
-            await new Promise((resolve) =>
-              setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 500),
-            );
-            setShowPrepare(false);
-            setDisableSubmit(false);
-          }}
-        >
+        <Form onSubmit={onSubmit}>
           <div className="flex w-full flex-col gap-4 md:flex-row">
             <FormSelect
               data={platform_types}
@@ -176,48 +178,48 @@ const UpdateGame = () => {
             <UploadResult
               isLoading={{
                 display: isDataLoading,
-                children: "Uploading game data...",
+                children: t("upload_games.update.loading_game"),
               }}
               isError={{
                 display: isDataError,
-                children: "There was some error while updating data.",
+                children: t("upload_games.update.error_game"),
                 error: dataError,
               }}
               isSuccess={{
                 display: isDataSuccess,
-                children: "Data were updated.",
+                children: t("upload_games.update.success_game"),
               }}
             />
 
             <UploadResult
               isLoading={{
                 display: isCoverLoading,
-                children: "Uploading game cover...",
+                children: t("upload_games.update.loading_cover"),
               }}
               isError={{
                 display: isCoverError,
-                children: "There was some error while updating cover.",
+                children: t("upload_games.update.error_cover"),
                 error: coverError,
               }}
               isSuccess={{
                 display: isCoverSuccess,
-                children: "Cover were updated",
+                children: t("upload_games.update.success_cover"),
               }}
             />
 
             <UploadResult
               isLoading={{
                 display: isFilesLoading,
-                children: "Uploading game files... Please wait till finish.",
+                children: t("upload_games.update.loading_files"),
               }}
               isError={{
                 display: isFilesError,
-                children: "There was some error while updating files.",
+                children: t("upload_games.update.error_files"),
                 error: filesError,
               }}
               isSuccess={{
                 display: isFilesSuccess,
-                children: "Files were updated",
+                children: t("upload_games.update.success_files"),
               }}
             />
           </div>
