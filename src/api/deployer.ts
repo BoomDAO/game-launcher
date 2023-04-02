@@ -216,7 +216,7 @@ export const useGetCycleBalance = (
   });
 
 // Submit functions
-export const useCreateGameSubmit = () => {
+export const useCreateGameUpload = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -243,6 +243,7 @@ export const useCreateGameSubmit = () => {
         {
           onError: (err) => {
             console.log("err", err);
+            throw { canister_id };
           },
         },
       );

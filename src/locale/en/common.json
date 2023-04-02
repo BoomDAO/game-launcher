@@ -59,11 +59,17 @@
     "button_game_upload": "Upload file",
     "placeholder_game_upload": "Upload new game files",
 
-    "new": {
+    "create": {
       "title": "Upload new game",
       "button": "Upload game",
-      "error_create": "There was an error while creating new game. Please try again!",
-      "success_create": "Game was created."
+
+      "loadgin_game": "Creating game data...",
+      "error_game": "There was some error while creating data. Please try again!",
+      "success_game": "Game data were saved.",
+
+      "loadgin_files": "Uploading game files... Please wait till finish.",
+      "error_files": "There was some error while updating files, but canister with data was created. Please try again!",
+      "success_files": "Files were created."
     },
 
     "update": {

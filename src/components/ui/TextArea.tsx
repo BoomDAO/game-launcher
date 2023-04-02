@@ -9,7 +9,15 @@ export interface TextAreaProps
 const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ className, rows = 5, ...rest }, ref) => {
     return (
-      <textarea ref={ref} className={cx("", className)} rows={rows} {...rest} />
+      <textarea
+        ref={ref}
+        className={cx(
+          rest.disabled && "border-gray-400 dark:border-gray-600",
+          className,
+        )}
+        rows={rows}
+        {...rest}
+      />
     );
   },
 );

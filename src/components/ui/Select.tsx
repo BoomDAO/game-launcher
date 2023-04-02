@@ -43,13 +43,14 @@ const Select = React.forwardRef<HTMLElement, SelectProps>(
         onChange={onChange}
         disabled={disabled}
       >
-        {({ open }) => (
+        {({ open, disabled }) => (
           <>
             <div className="relative w-full">
               <Listbox.Button
                 className={cx(
                   "relative w-full rounded-t-primary border border-black px-8 py-4 text-left dark:border-white",
                   !open && "rounded-b-primary",
+                  disabled && "border-gray-400 dark:border-gray-600",
                   className,
                 )}
               >

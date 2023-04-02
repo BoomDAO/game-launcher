@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   useCreateGameData,
   useCreateGameFiles,
-  useCreateGameSubmit,
+  useCreateGameUpload,
 } from "@/api/deployer";
 import { PreparingForUpload, UploadResult } from "@/components/Results";
 import Form from "@/components/form/Form";
@@ -33,9 +33,14 @@ type Form = z.infer<typeof scheme>;
 const CreateGame = () => {
   const [disableSubmit, setDisableSubmit] = React.useState(false);
   const [showPrepare, setShowPrepare] = React.useState(false);
-
   const [canisterId, setCanisterId] = React.useState<string>();
+
   const { t } = useTranslation();
+
+  const isPreparingUpload = (val: boolean) => {
+    setShowPrepare(val);
+    setDisableSubmit(val);
+  };
 
   const { control, handleSubmit, watch } = useForm<Form>({
     defaultValues: {
@@ -66,45 +71,56 @@ const CreateGame = () => {
     error: filesError,
   } = useCreateGameFiles();
 
-  const { mutateAsync: onSubmitGame, isLoading: isSubmitLoading } =
-    useCreateGameSubmit();
+  const {
+    mutateAsync: onUploadGame,
+    isLoading: isUploadLoading,
+    error: uploadError,
+  } = useCreateGameUpload();
 
-  const onSubmit = async (values: Form) => {
-    setShowPrepare(false);
-    setDisableSubmit(false);
+  React.useEffect(() => {
+    const err = uploadError as { canister_id?: string };
 
-    const canister_id = await onSubmitGame({
+    if (err?.canister_id) {
+      setCanisterId(err.canister_id);
+    }
+  }, [uploadError]);
+
+  const onUpload = async (values: Form) => {
+    isPreparingUpload(false);
+
+    await onUploadGame({
       values,
       mutateData,
       mutateFiles,
       canisterId,
     });
-
-    canister_id && setCanisterId(canister_id);
   };
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    isPreparingUpload(true);
+    await new Promise((resolve) => {
+      setTimeout(() => resolve(handleSubmit(onUpload)(e)), 500);
+    });
+    isPreparingUpload(false);
+  };
+
+  console.log("canister_id", canisterId);
 
   return (
     <>
       <Space size="medium" />
-      <H1>{t("upload_games.new.title")}</H1>
+      <H1>{t("upload_games.create.title")}</H1>
       <Space size="medium" />
 
-      <Form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setShowPrepare(true);
-          setDisableSubmit(true);
-
-          await new Promise((resolve) => {
-            setTimeout(() => resolve(handleSubmit(onSubmit)(e)), 500);
-          });
-
-          setShowPrepare(false);
-          setDisableSubmit(false);
-        }}
-      >
+      <Form onSubmit={onSubmit}>
         <div className="flex w-full flex-col gap-4 md:flex-row">
-          <FormSelect data={platform_types} control={control} name="platform" />
+          <FormSelect
+            data={platform_types}
+            control={control}
+            name="platform"
+            disabled={!!canisterId}
+          />
 
           <FormTextInput
             placeholder={t("upload_games.input_name")}
@@ -150,34 +166,32 @@ const CreateGame = () => {
           <UploadResult
             isLoading={{
               display: isDataLoading,
-              children: "Creating game data...",
+              children: t("upload_games.create.loadgin_game"),
             }}
             isError={{
               display: isDataError,
-              children:
-                "There was some error while creating data. Please try again!",
+              children: t("upload_games.create.error_game"),
               error: dataError,
             }}
             isSuccess={{
               display: isDataSuccess,
-              children: "Data were saved.",
+              children: t("upload_games.create.success_game"),
             }}
           />
 
           <UploadResult
             isLoading={{
               display: isFilesLoading,
-              children: "Uploading game files... Please wait till finish.",
+              children: t("upload_games.create.loadgin_files"),
             }}
             isError={{
               display: isFilesError,
-              children:
-                "There was some error while updating files, but canister with data was created. Please try again!",
+              children: t("upload_games.create.error_files"),
               error: filesError,
             }}
             isSuccess={{
               display: isFilesSuccess,
-              children: "Files were created.",
+              children: t("upload_games.create.success_files"),
             }}
           />
         </div>
@@ -185,9 +199,9 @@ const CreateGame = () => {
         <Button
           rightArrow
           size="big"
-          disabled={isSubmitLoading || disableSubmit}
+          disabled={isUploadLoading || disableSubmit}
         >
-          {t("upload_games.new.button")}
+          {t("upload_games.create.button")}
         </Button>
       </Form>
     </>

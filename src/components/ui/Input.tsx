@@ -6,7 +6,16 @@ export interface InputProps
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, ...rest }, ref) => {
-    return <input ref={ref} className={cx("", className)} {...rest} />;
+    return (
+      <input
+        ref={ref}
+        className={cx(
+          rest.disabled && "border-gray-400 dark:border-gray-600",
+          className,
+        )}
+        {...rest}
+      />
+    );
   },
 );
 
