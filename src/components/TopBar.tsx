@@ -50,7 +50,7 @@ const TopBar = () => {
           className={cx(
             "fixed top-0 z-50 w-full",
             openOrNotTop(open) &&
-              "bg-white bg-opacity-95 shadow dark:bg-dark dark:bg-opacity-95",
+              "bg-white bg-opacity-95 shadow-sm dark:bg-dark dark:bg-opacity-95",
           )}
         >
           <div className="mx-auto w-full max-w-screen-xl px-8 py-4">
