@@ -29,7 +29,7 @@ const Card = ({
   const { data: cycleBalance } = useGetCycleBalance(canisterId, showCycles);
 
   const iconWithProps = React.cloneElement(icon, {
-    className: "w-8 h-8 bg-black rounded-full text-white p-2",
+    className: "w-8 h-8 bg-black rounded-full text-white p-2 min-w-[32px]",
   });
 
   return (
@@ -40,7 +40,7 @@ const Card = ({
       >
         <div className="h-full w-full rounded-primary bg-white px-6 py-6 dark:bg-dark">
           <div className="mb-6 flex justify-between">
-            <p className="text-2xl">{title}</p>
+            <p className="truncate text-2xl">{title}</p>
             {iconWithProps}
           </div>
 
