@@ -32,7 +32,7 @@ export interface CreateGameSubmit {
 }
 
 export interface UpdateGameData
-  extends Pick<Game, "canister_id" | "name" | "description"> {}
+  extends Pick<Game, "canister_id" | "name" | "description" | "platform"> {}
 
 export interface UpdateGameCover extends Pick<Game, "canister_id"> {
   cover: string;

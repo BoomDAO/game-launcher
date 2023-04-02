@@ -7,7 +7,7 @@ const Footer = () => {
   return (
     <>
       <Divider className="mb-6" />
-      <div className="flex flex-col-reverse justify-between gap-2 md:flex-row">
+      <div className="flex flex-col-reverse justify-between gap-2 text-sm md:flex-row">
         <p>{t("footer.copyright")}</p>
         <div className="flex items-center gap-4">
           <p className="gradient-text text-lg font-semibold">

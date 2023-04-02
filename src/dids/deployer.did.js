@@ -38,7 +38,11 @@ export const idlFactory = ({ IDL }) => {
     http_request: IDL.Func([HttpRequest], [HttpResponse], ["query"]),
     remove_canister: IDL.Func([IDL.Text], [], []),
     update_game_cover: IDL.Func([IDL.Text, IDL.Text], [Result], []),
-    update_game_data: IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
+    update_game_data: IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [Result],
+      [],
+    ),
     wallet_receive: IDL.Func([], [IDL.Nat], []),
   });
 };

@@ -148,6 +148,7 @@ export const useUpdateGameData = () =>
           payload.canister_id,
           payload.name,
           payload.description,
+          payload.platform,
         );
 
         return payload.canister_id;
@@ -272,10 +273,11 @@ export const useUpdateGameSubmit = () => {
 
   return useMutation({
     mutationFn: async (payload: UpdateGameSubmit) => {
-      const { canister_id, cover, description, game, name } = payload.values;
+      const { canister_id, cover, description, game, name, platform } =
+        payload.values;
 
       await payload.mutateData(
-        { description, canister_id, name },
+        { description, canister_id, name, platform },
         {
           onError: (err) => {
             console.log("err", err);
