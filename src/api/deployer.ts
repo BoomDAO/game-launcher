@@ -18,10 +18,9 @@ import {
   Game,
   UpdateGameCover,
   UpdateGameData,
-  UpdateGameFiles,
   UpdateGameSubmit,
 } from "@/types";
-import { getAgent, uploadGameFiles } from "@/utils";
+import { getAgent, uploadGameFiles, uploadZip } from "@/utils";
 // @ts-ignore
 import { idlFactory as DeployerFactory } from "../dids/deployer.did.js";
 
@@ -127,7 +126,12 @@ export const useCreateGameFiles = () =>
   useMutation({
     mutationFn: async (payload: CreateGameFiles) => {
       try {
-        await uploadGameFiles(payload.canister_id, payload.game);
+        if (payload.platform === "Browser") {
+          await uploadGameFiles(payload.canister_id, payload.files);
+        } else {
+          await uploadZip(payload);
+        }
+
         return payload.canister_id;
       } catch (error) {
         if (error instanceof Error) {
@@ -182,21 +186,6 @@ export const useUpdateGameCover = () =>
     },
   });
 
-export const useUpdateGameFiles = () =>
-  useMutation({
-    mutationFn: async (payload: UpdateGameFiles) => {
-      try {
-        await uploadGameFiles(payload.canister_id, payload.game);
-        return payload.canister_id;
-      } catch (error) {
-        if (error instanceof Error) {
-          throw error.message;
-        }
-        throw serverErrorMsg;
-      }
-    },
-  });
-
 export const useGetCycleBalance = (
   canisterId?: string,
   showCycles?: boolean,
@@ -224,7 +213,7 @@ export const useCreateGameUpload = () => {
 
   return useMutation({
     mutationFn: async (payload: CreateGameSubmit) => {
-      const { cover, description, game, name, platform } = payload.values;
+      const { cover, description, files, name, platform } = payload.values;
 
       let canister_id = payload.canisterId;
 
@@ -240,7 +229,7 @@ export const useCreateGameUpload = () => {
       }
 
       await payload.mutateFiles(
-        { canister_id, game },
+        { canister_id, description, name, platform, files },
         {
           onError: (err) => {
             console.log("err", err);
@@ -273,7 +262,7 @@ export const useUpdateGameSubmit = () => {
 
   return useMutation({
     mutationFn: async (payload: UpdateGameSubmit) => {
-      const { canister_id, cover, description, game, name, platform } =
+      const { canister_id, cover, description, files, name, platform } =
         payload.values;
 
       await payload.mutateData(
@@ -296,9 +285,9 @@ export const useUpdateGameSubmit = () => {
         );
       }
 
-      if (game.length) {
+      if (files.length) {
         await payload.mutateFiles(
-          { canister_id, game },
+          { canister_id, description, name, platform, files },
           {
             onError: (err) => {
               console.log("err", err);

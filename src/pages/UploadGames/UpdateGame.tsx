@@ -5,10 +5,10 @@ import { useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
+  useCreateGameFiles,
   useGetGame,
   useUpdateGameCover,
   useUpdateGameData,
-  useUpdateGameFiles,
   useUpdateGameSubmit,
 } from "@/api/deployer";
 import {
@@ -27,12 +27,12 @@ import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 import { gameDataScheme, platform_types } from "@/shared";
-import { GameFile } from "@/utils";
+import { GameFile } from "@/types";
 
 const scheme = z
   .object({
     cover: z.string(),
-    game: z.custom<GameFile>().array(),
+    files: z.custom<GameFile>().array(),
   })
   .extend(gameDataScheme);
 
@@ -58,12 +58,13 @@ const UpdateGame = () => {
       description: "",
       platform: "Browser",
       cover: "",
-      game: [],
+      files: [],
     },
     resolver: zodResolver(scheme),
   });
 
   const cover = watch("cover");
+  const platform = watch("platform");
 
   React.useEffect(() => {
     if (!data) return;
@@ -94,7 +95,7 @@ const UpdateGame = () => {
     isError: isFilesError,
     isSuccess: isFilesSuccess,
     error: filesError,
-  } = useUpdateGameFiles();
+  } = useCreateGameFiles();
 
   const { mutate: onSubmitGame, isLoading: isSubmitLoading } =
     useUpdateGameSubmit();
@@ -166,10 +167,10 @@ const UpdateGame = () => {
             <FormUploadButton
               buttonText={t("upload_games.button_game_upload")}
               placeholder={t("upload_games.placeholder_game_upload")}
-              uploadType="folder"
+              uploadType={platform === "Browser" ? "folder" : "zip"}
               setDisableSubmit={setDisableSubmit}
               control={control}
-              name="game"
+              name="files"
               hint={{
                 body: <UploadGameHint />,
               }}

@@ -3,7 +3,8 @@ import {
   UseControllerProps,
   useController,
 } from "react-hook-form";
-import { GameFile, cx } from "@/utils";
+import { GameFile } from "@/types";
+import { cx } from "@/utils";
 import UploadButton, { UploadButtonProps } from "../ui/UploadButton";
 import FormErrorMessage from "./FormErrorMessage";
 import FormWrapper from "./FormWrapper";

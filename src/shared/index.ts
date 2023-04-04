@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { SelectOption } from "@/components/ui/Select";
-
-export type Platform = "Browser" | "Android" | "Windows";
+import { Platform } from "@/types";
 
 export const serverErrorMsg = "Something went wrong.";
 
@@ -30,5 +29,5 @@ export const platform_types: SelectOption[] = [
 export const gameDataScheme = {
   name: z.string().min(1, { message: "Name is required." }),
   description: z.string().min(1, { message: "Description is required." }),
-  platform: z.string().min(1, { message: "Platform is required." }),
+  platform: z.custom<Platform>(),
 };

@@ -23,7 +23,7 @@ import { gameDataScheme, platform_types } from "@/shared";
 const scheme = z
   .object({
     cover: z.string().min(1, { message: "Cover image is required." }),
-    game: z.any().array().nonempty({
+    files: z.any().array().nonempty({
       message: "No files uploaded.",
     }),
   })
@@ -49,12 +49,13 @@ const CreateGame = () => {
       description: "",
       platform: "Browser",
       cover: "",
-      game: [],
+      files: [],
     },
     resolver: zodResolver(scheme),
   });
 
   const cover = watch("cover");
+  const platform = watch("platform");
 
   const {
     mutateAsync: mutateData,
@@ -152,10 +153,10 @@ const CreateGame = () => {
           <FormUploadButton
             buttonText={t("upload_games.button_game_upload")}
             placeholder={t("upload_games.placeholder_game_upload")}
-            uploadType="folder"
+            uploadType={platform === "Browser" ? "folder" : "zip"}
             setDisableSubmit={setDisableSubmit}
             control={control}
-            name="game"
+            name="files"
             hint={{
               body: <UploadGameHint />,
             }}

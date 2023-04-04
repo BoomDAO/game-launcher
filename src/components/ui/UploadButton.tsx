@@ -1,5 +1,6 @@
 import React from "react";
-import { GameFile, convertToBase64, cx, getGameFiles } from "@/utils";
+import { GameFile } from "@/types";
+import { convertToBase64, cx, getGameFiles } from "@/utils";
 import Button from "./Button";
 import Hint from "./Hint";
 
@@ -58,7 +59,7 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
         onUpload && onUpload(base64);
       }
 
-      if (uploadType === "folder") {
+      if (uploadType === "folder" || uploadType === "zip") {
         const { files } = e.target;
         if (!files?.length) return;
         setUploadName(`${files?.length} files to upload`);
@@ -100,8 +101,9 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
           onChange={handleChange}
           className="hidden"
           disabled={disabled}
+          accept={uploadType === "zip" ? ".zip,.rar,.7zip" : undefined}
           /* @ts-expect-error */
-          webkitdirectory={uploadType !== "image" ? "true" : undefined}
+          webkitdirectory={uploadType === "folder" ? "true" : undefined}
         />
       </div>
     );

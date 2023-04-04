@@ -1,5 +1,14 @@
 import { UseMutateAsyncFunction } from "@tanstack/react-query";
-import { GameFile } from "@/utils";
+
+export type Platform = "Browser" | "Android" | "Windows";
+
+export type Base64 = string | ArrayBuffer;
+
+export interface GameFile {
+  fileArr: number[][];
+  fileName: string;
+  fileType: string;
+}
 
 type GameFiles = GameFile[];
 
@@ -8,19 +17,22 @@ export interface Game {
   name: string;
   canister_id: string;
   description: string;
-  platform: string;
+  platform: Platform;
   cover: string;
 }
 
 export interface CreateGameData
   extends Pick<Game, "name" | "description" | "cover" | "platform"> {}
 
-export interface CreateGameFiles extends Pick<Game, "canister_id"> {
-  game: GameFiles;
+export interface UploadGameFileData
+  extends Pick<Game, "canister_id" | "name" | "description" | "platform"> {}
+
+export interface CreateGameFiles extends UploadGameFileData {
+  files: GameFile[];
 }
 
 export interface CreateGameSubmit {
-  values: CreateGameData & { game: GameFiles };
+  values: CreateGameData & { files: GameFiles };
   mutateData: UseMutateAsyncFunction<string, unknown, CreateGameData, unknown>;
   mutateFiles: UseMutateAsyncFunction<
     string,
@@ -38,12 +50,8 @@ export interface UpdateGameCover extends Pick<Game, "canister_id"> {
   cover: string;
 }
 
-export interface UpdateGameFiles extends Pick<Game, "canister_id"> {
-  game: GameFile[];
-}
-
 export interface UpdateGameSubmit {
-  values: UpdateGameData & UpdateGameCover & UpdateGameFiles;
+  values: UpdateGameData & UpdateGameCover & CreateGameFiles;
   mutateData: UseMutateAsyncFunction<string, unknown, UpdateGameData, unknown>;
   mutateCover: UseMutateAsyncFunction<
     string,
@@ -54,7 +62,7 @@ export interface UpdateGameSubmit {
   mutateFiles: UseMutateAsyncFunction<
     string,
     unknown,
-    UpdateGameFiles,
+    CreateGameFiles,
     unknown
   >;
 }
