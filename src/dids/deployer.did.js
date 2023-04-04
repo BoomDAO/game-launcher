@@ -4,6 +4,7 @@ export const idlFactory = ({ IDL }) => {
     name: IDL.Text,
     cover: IDL.Text,
     canister_id: IDL.Text,
+    lastUpdated: IDL.Int,
     description: IDL.Text,
     platform: IDL.Text,
   });
