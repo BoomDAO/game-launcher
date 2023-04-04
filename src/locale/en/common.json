@@ -93,6 +93,19 @@
       "loading_files": "Uploading game files... Please wait till finish.",
       "error_files": "There was some error while uploading files. Please try again!",
       "success_files": "Game files were updated."
+    },
+
+    "hint": {
+      "browser": {
+        "title": "Browser upload:",
+        "list_item_1": "Put all of your game files into one folder and upload the folder.",
+        "list_item_2": "An index.html file MUST be included in the folder. The index.html can also be the entire game.",
+        "list_item_3": "If you're uploading a Unity WebGL game, then include the index.html, .data, .framework, .loader, and .wasm files in the folder."
+      },
+      "mobile_pc": {
+        "title": "Mobile/PC upload:",
+        "text": "Please zip your game files in a folder and then upload the zipped file. Players will be able to download the zipped file."
+      }
     }
   },
 

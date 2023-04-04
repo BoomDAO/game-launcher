@@ -32,8 +32,12 @@ const Select = React.forwardRef<HTMLElement, SelectProps>(
 
     const selected = React.useMemo(() => {
       if (!value) return undefined;
-      const find = data.find((item) => item.value === value);
-      return find;
+      return (
+        data.find((item) => item.value === value) || {
+          value: null,
+          label: "Bad platform",
+        }
+      );
     }, [value]);
 
     return (

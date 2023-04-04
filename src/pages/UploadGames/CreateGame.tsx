@@ -9,6 +9,7 @@ import {
   useCreateGameUpload,
 } from "@/api/deployer";
 import { PreparingForUpload, UploadResult } from "@/components/Results";
+import UploadGameHint from "@/components/UploadGameHint";
 import Form from "@/components/form/Form";
 import FormSelect from "@/components/form/FormSelect";
 import FormTextArea from "@/components/form/FormTextArea";
@@ -155,6 +156,9 @@ const CreateGame = () => {
             setDisableSubmit={setDisableSubmit}
             control={control}
             name="game"
+            hint={{
+              body: <UploadGameHint />,
+            }}
           />
         </div>
 

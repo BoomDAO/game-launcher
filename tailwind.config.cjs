@@ -14,6 +14,7 @@ module.exports = {
         dark: "#33343F",
         error: colors.red[400],
         success: colors.green[500],
+        info: colors.yellow[500],
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],

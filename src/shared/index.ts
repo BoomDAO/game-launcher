@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { SelectOption } from "@/components/ui/Select";
 
+export type Platform = "Browser" | "Android" | "Windows";
+
 export const serverErrorMsg = "Something went wrong.";
 
 export const navPaths = {
@@ -20,12 +22,8 @@ export const platform_types: SelectOption[] = [
     value: "Android",
   },
   {
-    label: "Mac",
-    value: "Mac",
-  },
-  {
-    label: "PC",
-    value: "PC",
+    label: "Windows",
+    value: "Windows",
   },
 ];
 

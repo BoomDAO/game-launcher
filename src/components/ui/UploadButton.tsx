@@ -1,6 +1,7 @@
 import React from "react";
 import { GameFile, convertToBase64, cx, getGameFiles } from "@/utils";
 import Button from "./Button";
+import Hint from "./Hint";
 
 export interface UploadButtonProps {
   placeholder?: string;
@@ -10,6 +11,10 @@ export interface UploadButtonProps {
   className?: string;
   disabled?: boolean;
   setDisableSubmit?: (val: boolean) => void;
+  hint?: {
+    body: React.ReactNode;
+    right?: boolean;
+  };
 }
 
 const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
@@ -22,6 +27,7 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
       onUpload,
       disabled,
       setDisableSubmit,
+      hint,
     },
     ref,
   ) => {
@@ -82,9 +88,12 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
         <div className={cx(!uploadName && "text-gray-500")}>
           {uploadName || placeholder}
         </div>
-        <Button onClick={handleClick} disabled={disabled || isLoading}>
-          {isLoading ? "Uploading" : buttonText}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleClick} disabled={disabled || isLoading}>
+            {isLoading ? "Uploading" : buttonText}
+          </Button>
+          {!!hint && <Hint right={hint.right}>{hint.body}</Hint>}
+        </div>
         <input
           type="file"
           ref={hiddenFileInput}
