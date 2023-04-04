@@ -13,14 +13,6 @@ import Space from "@/components/ui/Space";
 import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
 
-const data = Array.from({ length: 9 }).map((_, i) => ({
-  title: `Game 0${i}`,
-  image: "/banner.png",
-  platform: "Browser",
-  canisterId: `r44we3-pqaaa-aaaap-aaosq-cai${i}`,
-  cycles: "2.3T",
-}));
-
 const UploadGames = () => {
   const [pageNumber, setPageNumber] = React.useState(1);
   const { t } = useTranslation();

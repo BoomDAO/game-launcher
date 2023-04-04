@@ -8,7 +8,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useAuth } from "@/context/authContext";
+import { useAuthContext } from "@/context/authContext";
 import { useGameClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import {
@@ -45,7 +45,7 @@ export const useGetTotalGames = () =>
   });
 
 export const useGetTotalUserGames = () => {
-  const { session } = useAuth();
+  const { session } = useAuthContext();
 
   return useQuery({
     queryKey: [queryKeys.games_user_total],
@@ -89,7 +89,7 @@ export const useGetGameCover = (canisterId?: string): UseQueryResult<string> =>
   });
 
 export const useGetUserGames = (page: number = 1): UseQueryResult<Game[]> => {
-  const { session } = useAuth();
+  const { session } = useAuthContext();
 
   return useQuery({
     queryKey: [queryKeys.user_games, page],

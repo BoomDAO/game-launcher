@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "@/context/authContext";
+import { useAuthContext } from "@/context/authContext";
 import Footer from "./Footer";
 import TopBar from "./TopBar";
 import Center from "./ui/Center";
@@ -7,7 +7,7 @@ import LogoLoader from "./ui/LogoLoader";
 import Space from "./ui/Space";
 
 const Layout = ({ children }: React.PropsWithChildren) => {
-  const { isLoading } = useAuth();
+  const { isLoading } = useAuthContext();
 
   if (isLoading)
     return (

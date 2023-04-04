@@ -51,4 +51,4 @@ export const ThemeContextProvider = ({ children }: React.PropsWithChildren) => {
   );
 };
 
-export const useTheme = () => React.useContext(ThemeContext);
+export const useThemeContext = () => React.useContext(ThemeContext);

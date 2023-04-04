@@ -4,8 +4,9 @@ import { NavLink } from "react-router-dom";
 import { Disclosure } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 import { useScrollPosition } from "@todayweb/hooks";
-import { useAuth } from "@/context/authContext";
-import { useTheme } from "@/context/themeContext";
+import { useAuthContext } from "@/context/authContext";
+import { useGlobalContext } from "@/context/globalContext";
+import { useThemeContext } from "@/context/themeContext";
 import { navPaths } from "@/shared";
 import { cx } from "@/utils";
 import SideBar from "./SideBar";
@@ -13,10 +14,11 @@ import ThemeSwitcher from "./ThemeSwitcher";
 import Button from "./ui/Button";
 
 const TopBar = () => {
-  const [openSideBar, setOpenSideBar] = React.useState(false);
   const { t } = useTranslation();
-  const { session, login, logout } = useAuth();
-  const { theme } = useTheme();
+
+  const { isOpenNavSidebar, setIsOpenNavSidebar } = useGlobalContext();
+  const { session, login, logout } = useAuthContext();
+  const { theme } = useThemeContext();
 
   const scrollY = useScrollPosition();
 
@@ -93,11 +95,14 @@ const TopBar = () => {
                   <div className="max-w-[120px]">
                     {session ? (
                       <div
-                        onClick={() => setOpenSideBar(true)}
+                        onClick={() => setIsOpenNavSidebar(true)}
                         className="gradient-text cursor-pointer"
                       >{`${principal}...`}</div>
                     ) : (
-                      <Button rightArrow onClick={() => setOpenSideBar(true)}>
+                      <Button
+                        rightArrow
+                        onClick={() => setIsOpenNavSidebar(true)}
+                      >
                         {t("navigation.login")}
                       </Button>
                     )}
@@ -106,7 +111,7 @@ const TopBar = () => {
 
                 <ThemeSwitcher className="text-black dark:text-white" />
 
-                <SideBar open={openSideBar} setOpen={setOpenSideBar}>
+                <SideBar open={isOpenNavSidebar} setOpen={setIsOpenNavSidebar}>
                   <div className="p-6">
                     {session ? (
                       <div className="space-y-4">

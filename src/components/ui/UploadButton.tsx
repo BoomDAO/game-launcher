@@ -80,7 +80,7 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
       <div
         ref={ref}
         className={cx(
-          "flex w-full items-center justify-between rounded-primary border border-black px-8 py-[0.63rem] dark:border-white",
+          "flex w-full items-center justify-between rounded-primary border border-black px-6 py-[0.63rem] dark:border-white",
           disabled && "border-gray-400 dark:border-gray-600",
           className,
         )}

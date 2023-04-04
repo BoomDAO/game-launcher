@@ -36,7 +36,7 @@ const ErrorAlert = ({ children }: React.PropsWithChildren) => {
 export const LoadingResult = ({ children }: React.PropsWithChildren) => {
   return (
     <Center className="flex-col gap-2">
-      <Loader />
+      <Loader className="h-7 w-7" />
       {children}
     </Center>
   );

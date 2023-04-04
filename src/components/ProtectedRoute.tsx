@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "@/context/authContext";
+import { useAuthContext } from "@/context/authContext";
 import { navPaths } from "@/shared";
 
 interface ProtectedRouteProps {
@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({
   redirectPath = navPaths.home,
 }: ProtectedRouteProps) => {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading } = useAuthContext();
 
   if (isLoading) return null;
 

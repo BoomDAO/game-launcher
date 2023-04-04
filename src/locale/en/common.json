@@ -34,7 +34,7 @@
 
   "home": {
     "loading": "Loading games...",
-    "button_upload": "Upload new game",
+    "button_upload": "Upload my game",
     "no_games": "There was no games created yet...",
     "title": {
       "text_1": "Games",
