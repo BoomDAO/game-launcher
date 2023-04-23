@@ -7,7 +7,7 @@ import {
   useCreateGameData,
   useCreateGameFiles,
   useCreateGameUpload,
-} from "@/api/deployer";
+} from "@/api/games_deployer";
 import { PreparingForUpload, UploadResult } from "@/components/Results";
 import UploadGameHint from "@/components/UploadGameHint";
 import Form from "@/components/form/Form";

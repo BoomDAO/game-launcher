@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Cog8ToothIcon } from "@heroicons/react/20/solid";
-import { useGetTotalUserGames, useGetUserGames } from "@/api/deployer";
+import { useGetTotalUserGames, useGetUserGames } from "@/api/games_deployer";
 import Card from "@/components/Card";
 import EmptyGameCard from "@/components/EmptyGameCard";
 import Pagination from "@/components/Pagination";

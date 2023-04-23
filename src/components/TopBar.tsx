@@ -39,10 +39,6 @@ const TopBar = () => {
       name: t("navigation.manage_NFTs"),
       path: navPaths.manage_nfts,
     },
-    {
-      name: t("navigation.manage_payments"),
-      path: navPaths.manage_payments,
-    },
   ];
 
   return (

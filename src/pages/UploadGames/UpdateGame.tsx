@@ -10,7 +10,7 @@ import {
   useUpdateGameCover,
   useUpdateGameData,
   useUpdateGameSubmit,
-} from "@/api/deployer";
+} from "@/api/games_deployer";
 import {
   ErrorResult,
   LoadingResult,

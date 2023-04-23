@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { NoSymbolIcon } from "@heroicons/react/20/solid";
-import { useGetCycleBalance, useGetGameCover } from "@/api/deployer";
+import { useGetCycleBalance, useGetGameCover } from "@/api/games_deployer";
 import Center from "./ui/Center";
 import Divider from "./ui/Divider";
 import Loader from "./ui/Loader";

@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
-import { useGetGames, useGetTotalGames } from "@/api/deployer";
+import { useGetGames, useGetTotalGames } from "@/api/games_deployer";
 import Card from "@/components/Card";
 import EmptyGameCard from "@/components/EmptyGameCard";
 import Pagination from "@/components/Pagination";
