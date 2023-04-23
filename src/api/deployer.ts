@@ -22,7 +22,7 @@ import {
 } from "@/types";
 import { getAgent, uploadGameFiles, uploadZip } from "@/utils";
 // @ts-ignore
-import { idlFactory as DeployerFactory } from "../dids/deployer.did.js";
+import { idlFactory as GamesDeployerFactory } from "../dids/games_deployer.did.js";
 
 export const queryKeys = {
   games: "games",
@@ -195,7 +195,7 @@ export const useGetCycleBalance = (
     queryKey: [queryKeys.cycle_balance, canisterId],
     queryFn: async () => {
       const agent = await getAgent();
-      const actor = Actor.createActor(DeployerFactory, {
+      const actor = Actor.createActor(GamesDeployerFactory, {
         agent,
         canisterId: canisterId!,
       });
