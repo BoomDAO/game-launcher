@@ -36,7 +36,7 @@ const ManageNfts = () => {
 
       <Space size="medium" />
 
-      <div className="grid gap-6 grid-auto-fit-xl">
+      <div className="card-container">
         {data.map(({ canisterId, title, cycles }) => (
           <Card
             key={canisterId}

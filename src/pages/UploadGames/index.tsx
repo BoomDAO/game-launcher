@@ -45,7 +45,7 @@ const UploadGames = () => {
         <ErrorResult>{t("error")}</ErrorResult>
       ) : games.length ? (
         <>
-          <div className="grid grid-cols-card gap-6">
+          <div className="card-container">
             {games.map(({ canister_id, platform, name }) => (
               <Card
                 key={canister_id}

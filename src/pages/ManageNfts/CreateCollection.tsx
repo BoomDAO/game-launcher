@@ -7,7 +7,7 @@ import Space from "@/components/ui/Space";
 import TextArea from "@/components/ui/TextArea";
 import UploadButton from "@/components/ui/UploadButton";
 
-const ManageNftsNew = () => {
+const CreateCollection = () => {
   const { t } = useTranslation();
 
   return (
@@ -39,4 +39,4 @@ const ManageNftsNew = () => {
   );
 };
 
-export default ManageNftsNew;
+export default CreateCollection;

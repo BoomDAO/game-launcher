@@ -8,8 +8,8 @@ import { GlobalContextProvider } from "./context/globalContext";
 import { ThemeContextProvider } from "./context/themeContext";
 import Home from "./pages/Home";
 import ManageNfts from "./pages/ManageNfts";
-import ManageNftsNew from "./pages/ManageNftsNew";
-import ManageNftsUpdate from "./pages/ManageNftsUpdate";
+import CreateCollection from "./pages/ManageNfts/CreateCollection";
+import UpdateCollection from "./pages/ManageNfts/UpdateCollection";
 import NotFound from "./pages/NotFound";
 import UploadGames from "./pages/UploadGames";
 import CreateGame from "./pages/UploadGames/CreateGame";
@@ -38,11 +38,11 @@ function App() {
                 <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
                 <Route
                   path={`${navPaths.manage_nfts}/new`}
-                  element={<ManageNftsNew />}
+                  element={<CreateCollection />}
                 />
                 <Route
                   path={`${navPaths.manage_nfts}/:canisterId`}
-                  element={<ManageNftsUpdate />}
+                  element={<UpdateCollection />}
                 />
               </Route>
 

@@ -4,8 +4,11 @@ import { getAgent, getAuthClient } from "@/utils";
 import { idlFactory as AssetFactory } from "../dids/asset.did.js";
 // @ts-ignore
 import { idlFactory as GamesDeployerFactory } from "../dids/games_deployer.did.js";
+// @ts-ignore
+import { idlFactory as MintingDeployerFactory } from "../dids/minting_deployer.did.js";
 
-const deploy_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
+const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
+const minting_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
 
 export const useGameClient = async () => {
   const authClient = await getAuthClient();
@@ -16,7 +19,7 @@ export const useGameClient = async () => {
   return {
     actor: Actor.createActor(GamesDeployerFactory, {
       agent,
-      canisterId: deploy_canisterId,
+      canisterId: games_canisterId,
     }),
     methods: {
       get_all_games: "get_all_asset_canisters",
@@ -46,6 +49,26 @@ export const useAssetClient = async (canister_id: string) => {
     }),
     methods: {
       clear: "clear",
+      commit_asset_upload: "commit_asset_upload",
+      create_batch: "create_batch",
+      create_chunk: "create_chunk",
+    },
+  };
+};
+
+export const useMintingDeployerClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(MintingDeployerFactory, {
+      agent,
+      canisterId: minting_canisterId,
+    }),
+    methods: {
+      get_collections: "getCollections",
       commit_asset_upload: "commit_asset_upload",
       create_batch: "create_batch",
       create_chunk: "create_chunk",
