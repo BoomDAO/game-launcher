@@ -43,13 +43,12 @@ const ManageNfts = () => {
       ) : collections.length ? (
         <>
           <div className="card-container">
-            {collections.map(({ canister_id, platform, name }) => (
+            {collections.map(({ canister_id, name }) => (
               <Card
                 key={canister_id}
                 icon={<Cog8ToothIcon />}
                 title={name}
                 canisterId={canister_id}
-                platform={platform}
                 showCycles
                 onClick={() =>
                   navigate(`${navPaths.manage_nfts}/${canister_id}`)

@@ -20,8 +20,11 @@ export const idlFactory = ({ IDL }) => {
     upperBound: IDL.Nat,
     burnAt: IDL.Int,
   });
+  const Collection = IDL.Record({
+    name: IDL.Text,
+    canister_id: IDL.Text,
+  });
   const TokenIdentifier = IDL.Text;
-  const TimerId = IDL.Nat;
   const HeaderField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
     url: IDL.Text,
@@ -77,6 +80,7 @@ export const idlFactory = ({ IDL }) => {
       [IDL.Vec(TokenIndex)],
       [],
     ),
+    bulk_burn_nfts: IDL.Func([IDL.Text], [], []),
     burnNft: IDL.Func(
       [IDL.Text, TokenIndex, AccountIdentifier],
       [Result_1],
@@ -94,7 +98,7 @@ export const idlFactory = ({ IDL }) => {
     getAID: IDL.Func([], [AccountIdentifier], []),
     getBurnInfo: IDL.Func([IDL.Text], [IDL.Vec(Info)], ["query"]),
     getCollectionMetadata: IDL.Func([IDL.Text], [IDL.Text, IDL.Text], []),
-    getCollections: IDL.Func([], [IDL.Vec(IDL.Text)], ["query"]),
+    getCollections: IDL.Func([], [IDL.Vec(Collection)], ["query"]),
     getController: IDL.Func([IDL.Text], [IDL.Vec(IDL.Principal)], []),
     getNow: IDL.Func([], [IDL.Int], []),
     getOwner: IDL.Func([IDL.Text], [IDL.Text], ["query"]),
@@ -108,15 +112,11 @@ export const idlFactory = ({ IDL }) => {
       [IDL.Vec(IDL.Tuple(TokenIndex, IDL.Text))],
       [],
     ),
-    get_cron_id: IDL.Func([], [TimerId], ["query"]),
-    get_last_cron_timestamp: IDL.Func([], [IDL.Int], ["query"]),
     http_request: IDL.Func([HttpRequest], [HttpResponse], ["query"]),
     http_request_update: IDL.Func([HttpRequest], [HttpResponse], []),
     isController: IDL.Func([IDL.Text, IDL.Principal], [IDL.Bool], []),
     isMinter: IDL.Func([IDL.Text, IDL.Principal], [IDL.Bool], []),
-    kill_cron: IDL.Func([], [], []),
     remove_controller: IDL.Func([IDL.Text, IDL.Text], [], []),
-    setMinter: IDL.Func([IDL.Text, IDL.Text], [], []),
     transform: IDL.Func(
       [ICTransformArgs],
       [ICCanisterHttpResponsePayload],

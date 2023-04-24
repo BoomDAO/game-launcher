@@ -21,6 +21,11 @@ export interface Game {
   cover: string;
 }
 
+export interface Collection {
+  name: string;
+  canister_id: string;
+}
+
 export interface CreateGameData
   extends Pick<Game, "name" | "description" | "cover" | "platform"> {}
 

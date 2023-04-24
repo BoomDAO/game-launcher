@@ -5,17 +5,15 @@ import Tabs from "@/components/Tabs";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 
-const canisterId = "jh775-jaaaa-aaaal-qbuda-cai";
-
 const UpdateCollection = () => {
-  const [activeTab, setActiveTab] = React.useState("View");
+  const [activeTab, setActiveTab] = React.useState(1);
 
   const { t } = useTranslation();
-  // const { canisterId } = useParams();
+  const { canisterId } = useParams();
 
   const tabItems = [
-    t("manage_nfts.update.tabs.item_1"),
-    t("manage_nfts.update.tabs.item_2"),
+    { id: 1, name: t("manage_nfts.update.tabs.item_1") },
+    { id: 2, name: t("manage_nfts.update.tabs.item_2") },
   ];
 
   return (
@@ -26,13 +24,9 @@ const UpdateCollection = () => {
 
       <Tabs tabs={tabItems} active={activeTab} setActive={setActiveTab} />
 
-      {activeTab === t("manage_nfts.update.tabs.item_1") && (
-        <div>Hello tehere1</div>
-      )}
+      {activeTab === 1 && <div>Hello tehere1</div>}
 
-      {activeTab === t("manage_nfts.update.tabs.item_2") && (
-        <div>Hello tehere2</div>
-      )}
+      {activeTab === 2 && <div>Hello tehere2</div>}
     </>
   );
 };

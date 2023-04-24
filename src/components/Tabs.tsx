@@ -1,13 +1,13 @@
 import { cx } from "@/utils";
 
 interface TabsProps {
-  tabs: string[];
-  active: string;
-  setActive: (val: string) => void;
+  tabs: { name: string; id: number }[];
+  active: number;
+  setActive: (val: number) => void;
 }
 
 const Tabs = ({ tabs, active, setActive }: TabsProps) => {
-  const activeItem = tabs.find((tab) => tab === active);
+  const activeItem = tabs.find((tab) => tab.id === active);
 
   return (
     <div className="mb-6">
@@ -20,12 +20,12 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
           id="tabs"
           name="tabs"
           className="block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-          onChange={(e) => setActive(e.target.value)}
-          defaultValue={activeItem}
+          onChange={(e) => setActive(parseInt(e.target.value, 10))}
+          defaultValue={activeItem?.name}
         >
           {tabs.map((tab) => (
-            <option key={tab} value={tab}>
-              {tab}
+            <option key={tab.id} value={tab.id}>
+              {tab.name}
             </option>
           ))}
         </select>
@@ -36,8 +36,8 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
           <nav className="-mb-px flex" aria-label="Tabs">
             {tabs.map((tab) => (
               <button
-                onClick={() => setActive(tab)}
-                key={tab}
+                onClick={() => setActive(tab.id)}
+                key={tab.id}
                 className={cx(
                   activeItem === tab
                     ? "border-lightPrimary text-lightPrimary dark:border-darkPrimary dark:text-darkPrimary"
@@ -46,7 +46,7 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
                 )}
                 aria-current={activeItem ? "page" : undefined}
               >
-                {tab}
+                {tab.name}
               </button>
             ))}
           </nav>

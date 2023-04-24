@@ -12,10 +12,10 @@ import { useAuthContext } from "@/context/authContext";
 import { useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import {
+  Collection,
   CreateGameData,
   CreateGameFiles,
   CreateGameSubmit,
-  Game,
   UpdateGameCover,
   UpdateGameData,
   UpdateGameSubmit,
@@ -30,7 +30,7 @@ export const queryKeys = {
   cycle_balance: "cycle_balance",
 };
 
-export const useGetCollections = (): UseQueryResult<Game[]> =>
+export const useGetCollections = (): UseQueryResult<Collection[]> =>
   useQuery({
     queryKey: [queryKeys.collections],
     queryFn: async () => {
