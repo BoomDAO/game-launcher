@@ -7,8 +7,9 @@ export const serverErrorMsg = "Something went wrong.";
 export const navPaths = {
   home: "/",
   upload_games: "/upload-games",
+  upload_games_new: "/upload-games/create-game",
   manage_nfts: "/manage-nfts",
-  manage_payments: "/manage-payments",
+  manage_nfts_new: "/manage-nfts/create-collection",
 };
 
 export const platform_types: SelectOption[] = [

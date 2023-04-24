@@ -25,7 +25,7 @@ const ManageNfts = () => {
       <Button
         size="big"
         rightArrow
-        onClick={() => navigate(`${navPaths.manage_nfts}/new`)}
+        onClick={() => navigate(`${navPaths.manage_nfts_new}`)}
       >
         {t("manage_nfts.button")}
       </Button>
@@ -52,7 +52,7 @@ const ManageNfts = () => {
                 platform={platform}
                 showCycles
                 onClick={() =>
-                  navigate(`${navPaths.upload_games}/${canister_id}`)
+                  navigate(`${navPaths.manage_nfts}/${canister_id}`)
                 }
               />
             ))}

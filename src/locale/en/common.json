@@ -121,11 +121,13 @@
     "new": {
       "title": "Create new collection",
       "button": "Create collection"
-    }
-  },
+    },
 
-  "manage_payments": {
-    "button": "Deploy Payment Canister",
-    "text": "By deploying and configuring this canister, you can let players in your game pay ICP to dynamically mint in-game NFTs. Please download our Unity template first to get started."
+    "update": {
+      "tabs": {
+        "item_1": "View",
+        "item_2": "Mint"
+      }
+    }
   }
 }

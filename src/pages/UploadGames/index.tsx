@@ -28,7 +28,7 @@ const UploadGames = () => {
       <Button
         size="big"
         rightArrow
-        onClick={() => navigate(`${navPaths.upload_games}/create_game`)}
+        onClick={() => navigate(`${navPaths.upload_games_new}`)}
       >
         {t("upload_games.button_upload")}
       </Button>

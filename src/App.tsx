@@ -28,7 +28,7 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
                 <Route
-                  path={`${navPaths.upload_games}/create_game`}
+                  path={`${navPaths.upload_games_new}`}
                   element={<CreateGame />}
                 />
                 <Route
@@ -37,7 +37,7 @@ function App() {
                 />
                 <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
                 <Route
-                  path={`${navPaths.manage_nfts}/new`}
+                  path={`${navPaths.manage_nfts_new}`}
                   element={<CreateCollection />}
                 />
                 <Route
