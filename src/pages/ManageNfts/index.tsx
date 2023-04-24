@@ -1,22 +1,22 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Cog8ToothIcon } from "@heroicons/react/20/solid";
+import { useGetCollections } from "@/api/minting_deployer";
 import Card from "@/components/Card";
+import EmptyGameCard from "@/components/EmptyGameCard";
+import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 import { navPaths } from "@/shared";
 
-const data = Array.from({ length: 9 }).map((_, i) => ({
-  title: `Collection 0${i}`,
-  image: "/banner.png",
-  canisterId: `r44we3-pqaaa-aaaap-aaosq-cai${i}`,
-  cycles: "2.3T",
-}));
-
 const ManageNfts = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const { data: collections = [], isLoading, isError } = useGetCollections();
+
+  console.log("collections", collections);
 
   return (
     <>
@@ -36,18 +36,32 @@ const ManageNfts = () => {
 
       <Space size="medium" />
 
-      <div className="card-container">
-        {data.map(({ canisterId, title, cycles }) => (
-          <Card
-            key={canisterId}
-            icon={<Cog8ToothIcon />}
-            title={title}
-            canisterId={canisterId}
-            showCycles
-            onClick={() => navigate(`${navPaths.manage_nfts}/${canisterId}`)}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <LoadingResult>{t("upload_games.loading")}</LoadingResult>
+      ) : isError ? (
+        <ErrorResult>{t("error")}</ErrorResult>
+      ) : collections.length ? (
+        <>
+          <div className="card-container">
+            {collections.map(({ canister_id, platform, name }) => (
+              <Card
+                key={canister_id}
+                icon={<Cog8ToothIcon />}
+                title={name}
+                canisterId={canister_id}
+                platform={platform}
+                showCycles
+                onClick={() =>
+                  navigate(`${navPaths.upload_games}/${canister_id}`)
+                }
+              />
+            ))}
+            <EmptyGameCard length={collections.length} />
+          </div>
+        </>
+      ) : (
+        <NoDataResult>{t("upload_games.no_games")}</NoDataResult>
+      )}
     </>
   );
 };
