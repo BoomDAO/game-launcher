@@ -125,9 +125,24 @@
     },
 
     "update": {
+      "title": "Manage collection",
+
       "tabs": {
         "item_1": "View",
         "item_2": "Mint"
+      },
+      "view": {
+        "registry": {
+          "title": "View holders",
+          "button": "Get token registry"
+        },
+
+        "token": {
+          "title": "View an NFT’s data",
+          "button": "Get data",
+          "input_index": "Token index",
+          "error": "We did not find this token."
+        }
       }
     }
   }

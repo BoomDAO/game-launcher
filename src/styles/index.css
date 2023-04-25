@@ -8,7 +8,9 @@
   }
 
   input,
-  textarea {
+  input[type="number"],
+  textarea,
+  select {
     @apply w-full rounded-primary border border-black bg-transparent py-4 px-6 focus:border-lightPrimary focus:outline-none focus:ring-0 dark:border-white dark:focus:border-darkPrimary;
   }
 }

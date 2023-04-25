@@ -10,7 +10,7 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
   const activeItem = tabs.find((tab) => tab.id === active);
 
   return (
-    <div className="mb-6">
+    <div className="mb-12">
       <div className="sm:hidden">
         <label htmlFor="tabs" className="sr-only">
           Select a tab
@@ -19,7 +19,6 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
         <select
           id="tabs"
           name="tabs"
-          className="block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
           onChange={(e) => setActive(parseInt(e.target.value, 10))}
           defaultValue={activeItem?.name}
         >
@@ -32,7 +31,7 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
       </div>
 
       <div className="hidden sm:block">
-        <div className="border-b border-gray-200">
+        <div className="border-b border-white">
           <nav className="-mb-px flex" aria-label="Tabs">
             {tabs.map((tab) => (
               <button

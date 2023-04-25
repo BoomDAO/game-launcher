@@ -14,7 +14,6 @@ import { Collection, CreateCollection } from "@/types";
 
 export const queryKeys = {
   collections: "collections",
-  cycle_balance: "cycle_balance",
 };
 
 export const useGetCollections = (): UseQueryResult<Collection[]> =>
@@ -62,3 +61,57 @@ export const useCreateCollection = () => {
     },
   });
 };
+
+export const useGetTokenRegistry = () =>
+  useMutation({
+    mutationFn: async ({
+      canisterId,
+      page = 0,
+    }: {
+      canisterId?: string;
+      page?: number;
+    }) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+        const data = await actor[methods.getRegistry](canisterId, page);
+
+        return data;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+  });
+
+export const useGetTokenMetadata = () =>
+  useMutation({
+    mutationFn: async ({
+      canisterId,
+      index,
+    }: {
+      canisterId?: string;
+      index: string;
+    }) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+        const metadata = (await actor[methods.getTokenMetadata](
+          canisterId,
+          parseInt(index, 10),
+        )) as string;
+
+        const tokenUrl = (await actor[methods.getTokenUrl](
+          canisterId,
+          parseInt(index, 10),
+        )) as string;
+
+        return { metadata, tokenUrl };
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+  });

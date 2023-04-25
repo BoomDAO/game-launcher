@@ -26,7 +26,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         className={cx(
           "flex w-fit items-center rounded-primary uppercase text-white",
-          size === "normal" && "gap-1 px-6 py-2 text-sm",
+          size === "normal" && "gap-2 px-6 py-2 text-sm",
           size === "big" && "gap-2 px-12 py-4 text-base md:text-lg",
           isLoading || disabled
             ? "cursor-default bg-gray-600 text-gray-500"

@@ -21,3 +21,7 @@ export const getPaginationPages = (total?: number, max: number = 9) => {
   const pages = total / max;
   return Math.ceil(pages);
 };
+
+export const modifyRegistryData = (data: string[]) => {
+  console.log("data", data);
+};
