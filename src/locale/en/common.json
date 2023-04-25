@@ -115,12 +115,13 @@
 
     "input_name": "Collection name",
     "input_description": "Collection name",
-    "button_cover_upload": "Upload image",
-    "placeholder_cover_upload": "Upload new cover image",
 
-    "new": {
+    "create": {
       "title": "Create new collection",
-      "button": "Create collection"
+      "button": "Create collection",
+
+      "success": "Collection was created.",
+      "error": "There was some error while creating collection. Please try again!"
     },
 
     "update": {

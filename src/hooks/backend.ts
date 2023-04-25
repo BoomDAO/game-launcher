@@ -78,6 +78,7 @@ export const useMintingDeployerClient = async () => {
     }),
     methods: {
       get_collections: "getCollections",
+      create_collection: "create_collection",
     },
   };
 };

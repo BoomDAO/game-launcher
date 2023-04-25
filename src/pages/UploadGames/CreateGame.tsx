@@ -29,7 +29,7 @@ const scheme = z
   })
   .extend(gameDataScheme);
 
-type Form = z.infer<typeof scheme>;
+type Data = z.infer<typeof scheme>;
 
 const CreateGame = () => {
   const [disableSubmit, setDisableSubmit] = React.useState(false);
@@ -43,7 +43,7 @@ const CreateGame = () => {
     setDisableSubmit(val);
   };
 
-  const { control, handleSubmit, watch } = useForm<Form>({
+  const { control, handleSubmit, watch } = useForm<Data>({
     defaultValues: {
       name: "",
       description: "",
@@ -87,7 +87,7 @@ const CreateGame = () => {
     }
   }, [uploadError]);
 
-  const onUpload = async (values: Form) => {
+  const onUpload = async (values: Data) => {
     isPreparingUpload(false);
 
     await onUploadGame({

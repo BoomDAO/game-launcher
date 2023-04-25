@@ -16,8 +16,6 @@ const ManageNfts = () => {
 
   const { data: collections = [], isLoading, isError } = useGetCollections();
 
-  console.log("collections", collections);
-
   return (
     <>
       <Space size="medium" />
@@ -49,7 +47,7 @@ const ManageNfts = () => {
                 icon={<Cog8ToothIcon />}
                 title={name}
                 canisterId={canister_id}
-                showCycles
+                // showCycles
                 onClick={() =>
                   navigate(`${navPaths.manage_nfts}/${canister_id}`)
                 }

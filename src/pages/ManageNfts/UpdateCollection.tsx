@@ -19,7 +19,7 @@ const UpdateCollection = () => {
   return (
     <>
       <Space size="medium" />
-      <H1>{t("upload_games.update.title")}</H1>
+      <H1>{t("manage_nfts.title")}</H1>
       <Space size="medium" />
 
       <Tabs tabs={tabItems} active={activeTab} setActive={setActiveTab} />
