@@ -1,6 +1,7 @@
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { Principal } from "@dfinity/principal";
 import {
   UseQueryResult,
   useMutation,
@@ -8,7 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAuthContext } from "@/context/authContext";
-import { useMintingDeployerClient } from "@/hooks";
+import { useExtClient, useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { Collection, CreateCollection } from "@/types";
 
@@ -115,3 +116,161 @@ export const useGetTokenMetadata = () =>
       }
     },
   });
+
+export const useAddAdmin = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useExtClient(canisterId);
+
+        return await actor[methods.add_admin](Principal.fromText(principal));
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.admin.add.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.admin.add.success"));
+    },
+  });
+};
+
+export const useRemoveAdmin = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useExtClient(canisterId);
+
+        return await actor[methods.remove_admin](Principal.fromText(principal));
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.admin.remove.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.admin.remove.success"));
+    },
+  });
+};
+
+export const useAddController = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+
+        return await actor[methods.add_controller](canisterId, principal);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.controller.add.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.controller.add.success"));
+    },
+  });
+};
+
+export const useRemoveController = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+
+        return await actor[methods.remove_controller](canisterId, principal);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.controller.remove.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.controller.remove.success"));
+    },
+  });
+};
+
+export const useBurnNft = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      index,
+      canisterId,
+    }: {
+      index: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+
+        return await actor[methods.external_burn](
+          canisterId,
+          parseInt(index, 10),
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.burn.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.burn.success"));
+    },
+  });
+};

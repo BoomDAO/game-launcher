@@ -31,7 +31,7 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
       </div>
 
       <div className="hidden sm:block">
-        <div className="border-b border-white">
+        <div className="border-b border-black dark:border-white">
           <nav className="-mb-px flex" aria-label="Tabs">
             {tabs.map((tab) => (
               <button

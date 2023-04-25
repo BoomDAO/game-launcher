@@ -82,6 +82,9 @@ export const useMintingDeployerClient = async () => {
       getRegistry: "getRegistry",
       getTokenMetadata: "getTokenMetadata",
       getTokenUrl: "getTokenUrl",
+      add_controller: "add_controller",
+      remove_controller: "remove_controller",
+      external_burn: "external_burn",
     },
   };
 };
@@ -101,7 +104,7 @@ export const useLedgerClient = async () => {
   };
 };
 
-export const useExtClient = async () => {
+export const useExtClient = async (canister_id?: string) => {
   const authClient = await getAuthClient();
   const identity = authClient?.getIdentity();
 
@@ -110,9 +113,12 @@ export const useExtClient = async () => {
   return {
     actor: Actor.createActor(ExtFactory, {
       agent,
-      canisterId: ext_canisterId,
+      canisterId: canister_id || ext_canisterId,
     }),
-    methods: {},
+    methods: {
+      add_admin: "ext_addAdmin",
+      remove_admin: "ext_removeAdmin",
+    },
   };
 };
 

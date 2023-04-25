@@ -35,7 +35,7 @@ const CreateCollection = () => {
   return (
     <>
       <Space size="medium" />
-      <H1>{t("manage_nfts.title")}</H1>
+      <H1>{t("manage_nfts.create.title")}</H1>
       <Space size="medium" />
 
       <Form onSubmit={handleSubmit(onSubmit)}>

@@ -5,7 +5,7 @@ interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {}
 
 const Form = ({ children, className, ...rest }: FormProps) => {
   return (
-    <form className={cx("flex flex-col gap-6", className)} {...rest}>
+    <form className={cx("flex w-full flex-col gap-6", className)} {...rest}>
       {children}
     </form>
   );

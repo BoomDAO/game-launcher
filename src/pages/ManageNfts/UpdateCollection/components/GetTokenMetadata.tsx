@@ -4,13 +4,13 @@ import { useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGetTokenMetadata } from "@/api/minting_deployer";
-import { ErrorResult } from "./Results";
-import Form from "./form/Form";
-import FormNumberInput from "./form/FormNumberInput";
-import Box from "./ui/Box";
-import Button from "./ui/Button";
-import Space from "./ui/Space";
-import SubHeading from "./ui/SubHeading";
+import { ErrorResult } from "@/components/Results";
+import Form from "@/components/form/Form";
+import FormNumberInput from "@/components/form/FormNumberInput";
+import Box from "@/components/ui/Box";
+import Button from "@/components/ui/Button";
+import Space from "@/components/ui/Space";
+import SubHeading from "@/components/ui/SubHeading";
 
 const scheme = z.object({
   index: z.string().min(1, "Index is required."),
@@ -44,7 +44,7 @@ const GetTokenMetadata = () => {
           <FormNumberInput
             control={control}
             name="index"
-            placeholder={t("manage_nfts.update.view.token.input_index")}
+            placeholder={t("manage_nfts.update.view.token.input_placeholder")}
             min={0}
           />
 

@@ -129,7 +129,10 @@
 
       "tabs": {
         "item_1": "View",
-        "item_2": "Mint"
+        "item_2": "Admin / Controller",
+        "item_3": "Burn",
+        "item_4": "Mint",
+        "item_5": "Airdrop"
       },
       "view": {
         "registry": {
@@ -140,9 +143,46 @@
         "token": {
           "title": "View an NFT’s data",
           "button": "Get data",
-          "input_index": "Token index",
+          "input_placeholder": "Token index",
           "error": "We did not find this token."
         }
+      },
+      "admin": {
+        "title": "Add / Remove admin",
+        "add": {
+          "input_placeholder": "Principal id to add admin",
+          "button": "Add admin",
+          "error": "There was some error while adding admin. Please try again!",
+          "success": "Admin was added."
+        },
+        "remove": {
+          "input_placeholder": "Principal id to remove admin",
+          "button": "Remove admin",
+          "error": "There was some error while removing admin. Please try again!",
+          "success": "Admin was removed."
+        }
+      },
+      "controller": {
+        "title": "Add / Remove controller",
+        "add": {
+          "input_placeholder": "Principal id to add controller",
+          "button": "Add controller",
+          "error": "There was some error while adding controller. Please try again!",
+          "success": "Controller was added."
+        },
+        "remove": {
+          "input_placeholder": "Principal id to remove controller",
+          "button": "Remove controller",
+          "error": "There was some error while removing controller. Please try again!",
+          "success": "Controller was removed."
+        }
+      },
+      "burn": {
+        "title": "Burn an NFT",
+        "input_placeholder": "Token index",
+        "button": "Burn it",
+        "error": "There was some error while burning NFT. Please try again!",
+        "success": "NFT was burned."
       }
     }
   }
