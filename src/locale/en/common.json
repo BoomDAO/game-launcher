@@ -137,7 +137,8 @@
       "view": {
         "registry": {
           "title": "View holders",
-          "button": "Get token registry"
+          "button": "Get token registry",
+          "error": "We did not find registry."
         },
 
         "token": {

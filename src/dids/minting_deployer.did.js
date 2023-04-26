@@ -107,6 +107,7 @@ export const idlFactory = ({ IDL }) => {
     getTokenIdentifier: IDL.Func([IDL.Text, TokenIndex], [TokenIdentifier], []),
     getTokenMetadata: IDL.Func([IDL.Text, TokenIndex], [IDL.Text], []),
     getTokenUrl: IDL.Func([IDL.Text, TokenIndex], [IDL.Text], []),
+    getUserCollections: IDL.Func([IDL.Text], [IDL.Vec(Collection)], ["query"]),
     getUserNfts: IDL.Func(
       [IDL.Text, IDL.Text],
       [IDL.Vec(IDL.Tuple(TokenIndex, IDL.Text))],

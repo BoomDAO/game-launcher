@@ -17,14 +17,17 @@ export const queryKeys = {
   collections: "collections",
 };
 
-export const useGetCollections = (): UseQueryResult<Collection[]> =>
-  useQuery({
+export const useGetCollections = (): UseQueryResult<Collection[]> => {
+  const { session } = useAuthContext();
+
+  return useQuery({
     queryKey: [queryKeys.collections],
     queryFn: async () => {
       const { actor, methods } = await useMintingDeployerClient();
-      return await actor[methods.get_collections]();
+      return await actor[methods.get_collections](session?.address);
     },
   });
+};
 
 export const useCreateCollection = () => {
   const { session } = useAuthContext();
@@ -74,7 +77,10 @@ export const useGetTokenRegistry = () =>
     }) => {
       try {
         const { actor, methods } = await useMintingDeployerClient();
-        const data = await actor[methods.getRegistry](canisterId, page);
+        const data = (await actor[methods.getRegistry](
+          canisterId,
+          page,
+        )) as string[];
 
         return data;
       } catch (error) {

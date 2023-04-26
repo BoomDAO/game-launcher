@@ -77,7 +77,7 @@ export const useMintingDeployerClient = async () => {
       canisterId: minting_canisterId,
     }),
     methods: {
-      get_collections: "getCollections",
+      get_collections: "getUserCollections",
       create_collection: "create_collection",
       getRegistry: "getRegistry",
       getTokenMetadata: "getTokenMetadata",

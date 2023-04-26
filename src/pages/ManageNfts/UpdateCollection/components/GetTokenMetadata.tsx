@@ -53,7 +53,7 @@ const GetTokenMetadata = () => {
           </Button>
         </Form>
 
-        {data?.metadata === "" ? (
+        {data?.metadata === "" || isError ? (
           <ErrorResult>{t("manage_nfts.update.view.token.error")}</ErrorResult>
         ) : (
           <div className="flex flex-col gap-4">
