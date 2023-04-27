@@ -61,6 +61,7 @@ const Airdrop = () => {
           control={control}
           name="prevent"
           label={t("manage_nfts.update.airdrop.checkbox_prevent")}
+          id="prevent"
         />
 
         <div className="flex flex-col gap-6 md:flex-row">

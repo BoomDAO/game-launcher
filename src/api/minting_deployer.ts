@@ -11,7 +11,7 @@ import {
 import { useAuthContext } from "@/context/authContext";
 import { useExtClient, useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
-import { Airdrop, Collection, CreateCollection } from "@/types";
+import { Airdrop, Collection, CreateCollection, Mint } from "@/types";
 import { b64toType } from "@/utils";
 
 export const queryKeys = {
@@ -308,7 +308,7 @@ export const useAirdrop = () => {
           nft,
           JSON.stringify(metadata),
           type,
-          !!prevent,
+          prevent,
           burn,
         );
       } catch (error) {
@@ -323,6 +323,55 @@ export const useAirdrop = () => {
     },
     onSuccess: () => {
       toast.success(t("manage_nfts.update.airdrop.success"));
+    },
+  });
+};
+
+export const useMint = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      canisterId,
+      principals,
+      metadata,
+      nft,
+      burnTime,
+      address,
+      mintForAddress,
+    }: Mint) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+
+        const type = b64toType(nft);
+        const burn = burnTime
+          ? BigInt(parseInt(burnTime, 10) * 1000000)
+          : BigInt(0);
+
+        const trimPrincipals = principals.replace(/\s/g, "");
+
+        return await actor[methods.batch_mint_to_addresses](
+          canisterId,
+          trimPrincipals.split(","),
+          nft,
+          JSON.stringify(metadata),
+          type,
+          parseInt(mintForAddress, 10),
+          burn,
+          address,
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.mint.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.mint.success"));
     },
   });
 };

@@ -185,18 +185,30 @@
         "error": "There was some error while burning NFT. Please try again!",
         "success": "NFT was burned."
       },
-      "mint": {},
+      "mint": {
+        "title": "Mint or Batch Mint NFTs",
+        "error": "There was some error during mint. Please try again!",
+        "success": "Mint was successful.",
+        "input_placeholder_mint_number": "Number of NFTs to mint per principal/address",
+        "input_placeholder_burn": "(Optional) NFT burn timestamp - unix timestamp in ms",
+        "checkbox_addresses": "Minting to addresses insted of principals",
+        "textarea_addresses": "Comma-separated list of principals or addresses",
+        "textarea_metadata": "NFT metadata",
+        "upload_placeholder": "NFT image file",
+        "upload_button": "Choose img",
+        "button": "Mint NFT(s)"
+      },
       "airdrop": {
         "title": "Airdrop NFTs to holders of an NFT collection",
         "error": "There was some error during airdrop. Please try again!",
-        "success": "Airdrop was successful",
+        "success": "Airdrop was successful.",
         "checkbox_prevent": "Prevent a single principal receiving multiple NFTs",
         "input_placeholder_canister": "Canister id of the NFT collection you want to airdrop to holders of",
         "input_placeholder_burn": "(Optional) NFT burn timestamp - unix timestamp in ms",
-        "textarea_metadata": "NFT Metadata",
+        "textarea_metadata": "NFT metadata",
         "upload_placeholder": "NFT image file",
         "upload_button": "Choose img",
-        "button": "Mint NFTs to holders of an NFT Collection"
+        "button": "Mint NFTs to holders of an NFT collection"
       }
     }
   }

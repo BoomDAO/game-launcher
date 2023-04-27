@@ -12,6 +12,7 @@ interface CardProps {
   platform?: string;
   canisterId?: string;
   showCycles?: boolean;
+  noImage?: boolean;
   onClick?: () => void;
 }
 
@@ -21,6 +22,7 @@ const Card = ({
   platform,
   canisterId,
   showCycles,
+  noImage,
   onClick,
 }: CardProps) => {
   const { t } = useTranslation();
@@ -44,25 +46,27 @@ const Card = ({
             {iconWithProps}
           </div>
 
-          <div className="mb-4 h-40">
-            {loadingImage ? (
-              <Center className="h-full flex-col gap-2">
-                <Loader />
-                <p className="text-sm">{t("card.loading_image")}</p>
-              </Center>
-            ) : !image ? (
-              <Center className="h-full flex-col gap-2">
-                <NoSymbolIcon className="w-10" />
-                <p className="text-sm">{t("card.no_image")}</p>
-              </Center>
-            ) : (
-              <img
-                src={image}
-                alt="game image"
-                className="h-40 w-full object-cover"
-              />
-            )}
-          </div>
+          {!noImage ? (
+            <div className="mb-4 h-40">
+              {loadingImage ? (
+                <Center className="h-full flex-col gap-2">
+                  <Loader />
+                  <p className="text-sm">{t("card.loading_image")}</p>
+                </Center>
+              ) : !image ? (
+                <Center className="h-full flex-col gap-2">
+                  <NoSymbolIcon className="w-10" />
+                  <p className="text-sm">{t("card.no_image")}</p>
+                </Center>
+              ) : (
+                <img
+                  src={image}
+                  alt="game image"
+                  className="h-40 w-full object-cover"
+                />
+              )}
+            </div>
+          ) : null}
 
           <div>
             {platform && (

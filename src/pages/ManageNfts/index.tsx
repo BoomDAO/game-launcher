@@ -48,6 +48,7 @@ const ManageNfts = () => {
                 title={name}
                 canisterId={canister_id}
                 // showCycles
+                noImage
                 onClick={() =>
                   navigate(`${navPaths.manage_nfts}/${canister_id}`)
                 }
