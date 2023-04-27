@@ -85,6 +85,7 @@ export const useMintingDeployerClient = async () => {
       add_controller: "add_controller",
       remove_controller: "remove_controller",
       external_burn: "external_burn",
+      airdrop_to_addresses: "airdrop_to_addresses",
     },
   };
 };

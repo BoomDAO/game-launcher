@@ -21,7 +21,7 @@ const BurnNft = () => {
 
   const { t } = useTranslation();
 
-  const { control, handleSubmit } = useForm<Data>({
+  const { control, handleSubmit, reset } = useForm<Data>({
     defaultValues: {
       index: "",
     },
@@ -30,7 +30,13 @@ const BurnNft = () => {
 
   const { mutate, isLoading } = useBurnNft();
 
-  const onSubmit = (values: Data) => mutate({ ...values, canisterId });
+  const onSubmit = (values: Data) =>
+    mutate(
+      { ...values, canisterId },
+      {
+        onSuccess: () => reset(),
+      },
+    );
 
   return (
     <div>

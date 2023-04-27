@@ -11,7 +11,8 @@ import {
 import { useAuthContext } from "@/context/authContext";
 import { useExtClient, useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
-import { Collection, CreateCollection } from "@/types";
+import { Airdrop, Collection, CreateCollection } from "@/types";
+import { b64toType } from "@/utils";
 
 export const queryKeys = {
   collections: "collections",
@@ -277,6 +278,51 @@ export const useBurnNft = () => {
     },
     onSuccess: () => {
       toast.success(t("manage_nfts.update.burn.success"));
+    },
+  });
+};
+
+export const useAirdrop = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      canisterId,
+      collectionId,
+      metadata,
+      nft,
+      prevent,
+      burnTime,
+    }: Airdrop) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+
+        const type = b64toType(nft);
+        const burn = burnTime
+          ? BigInt(parseInt(burnTime, 10) * 1000000)
+          : BigInt(0);
+
+        return await actor[methods.airdrop_to_addresses](
+          canisterId,
+          collectionId,
+          nft,
+          JSON.stringify(metadata),
+          type,
+          !!prevent,
+          burn,
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.airdrop.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.airdrop.success"));
     },
   });
 };

@@ -21,17 +21,21 @@ const ManageController = () => {
 
   const { t } = useTranslation();
 
-  const { control: addControllerControl, handleSubmit: handleAddController } =
-    useForm<Data>({
-      defaultValues: {
-        principal: "",
-      },
-      resolver: zodResolver(scheme),
-    });
+  const {
+    control: addControllerControl,
+    handleSubmit: handleAddController,
+    reset: resetAdd,
+  } = useForm<Data>({
+    defaultValues: {
+      principal: "",
+    },
+    resolver: zodResolver(scheme),
+  });
 
   const {
     control: removeControllerControll,
     handleSubmit: handleRemoveController,
+    reset: resetRemove,
   } = useForm<Data>({
     defaultValues: {
       principal: "",
@@ -45,9 +49,19 @@ const ManageController = () => {
     useRemoveController();
 
   const onAddController = (values: Data) =>
-    addController({ ...values, canisterId });
+    addController(
+      { ...values, canisterId },
+      {
+        onSuccess: () => resetAdd(),
+      },
+    );
   const onRemoveController = (values: Data) =>
-    removeController({ ...values, canisterId });
+    removeController(
+      { ...values, canisterId },
+      {
+        onSuccess: () => resetRemove(),
+      },
+    );
 
   return (
     <div>

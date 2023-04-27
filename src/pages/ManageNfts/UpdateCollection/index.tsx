@@ -4,11 +4,13 @@ import Tabs from "@/components/Tabs";
 import Divider from "@/components/ui/Divider";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
+import Airdrop from "./components/Airdrop";
 import BurnNft from "./components/BurnNft";
 import GetTokenMetadata from "./components/GetTokenMetadata";
 import GetTokenRegistry from "./components/GetTokenRegistry";
 import ManageAdmin from "./components/ManageAdmin";
 import ManageController from "./components/ManageController";
+import Mint from "./components/Mint";
 
 const UpdateCollection = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -50,6 +52,18 @@ const UpdateCollection = () => {
       {activeTab === 3 && (
         <div className="w-full space-y-12">
           <BurnNft />
+        </div>
+      )}
+
+      {activeTab === 4 && (
+        <div className="w-full space-y-12">
+          <Mint />
+        </div>
+      )}
+
+      {activeTab === 5 && (
+        <div className="w-full space-y-12">
+          <Airdrop />
         </div>
       )}
     </>

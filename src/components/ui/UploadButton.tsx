@@ -16,6 +16,7 @@ export interface UploadButtonProps {
     body: React.ReactNode;
     right?: boolean;
   };
+  value?: string;
 }
 
 const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
@@ -29,11 +30,18 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
       disabled,
       setDisableSubmit,
       hint,
+      value,
     },
     ref,
   ) => {
     const [isLoading, setIsLoading] = React.useState(false);
     const [uploadName, setUploadName] = React.useState("");
+
+    React.useEffect(() => {
+      if (!value) {
+        setUploadName("");
+      }
+    }, [value]);
 
     const hiddenFileInput = React.useRef<HTMLInputElement>(null);
 

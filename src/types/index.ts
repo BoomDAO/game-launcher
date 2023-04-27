@@ -76,3 +76,12 @@ export interface UpdateGameSubmit {
     unknown
   >;
 }
+
+export interface Airdrop {
+  canisterId?: string;
+  collectionId: string;
+  prevent: boolean;
+  metadata: string;
+  nft: string;
+  burnTime: string;
+}

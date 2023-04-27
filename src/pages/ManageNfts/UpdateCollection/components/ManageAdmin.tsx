@@ -21,29 +21,47 @@ const ManageAdmin = () => {
 
   const { t } = useTranslation();
 
-  const { control: addAdminControl, handleSubmit: handleAddAdmin } =
-    useForm<Data>({
-      defaultValues: {
-        principal: "",
-      },
-      resolver: zodResolver(scheme),
-    });
+  const {
+    control: addAdminControl,
+    handleSubmit: handleAddAdmin,
+    reset: resetAdd,
+  } = useForm<Data>({
+    defaultValues: {
+      principal: "",
+    },
+    resolver: zodResolver(scheme),
+  });
 
-  const { control: removeAdminControll, handleSubmit: handleRemoveAdmin } =
-    useForm<Data>({
-      defaultValues: {
-        principal: "",
-      },
-      resolver: zodResolver(scheme),
-    });
+  const {
+    control: removeAdminControll,
+    handleSubmit: handleRemoveAdmin,
+    reset: resetRemove,
+  } = useForm<Data>({
+    defaultValues: {
+      principal: "",
+    },
+    resolver: zodResolver(scheme),
+  });
 
   const { mutate: addAdmin, isLoading: isLoadingAddAdmin } = useAddAdmin();
   const { mutate: removeAdmin, isLoading: isLoadingRemoveAdmin } =
     useRemoveAdmin();
 
-  const onAddAdmin = (values: Data) => addAdmin({ ...values, canisterId });
+  const onAddAdmin = (values: Data) =>
+    addAdmin(
+      { ...values, canisterId },
+      {
+        onSuccess: () => resetAdd(),
+      },
+    );
+
   const onRemoveAdmin = (values: Data) =>
-    removeAdmin({ ...values, canisterId });
+    removeAdmin(
+      { ...values, canisterId },
+      {
+        onSuccess: () => resetRemove(),
+      },
+    );
 
   return (
     <div>
