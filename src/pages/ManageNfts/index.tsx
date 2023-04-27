@@ -35,7 +35,7 @@ const ManageNfts = () => {
       <Space size="medium" />
 
       {isLoading ? (
-        <LoadingResult>{t("upload_games.loading")}</LoadingResult>
+        <LoadingResult>{t("manage_nfts.loading")}</LoadingResult>
       ) : isError ? (
         <ErrorResult>{t("error")}</ErrorResult>
       ) : collections.length ? (
@@ -58,7 +58,7 @@ const ManageNfts = () => {
           </div>
         </>
       ) : (
-        <NoDataResult>{t("upload_games.no_games")}</NoDataResult>
+        <NoDataResult>{t("manage_nfts.no_collections")}</NoDataResult>
       )}
     </>
   );

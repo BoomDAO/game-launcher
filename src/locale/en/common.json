@@ -113,6 +113,9 @@
     "button": "Create new NFT collection",
     "title": "Previously created collections",
 
+    "loading": "Loading collections...",
+    "no_collections": "You have no collections created yet...",
+
     "input_name": "Collection name",
     "input_description": "Collection name",
 
