@@ -20,8 +20,7 @@
     "logout": "Logout",
     "browse_games": "Browse games",
     "upload_games": "Upload games",
-    "manage_NFTs": "Manage NFTs",
-    "manage_payments": "Manage payments"
+    "manage_NFTs": "Airdrop NFTs"
   },
 
   "card": {
@@ -117,7 +116,7 @@
     "no_collections": "You have no collections created yet...",
 
     "input_name": "Collection name",
-    "input_description": "Collection name",
+    "input_description": "Collection description",
 
     "create": {
       "title": "Create new collection",
@@ -193,7 +192,8 @@
         "error": "There was some error during mint. Please try again!",
         "success": "Mint was successful.",
         "input_placeholder_mint_number": "Number of NFTs to mint per principal/address",
-        "input_placeholder_burn": "(Optional) NFT burn timestamp - unix timestamp in ms",
+        "input_placeholder_burn": "(Optional) NFT burn timestamp",
+        "input_helper_burn": "If you specify a timestamp, the NFT will automatically get sent to the burn address when that timestamp is reached. You must specify the timestamp in milliseconds using the UNIX timestamp standard.",
         "checkbox_addresses": "Minting to addresses insted of principals",
         "textarea_addresses": "Comma-separated list of principals or addresses",
         "textarea_metadata": "NFT metadata",
@@ -207,7 +207,9 @@
         "success": "Airdrop was successful.",
         "checkbox_prevent": "Prevent a single principal receiving multiple NFTs",
         "input_placeholder_canister": "Canister id of the NFT collection you want to airdrop to holders of",
-        "input_placeholder_burn": "(Optional) NFT burn timestamp - unix timestamp in ms",
+        "input_helper_canister": "We will fetch all the holders of the NFT collection canister id and mint an NFT to each of the holders. If you check the 'Prevent a single principal receiving multiple NFTs' checkbox then it will mint only one NFT to each holder even if they own multiple NFTs in the collection.",
+        "input_placeholder_burn": "(Optional) NFT burn timestamp",
+        "input_helper_burn": "If you specify a timestamp, the NFT will automatically get sent to the burn address when that timestamp is reached. You must specify the timestamp in milliseconds using the UNIX timestamp standard.",
         "textarea_metadata": "NFT metadata",
         "upload_placeholder": "NFT image file",
         "upload_button": "Choose img",

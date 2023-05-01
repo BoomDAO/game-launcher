@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowUpRightIcon } from "@heroicons/react/20/solid";
 import { cx } from "@/utils";
+import Loader from "./Loader";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "normal" | "big";
@@ -38,7 +39,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {children}
         {isLoading && (
-          <img src="/logo.svg" alt="logo" className="h-6 w-6 animate-pulse" />
+          <Loader
+            className={cx(size === "normal" ? "h-4 w-4" : "ml-2 h-6 w-6")}
+          />
+          // <img src="/logo.svg" alt="logo" className="h-6 w-6 animate-pulse" />
         )}
         {!isLoading && rightArrow && (
           <ArrowUpRightIcon

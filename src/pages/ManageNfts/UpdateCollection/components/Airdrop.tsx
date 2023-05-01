@@ -6,6 +6,7 @@ import { z } from "zod";
 import { useAirdrop } from "@/api/minting_deployer";
 import Form from "@/components/form/Form";
 import FormCheckbox from "@/components/form/FormCheckbox";
+import FormNumberInput from "@/components/form/FormNumberInput";
 import FormTextArea from "@/components/form/FormTextArea";
 import FormTextInput from "@/components/form/FormTextInput";
 import FormUploadButton from "@/components/form/FormUploadButton";
@@ -71,11 +72,18 @@ const Airdrop = () => {
             placeholder={t(
               "manage_nfts.update.airdrop.input_placeholder_canister",
             )}
+            hint={{
+              body: t("manage_nfts.update.airdrop.input_helper_canister"),
+            }}
           />
-          <FormTextInput
+          <FormNumberInput
             control={control}
             name="burnTime"
+            min={0}
             placeholder={t("manage_nfts.update.airdrop.input_placeholder_burn")}
+            hint={{
+              body: t("manage_nfts.update.airdrop.input_helper_burn"),
+            }}
           />
         </div>
 

@@ -16,7 +16,7 @@ const Hint = ({ children, right }: React.PropsWithChildren<HintProps>) => {
 
       <Popover.Panel
         className={cx(
-          "absolute z-10 w-[300px] rounded-primary bg-info p-6 text-white shadow-md md:w-[364px]",
+          "absolute z-10 w-[300px] rounded-primary bg-info p-6 leading-5 text-white shadow-md md:w-[364px]",
           right ? "-left-4" : "-right-4",
         )}
       >

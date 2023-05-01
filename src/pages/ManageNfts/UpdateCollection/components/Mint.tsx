@@ -68,10 +68,14 @@ const Mint = () => {
               "manage_nfts.update.mint.input_placeholder_mint_number",
             )}
           />
-          <FormTextInput
+          <FormNumberInput
             control={control}
             name="burnTime"
+            min={0}
             placeholder={t("manage_nfts.update.mint.input_placeholder_burn")}
+            hint={{
+              body: t("manage_nfts.update.mint.input_helper_burn"),
+            }}
           />
         </div>
 

@@ -14,8 +14,6 @@ const GetTokenRegistry = () => {
 
   const { mutate, data, isLoading } = useGetTokenRegistry();
 
-  console.log("data", data);
-
   return (
     <div>
       <SubHeading>{t("manage_nfts.update.view.registry.title")}</SubHeading>
