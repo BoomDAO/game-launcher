@@ -48,6 +48,7 @@ const UploadGames = () => {
           <div className="card-container">
             {games.map(({ canister_id, platform, name }) => (
               <Card
+                type="game"
                 key={canister_id}
                 icon={<Cog8ToothIcon />}
                 title={name}

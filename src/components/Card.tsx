@@ -1,7 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { NoSymbolIcon } from "@heroicons/react/20/solid";
-import { useGetCycleBalance, useGetGameCover } from "@/api/games_deployer";
+import { useGetGameCover, useGetGameCycleBalance } from "@/api/games_deployer";
+import { useGetCollectionCycleBalance } from "@/api/minting_deployer";
 import Center from "./ui/Center";
 import Divider from "./ui/Divider";
 import Loader from "./ui/Loader";
@@ -14,6 +15,7 @@ interface CardProps {
   showCycles?: boolean;
   noImage?: boolean;
   onClick?: () => void;
+  type: "game" | "collection";
 }
 
 const Card = ({
@@ -24,15 +26,27 @@ const Card = ({
   showCycles,
   noImage,
   onClick,
+  type,
 }: CardProps) => {
   const { t } = useTranslation();
 
   const { data: image, isLoading: loadingImage } = useGetGameCover(canisterId);
-  const { data: cycleBalance } = useGetCycleBalance(canisterId, showCycles);
+
+  const { data: gameCycleBalance } = useGetGameCycleBalance(
+    canisterId,
+    showCycles && type === "game",
+  );
+
+  const { data: collectionCycleBalance } = useGetCollectionCycleBalance(
+    canisterId,
+    showCycles && type === "collection",
+  );
 
   const iconWithProps = React.cloneElement(icon, {
     className: "w-8 h-8 bg-black rounded-full text-white p-2 min-w-[32px]",
   });
+
+  const cycles = gameCycleBalance || collectionCycleBalance || "0.00T";
 
   return (
     <Center>
@@ -90,7 +104,7 @@ const Card = ({
             {showCycles && (
               <div className="mt-4 flex items-center gap-2">
                 <p className="font-semibold">{t("card.cycles")}: </p>
-                <p>{cycleBalance || "0.00T"}</p>
+                <p>{cycles}</p>
               </div>
             )}
           </div>

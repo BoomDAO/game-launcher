@@ -1,6 +1,7 @@
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 import {
   UseQueryResult,
@@ -12,10 +13,13 @@ import { useAuthContext } from "@/context/authContext";
 import { useExtClient, useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { Airdrop, Collection, CreateCollection, Mint } from "@/types";
-import { b64toType } from "@/utils";
+import { b64toType, formatCycleBalance, getAgent } from "@/utils";
+// @ts-ignore
+import { idlFactory as ExtFactory } from "../dids/ext.did.js";
 
 export const queryKeys = {
   collections: "collections",
+  collection_cycle_balance: "collection_cycle_balance",
 };
 
 export const useGetCollections = (): UseQueryResult<Collection[]> => {
@@ -337,7 +341,6 @@ export const useMint = () => {
       metadata,
       nft,
       burnTime,
-      address,
       mintForAddress,
     }: Mint) => {
       try {
@@ -358,7 +361,7 @@ export const useMint = () => {
           type,
           parseInt(mintForAddress, 10),
           burn,
-          address,
+          undefined,
         );
       } catch (error) {
         if (error instanceof Error) {
@@ -375,3 +378,22 @@ export const useMint = () => {
     },
   });
 };
+
+export const useGetCollectionCycleBalance = (
+  canisterId?: string,
+  showCycles?: boolean,
+): UseQueryResult<string> =>
+  useQuery({
+    enabled: !!canisterId && !!showCycles,
+    queryKey: [queryKeys.collection_cycle_balance, canisterId],
+    queryFn: async () => {
+      const agent = await getAgent();
+      const actor = Actor.createActor(ExtFactory, {
+        agent,
+        canisterId: canisterId!,
+      });
+
+      const balance = Number(await actor.availableCycles());
+      return `${formatCycleBalance(balance)}T`;
+    },
+  });

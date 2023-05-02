@@ -67,6 +67,7 @@ const Home = () => {
           <div className="card-container">
             {games.map(({ canister_id, platform, name, url }) => (
               <Card
+                type="game"
                 key={canister_id}
                 icon={<ArrowUpRightIcon />}
                 title={name}

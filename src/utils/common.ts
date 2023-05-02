@@ -21,3 +21,6 @@ export const getPaginationPages = (total?: number, max: number = 9) => {
   const pages = total / max;
   return Math.ceil(pages);
 };
+
+export const formatCycleBalance = (balance: number) =>
+  (balance * 0.0000000000001).toFixed(2);

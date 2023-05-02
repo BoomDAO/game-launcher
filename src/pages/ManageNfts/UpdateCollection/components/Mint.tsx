@@ -20,7 +20,6 @@ const scheme = z.object({
   metadata: z.string().min(1, "Metadata are required."),
   nft: z.string().min(1, "Image is required."),
   burnTime: z.string(),
-  address: z.boolean(),
 });
 
 type Data = z.infer<typeof scheme>;
@@ -37,7 +36,6 @@ const Mint = () => {
       nft: "",
       burnTime: "",
       principals: "",
-      address: false,
     },
     resolver: zodResolver(scheme),
   });
@@ -83,13 +81,6 @@ const Mint = () => {
           control={control}
           name="metadata"
           placeholder={t("manage_nfts.update.mint.textarea_metadata")}
-        />
-
-        <FormCheckbox
-          control={control}
-          name="address"
-          label={t("manage_nfts.update.mint.checkbox_addresses")}
-          id="address"
         />
 
         <FormTextArea

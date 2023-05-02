@@ -194,7 +194,6 @@
         "input_placeholder_mint_number": "Number of NFTs to mint per principal/address",
         "input_placeholder_burn": "(Optional) NFT burn timestamp",
         "input_helper_burn": "If you specify a timestamp, the NFT will automatically get sent to the burn address when that timestamp is reached. You must specify the timestamp in milliseconds using the UNIX timestamp standard.",
-        "checkbox_addresses": "Minting to addresses insted of principals",
         "textarea_addresses": "Comma-separated list of principals or addresses",
         "textarea_metadata": "NFT metadata",
         "upload_placeholder": "NFT image file",

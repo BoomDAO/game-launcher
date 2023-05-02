@@ -20,7 +20,12 @@ import {
   UpdateGameData,
   UpdateGameSubmit,
 } from "@/types";
-import { getAgent, uploadGameFiles, uploadZip } from "@/utils";
+import {
+  formatCycleBalance,
+  getAgent,
+  uploadGameFiles,
+  uploadZip,
+} from "@/utils";
 // @ts-ignore
 import { idlFactory as GamesDeployerFactory } from "../dids/games_deployer.did.js";
 
@@ -186,7 +191,7 @@ export const useUpdateGameCover = () =>
     },
   });
 
-export const useGetCycleBalance = (
+export const useGetGameCycleBalance = (
   canisterId?: string,
   showCycles?: boolean,
 ): UseQueryResult<string> =>
@@ -201,7 +206,7 @@ export const useGetCycleBalance = (
       });
 
       const balance = Number(await actor.cycleBalance());
-      return `${(balance * 0.0000000000001).toFixed(2)}T`;
+      return `${formatCycleBalance(balance)}T`;
     },
   });
 

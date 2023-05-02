@@ -90,7 +90,6 @@ export interface Mint {
   mintForAddress: string;
   canisterId?: string;
   principals: string;
-  address: boolean;
   metadata: string;
   nft: string;
   burnTime: string;

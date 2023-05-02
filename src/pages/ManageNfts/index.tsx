@@ -43,6 +43,7 @@ const ManageNfts = () => {
           <div className="card-container">
             {collections.map(({ canister_id, name }) => (
               <Card
+                type="collection"
                 key={canister_id}
                 icon={<Cog8ToothIcon />}
                 title={name}
