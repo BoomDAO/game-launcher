@@ -19,6 +19,7 @@ export interface Game {
   description: string;
   platform: Platform;
   cover: string;
+  verified: boolean;
 }
 
 export interface Collection {
