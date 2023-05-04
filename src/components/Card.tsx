@@ -14,6 +14,7 @@ interface CardProps {
   canisterId?: string;
   showCycles?: boolean;
   noImage?: boolean;
+  verified: boolean;
   onClick?: () => void;
   type: "game" | "collection";
 }
@@ -25,6 +26,7 @@ const Card = ({
   canisterId,
   showCycles,
   noImage,
+  verified,
   onClick,
   type,
 }: CardProps) => {
@@ -56,10 +58,18 @@ const Card = ({
       >
         <div className="h-full w-full rounded-primary bg-white px-6 py-6 dark:bg-dark">
           <div className="mb-6 flex justify-between">
-            <p className="truncate text-2xl">{title}</p>
+            <div className="flex justify-content-center items-center">
+              <p className="truncate text-2xl">{title}</p>
+              {verified ? (
+                <img
+                  src="/verified.png"
+                  alt="game image"
+                  className="h-5 w-5"
+                />
+              ) : null}
+            </div>
             {iconWithProps}
           </div>
-
           {!noImage ? (
             <div className="mb-4 h-40">
               {loadingImage ? (

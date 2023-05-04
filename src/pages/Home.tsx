@@ -65,7 +65,7 @@ const Home = () => {
       ) : games.length ? (
         <>
           <div className="card-container">
-            {games.map(({ canister_id, platform, name, url }) => (
+            {games.map(({ canister_id, platform, name, url , verified}) => (
               <Card
                 type="game"
                 key={canister_id}
@@ -73,6 +73,7 @@ const Home = () => {
                 title={name}
                 canisterId={canister_id}
                 platform={platform}
+                verified={verified}
                 onClick={() => window.open(url, "_blank")}
               />
             ))}
