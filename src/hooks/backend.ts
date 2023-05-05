@@ -13,8 +13,9 @@ import { idlFactory as MintingDeployerFactory } from "../dids/minting_deployer.d
 // @ts-ignore
 import { idlFactory as ManagementFactory } from "../dids/minting_deployer.did.js";
 
-const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai";
-const minting_canisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
+const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; //game deployer
+const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; //for staging
+// const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; //for prod
 const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
