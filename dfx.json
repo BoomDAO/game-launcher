@@ -1,0 +1,20 @@
+{
+    "canisters": {
+        "game-launcher": {
+            "frontend": {
+                "entrypoint": "dist/index.html"
+            },
+            "source": [
+                "dist/"
+            ],
+            "type": "assets"
+        }
+    },
+    "defaults": {
+        "build": {
+            "args": "",
+            "packtool": ""
+        }
+    },
+    "version": 1
+}

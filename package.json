@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "",
     "tsc": "tsc --noEmit --incremental",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "prepare": "husky install"
