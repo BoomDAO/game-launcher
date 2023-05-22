@@ -62,12 +62,12 @@ export const useGetTotalUserGames = () => {
   });
 };
 
-export const useGetGames = (page: number = 1): UseQueryResult<Game[]> =>
+export const useGetGames = (page: number = 1, type?: String): UseQueryResult<Game[]> =>
   useQuery({
-    queryKey: [queryKeys.games, page],
+    queryKey: [queryKeys.games, page, type],
     queryFn: async () => {
       const { actor, methods } = await useGameClient();
-      return await actor[methods.get_all_games](page - 1);
+      return await actor[methods.get_all_games](page - 1, type);
     },
   });
 

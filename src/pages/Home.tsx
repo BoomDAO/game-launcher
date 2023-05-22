@@ -6,6 +6,7 @@ import { useGetGames, useGetTotalGames } from "@/api/games_deployer";
 import Card from "@/components/Card";
 import EmptyGameCard from "@/components/EmptyGameCard";
 import Pagination from "@/components/Pagination";
+import Slider from "@/components/Slider";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
@@ -16,6 +17,7 @@ import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
 
 const Home = () => {
+  const [sorting, setSorting] = React.useState("newest");
   const [pageNumber, setPageNumber] = React.useState(1);
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ const Home = () => {
   const { setIsOpenNavSidebar } = useGlobalContext();
   const { session } = useAuthContext();
 
-  const { data: games = [], isError, isLoading } = useGetGames(pageNumber);
+  const { data: games = [], isError, isLoading } = useGetGames(pageNumber, sorting);
   const { data: totalGames } = useGetTotalGames();
 
   const onUploadButtonClick = () => {
@@ -33,11 +35,7 @@ const Home = () => {
 
   return (
     <>
-      <img
-        src="/banner.png"
-        alt="banner"
-        className="h-72 w-full rounded-primary object-cover shadow md:h-96"
-      />
+      <Slider />
       <Space />
 
       <H1 className="flex flex-wrap gap-3 font-semibold leading-none">
@@ -56,16 +54,27 @@ const Home = () => {
           {t("home.button_upload")}
         </Button>
       </H1>
-
-      <Space size="medium" />
+      <>
+        <div className="w-full max-w-screen-xl flex items-center pt-10 pb-10 justify-end">
+          <div><label className="pr-3">Sort By : </label></div>
+          <div><select
+          onChange={(event)=> setSorting(event.target.value)} 
+          className="w-60 h-10 p-2 cursor-pointer" name="sorting" id="sorting">
+            <option value="newest">Newest</option>
+            <option value="featured">Featured</option>
+          </select>
+          </div>
+        </div>
+      </>
       {isLoading ? (
         <LoadingResult>{t("home.loading")}</LoadingResult>
       ) : isError ? (
         <ErrorResult>{t("error")}</ErrorResult>
-      ) : games.length ? (
+      ) : 
+      games.length ? (
         <>
           <div className="card-container">
-            {games.map(({ canister_id, platform, name, url , verified}) => (
+            {games.map(({ canister_id, platform, name, url, verified }) => (
               <Card
                 type="game"
                 key={canister_id}

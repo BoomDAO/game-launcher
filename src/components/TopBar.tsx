@@ -55,7 +55,7 @@ const TopBar = () => {
             <div className="flex items-center justify-between">
               <div className="relative mb-2 flex-shrink-0">
                 <img
-                  src={`/logo-${theme}.png`}
+                  src={`/logo-${theme}.svg`}
                   width={164}
                   alt="logo"
                   className="hidden md:flex"

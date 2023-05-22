@@ -77,8 +77,6 @@ export interface UnsetAssetContentArguments {
   'key' : Key,
   'content_encoding' : string,
 }
-export type ValidationResult = { 'Ok' : string } |
-  { 'Err' : string };
 export interface _SERVICE {
   'authorize' : ActorMethod<[Principal], undefined>,
   'certified_tree' : ActorMethod<
@@ -170,14 +168,5 @@ export interface _SERVICE {
     ],
     undefined
   >,
-  'take_ownership' : ActorMethod<[], undefined>,
   'unset_asset_content' : ActorMethod<[UnsetAssetContentArguments], undefined>,
-  'validate_grant_permission' : ActorMethod<
-    [GrantPermission],
-    ValidationResult
-  >,
-  'validate_revoke_permission' : ActorMethod<
-    [RevokePermission],
-    ValidationResult
-  >,
 }

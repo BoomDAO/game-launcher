@@ -38,7 +38,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'cycleBalance' : IDL.Func([], [IDL.Nat], ['query']),
     'get_all_admins' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
-    'get_all_asset_canisters' : IDL.Func([IDL.Nat], [IDL.Vec(Game)], ['query']),
+    'get_all_asset_canisters' : IDL.Func(
+        [IDL.Nat, IDL.Text],
+        [IDL.Vec(Game)],
+        ['query'],
+      ),
     'get_epoch_in_nano' : IDL.Func([], [IDL.Int], []),
     'get_game' : IDL.Func([IDL.Text], [IDL.Opt(Game)], ['query']),
     'get_game_cover' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
@@ -53,6 +57,7 @@ export const idlFactory = ({ IDL }) => {
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'remove_admin' : IDL.Func([IDL.Text], [], []),
     'remove_canister' : IDL.Func([IDL.Text], [], []),
+    'remove_game_verification' : IDL.Func([IDL.Text], [], []),
     'update_game_cover' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'update_game_data' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
@@ -62,6 +67,4 @@ export const idlFactory = ({ IDL }) => {
     'wallet_receive' : IDL.Func([], [IDL.Nat], []),
   });
 };
-export const init = ({ IDL }) => {
-  return [];
-};
+export const init = ({ IDL }) => { return []; };
