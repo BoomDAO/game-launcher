@@ -3,18 +3,15 @@
   "button_login": "Login via NFID",
   "previous": "Previous",
   "next": "Next",
-
   "404": {
     "title": "Are you lost?",
     "message": "Sorry, we couldn’t find the page you’re looking for.",
     "button_home": "Go back home"
   },
-
   "footer": {
     "follow": "Follow us",
     "copyright": ""
   },
-
   "navigation": {
     "login": "Login",
     "logout": "Logout",
@@ -22,7 +19,6 @@
     "upload_games": "Upload games",
     "manage_NFTs": "Airdrop NFTs"
   },
-
   "card": {
     "platform": "Platform",
     "canister_id": "Canister Id",
@@ -30,7 +26,6 @@
     "loading_image": "Loading image...",
     "no_image": "No image found"
   },
-
   "home": {
     "loading": "Loading games...",
     "button_upload": "Upload my game",
@@ -44,30 +39,24 @@
       "text_6": "blockchain"
     }
   },
-
   "upload_games": {
     "loading": "Loading games...",
     "title": "Previously uploaded games",
     "button_upload": "Upload new game",
     "no_games": "You have no games created yet...",
-
     "input_name": "Game name",
     "input_description": "Game description",
     "button_cover_upload": "Upload image",
     "placeholder_cover_upload": "Upload new cover image",
     "button_game_upload": "Upload file",
     "placeholder_game_upload": "Upload new game files",
-
     "create": {
       "title": "Upload new game",
       "button": "Upload game",
-
       "success_update": "Game was created.",
-
       "loading_game": "Uploading game data...",
       "error_game": "There was some error while creating data. Please try again!",
       "success_game": "Game data were saved.",
-
       "loading_files": "Uploading game files... Please wait till finish.",
       "error_files": "There was some error while uploading files, but game canister was created. Please try again!",
       "success_files": "Game files were created."
@@ -77,22 +66,17 @@
       "button": "Update game",
       "loading": "Loading game...",
       "error": "We did not found any game... :(",
-
       "success_update": "Game was updated.",
-
       "loading_game": "Uploading game data...",
       "error_game": "There was some error while uploading data. Please try again!",
       "success_game": "Game data were updated.",
-
       "loading_cover": "Uploading game cover...",
       "error_cover": "There was some error while uploading cover. Please try again!",
       "success_cover": "Game cover was updated.",
-
       "loading_files": "Uploading game files... Please wait till finish.",
       "error_files": "There was some error while uploading files. Please try again!",
       "success_files": "Game files were updated."
     },
-
     "hint": {
       "browser": {
         "title": "Browser upload:",
@@ -106,28 +90,21 @@
       }
     }
   },
-
   "manage_nfts": {
     "button": "Create new NFT collection",
     "title": "Previously created collections",
-
     "loading": "Loading collections...",
     "no_collections": "You have no collections created yet...",
-
     "input_name": "Collection name",
     "input_description": "Collection description",
-
     "create": {
       "title": "Create new collection",
       "button": "Create collection",
-
       "success": "Collection was created.",
       "error": "There was some error while creating collection. Please try again!"
     },
-
     "update": {
       "title": "Manage collection",
-
       "tabs": {
         "item_1": "View",
         "item_2": "Admin / Controller",
@@ -141,7 +118,6 @@
           "button": "Get token registry",
           "error": "We did not find registry."
         },
-
         "token": {
           "title": "View an NFT’s data",
           "button": "Get data",
@@ -214,5 +190,22 @@
         "button": "Mint NFTs to holders of an NFT collection"
       }
     }
-  }
+  },
+  "sliderImages": [
+    {
+        "image": "/banner.png",
+        "url": "https://5iuic-ryaaa-aaaal-ack7a-cai.raw.icp0.io/",
+        "name": "Plethora"
+    },
+    {
+        "image": "/game-1.png",
+        "url": "https://fsowo-7aaaa-aaaal-acdxa-cai.raw.icp0.io/",
+        "name": "Cubetopia"
+    },
+    {
+        "image": "/game-2.png",
+        "url": "https://edeir-hiaaa-aaaal-acdsq-cai.raw.icp0.io/",
+        "name": "Degen Spin"
+    }
+  ]
 }
