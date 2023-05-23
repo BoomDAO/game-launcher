@@ -17,7 +17,7 @@ import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
 
 const Home = () => {
-  const [sorting, setSorting] = React.useState("newest");
+  const [sorting, setSorting] = React.useState("featured");
   const [pageNumber, setPageNumber] = React.useState(1);
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -60,8 +60,8 @@ const Home = () => {
           <div><select
           onChange={(event)=> setSorting(event.target.value)} 
           className="w-60 h-10 p-2 cursor-pointer" name="sorting" id="sorting">
-            <option value="newest">Newest</option>
             <option value="featured">Featured</option>
+            <option value="newest">Newest</option>
           </select>
           </div>
         </div>
