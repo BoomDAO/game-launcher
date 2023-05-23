@@ -1,0 +1,9 @@
+.currentSlide {
+    transition-duration: 1s ease;
+    opacity: 1;
+ }
+ .currentSlide.active {
+    opacity: 1;
+    transition-duration: 1s;
+    transform: scale(1);
+ }
