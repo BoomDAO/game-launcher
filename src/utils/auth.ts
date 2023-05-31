@@ -2,9 +2,10 @@ import { HttpAgent, Identity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
 import fetch from "cross-fetch";
 
-const APPLICATION_NAME = "IC_GAMES_DEPLOYER";
+const APPLICATION_NAME = "BoomDAO";
+const APPLICATION_LOGO_URL = "https://i.postimg.cc/L4f471FF/logo.png";
 const AUTH_PATH =
-  "/authenticate/?applicationName=" + APPLICATION_NAME + "#authorize";
+  "/authenticate/?applicationName=" + APPLICATION_NAME+"&applicationLogo="+APPLICATION_LOGO_URL+"#authorize";
 const NFID_AUTH_URL = "https://nfid.one" + AUTH_PATH;
 
 export const nfidLogin = async (authClient: AuthClient) => {
@@ -15,7 +16,6 @@ export const nfidLogin = async (authClient: AuthClient) => {
         `left=${window.screen.width / 2 - 525 / 2}, ` +
         `top=${window.screen.height / 2 - 705 / 2},` +
         `toolbar=0,location=0,menubar=0,width=525,height=705`,
-      derivationOrigin: "https://qyomk-5qaaa-aaaai-ab7ga-cai.ic0.app",
       onSuccess: () => {
         resolve(true);
       },

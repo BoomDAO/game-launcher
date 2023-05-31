@@ -24,19 +24,20 @@ export const idlFactory = ({ IDL }) => {
   const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   return IDL.Service({
     'add_admin' : IDL.Func([IDL.Text], [], []),
+    'adminUpdateFeaturedGames' : IDL.Func([IDL.Text], [], []),
     'admin_create_game' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
         [IDL.Text],
         [],
       ),
     'admin_remove_game' : IDL.Func([IDL.Text], [], []),
-    'admin_verify_game' : IDL.Func([IDL.Text], [], []),
     'create_game_canister' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
         [IDL.Text],
         [],
       ),
     'cycleBalance' : IDL.Func([], [IDL.Nat], ['query']),
+    'getFeaturedGames' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'get_all_admins' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'get_all_asset_canisters' : IDL.Func(
         [IDL.Nat, IDL.Text],
@@ -57,7 +58,6 @@ export const idlFactory = ({ IDL }) => {
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'remove_admin' : IDL.Func([IDL.Text], [], []),
     'remove_canister' : IDL.Func([IDL.Text], [], []),
-    'remove_game_verification' : IDL.Func([IDL.Text], [], []),
     'update_game_cover' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'update_game_data' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
