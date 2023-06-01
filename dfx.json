@@ -8,6 +8,15 @@
                 "dist/"
             ],
             "type": "assets"
+        },
+        "game-launcher-staging": {
+            "frontend": {
+                "entrypoint": "dist/index.html"
+            },
+            "source": [
+                "dist/"
+            ],
+            "type": "assets"
         }
     },
     "defaults": {
