@@ -201,9 +201,9 @@
     "title": "Previously deployed tokens",
     "input_name": "Token Name",
     "input_symbol": "Token Symbol",
-    "input_amount": "Token Amount",
-    "input_decimals": "Token Decimals",
-    "input_fee": "Token Transaction Fee",
+    "input_amount": "Total Supply",
+    "input_decimals": "Token Decimal Places",
+    "input_fee": "Token Transaction Fee (Use Precision Value)",
     "input_description": "Token Description",
     "deploy_token": {
       "title": "Deploy New Token",
