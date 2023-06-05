@@ -17,7 +17,8 @@
     "logout": "Logout",
     "browse_games": "Browse games",
     "upload_games": "Upload games",
-    "manage_NFTs": "Airdrop NFTs"
+    "manage_NFTs": "Airdrop NFTs",
+    "token_deployer": "Token Deployer"
   },
   "card": {
     "platform": "Platform",
@@ -189,6 +190,25 @@
         "upload_button": "Choose img",
         "button": "Mint NFTs to holders of an NFT collection"
       }
+    }
+  },
+  "token_deployer": {
+    "button_token_deploy": "Deploy New Token",
+    "button_logo_upload": "Upload Token Logo",
+    "placeholder_logo_upload": "Token Logo",
+    "loading": "Loading Tokens ...",
+    "no_tokens": "you have no tokens created yet ...",
+    "title": "Previously deployed tokens",
+    "input_name": "Token Name",
+    "input_symbol": "Token Symbol",
+    "input_amount": "Token Amount",
+    "input_decimals": "Token Decimals",
+    "input_fee": "Token Transaction Fee",
+    "input_description": "Token Description",
+    "deploy_token": {
+      "title": "Deploy New Token",
+      "deploy_button": "Deploy New Token",
+      "success_update": "Token created"
     }
   },
   "sliderImages": [

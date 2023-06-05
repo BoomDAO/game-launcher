@@ -46,7 +46,7 @@ const UploadGames = () => {
       ) : games.length ? (
         <>
           <div className="card-container">
-            {games.map(({ canister_id, platform, name }) => (
+            {games.map(({ canister_id, platform, name, verified }) => (
               <Card
                 type="game"
                 key={canister_id}
@@ -58,6 +58,7 @@ const UploadGames = () => {
                 onClick={() =>
                   navigate(`${navPaths.upload_games}/${canister_id}`)
                 }
+                verified={verified}
               />
             ))}
             <EmptyGameCard length={games.length} />

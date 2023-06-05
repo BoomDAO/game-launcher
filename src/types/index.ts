@@ -32,6 +32,9 @@ export interface CreateCollection {
   description: string;
 }
 
+export interface CreateTokenData 
+  extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "decimals" | "fee" | "amount"> {}
+
 export interface CreateGameData
   extends Pick<Game, "name" | "description" | "cover" | "platform"> {}
 
@@ -40,6 +43,12 @@ export interface UploadGameFileData
 
 export interface CreateGameFiles extends UploadGameFileData {
   files: GameFile[];
+}
+
+export interface CreateTokenSubmit {
+  values: CreateTokenData;
+  mutateData: UseMutateAsyncFunction<string, unknown, CreateTokenData, unknown>;
+  canisterId?: string;
 }
 
 export interface CreateGameSubmit {
@@ -95,3 +104,23 @@ export interface Mint {
   nft: string;
   burnTime: string;
 }
+
+export interface Token {
+  name: string;
+  symbol: string;
+  description: string;
+  canister: string;
+  cover: string;
+}
+
+export interface TokenData {
+  name: string;
+  symbol: string;
+  description: string;
+  logo: string;
+  decimals: string;
+  fee: string;
+  amount: string;
+};
+
+

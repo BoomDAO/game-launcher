@@ -14,6 +14,8 @@ import NotFound from "./pages/NotFound";
 import UploadGames from "./pages/UploadGames";
 import CreateGame from "./pages/UploadGames/CreateGame";
 import UpdateGame from "./pages/UploadGames/UpdateGame";
+import TokenDeployer from "./pages/Tokens";
+import DeployToken from "./pages/Tokens/DeployToken";
 
 function App() {
   return (
@@ -43,6 +45,14 @@ function App() {
                 <Route
                   path={`${navPaths.manage_nfts}/:canisterId`}
                   element={<UpdateCollection />}
+                />
+                <Route
+                  path={`${navPaths.token_deployer}`}
+                  element={<TokenDeployer />}
+                />
+                <Route
+                  path={`${navPaths.deploy_new_token}`}
+                  element={<DeployToken />}
                 />
               </Route>
 

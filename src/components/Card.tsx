@@ -6,6 +6,7 @@ import { useGetCollectionCycleBalance } from "@/api/minting_deployer";
 import Center from "./ui/Center";
 import Divider from "./ui/Divider";
 import Loader from "./ui/Loader";
+import { useGetTokenCycleBalance } from "@/api/token_deployer";
 
 interface CardProps {
   title: string;
@@ -14,9 +15,10 @@ interface CardProps {
   canisterId?: string;
   showCycles?: boolean;
   noImage?: boolean;
-  verified: boolean;
+  verified?: boolean;
+  symbol?: string;
   onClick?: () => void;
-  type: "game" | "collection";
+  type: "game" | "collection" | "token";
 }
 
 const Card = ({
@@ -27,6 +29,7 @@ const Card = ({
   showCycles,
   noImage,
   verified,
+  symbol,
   onClick,
   type,
 }: CardProps) => {
@@ -57,7 +60,7 @@ const Card = ({
         className="gradient-bg w-full cursor-pointer rounded-primary p-0.5"
       >
         <div className="h-full w-full rounded-primary bg-white px-6 py-6 dark:bg-dark">
-          <div className="mb-6 flex justify-between">
+          <div className="mb-2 flex justify-between">
             <div className="flex justify-content-center items-center">
               <p className="truncate text-2xl">{title}</p>
               {verified ? (
@@ -70,6 +73,12 @@ const Card = ({
             </div>
             {iconWithProps}
           </div>
+          {symbol ? (
+            <div className="text-1xl flex justify-content-center">
+              <p className="font-semibold">Symbol :</p>
+              <p className="pl-3 font-bold">{symbol}</p>
+            </div>
+          ) : null}
           {!noImage ? (
             <div className="mb-4 h-40">
               {loadingImage ? (
@@ -106,7 +115,7 @@ const Card = ({
 
             {canisterId && (
               <div>
-                <p className="font-semibold">{t("card.canister_id")}: </p>
+                <p className="font-semibold">{t("card.canister_id")} : </p>
                 <p>{canisterId}</p>
               </div>
             )}
