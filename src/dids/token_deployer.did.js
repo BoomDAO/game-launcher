@@ -22,7 +22,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     'addAdmin' : IDL.Func([IDL.Text], [], []),
     'createTokenCanister' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Text, IDL.Nat8, IDL.Nat],
         [IDL.Text],
         [],
       ),
@@ -35,6 +35,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getOwner' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
     'getTokenDetails' : IDL.Func([IDL.Text], [IDL.Opt(Token)], ['query']),
+    'getTokens' : IDL.Func([IDL.Nat], [IDL.Vec(Token)], ['query']),
     'getTotalTokens' : IDL.Func([], [IDL.Nat], ['query']),
     'getUserTokens' : IDL.Func(
         [IDL.Text, IDL.Nat],
@@ -43,6 +44,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getUserTotalTokens' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
+    'remove' : IDL.Func([IDL.Text], [], []),
     'removeAdmin' : IDL.Func([IDL.Text], [], []),
     'update' : IDL.Func([IDL.Text], [], []),
     'updateTokenCover' : IDL.Func([IDL.Text, IDL.Text], [Result], []),

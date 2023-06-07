@@ -193,6 +193,13 @@
     }
   },
   "token_deployer": {
+    "index": {
+      "title": "Game Launcher Tokens",
+      "tabs": {
+        "item_2": "Your Tokens",
+        "item_1": "All Tokens"
+      }
+    },
     "button_token_deploy": "Deploy New Token",
     "button_logo_upload": "Upload Token Logo",
     "placeholder_logo_upload": "Token Logo",
@@ -208,7 +215,40 @@
     "deploy_token": {
       "title": "Deploy New Token",
       "deploy_button": "Deploy New Token",
-      "success_update": "Token created"
+      "success": "Token created",
+      "error": "There was some error during deployment. Please try again!"
+    },
+    "token": {
+      "title": "Token Operations",
+      "tabs": {
+        "item_1": "Approve/Transfer_From",
+        "item_2": "Mint"
+      },
+      "transfer": {
+        "title": "Mint Token",
+        "transfer_button": "Mint",
+        "transfer_to": "Mint To",
+        "input_helper_transfer_to": "Principal of User",
+        "transfer_amount": "Amount To Mint",
+        "error": "There was some error during Token Transfer. Please try again!",
+        "success": "Token Transferred"
+      },
+      "approve": {
+        "title": "Approve Spender to Transfer on your behalf",
+        "approve_button": "Approve",
+        "approve_to": "Spender account principal",
+        "input_helper_approve_to": "Entitles the Spender account to transfer token amount on behalf of the caller from account. The number of transfers the spender can initiate from the caller's account is unlimited as long as the total amounts and fees of these transfers do not exceed the allowance.",
+        "approve_amount": "Amount allowed to spend",
+        "error": "There was some error during Approval. Please try again!",
+        "success": "Spender Approved"
+      },
+      "transfer_from": {
+        "title": "Transfer From",
+        "transfer_from_button": "Transfer",
+        "transfer_from": "From account principal",
+        "transfer_to": "To account principal",
+        "amount": "Amount to transfer"
+      }
     }
   },
   "sliderImages": [

@@ -35,6 +35,15 @@ export interface CreateCollection {
 export interface CreateTokenData 
   extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "decimals" | "fee" | "amount"> {}
 
+export interface CreateTokenTransfer
+  extends Pick<TokenTransferArgs, "principal" | "amount"> {}
+
+export interface CreateTokenApprove 
+  extends Pick<TokenApproveArgs, "spender" | "amount"> {}
+
+export interface CreateTokenTransferFrom 
+  extends Pick<TokenTransferFromArgs, "from" | "to" | "amount"> {}
+
 export interface CreateGameData
   extends Pick<Game, "name" | "description" | "cover" | "platform"> {}
 
@@ -43,6 +52,12 @@ export interface UploadGameFileData
 
 export interface CreateGameFiles extends UploadGameFileData {
   files: GameFile[];
+}
+
+export interface CreateTokenTransferSubmit {
+  values: CreateTokenTransfer;
+  mutateData: UseMutateAsyncFunction<string, unknown, CreateTokenTransfer, unknown>;
+  canisterId?: string;
 }
 
 export interface CreateTokenSubmit {
@@ -122,5 +137,21 @@ export interface TokenData {
   fee: string;
   amount: string;
 };
+
+export interface TokenTransferArgs {
+  principal: string;
+  amount: string;
+}
+
+export interface TokenApproveArgs {
+  spender: string;
+  amount: string;
+}
+
+export interface TokenTransferFromArgs {
+  from: string;
+  to: string;
+  amount: string;
+}
 
 

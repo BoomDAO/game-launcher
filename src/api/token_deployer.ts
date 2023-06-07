@@ -2,11 +2,15 @@ import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Actor } from "@dfinity/agent";
+import { Principal } from "@dfinity/principal";
 
 import {
     CreateTokenData,
     CreateTokenSubmit,
+    CreateTokenTransfer,
     Token,
+    CreateTokenApprove,
+    CreateTokenTransferFrom
 } from "@/types";
 import {
     UseQueryResult,
@@ -15,7 +19,7 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 import { useAuthContext } from "@/context/authContext";
-import { useTokenClient } from "@/hooks";
+import { useTokenDeployerClient, useTokenClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import {
     formatCycleBalance,
@@ -42,7 +46,7 @@ export const useGetTotalTokens = () =>
     useQuery({
         queryKey: [queryKeys.tokens_total],
         queryFn: async () => {
-            const { actor, methods } = await useTokenClient();
+            const { actor, methods } = await useTokenDeployerClient();
             return Number(await actor[methods.get_total_tokens]());
         },
     });
@@ -53,7 +57,7 @@ export const useGetTotalUserTokens = () => {
     return useQuery({
         queryKey: [queryKeys.tokens_user_total],
         queryFn: async () => {
-            const { actor, methods } = await useTokenClient();
+            const { actor, methods } = await useTokenDeployerClient();
             return Number(
                 await actor[methods.get_users_total_tokens](session?.address),
             );
@@ -67,8 +71,20 @@ export const useGetUserTokens = (page: number = 1): UseQueryResult<Token[]> => {
     return useQuery({
         queryKey: [queryKeys.user_tokens, page],
         queryFn: async () => {
-            const { actor, methods } = await useTokenClient();
+            const { actor, methods } = await useTokenDeployerClient();
             return await actor[methods.get_user_tokens](session?.address, page - 1);
+        },
+    });
+};
+
+export const useGetTokens = (page: number = 1): UseQueryResult<Token[]> => {
+    const { session } = useAuthContext();
+
+    return useQuery({
+        queryKey: [queryKeys.tokens, page],
+        queryFn: async () => {
+            const { actor, methods } = await useTokenDeployerClient();
+            return await actor[methods.get_tokens](page - 1);
         },
     });
 };
@@ -92,21 +108,24 @@ export const useGetTokenCycleBalance = (
         },
     });
 
-
 export const useCreateTokenData = () =>
     useMutation({
         mutationFn: async (payload: CreateTokenData) => {
             try {
-                const { actor, methods } = await useTokenClient();
-
+                const { actor, methods } = await useTokenDeployerClient();
+                const _decimals = parseInt(payload.decimals);
+                const _amount = payload.amount
+                    ? BigInt(parseInt(payload.amount) * Math.pow(10, _decimals))
+                    : BigInt(0);
+                const _fee = parseInt(payload.fee)
                 const canisterId = (await actor[methods.create_token](
                     payload.name,
                     payload.symbol,
                     payload.description,
-                    payload.amount,
+                    _amount,
                     payload.logo,
-                    payload.decimals,
-                    payload.fee
+                    _decimals,
+                    _fee
                 )) as string;
 
                 return canisterId;
@@ -116,7 +135,7 @@ export const useCreateTokenData = () =>
                 }
                 throw serverErrorMsg;
             }
-        },
+        }
     });
 
 
@@ -145,7 +164,7 @@ export const useCreateTokenUpload = () => {
             return canister_id;
         },
         onSuccess: () => {
-            toast.success(t("token_deployer.deploy_token.success_update"));
+            toast.success(t("token_deployer.deploy_token.success"));
             navigate(navPaths.token_deployer);
         },
         onSettled: () => {
@@ -158,3 +177,117 @@ export const useCreateTokenUpload = () => {
         },
     });
 };
+
+
+export const useTokenTransfer = (token_canister_id: string) =>
+    useMutation({
+        mutationFn: async (payload: CreateTokenTransfer) => {
+            try {
+                const { actor, methods } = await useTokenClient(token_canister_id);
+                const _amount = payload.amount
+                    ? BigInt(parseInt(payload.amount) * Math.pow(10, parseInt(String(await actor[methods.icrc1_decimals]()))))
+                    : BigInt(0);
+                const _p = Principal.fromText(payload.principal);
+                const response = (await actor[methods.icrc1_transfer](
+                    {
+                        from_subaccount: [],
+                        to: {
+                            owner: _p,
+                            subaccount: [],
+                        },
+                        amount: _amount,
+                        fee: [],
+                        memo: [],
+                        created_at_time: [],
+                    }
+                ));
+                console.log(response);
+
+                return response;
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        }
+    });
+
+export const useTokenApprove = (token_canister_id: string) =>
+    useMutation({
+        mutationFn: async (payload: CreateTokenApprove) => {
+            try {
+                const { actor, methods } = await useTokenClient(token_canister_id);
+                const _amount = payload.amount
+                    ? BigInt(parseInt(payload.amount) * Math.pow(10, parseInt(String(await actor[methods.icrc1_decimals]()))))
+                    : BigInt(0);
+                const _fee = BigInt(parseInt(String(await actor[methods.icrc1_fee]())))
+                console.log(_fee);
+                const _spender = Principal.fromText(payload.spender);
+                const response = (await actor[methods.icrc2_approve](
+                    {
+                        from_subaccount: [],
+                        spender: {
+                            owner: _spender,
+                            subaccount: [],
+                        },
+                        amount: _amount,
+                        expires_at: [],
+                        expected_allowance: [],
+                        memo: [],
+                        fee: [_fee],
+                        created_at_time: []
+                    }
+                ));
+                console.log(response);
+
+                return response;
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        }
+    });
+
+export const useTokenTransferFrom = (token_canister_id: string) =>
+    useMutation({
+        mutationFn: async (payload: CreateTokenTransferFrom) => {
+            try {
+                const { actor, methods } = await useTokenClient(token_canister_id);
+                const _amount = payload.amount
+                    ? BigInt(parseInt(payload.amount) * Math.pow(10, parseInt(String(await actor[methods.icrc1_decimals]()))))
+                    : BigInt(0);
+                const _fee = BigInt(parseInt(String(await actor[methods.icrc1_fee]())))
+                const _from = Principal.fromText(payload.from);
+                const _to = Principal.fromText(payload.to);
+                console.log(_to)
+                const response = (await actor[methods.icrc2_transfer_from](
+                    {
+                        spender_subaccount: [],
+                        from: {
+                            owner: _from,
+                            subaccount: [],
+                        },
+                        to: {
+                            owner: _to,
+                            subaccount: [],
+                        },
+                        amount: _amount,
+                        fee: [_fee],
+                        memo: [],
+                        created_at_time: [],
+                    }
+                ));
+                console.log(response);
+                return response;
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        }
+    });
+

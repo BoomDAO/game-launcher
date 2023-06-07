@@ -118,7 +118,7 @@ const DeployToken = () => {
           />
         </div>
         <div className="flex w-full flex-col gap-4 md:flex-row">
-          <FormTextInput
+          <FormNumberInput
             placeholder={t("token_deployer.input_amount")}
             control={control}
             name="amount"
@@ -161,6 +161,7 @@ const DeployToken = () => {
 
         <Button
           rightArrow
+          isLoading={isDataLoading}
           size="big"
           disabled={isUploadLoading || disableSubmit}
         >

@@ -12,7 +12,7 @@ export const navPaths = {
   manage_nfts_new: "/manage-nfts/create-collection",
   token_deployer: "/token-deployer",
   deploy_new_token: "/token-deployer/deploy-token",
-  token_details: "/token-deployer/token-details",
+  token: "/token-deployer/token",
 };
 
 export const platform_types: SelectOption[] = [

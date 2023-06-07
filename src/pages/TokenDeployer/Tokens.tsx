@@ -13,7 +13,7 @@ import Space from "@/components/ui/Space";
 import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
 
-const TokenDeployer = () => {
+const Tokens = () => {
     const [pageNumber, setPageNumber] = React.useState(1);
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -23,7 +23,6 @@ const TokenDeployer = () => {
 
     return (
         <>
-            <Space size="medium" />
             <Button
                 size="big"
                 rightArrow
@@ -31,9 +30,6 @@ const TokenDeployer = () => {
             >
                 {t("token_deployer.button_token_deploy")}
             </Button>
-
-            <Space size="medium" />
-
             {isLoading ? (
                 <LoadingResult>{t("token_deployer.loading")}</LoadingResult>
             ) : isError ? (
@@ -50,6 +46,9 @@ const TokenDeployer = () => {
                                 canisterId={canister}
                                 noImage
                                 symbol={symbol}
+                                onClick={() =>
+                                    navigate(`${navPaths.token}/${canister}`)
+                                }
                             />
                         ))}
                         <EmptyGameCard length={tokens.length} />
@@ -68,4 +67,4 @@ const TokenDeployer = () => {
     );
 };
 
-export default TokenDeployer;
+export default Tokens;

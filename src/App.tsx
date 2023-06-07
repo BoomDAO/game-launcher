@@ -14,8 +14,9 @@ import NotFound from "./pages/NotFound";
 import UploadGames from "./pages/UploadGames";
 import CreateGame from "./pages/UploadGames/CreateGame";
 import UpdateGame from "./pages/UploadGames/UpdateGame";
-import TokenDeployer from "./pages/Tokens";
-import DeployToken from "./pages/Tokens/DeployToken";
+import TokenDeployer from "./pages/TokenDeployer";
+import DeployToken from "./pages/TokenDeployer/DeployToken";
+import Token from "./pages/TokenDeployer/Token/Token";
 
 function App() {
   return (
@@ -53,6 +54,10 @@ function App() {
                 <Route
                   path={`${navPaths.deploy_new_token}`}
                   element={<DeployToken />}
+                />
+                <Route
+                  path={`${navPaths.token}/:canisterId`}
+                  element={<Token />}
                 />
               </Route>
 
