@@ -127,7 +127,6 @@ export const useCreateTokenData = () =>
                     _decimals,
                     _fee
                 )) as string;
-
                 return canisterId;
             } catch (error) {
                 if (error instanceof Error) {
@@ -200,12 +199,20 @@ export const useTokenTransfer = (token_canister_id: string) =>
                         memo: [],
                         created_at_time: [],
                     }
-                ));
+                )) as {
+                    Ok: bigint,
+                    Err: undefined
+                };
                 console.log(response);
-
+                if (response.Ok == null) {
+                    toast.error("Some error occured! Check Console!");
+                } else {
+                    toast.success("Transferred!");
+                }
                 return response;
             } catch (error) {
                 if (error instanceof Error) {
+                    toast.error(error.message);
                     throw error.message;
                 }
                 throw serverErrorMsg;
@@ -222,7 +229,6 @@ export const useTokenApprove = (token_canister_id: string) =>
                     ? BigInt(parseInt(payload.amount) * Math.pow(10, parseInt(String(await actor[methods.icrc1_decimals]()))))
                     : BigInt(0);
                 const _fee = BigInt(parseInt(String(await actor[methods.icrc1_fee]())))
-                console.log(_fee);
                 const _spender = Principal.fromText(payload.spender);
                 const response = (await actor[methods.icrc2_approve](
                     {
@@ -238,12 +244,20 @@ export const useTokenApprove = (token_canister_id: string) =>
                         fee: [_fee],
                         created_at_time: []
                     }
-                ));
+                )) as {
+                    Ok: bigint,
+                    Err: undefined
+                };
                 console.log(response);
-
+                if (response.Ok == null) {
+                    toast.error("Some error occured! Check Console!");
+                } else {
+                    toast.success("Transferred!");
+                }
                 return response;
             } catch (error) {
                 if (error instanceof Error) {
+                    toast.error(error.message);
                     throw error.message;
                 }
                 throw serverErrorMsg;
@@ -262,7 +276,6 @@ export const useTokenTransferFrom = (token_canister_id: string) =>
                 const _fee = BigInt(parseInt(String(await actor[methods.icrc1_fee]())))
                 const _from = Principal.fromText(payload.from);
                 const _to = Principal.fromText(payload.to);
-                console.log(_to)
                 const response = (await actor[methods.icrc2_transfer_from](
                     {
                         spender_subaccount: [],
@@ -279,11 +292,20 @@ export const useTokenTransferFrom = (token_canister_id: string) =>
                         memo: [],
                         created_at_time: [],
                     }
-                ));
+                )) as {
+                    Ok: bigint,
+                    Err: undefined
+                };
                 console.log(response);
+                if (response.Ok == null) {
+                    toast.error("Some error occured! Check Console!");
+                } else {
+                    toast.success("Transferred!");
+                }
                 return response;
             } catch (error) {
                 if (error instanceof Error) {
+                    toast.error(error.message);
                     throw error.message;
                 }
                 throw serverErrorMsg;

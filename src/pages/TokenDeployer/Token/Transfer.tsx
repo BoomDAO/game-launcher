@@ -34,7 +34,7 @@ const Transfer = () => {
     resolver: zodResolver(scheme),
   });
 
-  const { mutate, isLoading } = useTokenTransfer((canisterId != undefined)? canisterId : "");
+  const { mutate, isLoading, isError } = useTokenTransfer((canisterId != undefined)? canisterId : "");
 
   const onSubmit = (values: Data) =>
     mutate(
