@@ -222,14 +222,14 @@
       "title": "Manage Tokens",
       "tabs": {
         "item_1": "Approve/Transfer_From",
-        "item_2": "Mint"
+        "item_2": "Transfer"
       },
       "transfer": {
-        "title": "Mint Token",
-        "transfer_button": "Mint",
-        "transfer_to": "Mint To",
-        "input_helper_transfer_to": "Principal of User",
-        "transfer_amount": "Amount To Mint",
+        "title": "Transfer Token",
+        "transfer_button": "Transfer",
+        "transfer_to": "Transfer To",
+        "input_helper_transfer_to": "Principal of user to transfer to. Transfer initiated by owner of token will mint new tokens instead of Transfer.",
+        "transfer_amount": "Amount To Transfer",
         "error": "There was some error during Token Transfer. Please try again!",
         "success": "Token Transferred"
       },
