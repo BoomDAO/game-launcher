@@ -30,6 +30,7 @@ const Tokens = () => {
             >
                 {t("token_deployer.button_token_deploy")}
             </Button>
+            <H1>{t("token_deployer.title")}</H1>
             {isLoading ? (
                 <LoadingResult>{t("token_deployer.loading")}</LoadingResult>
             ) : isError ? (

@@ -27,12 +27,12 @@ const TokenDeployer = () => {
 
       {activeTab === 1 && (
         <div className="w-full space-y-12">
-          < AllTokens />
+          < Tokens />
         </div>
       )}
       {activeTab === 2 && (
         <div className="w-full space-y-12">
-          < Tokens />
+          < AllTokens />
         </div>
       )}
     </>

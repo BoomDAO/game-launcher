@@ -196,16 +196,16 @@
     "index": {
       "title": "Game Launcher Tokens",
       "tabs": {
-        "item_2": "Your Tokens",
-        "item_1": "All Tokens"
+        "item_2": "Everyone's Tokens",
+        "item_1": "Your Tokens"
       }
     },
-    "button_token_deploy": "Deploy New Token",
+    "button_token_deploy": "Create New Token",
     "button_logo_upload": "Upload Token Logo",
     "placeholder_logo_upload": "Token Logo",
     "loading": "Loading Tokens ...",
     "no_tokens": "you have no tokens created yet ...",
-    "title": "Previously deployed tokens",
+    "title": "Previously created tokens",
     "input_name": "Token Name",
     "input_symbol": "Token Symbol",
     "input_amount": "Total Supply",
@@ -219,7 +219,7 @@
       "error": "There was some error during deployment. Please try again!"
     },
     "token": {
-      "title": "Token Operations",
+      "title": "Manage Tokens",
       "tabs": {
         "item_1": "Approve/Transfer_From",
         "item_2": "Mint"
@@ -243,7 +243,7 @@
         "success": "Spender Approved"
       },
       "transfer_from": {
-        "title": "Transfer From",
+        "title": "Transfer Tokens on another's behalf",
         "transfer_from_button": "Transfer",
         "transfer_from": "From account principal",
         "transfer_to": "To account principal",
