@@ -13,6 +13,7 @@ export const navPaths = {
   token_deployer: "/token-deployer",
   deploy_new_token: "/token-deployer/deploy-token",
   token: "/token-deployer/token",
+  world_deployer: "/world-deployer"
 };
 
 export const platform_types: SelectOption[] = [

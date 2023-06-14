@@ -24,6 +24,7 @@ const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
 const token_deployerId = "qx76v-6qaaa-aaaal-acmla-cai"; //token deployer
+const world_deployerId = ""; //World Deployer
 
 export const useTokenDeployerClient = async () => {
   const authClient = await getAuthClient();

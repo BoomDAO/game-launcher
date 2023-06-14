@@ -43,6 +43,10 @@ const TopBar = () => {
       name: t("navigation.token_deployer"),
       path: navPaths.token_deployer,
     },
+    {
+      name: t("navigation.world_deployer"),
+      path: navPaths.world_deployer
+    }
   ];
 
   return (

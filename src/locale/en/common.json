@@ -18,7 +18,8 @@
     "browse_games": "Browse games",
     "upload_games": "Upload games",
     "manage_NFTs": "Airdrop NFTs",
-    "token_deployer": "Token Deployer"
+    "token_deployer": "Token Deployer",
+    "world_deployer": "World Deployer"
   },
   "card": {
     "platform": "Platform",
@@ -249,6 +250,12 @@
         "transfer_to": "To account principal",
         "amount": "Amount to transfer"
       }
+    }
+  },
+  "world_deployer": {
+    "index": {
+      "title": "Previously created worlds",
+      "button_world_deployer": "Create new World"
     }
   },
   "sliderImages": [
