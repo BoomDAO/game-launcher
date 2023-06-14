@@ -12,6 +12,10 @@ import { idlFactory as LedgerFactory } from "../dids/ledger.did.js";
 import { idlFactory as MintingDeployerFactory } from "../dids/minting_deployer.did.js";
 // @ts-ignore
 import { idlFactory as ManagementFactory } from "../dids/minting_deployer.did.js";
+//@ts-ignore
+import { idlFactory as TokenDeployerFactory } from "../dids/token_deployer.did.js";
+//@ts-ignore
+import { idlFactory as TokenFactory } from "../dids/icrc.did.js";
 
 const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; //game deployer
 const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; //for staging
@@ -19,6 +23,55 @@ const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; //for staging
 const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
+const token_deployerId = "qx76v-6qaaa-aaaal-acmla-cai"; //token deployer
+
+export const useTokenDeployerClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(TokenDeployerFactory, {
+      agent,
+      canisterId: token_deployerId,
+    }),
+    methods: {
+      get_all_tokens: "getAllTokens",
+      get_user_tokens: "getUserTokens",
+      get_all_admins: "getAllAdmins",
+      get_token: "getTokenDetails",
+      get_tokens: "getTokens",
+      get_users_total_tokens: "getUserTotalTokens",
+      get_total_tokens: "getTotalTokens",
+
+      create_token: "createTokenCanister",
+      update_token_cover: "updateTokenCover"
+    }
+  }
+}
+
+export const useTokenClient = async (token_canister_id : string) => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(TokenFactory, {
+      agent,
+      canisterId: token_canister_id,
+    }),
+    methods: {
+      icrc1_transfer: "icrc1_transfer",
+      icrc2_allowance: "icrc2_allowance",
+      icrc2_approve: "icrc2_approve",
+      icrc1_decimals: "icrc1_decimals",
+      icrc1_fee: "icrc1_fee",
+      icrc2_transfer_from: "icrc2_transfer_from"
+    }
+  }
+}
 
 export const useGameClient = async () => {
   const authClient = await getAuthClient();
