@@ -13,7 +13,8 @@ export const navPaths = {
   token_deployer: "/token-deployer",
   deploy_new_token: "/token-deployer/deploy-token",
   token: "/token-deployer/token",
-  world_deployer: "/world-deployer"
+  world_deployer: "/world-deployer",
+  create_new_world: "/world-deployer/create-world"
 };
 
 export const platform_types: SelectOption[] = [
@@ -46,3 +47,8 @@ export const tokenDataScheme = {
   decimals: z.string().min(1, {message: "Token Decimals is required."}),
   fee: z.string().min(1, {message: "Tx Fee is required."}),
 };
+
+export const worldDataScheme = {
+  name: z.string().min(1, { message: "Name is required." }),
+  cover: z.string().min(1, {message: "Cover is required."}),
+}

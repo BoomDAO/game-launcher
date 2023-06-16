@@ -255,7 +255,18 @@
   "world_deployer": {
     "index": {
       "title": "Previously created worlds",
-      "button_world_deployer": "Create new World"
+      "button_world_deployer": "Create new World",
+      "loading": "Loading Worlds ...",
+      "error": "you have no worlds created yet ..."
+    },
+    "create_world": {
+      "title": "Create New World",
+      "input_name": "Your world name",
+      "button_cover_upload": "Upload Cover",
+      "placeholder_cover_upload": "Your world cover",
+      "create_button": "Create New World",
+      "success": "World created successfully",
+      "error": "Sorry something happend... try again later"
     }
   },
   "sliderImages": [

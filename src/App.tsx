@@ -16,6 +16,7 @@ import CreateGame from "./pages/UploadGames/CreateGame";
 import UpdateGame from "./pages/UploadGames/UpdateGame";
 import TokenDeployer from "./pages/TokenDeployer";
 import WorldDeployer from "./pages/WorldDeployer";
+import CreateWorld from "./pages/WorldDeployer/CreateWorld"
 import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
 
@@ -63,6 +64,10 @@ function App() {
                 <Route
                   path={`${navPaths.world_deployer}`}
                   element={<WorldDeployer />}
+                />
+                <Route
+                  path={`${navPaths.world_deployer}/:canisterId`}
+                  element={<CreateWorld />}
                 />
               </Route>
 

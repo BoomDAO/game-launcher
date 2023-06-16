@@ -24,8 +24,6 @@ import { navPaths, serverErrorMsg } from "@/shared";
 import {
     formatCycleBalance,
     getAgent,
-    uploadGameFiles,
-    uploadZip,
 } from "@/utils";
 
 //@ts-ignore
