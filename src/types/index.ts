@@ -32,6 +32,10 @@ export interface CreateCollection {
   description: string;
 }
 
+export interface CreateWorldData 
+  extends Pick<WorldData, "name" | "cover"> {}
+
+
 export interface CreateTokenData 
   extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "decimals" | "fee" | "amount"> {}
 
@@ -52,6 +56,12 @@ export interface UploadGameFileData
 
 export interface CreateGameFiles extends UploadGameFileData {
   files: GameFile[];
+}
+
+export interface CreateWorldSubmit {
+  values: CreateWorldData;
+  mutateData: UseMutateAsyncFunction<string, unknown, CreateWorldData, unknown>;
+  canisterId?: string;
 }
 
 export interface CreateTokenTransferSubmit {
@@ -152,6 +162,17 @@ export interface TokenTransferFromArgs {
   from: string;
   to: string;
   amount: string;
+}
+
+export interface World {
+  name: string;
+  cover: string;
+  canister: string;
+}
+
+export interface WorldData {
+  name: string;
+  cover: string;
 }
 
 

@@ -36,13 +36,17 @@ const TopBar = () => {
       path: navPaths.upload_games,
     },
     {
+      name: t("navigation.world_deployer"),
+      path: navPaths.world_deployer
+    },
+    {
       name: t("navigation.manage_NFTs"),
       path: navPaths.manage_nfts,
     },
     {
       name: t("navigation.token_deployer"),
       path: navPaths.token_deployer,
-    },
+    }
   ];
 
   return (
@@ -52,7 +56,7 @@ const TopBar = () => {
           className={cx(
             "fixed top-0 z-50 w-full",
             openOrNotTop(open) &&
-              "bg-white bg-opacity-95 shadow-sm dark:bg-dark dark:bg-opacity-95",
+            "bg-white bg-opacity-95 shadow-sm dark:bg-dark dark:bg-opacity-95",
           )}
         >
           <div className="mx-auto w-full max-w-screen-xl px-8 py-4">
@@ -74,7 +78,7 @@ const TopBar = () => {
               <div className="hidden sm:ml-6 md:block">
                 <div className="flex items-center gap-6">
                   <div className="hidden space-x-4 text-sm uppercase md:flex">
-                    {session &&
+                    {(session) ? (
                       paths.map(({ name, path }) => (
                         <NavLink
                           key={name}
@@ -85,7 +89,22 @@ const TopBar = () => {
                         >
                           {name}
                         </NavLink>
-                      ))}
+                      ))
+                    ) : (
+                      paths.map(({ name, path }) => (
+                        <NavLink
+                          key={name}
+                          className={({ isActive }) =>
+                            isActive ? "gradient-text" : ""
+                          }
+                          to={path}
+                          onClick={() => setIsOpenNavSidebar(true)}
+                        >
+                          {name}
+                        </NavLink>
+                      ))
+                    )
+                    }
                   </div>
                 </div>
               </div>

@@ -17,8 +17,9 @@
     "logout": "Logout",
     "browse_games": "Browse games",
     "upload_games": "Upload games",
-    "manage_NFTs": "Airdrop NFTs",
-    "token_deployer": "Token Deployer"
+    "manage_NFTs": "DEPLOY NFTS",
+    "token_deployer": "DEPLOY TOKENS",
+    "world_deployer": "DEPLOY WORLDS"
   },
   "card": {
     "platform": "Platform",
@@ -249,6 +250,23 @@
         "transfer_to": "To account principal",
         "amount": "Amount to transfer"
       }
+    }
+  },
+  "world_deployer": {
+    "index": {
+      "title": "Previously created worlds",
+      "button_world_deployer": "Create new World",
+      "loading": "Loading Worlds ...",
+      "error": "you have no worlds created yet ..."
+    },
+    "create_world": {
+      "title": "Create New World",
+      "input_name": "Your world name",
+      "button_cover_upload": "Upload Cover",
+      "placeholder_cover_upload": "Your world cover",
+      "create_button": "Create New World",
+      "success": "World created successfully",
+      "error": "Sorry something happend... try again later"
     }
   },
   "sliderImages": [

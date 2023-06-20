@@ -16,6 +16,8 @@ import { idlFactory as ManagementFactory } from "../dids/minting_deployer.did.js
 import { idlFactory as TokenDeployerFactory } from "../dids/token_deployer.did.js";
 //@ts-ignore
 import { idlFactory as TokenFactory } from "../dids/icrc.did.js";
+//@ts-ignore
+import { idlFactory as WorldDeployerFactory } from "../dids/world_deployer.did.js";
 
 const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; //game deployer
 const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; //for staging
@@ -24,6 +26,35 @@ const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
 const token_deployerId = "qx76v-6qaaa-aaaal-acmla-cai"; //token deployer
+const world_deployerId = "a6t6i-riaaa-aaaal-acphq-cai"; //World Deployer
+
+export const useWorldDeployerClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(WorldDeployerFactory, {
+      agent,
+      canisterId: world_deployerId,
+    }),
+    methods: {
+      get_all_worlds: "getAllWorlds",
+      get_user_worlds: "getUserWorlds",
+      get_all_admins: "getAllAdmins",
+      get_world: "getWorldDetails",
+      get_worlds: "getWorlds",
+      get_users_total_worlds: "getUserTotalWorlds",
+      get_total_worlds: "getTotalWorlds",
+      get_world_cover: "getWorldCover",
+      
+      create_world: "createWorldCanister",
+      update_world_cover: "updateWorldCover",
+      cycleBalance: "cycleBalance"
+    }
+  }
+};
 
 export const useTokenDeployerClient = async () => {
   const authClient = await getAuthClient();

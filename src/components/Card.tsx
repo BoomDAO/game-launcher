@@ -7,6 +7,8 @@ import Center from "./ui/Center";
 import Divider from "./ui/Divider";
 import Loader from "./ui/Loader";
 import { useGetTokenCycleBalance } from "@/api/token_deployer";
+import { useGetWorldCycleBalance } from "@/api/world_deployer";
+import { useGetWorldCover } from "@/api/world_deployer";
 
 interface CardProps {
   title: string;
@@ -18,7 +20,7 @@ interface CardProps {
   verified?: boolean;
   symbol?: string;
   onClick?: () => void;
-  type: "game" | "collection" | "token";
+  type: "game" | "collection" | "token" | "world";
 }
 
 const Card = ({
@@ -36,10 +38,16 @@ const Card = ({
   const { t } = useTranslation();
 
   const { data: image, isLoading: loadingImage } = useGetGameCover(canisterId);
+  const { data: world_cover, isLoading: loadingWorldImage } = useGetWorldCover(canisterId);
 
   const { data: gameCycleBalance } = useGetGameCycleBalance(
     canisterId,
     showCycles && type === "game",
+  );
+
+  const { data: worldCycleBalance } = useGetWorldCycleBalance(
+    canisterId,
+    showCycles && type === "world"
   );
 
   const { data: collectionCycleBalance } = useGetCollectionCycleBalance(
@@ -51,7 +59,7 @@ const Card = ({
     className: "w-8 h-8 bg-black rounded-full text-white p-2 min-w-[32px]",
   });
 
-  const cycles = gameCycleBalance || collectionCycleBalance || "0.00T";
+  const cycles = gameCycleBalance || collectionCycleBalance || worldCycleBalance || "0.00T";
 
   return (
     <Center>
@@ -81,11 +89,22 @@ const Card = ({
           ) : null}
           {!noImage ? (
             <div className="mb-4 h-40">
-              {loadingImage ? (
+              {(loadingImage && type === "game") ? (
                 <Center className="h-full flex-col gap-2">
                   <Loader />
                   <p className="text-sm">{t("card.loading_image")}</p>
                 </Center>
+              ) : (loadingWorldImage && type === "world") ? (
+                <Center className="h-full flex-col gap-2">
+                  <Loader />
+                  <p className="text-sm">{t("card.loading_image")}</p>
+                </Center>
+              ) : (type === "world") ? (
+                <img
+                  src={world_cover}
+                  alt="game image"
+                  className="h-40 w-full object-cover"
+                />
               ) : !image ? (
                 <Center className="h-full flex-col gap-2">
                   <NoSymbolIcon className="w-10" />
