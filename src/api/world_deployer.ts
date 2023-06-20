@@ -25,6 +25,7 @@ import {
 
 //@ts-ignore
 import { idlFactory as WorldDeployerFactory } from "../dids/world_deployer.did.js";
+import { Float64 } from "@dfinity/candid/lib/cjs/idl.js";
 
 export const queryKeys = {
     worlds: "worlds",

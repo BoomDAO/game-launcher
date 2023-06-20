@@ -55,7 +55,7 @@ const WorldDeployer = () => {
                 canisterId={canister}
                 showCycles
                 onClick={() =>
-                  navigate(`${navPaths.world_deployer}/${canister}`)
+                  window.open(`${navPaths.boomdao_candid_url}?id=${canister}`, "_blank")
                 }
               />
             ))}

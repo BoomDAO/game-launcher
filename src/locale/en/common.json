@@ -17,9 +17,9 @@
     "logout": "Logout",
     "browse_games": "Browse games",
     "upload_games": "Upload games",
-    "manage_NFTs": "Airdrop NFTs",
-    "token_deployer": "Token Deployer",
-    "world_deployer": "World Deployer"
+    "manage_NFTs": "DEPLOY NFTS",
+    "token_deployer": "DEPLOY TOKENS",
+    "world_deployer": "DEPLOY WORLDS"
   },
   "card": {
     "platform": "Platform",

@@ -23,4 +23,4 @@ export const getPaginationPages = (total?: number, max: number = 9) => {
 };
 
 export const formatCycleBalance = (balance: number) =>
-  (balance * 0.0000000000001).toFixed(2);
+ ((1.0*(balance)) / 1000000000000).toFixed(2);
