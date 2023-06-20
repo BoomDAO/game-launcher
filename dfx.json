@@ -9,14 +9,21 @@
             ],
             "type": "assets"
         },
-        "game-launcher-staging": {
-            "frontend": {
-                "entrypoint": "dist/index.html"
-            },
-            "source": [
-                "dist/"
-            ],
-            "type": "assets"
+        "game_deployer": {
+            "main": "src/backend/game_deployer/deployer.mo",
+            "type": "motoko"
+        },
+        "nfts_deployer": {
+            "main": "src/backend/nfts_deployer/deployer.mo",
+            "type": "motoko"
+        },
+        "token_deployer": {
+            "main": "src/backend/token_deployer/deployer.mo",
+            "type": "motoko"
+        },
+        "world_deployer": {
+            "main": "src/backend/world_deployer/deployer.mo",
+            "type": "motoko"
         }
     },
     "defaults": {
@@ -25,5 +32,17 @@
             "packtool": ""
         }
     },
+    "networks": {
+		"local": {
+			"bind": "127.0.0.1:8001",
+			"type": "ephemeral"
+		},
+		"stag": {
+			"providers": [
+				"https://ic0.app"
+			],
+			"type": "persistent"
+		}
+	},
     "version": 1
 }
