@@ -1,1 +1,1 @@
-Game Launcher Frontend - BoomDAO
+Game Launcher - BoomDAO
