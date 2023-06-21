@@ -64,7 +64,7 @@
       "success_files": "Game files were created."
     },
     "update": {
-      "title": "Manage game",
+      "title": "Update game",
       "button": "Update game",
       "loading": "Loading game...",
       "error": "We did not found any game... :(",
@@ -89,6 +89,16 @@
       "mobile_pc": {
         "title": "Mobile/PC upload:",
         "text": "Please zip your game files in a folder and then upload the zipped file. Players will be able to download the zipped file."
+      }
+    },
+    "Game": {
+      "title": "Manage Game",
+      "tab_1": {
+        "title": "Update Game Data"
+      },
+      "tab_2": {
+        "title": "Visibility",
+        "button": "Change visibility"
       }
     }
   },
@@ -271,19 +281,19 @@
   },
   "sliderImages": [
     {
-        "image": "/banner.png",
-        "url": "https://5iuic-ryaaa-aaaal-ack7a-cai.raw.icp0.io/",
-        "name": "Plethora"
+      "image": "/banner.png",
+      "url": "https://5iuic-ryaaa-aaaal-ack7a-cai.raw.icp0.io/",
+      "name": "Plethora"
     },
     {
-        "image": "/game-1.png",
-        "url": "https://fsowo-7aaaa-aaaal-acdxa-cai.raw.icp0.io/",
-        "name": "Cubetopia"
+      "image": "/game-1.png",
+      "url": "https://fsowo-7aaaa-aaaal-acdxa-cai.raw.icp0.io/",
+      "name": "Cubetopia"
     },
     {
-        "image": "/game-2.png",
-        "url": "https://edeir-hiaaa-aaaal-acdsq-cai.raw.icp0.io/",
-        "name": "Degen Spin"
+      "image": "/game-2.png",
+      "url": "https://edeir-hiaaa-aaaal-acdsq-cai.raw.icp0.io/",
+      "name": "Degen Spin"
     }
   ]
 }

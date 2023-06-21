@@ -19,6 +19,7 @@ import {
   UpdateGameCover,
   UpdateGameData,
   UpdateGameSubmit,
+  UpdateGameVisibility,
 } from "@/types";
 import {
   formatCycleBalance,
@@ -162,6 +163,30 @@ export const useUpdateGameData = () =>
 
         return payload.canister_id;
       } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+  });
+
+export const useUpdateGameVisibility = (
+  canister_id? : string
+) =>
+  useMutation({
+    mutationFn: async (payload: UpdateGameVisibility) => {
+      try {
+        const { actor, methods } = await useGameClient();
+
+        await actor[methods.update_game_visibility](
+          canister_id,
+          payload.visibility,
+        );
+        toast.success("Updated!");
+        return canister_id;
+      } catch (error) {
+        toast.error("failed to update, Try again!");
         if (error instanceof Error) {
           throw error.message;
         }

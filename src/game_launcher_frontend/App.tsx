@@ -13,12 +13,13 @@ import UpdateCollection from "./pages/ManageNfts/UpdateCollection";
 import NotFound from "./pages/NotFound";
 import UploadGames from "./pages/UploadGames";
 import CreateGame from "./pages/UploadGames/CreateGame";
-import UpdateGame from "./pages/UploadGames/UpdateGame";
+import UpdateGame from "./pages/UploadGames/Games/UpdateGame";
 import TokenDeployer from "./pages/TokenDeployer";
 import WorldDeployer from "./pages/WorldDeployer";
 import CreateWorld from "./pages/WorldDeployer/CreateWorld"
 import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
+import Game from "./pages/UploadGames/Games/Game";
 
 function App() {
   return (
@@ -38,7 +39,7 @@ function App() {
                 />
                 <Route
                   path={`${navPaths.upload_games}/:canisterId`}
-                  element={<UpdateGame />}
+                  element={<Game />}
                 />
                 <Route path={navPaths.manage_nfts} element={<ManageNfts />} />
                 <Route

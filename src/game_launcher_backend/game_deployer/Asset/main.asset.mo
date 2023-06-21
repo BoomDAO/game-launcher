@@ -10,7 +10,6 @@ import Nat "mo:base/Nat";
 import Nat32 "mo:base/Nat32";
 import Order "mo:base/Order";
 import Result "mo:base/Result";
-import SHA256 "mo:sha/SHA256";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Trie "mo:base/Trie";
@@ -19,6 +18,7 @@ import Prim "mo:⛔";
 
 import State "State";
 import AssetStorage "AssetStorage";
+import SHA256 "../../utils/SHA256";
 
 actor class Assets(owner : Principal) = this {
     private let BATCH_EXPIRY_NANOS = 300_000_000_000;

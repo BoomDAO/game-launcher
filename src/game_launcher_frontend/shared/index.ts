@@ -33,6 +33,17 @@ export const platform_types: SelectOption[] = [
   },
 ];
 
+export const visibility_types: SelectOption[] = [
+  {
+    label: "Public ",
+    value: "public",
+  },
+  {
+    label: "Private",
+    value: "private",
+  }
+];
+
 export const gameDataScheme = {
   name: z.string().min(1, { message: "Name is required." }),
   description: z.string().min(1, { message: "Description is required." }),

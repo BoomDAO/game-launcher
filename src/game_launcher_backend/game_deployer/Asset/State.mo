@@ -1,4 +1,4 @@
-import AssetStorage "mo:asset-storage/AssetStorage";
+import AssetStorage "AssetStorage";
 import Hash "mo:base/Hash";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";

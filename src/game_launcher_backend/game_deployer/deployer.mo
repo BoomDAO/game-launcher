@@ -27,49 +27,38 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 import Asset "./Asset/main.asset";
+import Binary "../utils/Binary";
 
 actor Deployer {
 
     //Stable Memory
     //
-    private stable var _games : Trie.Trie<Text, Game> = Trie.empty(); //mapping of canister_id -> Game Info
+    private stable var deployer : Principal = Principal.fromText("aaaaa-aa"); 
+    private stable var _games : Trie.Trie<Text, Game> = Trie.empty(); //mapping of canister_id -> Game (info)
+    private stable var _ngames : Trie.Trie<Text, Game> = Trie.empty(); //mapping of canister_id -> Game (info)
     private stable var _covers : Trie.Trie<Text, Text> = Trie.empty(); //mapping of game_canister_id -> base64
     private stable var _owners : Trie.Trie<Text, Text> = Trie.empty(); //mapping asset canister_id -> owner principal id
-    private stable var _admins : [Text] = []; //admins of deployer canister
+    private stable var _admins : [Text] = [];
 
-    //IC-Management canister records
-    //
-    type canister_id = Principal;
-    type canister_settings = {
+    //Types
+    public type canister_id = Principal;
+    public type canister_settings = {
         freezing_threshold : ?Nat;
         controllers : ?[Principal];
         memory_allocation : ?Nat;
         compute_allocation : ?Nat;
     };
-    type definite_canister_settings = {
+    public type definite_canister_settings = {
         freezing_threshold : Nat;
         controllers : [Principal];
         memory_allocation : Nat;
         compute_allocation : Nat;
     };
-    type user_id = Principal;
-    type wasm_module = Blob;
-    type headerField = (Text, Text);
-    type HttpRequest = {
-        body : Blob;
-        headers : [headerField];
-        method : Text;
-        url : Text;
-    };
-    type HttpResponse = {
-        body : Blob;
-        headers : [headerField];
-        status_code : Nat16;
-    };
+    public type user_id = Principal;
+    public type wasm_module = Blob;
 
-    //Game Info record
-    //
-    type Game = {
+    //for game
+    public type Game = {
         name : Text;
         description : Text;
         platform : Text;
@@ -78,10 +67,23 @@ actor Deployer {
         cover : Text;
         lastUpdated : Int;
         verified : Bool;
+        visibility : Bool;
     };
 
-    //IC Management Canister Interface
-    //
+    public type headerField = (Text, Text);
+    public type HttpRequest = {
+        body : Blob;
+        headers : [headerField];
+        method : Text;
+        url : Text;
+    };
+    public type HttpResponse = {
+        body : Blob;
+        headers : [headerField];
+        status_code : Nat16;
+    };
+
+    //IC Management Canister
     let IC = actor ("aaaaa-aa") : actor {
         canister_status : shared { canister_id : canister_id } -> async {
             status : { #stopped; #stopping; #running };
@@ -119,10 +121,8 @@ actor Deployer {
         } -> async ();
     };
 
-    //internals
-    //
-    //to sort trie values
-    private func _sort(t : Trie.Trie<Text, Game>) : [Game] {
+    //Utility Functions
+    func _sort(t : Trie.Trie<Text, Game>) : [Game] {
         var trie : Trie.Trie<Text, Game> = Trie.empty();
         var b : Buffer.Buffer<Int> = Buffer.Buffer<Int>(0);
         var _b : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
@@ -144,12 +144,71 @@ actor Deployer {
         Buffer.toArray(_b);
     };
 
-    //to generate Trie key
+    func _sort_and_visible(t : Trie.Trie<Text, Game>) : [Game] {
+        var trie : Trie.Trie<Text, Game> = Trie.empty();
+        var b : Buffer.Buffer<Int> = Buffer.Buffer<Int>(0);
+        var _b : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
+        for ((i, g) in Trie.iter(t)) {
+            trie := Trie.put(trie, keyT(Int.toText(g.lastUpdated)), Text.equal, g).0;
+            b.add(g.lastUpdated);
+        };
+        var a : [Int] = Buffer.toArray(b);
+        a := Array.sort(a, Int.compare);
+        a := Array.reverse(a);
+        for (i in a.vals()) {
+            switch (Trie.find(trie, keyT(Int.toText(i)), Text.equal)) {
+                case (?g) {
+                    if(g.visibility == true) {
+                        _b.add(g);
+                    };
+                };
+                case _ {};
+            };
+        };
+        Buffer.toArray(_b);
+    };
+
     private func key(x : Nat32) : Trie.Key<Nat32> {
         return { hash = x; key = x };
     };
+
     private func keyT(x : Text) : Trie.Key<Text> {
         return { hash = Text.hash(x); key = x };
+    };
+
+    system func postupgrade() : () {
+        deployer := Principal.fromActor(Deployer);
+    };
+
+    public query func cycleBalance() : async Nat {
+        Cycles.balance();
+    };
+
+    public func wallet_receive() : async Nat {
+        Cycles.accept(Cycles.available());
+    };
+
+    public func get_epoch_in_nano() : async Int {
+        return Time.now();
+    };
+
+    public query func get_total_games() : async (Nat) {
+        return Trie.size(_games);
+    };
+
+    public query func get_users_total_games(uid : Text) : async (Nat) {
+        var b : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
+        for ((i, v) in Trie.iter(_owners)) {
+            if (v == uid) {
+                switch (Trie.find(_games, keyT(i), Text.equal)) {
+                    case (?g) {
+                        b.add(g);
+                    };
+                    case _ {};
+                };
+            };
+        };
+        return b.size();
     };
 
     private func _isAdmin(p : Text) : (Bool) {
@@ -161,6 +220,35 @@ actor Deployer {
         return false;
     };
 
+    public shared ({ caller }) func add_admin(p : Text) : async () {
+        assert (_isAdmin(Principal.toText(caller)));
+        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+        for (i in _admins.vals()) {
+            if (p != i) {
+                b.add(i);
+            };
+        };
+        b.add(p);
+        _admins := Buffer.toArray(b);
+    };
+
+    public shared ({ caller }) func remove_admin(p : Text) : async () {
+        assert (_isAdmin(Principal.toText(caller)));
+        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+        for (i in _admins.vals()) {
+            if (p != i) {
+                b.add(i);
+            };
+        };
+        _admins := Buffer.toArray(b);
+    };
+
+    public query func get_all_admins() : async ([Text]) {
+        return _admins;
+    };
+
+    //Internal Functions
+    //
     private func _isOwner(p : Principal, canister_id : Text) : async (Bool) {
         for ((i, v) in Trie.iter(_owners)) {
             if (canister_id == i and p == Principal.fromText(v)) {
@@ -184,7 +272,7 @@ actor Deployer {
             IC.update_settings({
                 canister_id = cid.canister_id;
                 settings = {
-                    controllers = ?[init_owner];
+                    controllers = ?[init_owner, deployer, Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe")];
                     compute_allocation = null;
                     memory_allocation = null;
                     freezing_threshold = ?31_540_000;
@@ -195,52 +283,158 @@ actor Deployer {
 
     //Queries
     //
-    public query func cycleBalance() : async Nat {
-        Cycles.balance();
-    };
-
-    public query func get_all_admins() : async ([Text]) {
-        return _admins;
-    };
-
-    public query func get_total_games() : async (Nat) {
-        return Trie.size(_games);
-    };
-
-    public query func get_users_total_games(uid : Text) : async (Nat) {
-        var b : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
-        for ((i, v) in Trie.iter(_owners)) {
-            if (v == uid) {
-                switch (Trie.find(_games, keyT(i), Text.equal)) {
-                    case (?g) {
-                        b.add(g);
-                    };
-                    case _ {};
-                };
-            };
-        };
-        return b.size();
-    };
-
-    public query func get_game_owner(canister_id : Text) : async (?Text) {
+    public query func get_owner(canister_id : Text) : async (?Text) {
         var owner : ?Text = Trie.find(_owners, keyT(canister_id), Text.equal);
         return owner;
     };
 
-    public query func get_all_asset_canisters(_page : Nat) : async ([Game]) {
+    public query func getFeaturedGames() : async [Text] {
+        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+        for((_canister_id, _games) in Trie.iter(_games)){
+            if(_games.verified == true) {
+                b.add(_canister_id);
+            }
+        };
+        return Buffer.toArray(b);
+    };
+
+    //Updates
+    //
+    public shared (msg) func create_game_canister(game_name : Text, data : Text, base64 : Text, _type : Text) : async (Text) {
+        var canister_id : Text = await create_canister(msg.caller);
+        var deployer_canister : Text = Principal.toText(deployer);
+        _games := Trie.put(
+            _games,
+            keyT(canister_id),
+            Text.equal,
+            {
+                name = game_name;
+                description = data;
+                platform = _type;
+                canister_id = canister_id;
+                url = "https://" #canister_id # ".raw.icp0.io/";
+                cover = "https://" #deployer_canister #".raw.ic0.app/cover/" #canister_id;
+                lastUpdated = Time.now();
+                verified = false;
+                visibility = true;
+            },
+        ).0;
+        _covers := Trie.put(_covers, keyT(canister_id), Text.equal, base64).0;
+        _owners := Trie.put(_owners, keyT(canister_id), Text.equal, Principal.toText(msg.caller)).0;
+        return canister_id;
+    };
+
+    public shared ({ caller }) func admin_create_game(game_name : Text, data : Text, base64 : Text, _type : Text, game_url : Text, canister_id : Text) : async (Text) {
+        assert (_isAdmin(Principal.toText(caller)));
+        var deployer_canister : Text = Principal.toText(deployer);
+        _games := Trie.put(
+            _games,
+            keyT(canister_id),
+            Text.equal,
+            {
+                name = game_name;
+                description = data;
+                platform = _type;
+                canister_id = canister_id;
+                url = game_url;
+                cover = "https://" #deployer_canister #".raw.ic0.app/cover/" #canister_id;
+                lastUpdated = Time.now();
+                verified = false;
+                visibility = true;
+            },
+        ).0;
+        _covers := Trie.put(_covers, keyT(canister_id), Text.equal, base64).0;
+        _owners := Trie.put(_owners, keyT(canister_id), Text.equal, Principal.toText(caller)).0;
+        return game_url;
+    };
+
+    public shared ({ caller }) func admin_remove_game(canister_id : Text) : async () {
+        assert (_isAdmin(Principal.toText(caller)));
+        _covers := Trie.remove(_covers, keyT(canister_id), Text.equal).0;
+        _owners := Trie.remove(_owners, keyT(canister_id), Text.equal).0;
+        _games := Trie.remove(_games, keyT(canister_id), Text.equal).0;
+    };
+
+    public shared ({ caller }) func adminUpdateFeaturedGames(_canister_ids : Text) : async () {
+        assert (_isAdmin(Principal.toText(caller)));
+        for ((canister_id, game) in Trie.iter(_games)) {
+            switch (Trie.find(_games, keyT(canister_id), Text.equal)) {
+                case (?_game) {
+                    var g : Game = {
+                        name = _game.name;
+                        description = _game.description;
+                        platform = _game.platform;
+                        canister_id = _game.canister_id;
+                        url = _game.url;
+                        cover = _game.cover;
+                        lastUpdated = _game.lastUpdated;
+                        verified = false;
+                        visibility = _game.visibility;
+                    };
+                    _games := Trie.put(_games, keyT(canister_id), Text.equal, g).0;
+                };
+                case _ {};
+            };
+        };
+        var canister_ids : [Text] = Iter.toArray(Text.tokens(_canister_ids, #text(",")));
+        for (canister_id in canister_ids.vals()) {
+            switch (Trie.find(_games, keyT(canister_id), Text.equal)) {
+                case (?_game) {
+                    var g : Game = {
+                        name = _game.name;
+                        description = _game.description;
+                        platform = _game.platform;
+                        canister_id = _game.canister_id;
+                        url = _game.url;
+                        cover = _game.cover;
+                        lastUpdated = _game.lastUpdated;
+                        verified = true;
+                        visibility = _game.visibility;
+                    };
+                    _games := Trie.put(_games, keyT(canister_id), Text.equal, g).0;
+                };
+                case _ {};
+            };
+        };
+    };
+
+    //Queries
+    //
+    public query func get_all_asset_canisters(_page : Nat, _sorting : Text) : async ([Game]) {
         var lower : Nat = _page * 9;
         var upper : Nat = lower + 9;
         var b : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
-        let arr : [Game] = _sort(_games);
-        let size = Trie.size(_games);
+        let arr : [Game] = _sort_and_visible(_games);
+        let size = arr.size();
         if (upper > size) {
             upper := size;
         };
-        while (lower < upper) {
-            b.add(arr[lower]);
-            lower := lower + 1;
+        switch (_sorting) {
+            case ("newest") {
+                while (lower < upper) {
+                    b.add(arr[lower]);
+                    lower := lower + 1;
+                };
+                return Buffer.toArray(b);
+            };
+            case ("featured") {
+                while (lower < upper) {
+                    if (arr[lower].verified == true) {
+                        b.add(arr[lower]);
+                    };
+                    lower := lower + 1;
+                };
+                lower := _page * 9;
+                while (lower < upper) {
+                    if (arr[lower].verified == false) {
+                        b.add(arr[lower]);
+                    };
+                    lower := lower + 1;
+                };
+                return Buffer.toArray(b);
+            };
+            case _ { return Buffer.toArray(b) };
         };
-        return Buffer.toArray(b);
     };
 
     public query func get_game_cover(canister_id : Text) : async (Text) {
@@ -292,54 +486,7 @@ actor Deployer {
         };
     };
 
-    //Updates
-    //
-    public shared ({ caller }) func add_admin(p : Text) : async () {
-        assert (_isAdmin(Principal.toText(caller)));
-        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-        for (i in _admins.vals()) {
-            if (p != i) {
-                b.add(i);
-            };
-        };
-        b.add(p);
-        _admins := Buffer.toArray(b);
-    };
-
-    public shared ({ caller }) func remove_admin(p : Text) : async () {
-        assert (_isAdmin(Principal.toText(caller)));
-        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-        for (i in _admins.vals()) {
-            if (p != i) {
-                b.add(i);
-            };
-        };
-        _admins := Buffer.toArray(b);
-    };
-    
-    public shared (msg) func create_game_canister(game_name : Text, data : Text, base64 : Text, _type : Text) : async (Text) {
-        var canister_id : Text = await create_canister(msg.caller);
-        _games := Trie.put(
-            _games,
-            keyT(canister_id),
-            Text.equal,
-            {
-                name = game_name;
-                description = data;
-                platform = _type;
-                canister_id = canister_id;
-                url = "https://" #canister_id # ".raw.icp0.io/";
-                cover = "https://6rvbl-uqaaa-aaaal-ab24a-cai.raw.icp0.io/cover/" #canister_id;
-                lastUpdated = Time.now();
-                verified = false;
-            },
-        ).0;
-        _covers := Trie.put(_covers, keyT(canister_id), Text.equal, base64).0;
-        _owners := Trie.put(_owners, keyT(canister_id), Text.equal, Principal.toText(msg.caller)).0;
-        return canister_id;
-    };
-
-    //update game info
+    //upgrade game data
     //
     public shared (msg) func update_game_data(canister_id : Text, game_name : Text, game_data : Text, game_platform : Text) : async (Result.Result<(), Text>) {
         assert ((await _isOwner(msg.caller, canister_id)) == true);
@@ -361,6 +508,7 @@ actor Deployer {
                                 cover = _game.cover;
                                 lastUpdated = _game.lastUpdated;
                                 verified = _game.verified;
+                                visibility = _game.visibility;
                             },
                         ).0;
                     };
@@ -388,7 +536,60 @@ actor Deployer {
         };
     };
 
-    public shared (msg) func owner_remove_canister(canister_id : Text) : async () {
+    public shared (msg) func update_game_visibility(canister_id : Text, visibility : Text) : async (Result.Result<(), Text>) {
+        assert ((await _isOwner(msg.caller, canister_id)) == true);
+        switch (Trie.find(_owners, keyT(canister_id), Text.equal)) {
+            case (?o) {
+                assert (Principal.fromText(o) == msg.caller);
+                switch (Trie.find(_games, keyT(canister_id), Text.equal)) {
+                    case (?_game) {
+                        if(visibility == "public") {
+                             _games := Trie.put(
+                            _games,
+                            keyT(canister_id),
+                            Text.equal,
+                            {
+                                name = _game.name;
+                                description = _game.description;
+                                platform = _game.platform;
+                                canister_id = _game.canister_id;
+                                url = _game.url;
+                                cover = _game.cover;
+                                lastUpdated = _game.lastUpdated;
+                                verified = _game.verified;
+                                visibility = true;
+                            },
+                        ).0;
+                        } else if(visibility == "private") {
+                             _games := Trie.put(
+                            _games,
+                            keyT(canister_id),
+                            Text.equal,
+                            {
+                                name = _game.name;
+                                description = _game.description;
+                                platform = _game.platform;
+                                canister_id = _game.canister_id;
+                                url = _game.url;
+                                cover = _game.cover;
+                                lastUpdated = _game.lastUpdated;
+                                verified = _game.verified;
+                                visibility = false;
+                            },
+                        ).0;
+                        } 
+                    };
+                    case _ {};
+                };
+                return #ok();
+            };
+            case null {
+                return #err("canister owner not found");
+            };
+        };
+    };
+
+    public shared (msg) func remove_canister(canister_id : Text) : async () {
         var o : Text = Option.get(Trie.find(_owners, keyT(canister_id), Text.equal), "");
         assert (Principal.fromText(o) == msg.caller);
         _covers := Trie.remove(_covers, keyT(canister_id), Text.equal).0;
@@ -396,78 +597,6 @@ actor Deployer {
         _games := Trie.remove(_games, keyT(canister_id), Text.equal).0;
     };
 
-    //admin functions
-    //
-    public shared ({ caller }) func admin_create_game(game_name : Text, data : Text, base64 : Text, _type : Text, game_url : Text, canister_id : Text) : async (Text) {
-        assert (_isAdmin(Principal.toText(caller)));
-        _games := Trie.put(
-            _games,
-            keyT(canister_id),
-            Text.equal,
-            {
-                name = game_name;
-                description = data;
-                platform = _type;
-                canister_id = canister_id;
-                url = game_url;
-                cover = "https://6rvbl-uqaaa-aaaal-ab24a-cai.raw.icp0.io/cover/" #canister_id;
-                lastUpdated = Time.now();
-                verified = false;
-            },
-        ).0;
-        _covers := Trie.put(_covers, keyT(canister_id), Text.equal, base64).0;
-        _owners := Trie.put(_owners, keyT(canister_id), Text.equal, Principal.toText(caller)).0;
-        return game_url;
-    };
-
-    public shared ({ caller }) func admin_remove_game(canister_id : Text) : async () {
-        assert (_isAdmin(Principal.toText(caller)));
-        _covers := Trie.remove(_covers, keyT(canister_id), Text.equal).0;
-        _owners := Trie.remove(_owners, keyT(canister_id), Text.equal).0;
-        _games := Trie.remove(_games, keyT(canister_id), Text.equal).0;
-    };
-
-    public shared ({ caller }) func admin_verify_game(canister_id : Text) : async () {
-        assert (_isAdmin(Principal.toText(caller)));
-        switch (Trie.find(_games, keyT(canister_id), Text.equal)) {
-            case (?_game) {
-                var g : Game = {
-                    name = _game.name;
-                    description = _game.description;
-                    platform = _game.platform;
-                    canister_id = _game.canister_id;
-                    url = _game.url;
-                    cover = _game.cover;
-                    lastUpdated = _game.lastUpdated;
-                    verified = true;
-                };
-                _games := Trie.put(_games, keyT(canister_id), Text.equal, g).0;
-            };
-            case _ {};
-        };
-    };
-
-    public shared ({ caller }) func admin_remove_game_verification(canister_id : Text) : async () {
-        assert (_isAdmin(Principal.toText(caller)));
-        switch (Trie.find(_games, keyT(canister_id), Text.equal)) {
-            case (?_game) {
-                var g : Game = {
-                    name = _game.name;
-                    description = _game.description;
-                    platform = _game.platform;
-                    canister_id = _game.canister_id;
-                    url = _game.url;
-                    cover = _game.cover;
-                    lastUpdated = _game.lastUpdated;
-                    verified = false;
-                };
-                _games := Trie.put(_games, keyT(canister_id), Text.equal, g).0;
-            };
-            case _ {};
-        };
-    };
-
-    //http query for cover url
     public query func http_request(req : HttpRequest) : async (HttpResponse) {
         let path = Iter.toArray(Text.tokens(req.url, #text("/")));
         let collection = path[1];
@@ -500,5 +629,17 @@ actor Deployer {
             };
         };
     };
+
+    // public func setOwner(c : Text, n : Text) : async (){
+    //     switch(Trie.find(_owners, keyT(c), Text.equal)){
+    //         case (?o){
+    //             // assert(Principal.fromText(o) == msg.caller);
+    //             _owners := Trie.put(_owners, keyT(c), Text.equal, n).0;
+    //         };
+    //         case null {
+    //             return ();
+    //         }
+    //     }
+    // };
 
 };

@@ -8,6 +8,7 @@ export const idlFactory = ({ IDL }) => {
     'lastUpdated' : IDL.Int,
     'description' : IDL.Text,
     'platform' : IDL.Text,
+    'visibility' : IDL.Bool,
   });
   const headerField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
@@ -64,6 +65,7 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
+    'update_game_visibility' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'wallet_receive' : IDL.Func([], [IDL.Nat], []),
   });
 };

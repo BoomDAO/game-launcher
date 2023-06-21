@@ -83,6 +83,7 @@ export const idlFactory = ({ IDL }) => {
     'allow_raw_access' : IDL.Opt(IDL.Opt(IDL.Bool)),
     'max_age' : IDL.Opt(IDL.Opt(IDL.Nat64)),
   });
+  const ValidationResult = IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text });
   return IDL.Service({
     'authorize' : IDL.Func([IDL.Principal], [], []),
     'certified_tree' : IDL.Func(
@@ -204,7 +205,18 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'take_ownership' : IDL.Func([], [], []),
     'unset_asset_content' : IDL.Func([UnsetAssetContentArguments], [], []),
+    'validate_grant_permission' : IDL.Func(
+        [GrantPermission],
+        [ValidationResult],
+        [],
+      ),
+    'validate_revoke_permission' : IDL.Func(
+        [RevokePermission],
+        [ValidationResult],
+        [],
+      ),
   });
 };
 export const init = ({ IDL }) => { return []; };

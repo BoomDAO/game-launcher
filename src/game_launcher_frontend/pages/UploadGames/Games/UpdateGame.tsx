@@ -122,9 +122,7 @@ const UpdateGame = () => {
 
   return (
     <>
-      <Space size="medium" />
       <H1>{t("upload_games.update.title")}</H1>
-      <Space size="medium" />
 
       {isLoadingGame ? (
         <LoadingResult>{t("upload_games.update.loading")}</LoadingResult>

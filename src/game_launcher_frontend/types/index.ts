@@ -20,7 +20,12 @@ export interface Game {
   platform: Platform;
   cover: string;
   verified: boolean;
+  visibility: boolean
 }
+
+export interface GameVisibility {
+  visibility: string;
+};
 
 export interface Collection {
   name: string;
@@ -32,27 +37,27 @@ export interface CreateCollection {
   description: string;
 }
 
-export interface CreateWorldData 
-  extends Pick<WorldData, "name" | "cover"> {}
+export interface CreateWorldData
+  extends Pick<WorldData, "name" | "cover"> { }
 
 
-export interface CreateTokenData 
-  extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "decimals" | "fee" | "amount"> {}
+export interface CreateTokenData
+  extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "decimals" | "fee" | "amount"> { }
 
 export interface CreateTokenTransfer
-  extends Pick<TokenTransferArgs, "principal" | "amount"> {}
+  extends Pick<TokenTransferArgs, "principal" | "amount"> { }
 
-export interface CreateTokenApprove 
-  extends Pick<TokenApproveArgs, "spender" | "amount"> {}
+export interface CreateTokenApprove
+  extends Pick<TokenApproveArgs, "spender" | "amount"> { }
 
-export interface CreateTokenTransferFrom 
-  extends Pick<TokenTransferFromArgs, "from" | "to" | "amount"> {}
+export interface CreateTokenTransferFrom
+  extends Pick<TokenTransferFromArgs, "from" | "to" | "amount"> { }
 
 export interface CreateGameData
-  extends Pick<Game, "name" | "description" | "cover" | "platform"> {}
+  extends Pick<Game, "name" | "description" | "cover" | "platform"> { }
 
 export interface UploadGameFileData
-  extends Pick<Game, "canister_id" | "name" | "description" | "platform"> {}
+  extends Pick<Game, "canister_id" | "name" | "description" | "platform"> { }
 
 export interface CreateGameFiles extends UploadGameFileData {
   files: GameFile[];
@@ -89,7 +94,10 @@ export interface CreateGameSubmit {
 }
 
 export interface UpdateGameData
-  extends Pick<Game, "canister_id" | "name" | "description" | "platform"> {}
+  extends Pick<Game, "canister_id" | "name" | "description" | "platform"> { }
+
+export interface UpdateGameVisibility
+  extends Pick<GameVisibility, "visibility"> { }
 
 export interface UpdateGameCover extends Pick<Game, "canister_id"> {
   cover: string;

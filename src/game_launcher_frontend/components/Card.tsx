@@ -19,6 +19,7 @@ interface CardProps {
   noImage?: boolean;
   verified?: boolean;
   symbol?: string;
+  visibility?: boolean;
   onClick?: () => void;
   type: "game" | "collection" | "token" | "world";
 }
@@ -32,6 +33,7 @@ const Card = ({
   noImage,
   verified,
   symbol,
+  visibility,
   onClick,
   type,
 }: CardProps) => {
@@ -78,6 +80,11 @@ const Card = ({
                   className="h-5 w-5"
                 />
               ) : null}
+              {(visibility == false) ? (
+                <>
+                  <p className="text-xs px-1" style={{ color: "yellow" }}>(Private)</p>
+                </>
+              ) : (<></>)}
             </div>
             {iconWithProps}
           </div>
@@ -121,16 +128,17 @@ const Card = ({
           ) : null}
 
           <div>
-            {platform && (
-              <>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold">{t("card.platform")}: </p>
-                  <p>{platform}</p>
-                </div>
-
-                <Divider className="my-2" />
-              </>
-            )}
+            <div className="flex items-center gap-2">
+              {platform && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">{t("card.platform")}: </p>
+                    <p>{platform}</p>
+                  </div>
+                </>
+              )}
+            </div>
+            <Divider className="my-2" />
 
             {canisterId && (
               <div>
