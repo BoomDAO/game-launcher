@@ -35,12 +35,16 @@ export const platform_types: SelectOption[] = [
 
 export const visibility_types: SelectOption[] = [
   {
-    label: "Public ",
+    label: "Public",
     value: "public",
   },
   {
     label: "Private",
     value: "private",
+  },
+  {
+    label: "Coming Soon!",
+    value: "soon"
   }
 ];
 

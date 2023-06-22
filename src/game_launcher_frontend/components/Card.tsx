@@ -19,7 +19,7 @@ interface CardProps {
   noImage?: boolean;
   verified?: boolean;
   symbol?: string;
-  visibility?: boolean;
+  visibility?: string;
   onClick?: () => void;
   type: "game" | "collection" | "token" | "world";
 }
@@ -80,7 +80,7 @@ const Card = ({
                   className="h-5 w-5"
                 />
               ) : null}
-              {(visibility == false) ? (
+              {(visibility == "private") ? (
                 <>
                   <p className="text-xs px-1" style={{ color: "yellow" }}>(Private)</p>
                 </>
@@ -118,11 +118,24 @@ const Card = ({
                   <p className="text-sm">{t("card.no_image")}</p>
                 </Center>
               ) : (
-                <img
-                  src={image}
-                  alt="game image"
-                  className="h-40 w-full object-cover"
-                />
+                <div className="relative text-center">
+                  {(visibility == "soon") ? (
+                    <>
+                      <img
+                        src={image}
+                        alt="game image"
+                        className="h-40 w-full object-cover blur"
+                      />
+                      <h3 className="font-semibold text-5xl text-white absolute left-1/5 top-1/4">Coming Soon!</h3>
+                    </>
+                  ) : (<>
+                    <img
+                      src={image}
+                      alt="game image"
+                      className="h-40 w-full object-cover"
+                    />
+                  </>)}
+                </div>
               )}
             </div>
           ) : null}

@@ -172,9 +172,10 @@ export const useUpdateGameData = () =>
   });
 
 export const useUpdateGameVisibility = (
-  canister_id? : string
-) =>
-  useMutation({
+  canister_id?: string
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: UpdateGameVisibility) => {
       try {
         const { actor, methods } = await useGameClient();
@@ -184,6 +185,12 @@ export const useUpdateGameVisibility = (
           payload.visibility,
         );
         toast.success("Updated!");
+        queryClient.refetchQueries({ queryKey: [queryKeys.games] });
+        queryClient.refetchQueries({ queryKey: [queryKeys.user_games] });
+        queryClient.refetchQueries({ queryKey: [queryKeys.games_total] });
+        queryClient.refetchQueries({
+          queryKey: [queryKeys.games_user_total],
+        });
         return canister_id;
       } catch (error) {
         toast.error("failed to update, Try again!");
@@ -194,6 +201,7 @@ export const useUpdateGameVisibility = (
       }
     },
   });
+}
 
 export const useUpdateGameCover = () =>
   useMutation({
