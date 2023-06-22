@@ -15,7 +15,7 @@ const Game = () => {
 
   const tabItems = [
     { id: 1, name: t("upload_games.Game.tab_1.title") },
-    { id: 2, name: t("upload_games.Game.tab_2.title") }
+    { id: 2, name: t("upload_games.Game.tab_2.title") },
   ];
 
   return (
@@ -28,7 +28,7 @@ const Game = () => {
 
       {activeTab === 1 && (
         <div className="w-full space-y-12">
-          <UpdateGame/>
+          <UpdateGame />
         </div>
       )}
       {activeTab === 2 && (

@@ -97,8 +97,12 @@
         "title": "Update Game Data"
       },
       "tab_2": {
-        "title": "Visibility",
+        "title": "Update Visibility",
         "button": "Change visibility"
+      },
+      "tab_3": {
+        "title": "Release/Hold a Game",
+        "button": "Apply"
       }
     }
   },

@@ -20,11 +20,15 @@ export interface Game {
   platform: Platform;
   cover: string;
   verified: boolean;
-  visibility: boolean
+  visibility: string;
 }
 
 export interface GameVisibility {
   visibility: string;
+};
+
+export interface GameRelease {
+  released: string;
 };
 
 export interface Collection {

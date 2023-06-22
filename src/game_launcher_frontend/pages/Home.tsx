@@ -15,6 +15,7 @@ import { useAuthContext } from "@/context/authContext";
 import { useGlobalContext } from "@/context/globalContext";
 import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
+import { TooltipComponent } from '@syncfusion/ej2-react-popups';
 
 const Home = () => {
   const [sorting, setSorting] = React.useState("featured");
@@ -58,8 +59,8 @@ const Home = () => {
         <div className="w-full max-w-screen-xl flex items-center pt-10 pb-10 justify-end">
           <div><label className="pr-3">Sort By : </label></div>
           <div><select
-          onChange={(event)=> setSorting(event.target.value)} 
-          className="w-60 h-10 p-2 cursor-pointer" name="sorting" id="sorting">
+            onChange={(event) => setSorting(event.target.value)}
+            className="w-60 h-10 p-2 cursor-pointer" name="sorting" id="sorting">
             <option value="featured">Featured</option>
             <option value="newest">Newest</option>
           </select>
@@ -70,34 +71,35 @@ const Home = () => {
         <LoadingResult>{t("home.loading")}</LoadingResult>
       ) : isError ? (
         <ErrorResult>{t("error")}</ErrorResult>
-      ) : 
-      games.length ? (
-        <>
-          <div className="card-container">
-            {games.map(({ canister_id, platform, name, url, verified }) => (
-              <Card
-                type="game"
-                key={canister_id}
-                icon={<ArrowUpRightIcon />}
-                title={name}
-                canisterId={canister_id}
-                platform={platform}
-                verified={verified}
-                onClick={() => window.open(url, "_blank")}
-              />
-            ))}
-            <EmptyGameCard length={games.length} />
-          </div>
+      ) :
+        games.length ? (
+          <>
+            <div className="card-container">
+              {games.map(({ canister_id, platform, name, url, verified, visibility }) => (
+                <Card
+                  type="game"
+                  key={canister_id}
+                  icon={<ArrowUpRightIcon />}
+                  title={name}
+                  canisterId={canister_id}
+                  platform={platform}
+                  verified={verified}
+                  visibility={visibility}
+                  onClick={() => (visibility == "public") ? (window.open(url, "_blank")) : (<></>)}
+                />
+              ))}
+              <EmptyGameCard length={games.length} />
+            </div>
 
-          <Pagination
-            pageNumber={pageNumber}
-            setPageNumber={setPageNumber}
-            totalNumbers={getPaginationPages(totalGames, 9)}
-          />
-        </>
-      ) : (
-        <NoDataResult>{t("home.no_games")}</NoDataResult>
-      )}
+            <Pagination
+              pageNumber={pageNumber}
+              setPageNumber={setPageNumber}
+              totalNumbers={getPaginationPages(totalGames, 9)}
+            />
+          </>
+        ) : (
+          <NoDataResult>{t("home.no_games")}</NoDataResult>
+        )}
     </>
   );
 };

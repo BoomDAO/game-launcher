@@ -5,20 +5,8 @@ import { useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-    useCreateGameFiles,
-    useGetGame,
-    useUpdateGameCover,
-    useUpdateGameData,
-    useUpdateGameSubmit,
     useUpdateGameVisibility,
 } from "@/api/games_deployer";
-import {
-    ErrorResult,
-    LoadingResult,
-    PreparingForUpload,
-    UploadResult,
-} from "@/components/Results";
-import UploadGameHint from "@/components/UploadGameHint";
 import Form from "@/components/form/Form";
 import FormSelect from "@/components/form/FormSelect";
 import Button from "@/components/ui/Button";
@@ -28,7 +16,7 @@ import { visibility_types } from "@/shared";
 import { GameVisibility } from "@/types";
 
 const scheme = z.object({
-    visibility: z.string().min(1, "Visibility are required."),
+    visibility: z.string().min(1, "Visibility is required."),
 });
 
 type Data = z.infer<typeof scheme>;

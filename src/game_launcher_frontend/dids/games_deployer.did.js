@@ -8,7 +8,7 @@ export const idlFactory = ({ IDL }) => {
     'lastUpdated' : IDL.Int,
     'description' : IDL.Text,
     'platform' : IDL.Text,
-    'visibility' : IDL.Bool,
+    'visibility' : IDL.Text,
   });
   const headerField = IDL.Tuple(IDL.Text, IDL.Text);
   const HttpRequest = IDL.Record({
@@ -45,7 +45,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Game)],
         ['query'],
       ),
-    'get_epoch_in_nano' : IDL.Func([], [IDL.Int], []),
     'get_game' : IDL.Func([IDL.Text], [IDL.Opt(Game)], ['query']),
     'get_game_cover' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
     'get_owner' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
@@ -66,7 +65,6 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'update_game_visibility' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
-    'wallet_receive' : IDL.Func([], [IDL.Nat], []),
   });
 };
 export const init = ({ IDL }) => { return []; };
