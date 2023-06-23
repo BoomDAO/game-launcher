@@ -10,9 +10,10 @@ Game developers have the power to create self-custodial **NFT** and **Token** co
 
 Deploy a game **World** and configure the contract directly on the Game Launcher website without writing a single line of code. Enforce smart contract laws and empower composability in your game at its inception.
 
+The Game Launcher shortens game development timelines from months to days. 
+
 ## CHECK IT OUT
 
-The Game Launcher shortens game development timelines from months to days. 
 **Check it out here:** launcher.boomdao.xyz
 
 ## TECH DOCUMENTATION
