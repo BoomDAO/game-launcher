@@ -19,8 +19,8 @@ import { idlFactory as TokenFactory } from "../dids/icrc.did.js";
 //@ts-ignore
 import { idlFactory as WorldDeployerFactory } from "../dids/world_deployer.did.js";
 
-const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; //game deployer
-// const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";//staging
+// const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; //game deployer
+const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";//staging
 const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; //for staging
 // const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; //for prod
 const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
