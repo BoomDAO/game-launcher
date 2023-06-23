@@ -69,7 +69,16 @@ const Card = ({
         onClick={onClick}
         className="gradient-bg w-full cursor-pointer rounded-primary p-0.5"
       >
-        <div className="h-full w-full rounded-primary bg-white px-6 py-6 dark:bg-dark">
+        <div className="h-full w-full rounded-primary bg-white px-6 py-6 dark:bg-dark relative overflow-hidden">
+        {
+          (visibility == "soon") ? (
+            <div style={{right:"-90px"}} className="bg-yellow-400 py-2 px-20 text-lg font-bold absolute top-8 rotate-45 z-10">
+              Coming Soon
+            </div>
+          ) : (
+            <></>
+          )
+        }
           <div className="mb-2 flex justify-between">
             <div className="flex justify-content-center items-center">
               <p className="truncate text-2xl">{title}</p>
@@ -119,22 +128,22 @@ const Card = ({
                 </Center>
               ) : (
                 <div className="relative text-center">
-                  {(visibility == "soon") ? (
+                  {/* {(visibility == "soon") ? (
                     <>
                       <img
                         src={image}
                         alt="game image"
-                        className="h-40 w-full object-cover blur-sm"
+                        className="h-40 w-full object-cover"
                       />
                       <h3 className="font-semibold text-5xl text-white absolute left-1/5 top-1/4">Coming Soon!</h3>
                     </>
-                  ) : (<>
-                    <img
-                      src={image}
-                      alt="game image"
-                      className="h-40 w-full object-cover"
-                    />
-                  </>)}
+                  ) : (<> */}
+                  <img
+                    src={image}
+                    alt="game image"
+                    className="h-40 w-full object-cover"
+                  />
+                  {/* </>)} */}
                 </div>
               )}
             </div>
