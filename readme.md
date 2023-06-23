@@ -14,8 +14,8 @@ The Game Launcher shortens game development timelines from months to days.
 
 ## CHECK IT OUT
 
-**Check it out here:** launcher.boomdao.xyz
+You can use the Game Launcher here: http://launcher.boomdao.xyz
 
 ## TECH DOCUMENTATION
 
-For more information about the Game Launcher, you can read the **tech documentation** here: https://docs.boomdao.xyz/game-launcher
+To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
