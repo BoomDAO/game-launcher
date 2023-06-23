@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="logo" target="_blank" rel="noreferrer"><img src="https://awcae-maaaa-aaaam-abmyq-cai.icp0.io/logo-light.svg" alt="my banner"></a>
+  <a href="logo" target="_blank" rel="noreferrer"><img src="[https://awcae-maaaa-aaaam-abmyq-cai.icp0.io/logo-light.svg](https://github.com/BoomDAO/game-launcher/assets/29381374/0e785949-f882-4a2b-a624-cce70e539109)" alt="my banner"></a>
 </p>
 
 ## GAME LAUNCHER
