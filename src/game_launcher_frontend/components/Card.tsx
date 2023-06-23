@@ -124,7 +124,7 @@ const Card = ({
                       <img
                         src={image}
                         alt="game image"
-                        className="h-40 w-full object-cover blur"
+                        className="h-40 w-full object-cover blur-sm"
                       />
                       <h3 className="font-semibold text-5xl text-white absolute left-1/5 top-1/4">Coming Soon!</h3>
                     </>
