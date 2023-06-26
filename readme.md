@@ -20,6 +20,8 @@ You can use the Game Launcher here: http://launcher.boomdao.xyz
 
 To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
 
+
+
 <p align="center">
-  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/bdf34934-c6ac-4bb7-b855-38c2773e7af6" alt="my banner"></a>
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/world-template/assets/29381374/46aaa5e2-93b2-4b66-a654-527fd04c070a" alt="my banner"></a>
 </p>
