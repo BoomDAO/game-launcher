@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/6ce4b485-20e1-4fb7-9216-2c354e2e9b49" alt="my banner"></a>
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/875537bb-f9d4-4594-84e0-a7375ce46213" alt="my banner"></a>
 </p>
 
 ## GAME LAUNCHER
@@ -19,3 +19,7 @@ You can use the Game Launcher here: http://launcher.boomdao.xyz
 ## TECH DOCUMENTATION
 
 To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
+
+<p align="center">
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/bdf34934-c6ac-4bb7-b855-38c2773e7af6" alt="my banner"></a>
+</p>
