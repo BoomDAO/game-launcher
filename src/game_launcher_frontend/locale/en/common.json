@@ -117,7 +117,7 @@
     "index": {
       "tabs": {
         "item_1": "Your Collections",
-        "item_2": "All Collections"
+        "item_2": "Everyone's Collections"
       },
       "title": "Game Launcher NFT Collections"
     },
@@ -283,7 +283,7 @@
       "tabs": {
         "item_1": "Your Worlds",
         "item_1_title": "Previously created worlds",
-        "item_2": "All Worlds"
+        "item_2": "Everyone's Worlds"
       }
     },
     "create_world": {
