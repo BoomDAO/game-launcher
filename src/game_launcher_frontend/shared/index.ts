@@ -9,6 +9,7 @@ export const navPaths = {
   upload_games: "/upload-games",
   upload_games_new: "/upload-games/create-game",
   manage_nfts: "/manage-nfts",
+  all_nfts: "manage-nfts/all-nfts",
   manage_nfts_new: "/manage-nfts/create-collection",
   token_deployer: "/token-deployer",
   deploy_new_token: "/token-deployer/deploy-token",

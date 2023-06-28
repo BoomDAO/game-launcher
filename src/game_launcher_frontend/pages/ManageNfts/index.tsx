@@ -1,68 +1,42 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { Cog8ToothIcon } from "@heroicons/react/20/solid";
-import { useGetCollections } from "@/api/minting_deployer";
-import Card from "@/components/Card";
-import EmptyGameCard from "@/components/EmptyGameCard";
-import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
-import Button from "@/components/ui/Button";
+import Tabs from "@/components/Tabs";
+import Divider from "@/components/ui/Divider";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
-import { navPaths } from "@/shared";
+import Nfts from "./Nfts";
+import AllNfts from "./AllNfts";
 
-const ManageNfts = () => {
+const TokenDeployer = () => {
+  const [activeTab, setActiveTab] = React.useState(1);
+
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
-  const { data: collections = [], isLoading, isError } = useGetCollections();
+  const tabItems = [
+    { id: 1, name: t("manage_nfts.index.tabs.item_1") },
+    { id: 2, name: t("manage_nfts.index.tabs.item_2") }
+  ];
 
   return (
     <>
       <Space size="medium" />
-
-      <Button
-        size="big"
-        rightArrow
-        onClick={() => navigate(`${navPaths.manage_nfts_new}`)}
-      >
-        {t("manage_nfts.button")}
-      </Button>
-
-      <Space />
-
-      <H1>{t("manage_nfts.title")}</H1>
-
+      <H1>{t("manage_nfts.index.title")}</H1>
       <Space size="medium" />
 
-      {isLoading ? (
-        <LoadingResult>{t("manage_nfts.loading")}</LoadingResult>
-      ) : isError ? (
-        <ErrorResult>{t("error")}</ErrorResult>
-      ) : collections.length ? (
-        <>
-          <div className="card-container">
-            {collections.map(({ canister_id, name }) => (
-              <Card
-                type="collection"
-                key={canister_id}
-                icon={<Cog8ToothIcon />}
-                title={name}
-                canisterId={canister_id}
-                showCycles
-                noImage
-                onClick={() =>
-                  navigate(`${navPaths.manage_nfts}/${canister_id}`)
-                }
-              />
-            ))}
-            <EmptyGameCard length={collections.length} />
-          </div>
-        </>
-      ) : (
-        <NoDataResult>{t("manage_nfts.no_collections")}</NoDataResult>
+      <Tabs tabs={tabItems} active={activeTab} setActive={setActiveTab} />
+
+      {activeTab === 1 && (
+        <div className="w-full space-y-12">
+          < Nfts />
+        </div>
+      )}
+      {activeTab === 2 && (
+        <div className="w-full space-y-12">
+          < AllNfts />
+        </div>
       )}
     </>
   );
 };
 
-export default ManageNfts;
+export default TokenDeployer;

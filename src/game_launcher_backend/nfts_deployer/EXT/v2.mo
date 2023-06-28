@@ -36,7 +36,15 @@ import Queue "../../utils/Queue";
 import EXTAsset "extAsset";
 import AccountIdentifier "../../utils/AccountIdentifier";
 
+
 actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
+  // For Production Purpose
+
+  // actor class EXTNFT() = this {
+  //   var init_owner : Principal = Principal.fromText("r2erm-ehpcs-iguiu-tckwf-igo3p-w4op6-zhcdf-c57c3-ov2z5-kg5pm-mqe");
+  //   var name : Text = "Plethora Items";
+  //   var data : Text = "The powerful items that can be spent in the Plethora world";
+
   // EXT Types
   type EXTAssetService = EXTAsset.EXTAsset;
   type Order = { #less; #equal; #greater };
@@ -292,7 +300,8 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   private stable var cap_rootBucketId : ?Text = null;
 
   //CONFIG
-  private stable var config_deployers : [Text] = []; //add Deployer Canister Ids for Bulk Mints/Airdrops/Burns handling (add yours accordingly)
+  private stable var config_deployers : [Text] = ["zeroy-xaaaa-aaaag-qb7da-cai"]; //NFT Deployer Canister Ids Boom
+  private stable var config_core : [Text] = []; 
   private stable var config_owner : Principal = init_owner;
   private stable var config_admin : [Principal] = [config_owner];
   private stable var config_royalty_address : AccountIdentifier = AID.fromPrincipal(config_owner, null);
@@ -427,6 +436,15 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
             _disbursements := Queue.add(d, _disbursements);
           };
         };
+        case (_) {};
+      };
+    };
+  };
+  public shared (msg) func heartbeat_paymentSettlements() : async () {
+    for ((paymentAddress, settlement) in _expiredPaymentSettlements().vals()) {
+      switch (settlement.purchase) {
+        case (#nft t) ignore (ext_marketplaceSettle(paymentAddress));
+        case (#sale q) ignore (ext_saleSettle(paymentAddress));
         case (_) {};
       };
     };
@@ -577,7 +595,7 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
     b.add(p);
     config_admin := Buffer.toArray(b);
   };
-
+  //for adding core and deployer as admin
   public shared (msg) func internal_ext_addAdmin() : async () {
     assert (_isDeployer(msg.caller));
     var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
@@ -587,6 +605,9 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
       };
     };
     b.add(msg.caller);
+    for (x in config_core.vals()) {
+      b.add(Principal.fromText(x));
+    };
     config_admin := Buffer.toArray(b);
   };
   public shared (msg) func ext_setRoyalty(request : [(AccountIdentifier, Nat64)]) : async () {
@@ -741,6 +762,72 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   //Marketplace
   public shared (msg) func ext_marketplaceList(request : ListRequest) : async Result.Result<(), CommonError> {
     await _ext_internal_marketplaceList(msg.caller, request);
+  };
+  public shared (msg) func ext_marketplacePurchase(tokenid : TokenIdentifier, price : Nat64, buyer : AccountIdentifier) : async Result.Result<(AccountIdentifier, Nat64), CommonError> {
+    if (ExtCore.TokenIdentifier.isPrincipal(tokenid, Principal.fromActor(this)) == false) {
+      return #err(#InvalidToken(tokenid));
+    };
+    let token = ExtCore.TokenIdentifier.getIndex(tokenid);
+    switch (_tokenListing.get(token)) {
+      case (?listing) {
+        if (listing.price != price) {
+          return #err(#Other("Price has changed!"));
+        } else {
+          return #ok(ext_addPayment(#nft(token), price, buyer), price);
+        };
+      };
+      case (_) {
+        return #err(#Other("No listing!"));
+      };
+    };
+  };
+  public shared (msg) func ext_marketplaceSettle(paymentaddress : AccountIdentifier) : async Result.Result<(), CommonError> {
+    switch (await ext_checkPayment(paymentaddress)) {
+      case (?(settlement, response)) {
+        switch (response) {
+          case (#ok ledgerResponse) {
+            switch (settlement.purchase) {
+              case (#nft token) {
+                switch (_tokenListing.get(token)) {
+                  case (?listing) {
+                    if (settlement.amount >= listing.price) {
+                      switch (_registry.get(token)) {
+                        case (?token_owner) {
+                          var bal : Nat64 = settlement.amount - (10000 * Nat64.fromNat(_marketplaceFees().size() + 1));
+                          var rem = bal;
+                          for (f in _marketplaceFees().vals()) {
+                            var _fee : Nat64 = bal * f.1 / 100000;
+                            _addDisbursement((token, f.0, settlement.subaccount, _fee));
+                            rem := rem - _fee : Nat64;
+                          };
+                          _addDisbursement((token, token_owner, settlement.subaccount, rem));
+                          _capAddSale(token, token_owner, settlement.payer, settlement.amount);
+                          _transferTokenToUser(token, settlement.payer);
+                          data_transactions := Array.append(data_transactions, [{ token = token; seller = token_owner; price = settlement.amount; buyer = settlement.payer; time = Time.now() }]);
+                          _tokenListing.delete(token);
+                          _paymentSettlements.delete(paymentaddress);
+                          return #ok();
+                        };
+                        case (_) {};
+                      };
+                    };
+                  };
+                  case (_) {};
+                };
+                //If we are here, that means we need to refund the payment
+                //No listing, refund (to slow)
+                _addDisbursement((0, settlement.payer, settlement.subaccount, (ledgerResponse.e8s -10000)));
+                _paymentSettlements.delete(paymentaddress);
+                return #err(#Other("NFT not for sale"));
+              };
+              case (_) return #err(#Other("Not a payment for a single NFT"));
+            };
+          };
+          case (#err e) return #err(#Other(e));
+        };
+      };
+      case (_) return #err(#Other("Nothing to settle"));
+    };
   };
   public query func ext_marketplaceListings() : async [(TokenIndex, Listing, Metadata)] {
     _ext_internalMarketplaceListings();
@@ -1560,6 +1647,15 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
     };
     return isPresent;
   };
+  func _isCore(p : Principal) : Bool {
+    var isPresent : Bool = false;
+    for (i in config_core.vals()) {
+      if (i == Principal.toText(p)) {
+        isPresent := true;
+      };
+    };
+    return isPresent;
+  };
   func _isAdmin(p : Principal) : Bool {
     var isPresent : Bool = false;
     for (i in config_admin.vals()) {
@@ -2023,6 +2119,37 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   public shared (msg) func transfer(request : TransferRequest) : async TransferResponse {
     await _ext_internal_transfer(msg.caller, request);
   };
+  public shared (msg) func lock(tokenid : TokenIdentifier, price : Nat64, address : AccountIdentifier, _subaccountNOTUSED : SubAccount) : async Result.Result<AccountIdentifier, CommonError> {
+    switch (await ext_marketplacePurchase(tokenid, price, address)) {
+      case (#ok p) return #ok(p.0);
+      case (#err e) return #err(e);
+    };
+  };
+  public shared (msg) func settle(tokenid : TokenIdentifier) : async Result.Result<(), CommonError> {
+    switch (
+      Array.find(
+        Iter.toArray(_paymentSettlements.entries()),
+        func(a : (AccountIdentifier, Payment)) : Bool {
+          switch (a.1.purchase) {
+            case (#nft t) {
+              return (t == ExtCore.TokenIdentifier.getIndex(tokenid));
+            };
+            case (_) {};
+          };
+          return false;
+        },
+      ),
+    ) {
+      case (?a) {
+        return await ext_marketplaceSettle(a.0);
+      };
+      case (_) {};
+    };
+    return #ok;
+  };
+  public shared (msg) func list(request : ListRequest) : async Result.Result<(), CommonError> {
+    await _ext_internal_marketplaceList(msg.caller, request);
+  };
   public query func getMinter() : async [Principal] {
     config_admin;
   };
@@ -2203,6 +2330,7 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
         };
         case (null) {};
       };
+      // b.add(a[Nat32.toNat(i)]);
       i := i + 1;
     };
     return Buffer.toArray(b);

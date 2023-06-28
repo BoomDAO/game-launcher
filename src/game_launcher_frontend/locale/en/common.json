@@ -111,8 +111,16 @@
     "title": "Previously created collections",
     "loading": "Loading collections...",
     "no_collections": "You have no collections created yet...",
+    "no_collections_at_all": "No collections created yet...",
     "input_name": "Collection name",
     "input_description": "Collection description",
+    "index": {
+      "tabs": {
+        "item_1": "Your Collections",
+        "item_2": "All Collections"
+      },
+      "title": "Game Launcher NFT Collections"
+    },
     "create": {
       "title": "Create new collection",
       "button": "Create collection",

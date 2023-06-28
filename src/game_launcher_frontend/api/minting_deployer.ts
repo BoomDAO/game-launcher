@@ -20,6 +20,28 @@ import { idlFactory as ExtFactory } from "../dids/ext.did.js";
 export const queryKeys = {
   collections: "collections",
   collection_cycle_balance: "collection_cycle_balance",
+  collecitons_total: "totalColections"
+};
+
+export const useGetTotalCollections = () =>
+  useQuery({
+    queryKey: [queryKeys.collecitons_total],
+    queryFn: async () => {
+      const { actor, methods } = await useMintingDeployerClient();
+      return Number(await actor[methods.get_total_collections]());
+    },
+  });
+
+export const useGetAllCollections = (page: number = 1): UseQueryResult<Collection[]> => {
+  const { session } = useAuthContext();
+
+  return useQuery({
+    queryKey: [queryKeys.collections, page],
+    queryFn: async () => {
+      const { actor, methods } = await useMintingDeployerClient();
+      return await actor[methods.get_all_collections](page - 1);
+    },
+  });
 };
 
 export const useGetCollections = (): UseQueryResult<Collection[]> => {
@@ -360,8 +382,7 @@ export const useMint = () => {
           JSON.stringify(metadata),
           type,
           parseInt(mintForAddress, 10),
-          burn,
-          undefined,
+          burn
         );
       } catch (error) {
         if (error instanceof Error) {
