@@ -111,7 +111,7 @@
     "title": "Previously created collections",
     "loading": "Loading collections...",
     "no_collections": "You have no collections created yet...",
-    "no_collections_at_all": "No collections created yet...",
+    "no_collections_at_all": "no collections created yet...",
     "input_name": "Collection name",
     "input_description": "Collection description",
     "index": {
@@ -276,10 +276,15 @@
   },
   "world_deployer": {
     "index": {
-      "title": "Previously created worlds",
+      "title": "Game Launcher Worlds",
       "button_world_deployer": "Create new World",
       "loading": "Loading Worlds ...",
-      "error": "you have no worlds created yet ..."
+      "error": "you have no worlds created yet ...",
+      "tabs": {
+        "item_1": "Your Worlds",
+        "item_1_title": "Previously created worlds",
+        "item_2": "All Worlds"
+      }
     },
     "create_world": {
       "title": "Create New World",
@@ -289,7 +294,8 @@
       "create_button": "Create New World",
       "success": "World created successfully",
       "error": "Sorry something happend... try again later"
-    }
+    },
+    "no_worlds_at_all": "no worlds created yet..."
   },
   "sliderImages": [
     {
