@@ -42,4 +42,7 @@ module {
     public let paymenthub_canister_id = "5hr3g-hqaaa-aaaap-abbxa-cai"; //!avoid changing this!
     public let stakinghub_canister_id = "4p3dm-lyaaa-aaaal-qb4da-cai"; //!avoid changing this!
     public let StakingHubAdmin = "";
+
+    public let NftDeployerCanisterId = "zeroy-xaaaa-aaaag-qb7da-cai";
+    public let NftDeployerCanisterIdStaging = "fbkar-zaaaa-aaaal-qbzca-cai";
 };

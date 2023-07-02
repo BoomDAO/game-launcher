@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Cog8ToothIcon } from "@heroicons/react/20/solid";
-import { useGetTotalUserGames, useGetUserGames } from "@/api/games_deployer";
+import { useGetTotalUserWorlds, useGetUserWorlds } from "@/api/world_deployer";
 import Card from "@/components/Card";
 import EmptyGameCard from "@/components/EmptyGameCard";
 import Pagination from "@/components/Pagination";
@@ -13,69 +13,59 @@ import Space from "@/components/ui/Space";
 import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
 
-const UploadGames = () => {
+const World = () => {
   const [pageNumber, setPageNumber] = React.useState(1);
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { data: games = [], isLoading, isError } = useGetUserGames(pageNumber);
-  const { data: totalGames } = useGetTotalUserGames();
+  const { data: worlds = [], isLoading, isError } = useGetUserWorlds(pageNumber);
+  const { data: totalWorlds } = useGetTotalUserWorlds();
 
   return (
     <>
-      <Space size="medium" />
-
       <Button
         size="big"
         rightArrow
-        onClick={() => navigate(`${navPaths.upload_games_new}`)}
+        onClick={() => navigate(`${navPaths.create_new_world}`)}
       >
-        {t("upload_games.button_upload")}
+        {t("world_deployer.index.button_world_deployer")}
       </Button>
-
-      <Space />
-
-      <H1>{t("upload_games.title")}</H1>
-
-      <Space size="medium" />
+      <H1>{t("world_deployer.index.tabs.item_1_title")}</H1>
 
       {isLoading ? (
-        <LoadingResult>{t("upload_games.loading")}</LoadingResult>
+        <LoadingResult>{t("world_deployer.index.loading")}</LoadingResult>
       ) : isError ? (
-        <ErrorResult>{t("error")}</ErrorResult>
-      ) : games.length ? (
+        <ErrorResult>{t("world_deployer.index.error")}</ErrorResult>
+      ) : worlds.length ? (
         <>
           <div className="card-container">
-            {games.map(({ canister_id, platform, name, verified, visibility}) => (
+            {worlds.map(({ canister, name, cover }) => (
               <Card
-                type="game"
-                key={canister_id}
+                type="world"
+                key={canister}
                 icon={<Cog8ToothIcon />}
                 title={name}
-                canisterId={canister_id}
-                platform={platform}
+                canisterId={canister}
                 showCycles
-                visibility={visibility}
                 onClick={() =>
-                  navigate(`${navPaths.upload_games}/${canister_id}`)
+                  window.open(`${navPaths.boomdao_candid_url}?id=${canister}`, "_blank")
                 }
-                verified={verified}
               />
             ))}
-            <EmptyGameCard length={games.length} />
+            <EmptyGameCard length={worlds.length} />
           </div>
 
           <Pagination
             pageNumber={pageNumber}
             setPageNumber={setPageNumber}
-            totalNumbers={getPaginationPages(totalGames, 9)}
+            totalNumbers={getPaginationPages(totalWorlds, 9)}
           />
         </>
       ) : (
-        <NoDataResult>{t("upload_games.no_games")}</NoDataResult>
+        <NoDataResult>{t("world_deployer.index.error")}</NoDataResult>
       )}
     </>
   );
 };
 
-export default UploadGames;
+export default World;

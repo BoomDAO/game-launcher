@@ -592,14 +592,29 @@ actor Deployer {
 
     //Queries
     //
-    public query func getCollections() : async ([Collection]) {
+    public query func getTotalCollections() : async (Nat) {
+        return Trie.size(collections);
+    };
+    
+    public query func getCollections(page : Nat32) : async ([Collection]) {
         var buffer : Buffer.Buffer<Collection> = Buffer.Buffer<Collection>(0);
+        var start : Nat32 = page * 9;
+        var end : Nat32 = start + 9;
         for ((id, name) in Trie.iter(collections)) {
             var i : Collection = {
                 name = name;
                 canister_id = id;
             };
             buffer.add(i);
+        };
+        var arr : [Collection] = Buffer.toArray(buffer);
+        if(Nat32.toNat(end) > arr.size()) {
+            end := Nat32.fromNat(arr.size());
+        };
+        buffer := Buffer.Buffer<Collection>(0);
+        while(start < end) {
+            buffer.add(arr[Nat32.toNat(start)]);
+            start := start + 1;
         };
         return Buffer.toArray(buffer);
     };
@@ -646,6 +661,37 @@ actor Deployer {
             };
             case (#err _) { return 0 };
         };
+    };
+
+    public shared (msg) func getTokenMetadata(collection_canister_id : Text, index : TokenIndex) : async (Text) {
+        // var owner : Text = Option.get(Trie.find(_owner, keyT(collection_canister_id), Text.equal), "");
+        // assert (msg.caller == Principal.fromText(owner));
+        let collection = actor (collection_canister_id) : actor {
+            extGetTokenMetadata : (TokenIndex) -> async (?Metadata);
+        };
+        var m : ?Metadata = await collection.extGetTokenMetadata(index);
+        var json : Text = "";
+        switch (m) {
+            case (?md) {
+                switch (md) {
+                    case (#fungible _) {};
+                    case (#nonfungible d) {
+                        switch (d.metadata) {
+                            case (?x) {
+                                switch (x) {
+                                    case (#json j) { json := j };
+                                    case (#blob _) {};
+                                    case (#data _) {};
+                                };
+                            };
+                            case _ {};
+                        };
+                    };
+                };
+            };
+            case _ {};
+        };
+        return json;
     };
 
     public shared (msg) func getUserNfts(collection_canister_id : Text, uid : Text) : async ([(TokenIndex, Text)]) {
@@ -730,15 +776,15 @@ actor Deployer {
     //Updates
     //
     //create a new nft collection
-    public shared (msg) func create_collection(collectionName : Text, description : Text) : async (Text) {
-        var canister_id : Text = await create_canister(msg.caller, collectionName, description);
-        collections := Trie.put(collections, keyT(canister_id), Text.equal, collectionName).0;
-        _owner := Trie.put(_owner, keyT(canister_id), Text.equal, Principal.toText(msg.caller)).0;
-        let collection = actor (canister_id) : actor {
+    public shared (msg) func create_collection(collectionName : Text, creator : Text, data : Text, _height : Nat64) : async (Text) {
+        var canID : Text = await create_canister(msg.caller, collectionName, data);
+        collections := Trie.put(collections, keyT(canID), Text.equal, collectionName).0;
+        _owner := Trie.put(_owner, keyT(canID), Text.equal, creator).0;
+        let collection = actor (canID) : actor {
             internal_ext_addAdmin : shared () -> async ();
         };
-        await collection.internal_ext_addAdmin(); //adding deployer as admin to NFT collection, for Bulk Mints/Airdrops/Burns operations
-        return canister_id;
+        await collection.internal_ext_addAdmin();
+        return canID;
     };
 
     //mint to a address/principal, specific number of NFT's
@@ -890,6 +936,18 @@ actor Deployer {
                 return #err(e);
             };
         };
+    };
+
+    //Burn a NFT - by collection owner
+    public shared (msg) func external_burn(collection_canister_id : Text, tokenindex : TokenIndex) : async Result.Result<(), CommonError> {
+        var owner : Text = Option.get(Trie.find(_owner, keyT(collection_canister_id), Text.equal), "");
+        assert (msg.caller == Principal.fromText(owner));
+        var tokenid : TokenIdentifier = await getTokenIdentifier(collection_canister_id, tokenindex);
+        let collection = actor (collection_canister_id) : actor {
+            ext_internal_burn : (TokenIdentifier) -> async (Result.Result<(), CommonError>);
+        };
+        var res : Result.Result<(), CommonError> = await collection.ext_internal_burn(tokenid);
+        return res;
     };
 
     //Burn all NFT's of a collection
