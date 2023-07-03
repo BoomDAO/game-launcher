@@ -10,6 +10,10 @@ export interface GameFile {
   fileType: string;
 }
 
+export interface CreateChunkType {
+  chunk_id: number;
+}
+
 type GameFiles = GameFile[];
 
 export interface Game {
