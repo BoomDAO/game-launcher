@@ -14,15 +14,18 @@ const Footer = () => {
             {t("footer.follow")}:
           </p>
           <div className="flex gap-3">
-            <a href="https://twitter.com/PlethoraGame" target="_blank">
+            <a href="https://twitter.com/boomdaosns" target="_blank">
               <img
                 src="/twitter.svg"
                 alt="twitter"
                 className="cursor-pointer"
               />
             </a>
-            <a href="https://medium.com/plethora" target="_blank">
-              <img src="/medium.svg" alt="medium" className="cursor-pointer" />
+            <a href="https://github.com/BoomDAO" target="_blank">
+              <img style={{width:24}} src="/github.svg" alt="medium" className="cursor-pointer" />
+            </a>
+            <a href="https://discord.com/" target="_blank">
+              <img style={{width:24}} src="/discord.svg" alt="medium" className="cursor-pointer" />
             </a>
           </div>
         </div>
