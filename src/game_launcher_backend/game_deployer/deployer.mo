@@ -386,7 +386,20 @@ actor Deployer {
         var lower : Nat = _page * 9;
         var upper : Nat = lower + 9;
         var b : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
+        var _featured_first : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
         let arr : [Game] = _sort_and_visible(_games);
+        for(i in arr.vals()) {
+            if(i.verified){
+                _featured_first.add(i);
+            };
+        };
+        for(i in arr.vals()) {
+            if(i.verified == false){
+                _featured_first.add(i);
+            };
+        };
+        var _featured_first_arr : [Game] = Buffer.toArray(_featured_first);
+
         let size = arr.size();
         if (upper > size) {
             upper := size;
@@ -401,16 +414,7 @@ actor Deployer {
             };
             case ("featured") {
                 while (lower < upper) {
-                    if (arr[lower].verified == true) {
-                        b.add(arr[lower]);
-                    };
-                    lower := lower + 1;
-                };
-                lower := _page * 9;
-                while (lower < upper) {
-                    if (arr[lower].verified == false) {
-                        b.add(arr[lower]);
-                    };
+                    b.add(_featured_first_arr[lower]);
                     lower := lower + 1;
                 };
                 return Buffer.toArray(b);

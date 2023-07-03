@@ -299,19 +299,19 @@
   },
   "sliderImages": [
     {
-      "image": "/banner.png",
-      "url": "https://5iuic-ryaaa-aaaal-ack7a-cai.raw.icp0.io/",
-      "name": "Plethora"
-    },
-    {
-      "image": "/game-1.png",
-      "url": "https://fsowo-7aaaa-aaaal-acdxa-cai.raw.icp0.io/",
+      "image": "/CubetopiaBanner.png",
+      "url": "https://kqwp7-2yaaa-aaaah-abyna-cai.raw.icp0.io/",
       "name": "Cubetopia"
     },
     {
-      "image": "/game-2.png",
-      "url": "https://edeir-hiaaa-aaaal-acdsq-cai.raw.icp0.io/",
-      "name": "Degen Spin"
+      "image": "/UnfoldBanner.jpg",
+      "url": "https://jmorc-qiaaa-aaaam-aaeda-cai.icp0.io/",
+      "name": "Unfold VR"
+    },
+    {
+      "image": "/PawsArenaBanner.jpeg",
+      "url": "https://knbkj-fiaaa-aaaan-qaadq-cai.icp0.io/",
+      "name": "Paws Arena"
     }
   ]
 }

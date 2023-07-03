@@ -1,5 +1,5 @@
 import { useAssetClient, useGameClient } from "@/hooks";
-import { Base64, CreateGameFiles, GameFile } from "@/types";
+import { Base64, CreateGameFiles, GameFile, CreateChunkType } from "@/types";
 
 export const b64toArrays = (base64: Base64) => {
   let encoded = base64.toString().replace(/^data:(.*,)?/, "");
@@ -156,23 +156,18 @@ export const uploadGameFiles = async (
       batch_id: number;
     };
     const file = files[i];
-    // const chunks = [];
     let chunks = [];
-    let chunkIds = [];
+    let chunkIds : Number[] = [];
     for (let i = 0; i < file.fileArr.length; i++) {
       const _req2 = {
         content: file.fileArr[i],
         batch_id: Number(batch.batch_id),
       };
-      // const chunk = (await actor[methods.create_chunk](_req2)) as {
-      //   chunk_id: number;
-      // };
-      // chunks.push(Number(chunk.chunk_id));
       chunks.push(actor[methods.create_chunk](_req2));
     }
     await Promise.all(chunks)
       .then(
-        res2 => {
+        (res2: any) => {
           for (let k = 0; k < res2.length; k++) {
             chunkIds.push(Number(res2[k].chunk_id));
           };
@@ -197,14 +192,6 @@ export const uploadGameFiles = async (
     const etag = Math.random();
 
     if (_bch == "" && _gch == "") {
-      // await actor[methods.commit_asset_upload](
-      //   batch.batch_id,
-      //   String(_name),
-      //   file.fileType,
-      //   chunks,
-      //   "identity",
-      //   etag.toString(),
-      // );
       commits.push(
         actor[methods.commit_asset_upload](
           batch.batch_id,
@@ -216,14 +203,6 @@ export const uploadGameFiles = async (
         )
       );
     } else if (_gch != "") {
-      // await actor[methods.commit_asset_upload](
-      //   batch.batch_id,
-      //   String(_name),
-      //   String(_gch),
-      //   chunks,
-      //   "gzip",
-      //   etag.toString(),
-      // );
       commits.push(
         actor[methods.commit_asset_upload](
           batch.batch_id,
@@ -235,14 +214,6 @@ export const uploadGameFiles = async (
         )
       );
     } else {
-      // await actor[methods.commit_asset_upload](
-      //   batch.batch_id,
-      //   String(_name),
-      //   String(_bch),
-      //   chunks,
-      //   "br",
-      //   etag.toString(),
-      // );
       commits.push(
         actor[methods.commit_asset_upload](
           batch.batch_id,
