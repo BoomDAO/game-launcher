@@ -134,7 +134,7 @@ export const getGameFiles = async (file: File) => {
       const fileArr = b64toArrays(reader.result);
       const fileType = b64toType(reader.result);
       const fileName = file.webkitRelativePath;
-
+      console.log((file.size) + ' Bytes')
       resolve({ fileName, fileType, fileArr });
     };
   });
@@ -149,7 +149,6 @@ export const uploadGameFiles = async (
   const r = {};
   await actor[methods.clear](r);
   console.log("Cleared State!");
-  let commits = [];
   for (let i = 0; i < files.length; i++) {
     console.log(files[i]);
     const batch = (await actor[methods.create_batch]()) as {
@@ -192,43 +191,40 @@ export const uploadGameFiles = async (
     const etag = Math.random();
 
     if (_bch == "" && _gch == "") {
-      commits.push(
-        actor[methods.commit_asset_upload](
+        let res = await actor[methods.commit_asset_upload](
           batch.batch_id,
           String(_name),
           file.fileType,
           chunks,
           "identity",
           etag.toString(),
-        )
-      );
+        );
+        // console.log((res.err == undefined)? "1" : "2");
     } else if (_gch != "") {
-      commits.push(
-        actor[methods.commit_asset_upload](
+        let res = await actor[methods.commit_asset_upload](
           batch.batch_id,
           String(_name),
           String(_gch),
           chunks,
           "gzip",
           etag.toString(),
-        )
-      );
+        );
+        // console.log((res.err == undefined)? "1" : "2");
     } else {
-      commits.push(
-        actor[methods.commit_asset_upload](
+        let res = await actor[methods.commit_asset_upload](
           batch.batch_id,
           String(_name),
           String(_bch),
           chunks,
           "br",
           etag.toString(),
-        )
-      );
+        );
+        // console.log((res.err == undefined)? "1" : "2");
     }
   }
-  await Promise.all(commits).then((values) => {
-    console.log(values);
-  });
+  // await Promise.all(commits).then((values) => {
+  //   console.log(values);
+  // });
 };
 
 export const uploadZip = async ({

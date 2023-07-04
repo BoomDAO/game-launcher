@@ -360,7 +360,6 @@ actor Deployer {
             };
         };
         var canister_ids : [Text] = Iter.toArray(Text.tokens(_canister_ids, #text(",")));
-        canister_ids := Array.reverse(canister_ids);
         for (canister_id in canister_ids.vals()) {
             dummy_time := dummy_time - 1;
             switch (Trie.find(_games, Utils.keyT(canister_id), Text.equal)) {
