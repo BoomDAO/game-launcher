@@ -339,6 +339,7 @@ actor Deployer {
 
     public shared ({ caller }) func adminUpdateFeaturedGames(_canister_ids : Text) : async () {
         assert (_isAdmin(Principal.toText(caller)));
+        var dummy_time : Int = Time.now();
         for ((canister_id, game) in Trie.iter(_games)) {
             switch (Trie.find(_games, Utils.keyT(canister_id), Text.equal)) {
                 case (?_game) {
@@ -360,6 +361,7 @@ actor Deployer {
         };
         var canister_ids : [Text] = Iter.toArray(Text.tokens(_canister_ids, #text(",")));
         for (canister_id in canister_ids.vals()) {
+            dummy_time := dummy_time - 1;
             switch (Trie.find(_games, Utils.keyT(canister_id), Text.equal)) {
                 case (?_game) {
                     var g : Game = {
@@ -369,7 +371,7 @@ actor Deployer {
                         canister_id = _game.canister_id;
                         url = _game.url;
                         cover = _game.cover;
-                        lastUpdated = _game.lastUpdated;
+                        lastUpdated = dummy_time;
                         verified = true;
                         visibility = _game.visibility;
                     };
@@ -610,5 +612,13 @@ actor Deployer {
     //         }
     //     }
     // };
+
+    public query func get_all_games() : async [(Text, Game)] {
+        var b = Buffer.Buffer<(Text, Game)> (0);
+        for((i, v) in Trie.iter(_games)) {
+            b.add((i, v));
+        };
+        return Buffer.toArray(b);
+    };
 
 };
