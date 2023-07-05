@@ -45,7 +45,7 @@ export const useGetTotalGames = () =>
     queryKey: [queryKeys.games_total],
     queryFn: async () => {
       const { actor, methods } = await useGameClient();
-      return Number(await actor[methods.get_total_games]());
+      return Number(await actor[methods.get_total_visible_games]());
     },
   });
 
