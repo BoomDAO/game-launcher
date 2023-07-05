@@ -178,6 +178,16 @@ actor Deployer {
         return Trie.size(_games);
     };
 
+    public query func get_total_visible_games() : async (Nat) {
+        var count = 0;
+        for((i, v) in Trie.iter(_games)) {
+            if(v.visibility != "private"){
+                count := count + 1;
+            };
+        };
+        return count;
+    };
+
     public query func get_users_total_games(uid : Text) : async (Nat) {
         var b : Buffer.Buffer<Game> = Buffer.Buffer<Game>(0);
         for ((i, v) in Trie.iter(_owners)) {

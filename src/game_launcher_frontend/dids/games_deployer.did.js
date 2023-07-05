@@ -45,10 +45,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Game)],
         ['query'],
       ),
+    'get_all_games' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, Game))],
+        ['query'],
+      ),
     'get_game' : IDL.Func([IDL.Text], [IDL.Opt(Game)], ['query']),
     'get_game_cover' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
     'get_owner' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
     'get_total_games' : IDL.Func([], [IDL.Nat], ['query']),
+    'get_total_visible_games' : IDL.Func([], [IDL.Nat], ['query']),
     'get_user_games' : IDL.Func(
         [IDL.Text, IDL.Nat],
         [IDL.Vec(Game)],
