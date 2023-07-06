@@ -12,3 +12,7 @@ jobs:
           dfx-version: 0.13.1
           install-moc: true
       - run: for i in src/game_launcher_backend/game_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+      - run: for i in src/game_launcher_backend/nfts_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+      - run: for i in src/game_launcher_backend/token_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+      - run: for i in src/game_launcher_backend/world_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+
