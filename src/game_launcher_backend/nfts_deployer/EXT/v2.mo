@@ -38,13 +38,6 @@ import AccountIdentifier "../../utils/AccountIdentifier";
 
 
 actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
-  // For Production Purpose
-
-  // actor class EXTNFT() = this {
-  //   var init_owner : Principal = Principal.fromText("r2erm-ehpcs-iguiu-tckwf-igo3p-w4op6-zhcdf-c57c3-ov2z5-kg5pm-mqe");
-  //   var name : Text = "Plethora Items";
-  //   var data : Text = "The powerful items that can be spent in the Plethora world";
-
   // EXT Types
   type EXTAssetService = EXTAsset.EXTAsset;
   type Order = { #less; #equal; #greater };
@@ -287,6 +280,8 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   private stable var data_internalNextChunkId : ChunkId = 0;
   private stable var data_internalNextSubAccount : Nat = 0;
   private stable var data_storedChunkSize : Nat = 0;
+  private stable var data_assetHandle : Nat = 0;
+
   //Sale
   private stable var data_saleTransactions : [SaleTransaction] = [];
   private stable var data_expiredPayments : [(AccountIdentifier, SubAccount)] = [];
@@ -497,7 +492,9 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   public query func ext_assetExists(assetHandle : AssetHandle) : async Bool {
     Option.isSome(_assets.get(assetHandle));
   };
-  public shared (msg) func ext_assetAdd(assetHandle : AssetHandle, ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
+  public shared (msg) func ext_assetAdd(ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
+    var assetHandle : AssetHandle = "dynamicMintAsset:" #Nat.toText(data_assetHandle);
+    data_assetHandle := data_assetHandle + 1;
     await _ext_internal_assetAdd(msg.caller, assetHandle, ctype, filename, atype, size);
   };
   public shared (msg) func ext_assetStream(assetHandle : AssetHandle, chunk : Blob, first : Bool) : async Bool {
@@ -2345,19 +2342,22 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
     return Buffer.toArray(b);
   };
 
-  public query func get_assetHandle(_asset : Text) : async (TokenIndex) {
-    var token_index : TokenIndex = 0;
-    for (i in (Iter.toArray(_tokenMetadata.entries())).vals()) {
-      switch (i.1) {
-        case (#fungible _) {};
-        case (#nonfungible a) {
-          if (a.asset == _asset) {
-            token_index := i.0;
+  public query func get_asset_encoding(_assetHandle : Text) : async (Text) {
+    switch (_assets.get(_assetHandle)) {
+      case (null) {
+        return "";
+      };
+      case (?asset) {
+        switch (asset.atype) {
+          case (#other e) {
+            return e;
+          };
+          case _ {
+            return "";
           };
         };
       };
     };
-    return token_index;
   };
 
 };

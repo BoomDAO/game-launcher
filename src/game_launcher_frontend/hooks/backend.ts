@@ -183,6 +183,7 @@ export const useMintingDeployerClient = async () => {
       external_burn: "external_burn",
       airdrop_to_addresses: "airdrop_to_addresses",
       batch_mint_to_addresses: "batch_mint_to_addresses",
+      upload_asset: "upload_asset_to_collection_for_dynamic_mint",
     },
   };
 };
@@ -216,6 +217,8 @@ export const useExtClient = async (canister_id?: string) => {
     methods: {
       add_admin: "ext_addAdmin",
       remove_admin: "ext_removeAdmin",
+      get_asset_ids: "get_all_assetHandles",
+      get_asset_encoding: "get_asset_encoding"
     },
   };
 };
