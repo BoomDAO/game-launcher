@@ -11,6 +11,9 @@ import GetTokenRegistry from "./components/GetTokenRegistry";
 import ManageAdmin from "./components/ManageAdmin";
 import ManageController from "./components/ManageController";
 import Mint from "./components/Mint";
+import UploadAsset from "./components/UploadAsset";
+import ViewAssets from "./components/ViewAssets";
+import ViewAsset from "./components/ViewAsset";
 
 const UpdateCollection = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -23,6 +26,7 @@ const UpdateCollection = () => {
     { id: 3, name: t("manage_nfts.update.tabs.item_3") },
     { id: 4, name: t("manage_nfts.update.tabs.item_4") },
     { id: 5, name: t("manage_nfts.update.tabs.item_5") },
+    { id: 6, name: t("manage_nfts.update.tabs.item_6") },
   ];
 
   return (
@@ -64,6 +68,16 @@ const UpdateCollection = () => {
       {activeTab === 5 && (
         <div className="w-full space-y-12">
           <Airdrop />
+        </div>
+      )}
+
+      {activeTab === 6 && (
+        <div className="w-full space-y-12">
+          <UploadAsset />
+          <Divider/>
+          <ViewAssets/>
+          <Divider/>
+          <ViewAsset/>
         </div>
       )}
     </>

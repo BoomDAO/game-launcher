@@ -12,7 +12,7 @@ import {
 import { useAuthContext } from "@/context/authContext";
 import { useExtClient, useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
-import { Airdrop, Collection, CreateCollection, Mint } from "@/types";
+import { Airdrop, Collection, CreateCollection, Mint, AssetUpload } from "@/types";
 import { b64toType, formatCycleBalance, getAgent } from "@/utils";
 // @ts-ignore
 import { idlFactory as ExtFactory } from "../dids/ext.did.js";
@@ -416,5 +416,81 @@ export const useGetCollectionCycleBalance = (
 
       const balance = Number(await actor.availableCycles());
       return `${formatCycleBalance(balance)}T`;
+    },
+  });
+
+  export const useAssetUpload = () => {
+    const { t } = useTranslation();
+  
+    return useMutation({
+      mutationFn: async ({
+        canisterId,
+        nft,
+        assetId
+      }: AssetUpload) => {
+        try {
+          const { actor, methods } = await useMintingDeployerClient();
+          const type = b64toType(nft);
+          return await actor[methods.upload_asset](
+            canisterId,
+            assetId,
+            type,
+            nft
+          );
+        } catch (error) {
+          if (error instanceof Error) {
+            throw error.message;
+          }
+          throw serverErrorMsg;
+        }
+      },
+      onError: () => {
+        toast.error(t("manage_nfts.update.assets.upload.error"));
+      },
+      onSuccess: () => {
+        toast.success(t("manage_nfts.update.assets.upload.success"));
+      },
+    });
+  };
+
+  export const useGetAssetIds = () =>
+  useMutation({
+    mutationFn: async ({
+      canisterId,
+    }: {
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useExtClient(canisterId);
+        const data = (await actor[methods.get_asset_ids]()) as string[];
+        return data;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+  });
+
+  export const useGetAssetEncoding = () =>
+  useMutation({
+    mutationFn: async ({
+      canisterId,
+      assetId
+    }: {
+      canisterId?: string;
+      assetId: string;
+    }) => {
+      try {
+        const { actor, methods } = await useExtClient(canisterId);
+        const data = (await actor[methods.get_asset_encoding](assetId)) as string;
+        return data;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
     },
   });

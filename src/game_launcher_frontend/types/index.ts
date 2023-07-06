@@ -146,6 +146,12 @@ export interface Mint {
   burnTime: string;
 }
 
+export interface AssetUpload {
+  canisterId?: string;
+  nft: string;
+  assetId: string;
+}
+
 export interface Token {
   name: string;
   symbol: string;
