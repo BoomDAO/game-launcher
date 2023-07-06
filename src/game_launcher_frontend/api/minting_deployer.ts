@@ -426,12 +426,14 @@ export const useGetCollectionCycleBalance = (
       mutationFn: async ({
         canisterId,
         nft,
+        assetId
       }: AssetUpload) => {
         try {
           const { actor, methods } = await useMintingDeployerClient();
           const type = b64toType(nft);
           return await actor[methods.upload_asset](
             canisterId,
+            assetId,
             type,
             nft
           );

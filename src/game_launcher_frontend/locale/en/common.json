@@ -140,6 +140,8 @@
       "assets": {
         "upload": {
           "title": "Upload Image Asset to NFT Collection",
+          "assetId_input_placeholder": "Image Asset Id",
+          "assetId_input_helper": "Image asset id can be any text that uniquely idetifies this image, which can later be dynamically minted to users using this unique image asset id.",
           "upload_button": "Choose IMG",
           "upload_placeholder": "Image Asset File",
           "button": "Upload Image",

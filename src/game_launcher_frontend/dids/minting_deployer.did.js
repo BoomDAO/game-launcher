@@ -22,6 +22,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const TokenIdentifier = IDL.Text;
   const TimerId = IDL.Nat;
+  const AssetHandle = IDL.Text;
   return IDL.Service({
     'add_controller' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'airdrop_to_addresses' : IDL.Func(
@@ -83,7 +84,7 @@ export const idlFactory = ({ IDL }) => {
     'get_last_cron_timestamp' : IDL.Func([], [IDL.Int], ['query']),
     'remove_controller' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'upload_asset_to_collection_for_dynamic_mint' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Text, AssetHandle, IDL.Text, IDL.Text],
         [],
         [],
       ),

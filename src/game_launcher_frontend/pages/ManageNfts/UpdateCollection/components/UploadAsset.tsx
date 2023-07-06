@@ -17,6 +17,7 @@ import Divider from "@/components/ui/Divider";
 
 const scheme = z.object({
     nft: z.string().min(1, "Image is required."),
+    assetId: z.string().min(1, "Asset Id is required."),
 });
 
 type Data = z.infer<typeof scheme>;
@@ -29,6 +30,7 @@ const UploadAsset = () => {
     const { control, handleSubmit, watch, reset } = useForm<Data>({
         defaultValues: {
             nft: "",
+            assetId: "",
         },
         resolver: zodResolver(scheme),
     });
@@ -50,7 +52,17 @@ const UploadAsset = () => {
             <SubHeading>{t("manage_nfts.update.assets.upload.title")}</SubHeading>
             <Space />
             <Form onSubmit={handleSubmit(onSubmit)}>
-                <div className="grid grid-cols-1 justify-items-center md:grid-cols-2">
+                <div className="flex flex-col gap-6 md:flex-row">
+                    <FormTextInput
+                        control={control}
+                        name="assetId"
+                        placeholder={t(
+                            "manage_nfts.update.assets.upload.assetId_input_placeholder",
+                        )}
+                        hint={{
+                            body: t("manage_nfts.update.assets.upload.assetId_input_helper"),
+                        }}
+                    />
                     <FormUploadButton
                         buttonText={t("manage_nfts.update.assets.upload.upload_button")}
                         placeholder={t("manage_nfts.update.assets.upload.upload_placeholder")}

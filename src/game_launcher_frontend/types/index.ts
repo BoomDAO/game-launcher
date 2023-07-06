@@ -149,6 +149,7 @@ export interface Mint {
 export interface AssetUpload {
   canisterId?: string;
   nft: string;
+  assetId: string;
 }
 
 export interface Token {

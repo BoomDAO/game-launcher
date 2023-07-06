@@ -1,22 +1,22 @@
 {
-    "game-launcher": {
-        "ic": "awcae-maaaa-aaaam-abmyq-cai",
-        "stag": "n7z64-2yaaa-aaaam-abnsa-cai"
-    },
-    "game_deployer": {
-        "ic": "6rvbl-uqaaa-aaaal-ab24a-cai",
-        "stag": "ltwhn-5iaaa-aaaao-askdq-cai"
-    },
-    "nfts_deployer": {
-        "stag": "fbkar-zaaaa-aaaal-qbzca-cai",
-        "ic": "zeroy-xaaaa-aaaag-qb7da-cai"
-    },
-    "token_deployer": {
-        "ic": "qx76v-6qaaa-aaaal-acmla-cai",
-        "stag": "pffwa-eiaaa-aaaam-abn5a-cai"
-    },
-    "world_deployer": {
-        "ic": "a6t6i-riaaa-aaaal-acphq-cai",
-        "stag": "na2jz-uqaaa-aaaal-qbtfq-cai"
-    }
+  "game-launcher": {
+    "ic": "awcae-maaaa-aaaam-abmyq-cai",
+    "stag": "n7z64-2yaaa-aaaam-abnsa-cai"
+  },
+  "game_deployer": {
+    "ic": "6rvbl-uqaaa-aaaal-ab24a-cai",
+    "stag": "ltwhn-5iaaa-aaaao-askdq-cai"
+  },
+  "nfts_deployer": {
+    "ic": "zeroy-xaaaa-aaaag-qb7da-cai",
+    "stag": "fbkar-zaaaa-aaaal-qbzca-cai"
+  },
+  "token_deployer": {
+    "ic": "qx76v-6qaaa-aaaal-acmla-cai",
+    "stag": "pffwa-eiaaa-aaaam-abn5a-cai"
+  },
+  "world_deployer": {
+    "ic": "a6t6i-riaaa-aaaal-acphq-cai",
+    "stag": "na2jz-uqaaa-aaaal-qbtfq-cai"
+  }
 }

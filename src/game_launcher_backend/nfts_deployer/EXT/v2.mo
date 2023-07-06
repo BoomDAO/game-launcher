@@ -280,7 +280,6 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   private stable var data_internalNextChunkId : ChunkId = 0;
   private stable var data_internalNextSubAccount : Nat = 0;
   private stable var data_storedChunkSize : Nat = 0;
-  private stable var data_assetHandle : Nat = 0;
 
   //Sale
   private stable var data_saleTransactions : [SaleTransaction] = [];
@@ -492,9 +491,7 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   public query func ext_assetExists(assetHandle : AssetHandle) : async Bool {
     Option.isSome(_assets.get(assetHandle));
   };
-  public shared (msg) func ext_assetAdd(ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
-    var assetHandle : AssetHandle = Nat.toText(data_assetHandle);
-    data_assetHandle := data_assetHandle + 1;
+  public shared (msg) func ext_assetAdd(assetHandle: AssetHandle, ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
     await _ext_internal_assetAdd(msg.caller, assetHandle, ctype, filename, atype, size);
   };
   public shared (msg) func ext_assetStream(assetHandle : AssetHandle, chunk : Blob, first : Bool) : async Bool {
@@ -1273,14 +1270,6 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   };
   public query func availableCycles() : async Nat {
     return Cycles.balance();
-  };
-  public query func cycleBalance() : async Nat {
-    Cycles.balance();
-  };
-  public func accept_cycles() : async (Nat) {
-    let available = Cycles.available();
-    let accepted = Cycles.accept(available);
-    return accepted;
   };
 
   //Private

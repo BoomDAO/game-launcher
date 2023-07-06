@@ -961,14 +961,14 @@ actor Deployer {
         var res : () = await collection.ext_internal_bulk_burn(0, Nat32.fromNat(s));
     };
 
-    public shared (msg) func upload_asset_to_collection_for_dynamic_mint(collection_canister_id : Text, ctype : Text, encoding : Text) : async () {
+    public shared (msg) func upload_asset_to_collection_for_dynamic_mint(collection_canister_id : Text, assetHandle : AssetHandle, ctype : Text, encoding : Text) : async () {
         var owner : Text = Option.get(Trie.find(_owner, keyT(collection_canister_id), Text.equal), "");
         assert (msg.caller == Principal.fromText(owner));
         let collection = actor (collection_canister_id) : actor {
-            ext_assetAdd : (Text, Text, AssetType, Nat) -> async ();
+            ext_assetAdd : (Text, Text, Text, AssetType, Nat) -> async ();
         };
         var _atype : AssetType = #other encoding;
-        await collection.ext_assetAdd(ctype, "", _atype, 0);
+        await collection.ext_assetAdd(assetHandle, ctype, "", _atype, 0);
     };
 
     //Motoko Timer API
