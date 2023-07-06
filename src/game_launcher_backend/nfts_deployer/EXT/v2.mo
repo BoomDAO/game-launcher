@@ -493,7 +493,7 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
     Option.isSome(_assets.get(assetHandle));
   };
   public shared (msg) func ext_assetAdd(ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
-    var assetHandle : AssetHandle = "dynamicMintAsset:" #Nat.toText(data_assetHandle);
+    var assetHandle : AssetHandle = Nat.toText(data_assetHandle);
     data_assetHandle := data_assetHandle + 1;
     await _ext_internal_assetAdd(msg.caller, assetHandle, ctype, filename, atype, size);
   };

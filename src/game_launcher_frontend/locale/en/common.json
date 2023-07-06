@@ -135,28 +135,28 @@
         "item_3": "Burn",
         "item_4": "Mint",
         "item_5": "Airdrop",
-        "item_6": "Assets"
+        "item_6": "Configure Images"
       },
       "assets": {
         "upload": {
-          "title": "Upload Asset to NFT Collection",
-          "upload_button": "Choose Asset IMG",
-          "upload_placeholder": "Asset Image File",
-          "button": "Upload Asset",
+          "title": "Upload Image Asset to NFT Collection",
+          "upload_button": "Choose IMG",
+          "upload_placeholder": "Image Asset File",
+          "button": "Upload Image",
           "error": "Sorry something happend... try again later",
-          "success": "Asset Uploaded successfully",
-          "input_helper_upload_asset": "An asset image getting uploaded to your NFT collection, which can be minted dynamically from your game to users directly using unique asset_id assigned to this image."
+          "success": "Asset Image Uploaded successfully",
+          "input_helper_upload_asset": "An image asset getting uploaded to your NFT collection, which can be minted dynamically from your game to users directly using unique asset_id assigned to this image."
         },
         "view": {
-          "title": "View All Asset Ids",
+          "title": "View All Image Asset Ids",
           "button": "Get All Asset Ids of Collection",
-          "error": "No assets uploaded..."
+          "error": "No image assets uploaded..."
         },
         "asset": {
-          "title": "View Asset Image",
-          "input_placeholder": "Asset Id",
+          "title": "View Image Asset",
+          "input_placeholder": "Image Asset Id",
           "button": "View",
-          "error": "No asset with this asset id uploaded..."
+          "error": "No image asset with this asset id uploaded..."
         }
       },
       "view": {
