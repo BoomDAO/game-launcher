@@ -24,7 +24,7 @@ const Footer = () => {
             <a href="https://github.com/BoomDAO" target="_blank">
               <img style={{width:24}} src="/github.svg" alt="medium" className="cursor-pointer" />
             </a>
-            <a href="https://discord.com/" target="_blank">
+            <a href="https://discord.com/invite/fPVqZkQ6x2" target="_blank">
               <img style={{width:24}} src="/discord.svg" alt="medium" className="cursor-pointer" />
             </a>
           </div>
