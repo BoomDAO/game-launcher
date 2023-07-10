@@ -433,7 +433,7 @@ actor Deployer {
     func burn_cron() : async () {
         last_cron_time := Time.now();
         for ((id, info) in Trie.iter(_info)) {
-            if (info.burnAt < Time.now() and info.status == "active") {
+            if (info.burnAt < Time.now() and info.status == "active" and info.burnAt != 0) {
                 await burnNfts(info.collection, Nat32.fromNat(info.lowerBound), Nat32.fromNat(info.upperBound), id);
             };
         };

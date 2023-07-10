@@ -327,7 +327,6 @@ export const useAirdrop = () => {
         const burn = burnTime
           ? BigInt(parseInt(burnTime, 10) * 1000000)
           : BigInt(0);
-
         return await actor[methods.airdrop_to_addresses](
           canisterId,
           collectionId,
