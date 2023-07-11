@@ -294,7 +294,7 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   private stable var cap_rootBucketId : ?Text = null;
 
   //CONFIG
-  private stable var config_deployers : [Text] = ["zeroy-xaaaa-aaaag-qb7da-cai", "fbkar-zaaaa-aaaal-qbzca-cai"]; //NFT Deployer Canister Ids Boom
+  private stable var config_deployers : [Text] = ["zeroy-xaaaa-aaaag-qb7da-cai"]; //NFT Deployer Canister Ids Boom
   private stable var config_core : [Text] = []; 
   private stable var config_owner : Principal = init_owner;
   private stable var config_admin : [Principal] = [config_owner];
