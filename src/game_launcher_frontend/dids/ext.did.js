@@ -400,7 +400,7 @@ export const idlFactory = ({ IDL }) => {
     getTotalTokens: IDL.Func([], [IDL.Nat], ["query"]),
     get_all_assetHandles: IDL.Func([], [IDL.Vec(AssetHandle)], ["query"]),
     get_assetHandle: IDL.Func([IDL.Text], [TokenIndex], ["query"]),
-    get_asset_encoding: IDL.Func([IDL.Text], [IDL.Text], ["query"]),
+    get_asset_encoding: IDL.Func([IDL.Text], [IDL.Vec(IDL.Nat8)], ["query"]),
     get_paged_registry: IDL.Func(
       [IDL.Nat32],
       [IDL.Vec(IDL.Tuple(TokenIndex, AccountIdentifier__1))],

@@ -10,7 +10,7 @@ export const b64toArrays = (base64: Base64) => {
 
   const byteCharacters = Buffer.from(encoded, "base64");
   const byteArrays = [];
-  const sliceSize = 1500000;
+  const sliceSize = 1800000;
 
   for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
     const byteArray = [];
@@ -45,6 +45,22 @@ export const b64toType = (base64: Base64) => {
 
   return type;
 };
+
+export const arrayTob64 = async (data : []) => {
+  var buffer = new Uint8Array(data)
+  // Use a FileReader to generate a base64 data URI
+  var res = "";
+  await new Promise((r) => {
+      const reader = new FileReader()
+      reader.onload = () => r(reader.result)
+      reader.readAsDataURL(new Blob([buffer]))
+  }).then (
+    function (r) {
+      res = r;
+    }
+  )
+  return res;
+}
 
 export const trim_folder_name = (name: string) => {
   let res = "";
@@ -156,7 +172,7 @@ export const uploadGameFiles = async (
     };
     const file = files[i];
     let chunks = [];
-    let chunkIds : Number[] = [];
+    let chunkIds: Number[] = [];
     for (let i = 0; i < file.fileArr.length; i++) {
       const _req2 = {
         content: file.fileArr[i],
@@ -191,35 +207,35 @@ export const uploadGameFiles = async (
     const etag = Math.random();
 
     if (_bch == "" && _gch == "") {
-        let res = await actor[methods.commit_asset_upload](
-          batch.batch_id,
-          String(_name),
-          file.fileType,
-          chunks,
-          "identity",
-          etag.toString(),
-        );
-        // console.log((res.err == undefined)? "1" : "2");
+      let res = await actor[methods.commit_asset_upload](
+        batch.batch_id,
+        String(_name),
+        file.fileType,
+        chunks,
+        "identity",
+        etag.toString(),
+      );
+      // console.log((res.err == undefined)? "1" : "2");
     } else if (_gch != "") {
-        let res = await actor[methods.commit_asset_upload](
-          batch.batch_id,
-          String(_name),
-          String(_gch),
-          chunks,
-          "gzip",
-          etag.toString(),
-        );
-        // console.log((res.err == undefined)? "1" : "2");
+      let res = await actor[methods.commit_asset_upload](
+        batch.batch_id,
+        String(_name),
+        String(_gch),
+        chunks,
+        "gzip",
+        etag.toString(),
+      );
+      // console.log((res.err == undefined)? "1" : "2");
     } else {
-        let res = await actor[methods.commit_asset_upload](
-          batch.batch_id,
-          String(_name),
-          String(_bch),
-          chunks,
-          "br",
-          etag.toString(),
-        );
-        // console.log((res.err == undefined)? "1" : "2");
+      let res = await actor[methods.commit_asset_upload](
+        batch.batch_id,
+        String(_name),
+        String(_bch),
+        chunks,
+        "br",
+        etag.toString(),
+      );
+      // console.log((res.err == undefined)? "1" : "2");
     }
   }
   // await Promise.all(commits).then((values) => {

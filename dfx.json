@@ -24,6 +24,10 @@
         "world_deployer": {
             "main": "src/game_launcher_backend/world_deployer/deployer.mo",
             "type": "motoko"
+        },
+        "nft": {
+            "main": "src/game_launcher_backend/nfts_deployer/EXT/v2.mo",
+            "type": "motoko"
         }
     },
     "defaults": {

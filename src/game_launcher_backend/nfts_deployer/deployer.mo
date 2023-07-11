@@ -512,11 +512,14 @@ actor Deployer {
         return a[0];
     };
 
-    private func _addAsset(collection_canister_id : Text, assetHandle : AssetHandle, ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
+    private func _addAsset(collection_canister_id : Text, assetHandle : AssetHandle, chunk : [Nat8]) : async () {
         let collection = actor (collection_canister_id) : actor {
-            ext_assetAdd : (AssetHandle, Text, Text, AssetType, Nat) -> async ();
+            ext_assetAdd : (Text, Text, Text, AssetType, Nat) -> async ();
+            ext_assetStream : (Text, Blob, Bool) -> async (Bool);
         };
-        await collection.ext_assetAdd(assetHandle, ctype, filename, atype, size);
+        var _chunk : Blob = Blob.fromArray(chunk);
+        await collection.ext_assetAdd(assetHandle, "image/png", assetHandle, #direct([]) : AssetType, 0);
+        let res = await collection.ext_assetStream(assetHandle, _chunk, true);
     };
 
     //utility functions
@@ -788,23 +791,17 @@ actor Deployer {
     };
 
     //mint to a address/principal, specific number of NFT's
-    public shared (msg) func batch_mint_to_addresses(collection_canister_id : Text, p : [Text], encoding : Text, j : Text, _ctype : Text, mint_size : Nat32, _burnAt : Int) : async ([TokenIndex]) {
+    public shared (msg) func batch_mint_to_addresses(collection_canister_id : Text, p : [Text], j : Text, mint_size : Nat32, _burnAt : Int, chunk : [Nat8]) : async ([TokenIndex]) {
         var owner : Text = Option.get(Trie.find(_owner, keyT(collection_canister_id), Text.equal), "");
         var is_minter : Bool = await _isMinter(collection_canister_id, msg.caller);
         assert (msg.caller == Principal.fromText(owner) or is_minter == true);
 
         var _json : MetadataContainer = #json j;
-        var _atype : AssetType = #other encoding;
         var size : Nat = await getSize(collection_canister_id);
 
-        var _assetReq : Asset_req = {
-            assetHandle = "nftAsset:" #collection_canister_id # (Nat.toText(size));
-            ctype = _ctype;
-            filename = "";
-            atype = _atype;
-        };
+        let assetHandle = "nftAsset:" #collection_canister_id # (Nat.toText(size));
         //updating asset
-        await _addAsset(collection_canister_id, _assetReq.assetHandle, _assetReq.ctype, _assetReq.filename, _assetReq.atype, 0);
+        await _addAsset(collection_canister_id, assetHandle, chunk);
         var _lowerBound : Nat = 0;
         var _upperBound : Nat = 0;
         var indices : Buffer.Buffer<TokenIndex> = Buffer.Buffer<TokenIndex>(0);
@@ -818,8 +815,8 @@ actor Deployer {
                 aid,
                 #nonfungible {
                     name = "";
-                    asset = "nftAsset:" #collection_canister_id # (Nat.toText(size));
-                    thumbnail = "nftAsset:" #collection_canister_id # (Nat.toText(size));
+                    asset = assetHandle;
+                    thumbnail = assetHandle;
                     metadata = ?_json;
                 },
             );
@@ -846,18 +843,17 @@ actor Deployer {
             upperBound = _upperBound;
             status = "active";
         };
-        _info := Trie.put(_info, keyT(_assetReq.assetHandle), Text.equal, info).0;
+        _info := Trie.put(_info, keyT(assetHandle), Text.equal, info).0;
         return Buffer.toArray(indices);
     };
 
     //airdrop NFT's to addresses of other EXT std NFT collection
-    public shared (msg) func airdrop_to_addresses(collection_canister_id : Text, canid : Text, encoding : Text, j : Text, _ctype : Text, prevent : Bool, _burnAt : Int) : async ([TokenIndex]) {
+    public shared (msg) func airdrop_to_addresses(collection_canister_id : Text, canid : Text, j : Text, prevent : Bool, _burnAt : Int, chunk : [Nat8]) : async ([TokenIndex]) {
         var owner : Text = Option.get(Trie.find(_owner, keyT(canid), Text.equal), "");
         var is_minter : Bool = await _isMinter(canid, msg.caller);
         assert (msg.caller == Principal.fromText(owner) or is_minter == true);
 
         var _json : MetadataContainer = #json j;
-        var _atype : AssetType = #other encoding;
         var size : Nat = await getSize(collection_canister_id);
 
         var i : Nat = 0;
@@ -868,13 +864,9 @@ actor Deployer {
         var fetched_addresses : [(TokenIndex, AccountIdentifier)] = await collection.getRegistry();
         var total_mints : Nat = fetched_addresses.size();
         let airdrop_mapping = HashMap.HashMap<AccountIdentifier, Bool>(0, Text.equal, Text.hash); //mapping address to bool, to prevent duplicate airdrops.
-        var _assetReq : Asset_req = {
-            assetHandle = "nftAsset:" #canid # (Nat.toText(size));
-            ctype = _ctype;
-            filename = "";
-            atype = _atype;
-        };
-        await _addAsset(canid, _assetReq.assetHandle, _assetReq.ctype, _assetReq.filename, _assetReq.atype, 0);
+        let assetHandle = "nftAsset:" #canid # (Nat.toText(size));
+        
+        await _addAsset(canid, assetHandle, chunk);
         var _lowerBound : Nat = 0;
         var _upperBound : Nat = 0;
         var actually_minted : Nat = 0;
@@ -884,8 +876,8 @@ actor Deployer {
                 id.1,
                 #nonfungible {
                     name = "";
-                    asset = "nftAsset:" #canid # (Nat.toText(size));
-                    thumbnail = "nftAsset:" #canid # (Nat.toText(size));
+                    asset = assetHandle;
+                    thumbnail = assetHandle;
                     metadata = ?_json;
                 },
             );
@@ -916,7 +908,7 @@ actor Deployer {
             upperBound = _upperBound;
             status = "active";
         };
-        _info := Trie.put(_info, keyT(_assetReq.assetHandle), Text.equal, info).0;
+        _info := Trie.put(_info, keyT(assetHandle), Text.equal, info).0;
         return Buffer.toArray(indices);
     };
 
@@ -961,14 +953,10 @@ actor Deployer {
         var res : () = await collection.ext_internal_bulk_burn(0, Nat32.fromNat(s));
     };
 
-    public shared (msg) func upload_asset_to_collection_for_dynamic_mint(collection_canister_id : Text, assetHandle : AssetHandle, ctype : Text, encoding : Text) : async () {
+    public shared (msg) func upload_asset_to_collection_for_dynamic_mint(collection_canister_id : Text, assetHandle : AssetHandle, chunk : [Nat8]) : async () {
         var owner : Text = Option.get(Trie.find(_owner, keyT(collection_canister_id), Text.equal), "");
         assert (msg.caller == Principal.fromText(owner));
-        let collection = actor (collection_canister_id) : actor {
-            ext_assetAdd : (Text, Text, Text, AssetType, Nat) -> async ();
-        };
-        var _atype : AssetType = #other encoding;
-        await collection.ext_assetAdd(assetHandle, ctype, "", _atype, 0);
+        await _addAsset(collection_canister_id, assetHandle, chunk);
     };
 
     //Motoko Timer API

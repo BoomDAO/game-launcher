@@ -294,7 +294,7 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   private stable var cap_rootBucketId : ?Text = null;
 
   //CONFIG
-  private stable var config_deployers : [Text] = ["zeroy-xaaaa-aaaag-qb7da-cai"]; //NFT Deployer Canister Ids Boom
+  private stable var config_deployers : [Text] = ["zeroy-xaaaa-aaaag-qb7da-cai", "fbkar-zaaaa-aaaal-qbzca-cai"]; //NFT Deployer Canister Ids Boom
   private stable var config_core : [Text] = []; 
   private stable var config_owner : Principal = init_owner;
   private stable var config_admin : [Principal] = [config_owner];
@@ -2331,18 +2331,18 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
     return Buffer.toArray(b);
   };
 
-  public query func get_asset_encoding(_assetHandle : Text) : async (Text) {
+  public query func get_asset_encoding(_assetHandle : Text) : async ([Nat8]) {
     switch (_assets.get(_assetHandle)) {
       case (null) {
-        return "";
+        return [];
       };
       case (?asset) {
         switch (asset.atype) {
-          case (#other e) {
-            return e;
+          case (#direct e) {
+            return Blob.toArray(Option.get(_chunks.get(e[0]), Blob.fromArray([])));
           };
           case _ {
-            return "";
+            return [];
           };
         };
       };
