@@ -86,8 +86,8 @@ shared ({ caller = _owner }) actor class Token(
         ICRC3.allowance(token, args);
     };
 
-    public shared query func get_transactions(req : ICRC3.GetTransactionsRequest) : async ICRC3.GetTransactionsResponse {
-        ICRC3.get_transactions(token, req);
+    public shared query func icrc3_get_transactions(req : ICRC3.GetTransactionsRequest) : async ICRC3.GetTransactionsResponse {
+        ICRC3.icrc3_get_transactions(token, req);
     };
 
     // Additional functions not included in the ICRC3 standard

@@ -126,7 +126,7 @@ module {
 
     /// Functions supported by the ICRC-3 standard
     public type ICRC3Interface = actor {
-        get_transactions : shared query (GetTransactionsRequest) -> async GetTransactionsResponse;
+        icrc3_get_transactions : shared query (GetTransactionsRequest) -> async GetTransactionsResponse;
     };
 
     /// Interface of the ICRC token
