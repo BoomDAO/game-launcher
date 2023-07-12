@@ -13,7 +13,7 @@ import { useAuthContext } from "@/context/authContext";
 import { useExtClient, useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { Airdrop, Collection, CreateCollection, Mint, AssetUpload } from "@/types";
-import { b64toType, formatCycleBalance, getAgent } from "@/utils";
+import { b64toType, arrayTob64, b64toArrays, formatCycleBalance, getAgent } from "@/utils";
 // @ts-ignore
 import { idlFactory as ExtFactory } from "../dids/ext.did.js";
 
@@ -322,19 +322,17 @@ export const useAirdrop = () => {
     }: Airdrop) => {
       try {
         const { actor, methods } = await useMintingDeployerClient();
-
-        const type = b64toType(nft);
+        const chunk = (b64toArrays(nft))[0];
         const burn = burnTime
           ? BigInt(parseInt(burnTime, 10) * 1000000)
           : BigInt(0);
         return await actor[methods.airdrop_to_addresses](
           canisterId,
           collectionId,
-          nft,
           JSON.stringify(metadata),
-          type,
           prevent,
           burn,
+          chunk
         );
       } catch (error) {
         if (error instanceof Error) {
@@ -367,21 +365,19 @@ export const useMint = () => {
       try {
         const { actor, methods } = await useMintingDeployerClient();
 
-        const type = b64toType(nft);
         const burn = burnTime
           ? BigInt(parseInt(burnTime, 10) * 1000000)
           : BigInt(0);
 
         const trimPrincipals = principals.replace(/\s/g, "");
-
+        const chunk = (b64toArrays(nft))[0];
         return await actor[methods.batch_mint_to_addresses](
           canisterId,
           trimPrincipals.split(","),
-          nft,
           JSON.stringify(metadata),
-          type,
           parseInt(mintForAddress, 10),
-          burn
+          burn,
+          chunk
         );
       } catch (error) {
         if (error instanceof Error) {
@@ -429,12 +425,11 @@ export const useGetCollectionCycleBalance = (
       }: AssetUpload) => {
         try {
           const { actor, methods } = await useMintingDeployerClient();
-          const type = b64toType(nft);
+          const chunk = (b64toArrays(nft))[0];
           return await actor[methods.upload_asset](
             canisterId,
             assetId,
-            type,
-            nft
+            chunk
           );
         } catch (error) {
           if (error instanceof Error) {
@@ -483,8 +478,9 @@ export const useGetCollectionCycleBalance = (
     }) => {
       try {
         const { actor, methods } = await useExtClient(canisterId);
-        const data = (await actor[methods.get_asset_encoding](assetId)) as string;
-        return data;
+        const data = (await actor[methods.get_asset_encoding](assetId)) as [];
+        const image = await arrayTob64(data);
+        return image;
       } catch (error) {
         if (error instanceof Error) {
           throw error.message;

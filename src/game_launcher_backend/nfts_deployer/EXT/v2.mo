@@ -2331,18 +2331,18 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
     return Buffer.toArray(b);
   };
 
-  public query func get_asset_encoding(_assetHandle : Text) : async (Text) {
+  public query func get_asset_encoding(_assetHandle : Text) : async ([Nat8]) {
     switch (_assets.get(_assetHandle)) {
       case (null) {
-        return "";
+        return [];
       };
       case (?asset) {
         switch (asset.atype) {
-          case (#other e) {
-            return e;
+          case (#direct e) {
+            return Blob.toArray(Option.get(_chunks.get(e[0]), Blob.fromArray([])));
           };
           case _ {
-            return "";
+            return [];
           };
         };
       };
