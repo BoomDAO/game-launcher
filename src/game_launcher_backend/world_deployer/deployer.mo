@@ -31,7 +31,7 @@ import World "world";
 actor Deployer {
 
     //Stable Memory
-    private stable var deployer : Principal = Principal.fromText("a6t6i-riaaa-aaaal-acphq-cai");
+    private func deployer() : Principal = Principal.fromActor(Deployer);
     private stable var _worlds : Trie.Trie<Text, World> = Trie.empty(); //mapping of world_canister_id -> World details
     private stable var _covers : Trie.Trie<Text, Text> = Trie.empty(); //mapping of world_canister_id -> base64
     private stable var _owners : Trie.Trie<Text, Text> = Trie.empty(); //mapping  world_canister_id -> owner principal id
@@ -204,7 +204,7 @@ actor Deployer {
             IC.update_settings({
                 canister_id = cid.canister_id;
                 settings = {
-                    controllers = ?[init_owner, deployer, Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe")]; //here my principal is just for testing phase, will be removed in future
+                    controllers = ?[init_owner, deployer()];
                     compute_allocation = null;
                     memory_allocation = null;
                     freezing_threshold = ?31_540_000;
@@ -297,7 +297,7 @@ actor Deployer {
             {
                 name = _name;
                 canister = canister_id;
-                cover = "https://" #Principal.toText(deployer) #".raw.icp0.io/cover/" #canister_id; 
+                cover = "https://" #Principal.toText(deployer()) #".raw.icp0.io/cover/" #canister_id; 
             },
         ).0;
         _covers := Trie.put(_covers, keyT(canister_id), Text.equal, cover_encoding).0;
@@ -342,26 +342,6 @@ actor Deployer {
             };
         };
     };
-
-    // public shared (msg) func update(canister_id : Text) : async () {
-    //     switch (Trie.find(_tokens, keyT(canister_id), Text.equal)) {
-    //         case (?o) {
-    //             _tokens := Trie.put(
-    //                 _tokens,
-    //                 keyT(canister_id),
-    //                 Text.equal,
-    //                 {
-    //                     name = o.name;
-    //                     symbol = o.symbol;
-    //                     description = o.description;
-    //                     canister = o.canister;
-    //                     cover = "https://qx76v-6qaaa-aaaal-acmla-cai.raw.icp0.io/logo/" #canister_id; //edit canister id of deployer here!
-    //                 },
-    //             ).0;
-    //         };
-    //         case null {};
-    //     };
-    // };
 
     public query func http_request(req : HttpRequest) : async (HttpResponse) {
         let path = Iter.toArray(Text.tokens(req.url, #text("/")));

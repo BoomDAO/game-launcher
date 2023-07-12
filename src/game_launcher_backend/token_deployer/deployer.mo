@@ -26,12 +26,13 @@ import Time "mo:base/Time";
 import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
-import ICRC1 "./ICRC1/icrc1";
+import ICRC3 "./ICRC3/Canisters/Token";
+import Types "./ICRC3/Types";
 
 actor Deployer {
 
     //Stable Memory
-    private stable var deployer : Principal = Principal.fromText("qx76v-6qaaa-aaaal-acmla-cai");
+    private func deployer() : Principal = Principal.fromActor(Deployer);
     private stable var _tokens : Trie.Trie<Text, Token> = Trie.empty(); //mapping of token_canister_id -> Token details
     private stable var _logos : Trie.Trie<Text, Text> = Trie.empty(); //mapping of token_canister_id -> base64
     private stable var _owners : Trie.Trie<Text, Text> = Trie.empty(); //mapping  token_canister_id -> owner principal id
@@ -192,9 +193,9 @@ actor Deployer {
         return false;
     };
 
-    private func create_canister(_owner : Principal, init : { initial_mints : [{ account : { owner : Principal; subaccount : ?Blob }; amount : Nat }]; minting_account : { owner : Principal; subaccount : ?Blob }; token_name : Text; token_symbol : Text; decimals : Nat8; transfer_fee : Nat }) : async (Text) {
+    private func create_canister(_owner : Principal, init : Types.TokenInitArgs) : async (Text) {
         Cycles.add(1000000000000);
-        let canister = await ICRC1.ICRC1(init);
+        let canister = await ICRC3.Token(init);
         let _ = await updateCanister(canister, _owner);
         let canister_id = Principal.fromActor(canister);
         return Principal.toText(canister_id);
@@ -206,7 +207,7 @@ actor Deployer {
             IC.update_settings({
                 canister_id = cid.canister_id;
                 settings = {
-                    controllers = ?[init_owner, deployer, Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe")];
+                    controllers = ?[init_owner, deployer()];
                     compute_allocation = null;
                     memory_allocation = null;
                     freezing_threshold = ?31_540_000;
@@ -291,25 +292,23 @@ actor Deployer {
     //Updates
     //
     public shared (msg) func createTokenCanister(_name : Text, _symbol : Text, _desc : Text, _amt : Nat, logo_encoding : Text, _decimals : Nat8, tx_fee : Nat) : async (Text) {
+        let pre_mint_account = {
+            owner = msg.caller;
+            subaccount = null;
+        };
         var canister_id : Text = await create_canister(
             msg.caller,
             {
-                initial_mints = [{
-                    account = {
-                        owner = msg.caller;
-                        subaccount = null;
-                    };
-                    amount = _amt;
-                }];
-                minting_account = {
-                    owner = msg.caller;
-                    subaccount = null;
-                };
-                token_name = _name;
-                token_symbol = _symbol;
+                name = _name;
+                symbol = _symbol;
                 decimals = _decimals;
-                transfer_fee = tx_fee;
-            },
+                fee = tx_fee;
+                max_supply = 1000000000000000000; // Max supply is set to 10^18
+                initial_balances = [(pre_mint_account, _amt)];
+                min_burn_amount = 0;
+                minting_account = ?pre_mint_account;
+                advanced_settings= null;
+            }
         );
         _tokens := Trie.put(
             _tokens,
@@ -320,7 +319,7 @@ actor Deployer {
                 symbol = _symbol;
                 description = _desc;
                 canister = canister_id;
-                cover = "https://qx76v-6qaaa-aaaal-acmla-cai.raw.icp0.io/logo/" #canister_id; //edit canister id of deployer here!
+                cover = "https://" #Principal.toText(deployer()) #".raw.icp0.io/logo/" #canister_id; 
             },
         ).0;
         _logos := Trie.put(_logos, keyT(canister_id), Text.equal, logo_encoding).0;
@@ -354,26 +353,6 @@ actor Deployer {
             };
         };
     };
-
-    // public shared (msg) func update(canister_id : Text) : async () {
-    //     switch (Trie.find(_tokens, keyT(canister_id), Text.equal)) {
-    //         case (?o) {
-    //             _tokens := Trie.put(
-    //                 _tokens,
-    //                 keyT(canister_id),
-    //                 Text.equal,
-    //                 {
-    //                     name = o.name;
-    //                     symbol = o.symbol;
-    //                     description = o.description;
-    //                     canister = o.canister;
-    //                     cover = "https://qx76v-6qaaa-aaaal-acmla-cai.raw.icp0.io/logo/" #canister_id; //edit canister id of deployer here!
-    //                 },
-    //             ).0;
-    //         };
-    //         case null {};
-    //     };
-    // };
 
     public query func http_request(req : HttpRequest) : async (HttpResponse) {
         let path = Iter.toArray(Text.tokens(req.url, #text("/")));

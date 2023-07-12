@@ -34,7 +34,7 @@ actor Deployer {
 
     //Stable Memory
     //
-    private stable var deployer : Principal = Principal.fromText("aaaaa-aa"); 
+    private func deployer() : Principal = Principal.fromActor(Deployer);
     private stable var _games : Trie.Trie<Text, Game> = Trie.empty(); //mapping of canister_id -> Game (info)
     private stable var _covers : Trie.Trie<Text, Text> = Trie.empty(); //mapping of game_canister_id -> base64
     private stable var _owners : Trie.Trie<Text, Text> = Trie.empty(); //mapping asset canister_id -> owner principal id
@@ -166,10 +166,6 @@ actor Deployer {
         Buffer.toArray(_b);
     };
 
-    system func postupgrade() : () {
-        deployer := Principal.fromActor(Deployer);
-    };
-
     public query func cycleBalance() : async Nat {
         Cycles.balance();
     };
@@ -264,7 +260,7 @@ actor Deployer {
             IC.update_settings({
                 canister_id = cid.canister_id;
                 settings = {
-                    controllers = ?[init_owner, deployer, Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe")];
+                    controllers = ?[init_owner, deployer()];
                     compute_allocation = null;
                     memory_allocation = null;
                     freezing_threshold = ?31_540_000;
@@ -294,7 +290,7 @@ actor Deployer {
     //
     public shared (msg) func create_game_canister(game_name : Text, data : Text, base64 : Text, _type : Text) : async (Text) {
         var canister_id : Text = await create_canister(msg.caller);
-        var deployer_canister : Text = Principal.toText(deployer);
+        var deployer_canister : Text = Principal.toText(deployer());
         _games := Trie.put(
             _games,
             Utils.keyT(canister_id),
@@ -318,7 +314,7 @@ actor Deployer {
 
     public shared ({ caller }) func admin_create_game(game_name : Text, data : Text, base64 : Text, _type : Text, game_url : Text, canister_id : Text) : async (Text) {
         assert (_isAdmin(Principal.toText(caller)));
-        var deployer_canister : Text = Principal.toText(deployer);
+        var deployer_canister : Text = Principal.toText(deployer());
         _games := Trie.put(
             _games,
             Utils.keyT(canister_id),

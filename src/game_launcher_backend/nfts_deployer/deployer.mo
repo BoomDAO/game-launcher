@@ -356,7 +356,7 @@ actor Deployer {
     };
     //stable memory
     //
-    private stable var deployer : Principal = Principal.fromText("aaaaa-aa"); //for Deployer canister_id (will update on postupgrade)
+    private func deployer() : Principal = Principal.fromActor(Deployer); 
     private stable var collections : Trie.Trie<Text, Text> = Trie.empty(); //mapping of Collection CanisterID -> Collection Name
     private stable var _owner : Trie.Trie<Text, Text> = Trie.empty(); //mapping collection canister id -> owner principal id
     private stable var _info : Trie.Trie<AssetHandle, Info> = Trie.empty(); //mapping asset hanel -> Burn Information
@@ -399,11 +399,6 @@ actor Deployer {
             settings : canister_settings;
         } -> async ();
         http_request : shared ICCanisterHttpRequestArgs -> async ICCanisterHttpResponsePayload;
-    };
-
-    //update deployer canister_id
-    system func postupgrade() {
-        deployer := Principal.fromActor(Deployer);
     };
 
     //internal functions
@@ -461,7 +456,7 @@ actor Deployer {
             IC.update_settings({
                 canister_id = cid.canister_id;
                 settings = {
-                    controllers = ?[init_owner, deployer];
+                    controllers = ?[init_owner, deployer()];
                     compute_allocation = null;
                     memory_allocation = null;
                     freezing_threshold = ?31_540_000;
