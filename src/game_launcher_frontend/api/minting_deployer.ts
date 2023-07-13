@@ -322,7 +322,6 @@ export const useAirdrop = () => {
     }: Airdrop) => {
       try {
         const { actor, methods } = await useMintingDeployerClient();
-        const chunk = (b64toArrays(nft))[0];
         const burn = burnTime
           ? BigInt(parseInt(burnTime, 10) * 1000000)
           : BigInt(0);
@@ -332,7 +331,7 @@ export const useAirdrop = () => {
           JSON.stringify(metadata),
           prevent,
           burn,
-          chunk
+          nft
         );
       } catch (error) {
         if (error instanceof Error) {
@@ -370,14 +369,13 @@ export const useMint = () => {
           : BigInt(0);
 
         const trimPrincipals = principals.replace(/\s/g, "");
-        const chunk = (b64toArrays(nft))[0];
         return await actor[methods.batch_mint_to_addresses](
           canisterId,
           trimPrincipals.split(","),
           JSON.stringify(metadata),
           parseInt(mintForAddress, 10),
           burn,
-          chunk
+          nft
         );
       } catch (error) {
         if (error instanceof Error) {
@@ -414,40 +412,40 @@ export const useGetCollectionCycleBalance = (
     },
   });
 
-  export const useAssetUpload = () => {
-    const { t } = useTranslation();
-  
-    return useMutation({
-      mutationFn: async ({
-        canisterId,
-        nft,
-        assetId
-      }: AssetUpload) => {
-        try {
-          const { actor, methods } = await useMintingDeployerClient();
-          const chunk = (b64toArrays(nft))[0];
-          return await actor[methods.upload_asset](
-            canisterId,
-            assetId,
-            chunk
-          );
-        } catch (error) {
-          if (error instanceof Error) {
-            throw error.message;
-          }
-          throw serverErrorMsg;
-        }
-      },
-      onError: () => {
-        toast.error(t("manage_nfts.update.assets.upload.error"));
-      },
-      onSuccess: () => {
-        toast.success(t("manage_nfts.update.assets.upload.success"));
-      },
-    });
-  };
+export const useAssetUpload = () => {
+  const { t } = useTranslation();
 
-  export const useGetAssetIds = () =>
+  return useMutation({
+    mutationFn: async ({
+      canisterId,
+      nft,
+      assetId
+    }: AssetUpload) => {
+      try {
+        const { actor, methods } = await useMintingDeployerClient();
+        const chunk = (b64toArrays(nft))[0];
+        return await actor[methods.upload_asset](
+          canisterId,
+          assetId,
+          chunk
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.assets.upload.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.assets.upload.success"));
+    },
+  });
+};
+
+export const useGetAssetIds = () =>
   useMutation({
     mutationFn: async ({
       canisterId,
@@ -467,7 +465,7 @@ export const useGetCollectionCycleBalance = (
     },
   });
 
-  export const useGetAssetEncoding = () =>
+export const useGetAssetEncoding = () =>
   useMutation({
     mutationFn: async ({
       canisterId,

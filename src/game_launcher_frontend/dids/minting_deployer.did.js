@@ -26,19 +26,12 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     'add_controller' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'airdrop_to_addresses' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Bool, IDL.Int, IDL.Vec(IDL.Nat8)],
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Bool, IDL.Int, IDL.Text],
         [IDL.Vec(TokenIndex)],
         [],
       ),
     'batch_mint_to_addresses' : IDL.Func(
-        [
-          IDL.Text,
-          IDL.Vec(IDL.Text),
-          IDL.Text,
-          IDL.Nat32,
-          IDL.Int,
-          IDL.Vec(IDL.Nat8),
-        ],
+        [IDL.Text, IDL.Vec(IDL.Text), IDL.Text, IDL.Nat32, IDL.Int, IDL.Text],
         [IDL.Vec(TokenIndex)],
         [],
       ),

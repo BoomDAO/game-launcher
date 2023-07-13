@@ -27,7 +27,7 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 import Timer "mo:base/Timer";
 
-import NFT "./EXT/v2";
+import NFT "./EXT/extv2boom";
 import AID "../utils/AccountIdentifier";
 import Hex "../utils/Hex";
 import ExtCore "../utils/Core";
@@ -786,17 +786,12 @@ actor Deployer {
     };
 
     //mint to a address/principal, specific number of NFT's
-    public shared (msg) func batch_mint_to_addresses(collection_canister_id : Text, p : [Text], j : Text, mint_size : Nat32, _burnAt : Int, chunk : [Nat8]) : async ([TokenIndex]) {
+    public shared (msg) func batch_mint_to_addresses(collection_canister_id : Text, p : [Text], j : Text, mint_size : Nat32, _burnAt : Int, assetHandle : Text) : async ([TokenIndex]) {
         var owner : Text = Option.get(Trie.find(_owner, keyT(collection_canister_id), Text.equal), "");
         var is_minter : Bool = await _isMinter(collection_canister_id, msg.caller);
         assert (msg.caller == Principal.fromText(owner) or is_minter == true);
 
         var _json : MetadataContainer = #json j;
-        var size : Nat = await getSize(collection_canister_id);
-
-        let assetHandle = "nftAsset:" #collection_canister_id # (Nat.toText(size));
-        //updating asset
-        await _addAsset(collection_canister_id, assetHandle, chunk);
         var _lowerBound : Nat = 0;
         var _upperBound : Nat = 0;
         var indices : Buffer.Buffer<TokenIndex> = Buffer.Buffer<TokenIndex>(0);
@@ -809,7 +804,7 @@ actor Deployer {
             var _req : (AccountIdentifier, Metadata) = (
                 aid,
                 #nonfungible {
-                    name = "";
+                    name = assetHandle;
                     asset = assetHandle;
                     thumbnail = assetHandle;
                     metadata = ?_json;
@@ -843,13 +838,12 @@ actor Deployer {
     };
 
     //airdrop NFT's to addresses of other EXT std NFT collection
-    public shared (msg) func airdrop_to_addresses(collection_canister_id : Text, canid : Text, j : Text, prevent : Bool, _burnAt : Int, chunk : [Nat8]) : async ([TokenIndex]) {
+    public shared (msg) func airdrop_to_addresses(collection_canister_id : Text, canid : Text, j : Text, prevent : Bool, _burnAt : Int, assetHandle : Text) : async ([TokenIndex]) {
         var owner : Text = Option.get(Trie.find(_owner, keyT(canid), Text.equal), "");
         var is_minter : Bool = await _isMinter(canid, msg.caller);
         assert (msg.caller == Principal.fromText(owner) or is_minter == true);
 
         var _json : MetadataContainer = #json j;
-        var size : Nat = await getSize(collection_canister_id);
 
         var i : Nat = 0;
         var indices : Buffer.Buffer<TokenIndex> = Buffer.Buffer<TokenIndex>(0);
@@ -859,9 +853,6 @@ actor Deployer {
         var fetched_addresses : [(TokenIndex, AccountIdentifier)] = await collection.getRegistry();
         var total_mints : Nat = fetched_addresses.size();
         let airdrop_mapping = HashMap.HashMap<AccountIdentifier, Bool>(0, Text.equal, Text.hash); //mapping address to bool, to prevent duplicate airdrops.
-        let assetHandle = "nftAsset:" #canid # (Nat.toText(size));
-        
-        await _addAsset(canid, assetHandle, chunk);
         var _lowerBound : Nat = 0;
         var _upperBound : Nat = 0;
         var actually_minted : Nat = 0;
@@ -870,7 +861,7 @@ actor Deployer {
             var _req : (AccountIdentifier, Metadata) = (
                 id.1,
                 #nonfungible {
-                    name = "";
+                    name = assetHandle;
                     asset = assetHandle;
                     thumbnail = assetHandle;
                     metadata = ?_json;

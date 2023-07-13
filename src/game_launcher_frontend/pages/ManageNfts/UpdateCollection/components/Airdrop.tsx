@@ -17,7 +17,7 @@ import SubHeading from "@/components/ui/SubHeading";
 const scheme = z.object({
   collectionId: z.string().min(1, "Collection  is required."),
   metadata: z.string().min(1, "Metadata are required."),
-  nft: z.string().min(1, "Image is required."),
+  nft: z.string().min(1, "Image asset id is required."),
   burnTime: z.string(),
   prevent: z.boolean(),
 });
@@ -87,21 +87,22 @@ const Airdrop = () => {
           />
         </div>
 
+        <div className="grid grid-cols-1 justify-items-center md:grid-cols-2 gap-6">
+          <FormTextInput
+            control={control}
+            name="nft"
+            placeholder={t("manage_nfts.update.mint.upload_placeholder")}
+            hint={{
+              body: t("manage_nfts.update.mint.upload_placeholder_helper"),
+            }}
+          />
+        </div>
+
         <FormTextArea
           control={control}
           name="metadata"
           placeholder={t("manage_nfts.update.airdrop.textarea_metadata")}
         />
-
-        <div className="grid grid-cols-1 justify-items-center md:grid-cols-2">
-          <FormUploadButton
-            buttonText={t("manage_nfts.update.airdrop.upload_button")}
-            placeholder={t("manage_nfts.update.airdrop.upload_placeholder")}
-            control={control}
-            name="nft"
-          />
-          {nft && <img src={nft} alt="cover" className="h-full w-[200px]" />}
-        </div>
 
         <Button size="big" rightArrow isLoading={isLoading}>
           {t("manage_nfts.update.airdrop.button")}

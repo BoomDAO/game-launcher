@@ -35,6 +35,10 @@ const AllNfts = () => {
                                 title={name}
                                 canisterId={canister_id}
                                 noImage
+                                showCycles
+                                onClick={() =>
+                                    navigate(`${navPaths.manage_nfts}/${canister_id}`)
+                                }
                             />
                         ))}
                         <EmptyGameCard length={collections.length} />

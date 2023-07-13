@@ -55,7 +55,11 @@ const UpdateCollection = () => {
 
       {activeTab === 3 && (
         <div className="w-full space-y-12">
-          <BurnNft />
+          <UploadAsset />
+          <Divider/>
+          <ViewAssets/>
+          <Divider/>
+          <ViewAsset/>
         </div>
       )}
 
@@ -73,11 +77,7 @@ const UpdateCollection = () => {
 
       {activeTab === 6 && (
         <div className="w-full space-y-12">
-          <UploadAsset />
-          <Divider/>
-          <ViewAssets/>
-          <Divider/>
-          <ViewAsset/>
+          <BurnNft/>
         </div>
       )}
     </>

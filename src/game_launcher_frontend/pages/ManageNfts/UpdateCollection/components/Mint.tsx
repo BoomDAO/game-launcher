@@ -3,13 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMint } from "@/api/minting_deployer";
+import { useMint} from "@/api/minting_deployer";
 import Form from "@/components/form/Form";
 import FormCheckbox from "@/components/form/FormCheckbox";
 import FormNumberInput from "@/components/form/FormNumberInput";
 import FormTextArea from "@/components/form/FormTextArea";
 import FormTextInput from "@/components/form/FormTextInput";
-import FormUploadButton from "@/components/form/FormUploadButton";
 import Button from "@/components/ui/Button";
 import Space from "@/components/ui/Space";
 import SubHeading from "@/components/ui/SubHeading";
@@ -18,7 +17,7 @@ const scheme = z.object({
   mintForAddress: z.string().min(1, "Collection  is required."),
   principals: z.string().min(1, "List of addresses or principals is required."),
   metadata: z.string().min(1, "Metadata are required."),
-  nft: z.string().min(1, "Image is required."),
+  nft: z.string().min(1, "Image Asset Id is required."),
   burnTime: z.string(),
 });
 
@@ -77,6 +76,17 @@ const Mint = () => {
           />
         </div>
 
+        <div className="grid grid-cols-1 justify-items-center md:grid-cols-2 gap-6">
+          <FormTextInput
+            control={control}
+            name="nft"
+            placeholder={t("manage_nfts.update.mint.upload_placeholder")}
+            hint={{
+              body: t("manage_nfts.update.mint.upload_placeholder_helper"),
+            }}
+          />
+        </div>
+
         <FormTextArea
           control={control}
           name="metadata"
@@ -88,16 +98,6 @@ const Mint = () => {
           name="principals"
           placeholder={t("manage_nfts.update.mint.textarea_addresses")}
         />
-
-        <div className="grid grid-cols-1 justify-items-center md:grid-cols-2">
-          <FormUploadButton
-            buttonText={t("manage_nfts.update.mint.upload_button")}
-            placeholder={t("manage_nfts.update.mint.upload_placeholder")}
-            control={control}
-            name="nft"
-          />
-          {nft && <img src={nft} alt="cover" className="h-full w-[200px]" />}
-        </div>
 
         <Button size="big" rightArrow isLoading={isLoading}>
           {t("manage_nfts.update.mint.button")}

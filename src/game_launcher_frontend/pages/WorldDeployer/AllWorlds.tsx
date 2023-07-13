@@ -35,6 +35,9 @@ const AllWorlds = () => {
                                 icon={<Cog8ToothIcon />}
                                 title={name}
                                 canisterId={canister}
+                                onClick={() =>
+                                    window.open(`${navPaths.boomdao_candid_url}?id=${canister}`, "_blank")
+                                }
                             />
                         ))}
                         <EmptyGameCard length={worlds.length} />
