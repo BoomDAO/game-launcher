@@ -4,8 +4,8 @@ import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Principal "mo:base/Principal";
 
-import STMap "mo:StableTrieMap";
-import StableBuffer "mo:StableBuffer/StableBuffer";
+import STMap "../../utils/StableTrieMap";
+import StableBuffer "../../utils/StableBuffer";
 
 import T "Types";
 import U1 "../ICRC1/Utils";

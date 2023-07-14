@@ -1,4 +1,3 @@
-import Array "mo:base/Array";
 import Blob "mo:base/Blob";
 import Char "mo:base/Char";
 import Debug "mo:base/Debug";
@@ -14,10 +13,10 @@ import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 
-import ArrayModule "mo:array/Array";
-import Itertools "mo:itertools/Iter";
-import StableBuffer "mo:StableBuffer/StableBuffer";
-import STMap "mo:StableTrieMap";
+import Itertools "../../utils/Iter";
+import STMap "../../utils/StableTrieMap";
+import StableBuffer "../../utils/StableBuffer";
+import ArrayModule "../../utils/ArrayUtil";
 
 import T "Types";
 

@@ -7,8 +7,8 @@ import Nat64 "mo:base/Nat64";
 import Nat8 "mo:base/Nat8";
 import Principal "mo:base/Principal";
 
-import Itertools "mo:itertools/Iter";
-import StableTrieMap "mo:StableTrieMap";
+import Itertools "../../utils/Iter";
+import StableTrieMap "../../utils/StableTrieMap";
 
 import T "Types";
 import Utils "Utils";

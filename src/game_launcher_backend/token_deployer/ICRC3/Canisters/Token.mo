@@ -2,10 +2,9 @@ import Array "mo:base/Array";
 import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 import Time "mo:base/Time";
-
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 
-import SB "mo:StableBuffer/StableBuffer";
+import SB "../../../utils/StableBuffer";
 
 import ICRC3 "..";
 

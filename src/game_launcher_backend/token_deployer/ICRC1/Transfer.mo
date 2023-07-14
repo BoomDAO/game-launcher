@@ -11,9 +11,9 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 
-import Itertools "mo:itertools/Iter";
-import StableBuffer "mo:StableBuffer/StableBuffer";
-import STMap "mo:StableTrieMap";
+import Itertools "../../utils/Iter";
+import STMap "../../utils/StableTrieMap";
+import StableBuffer "../../utils/StableBuffer";
 
 import Account "Account";
 

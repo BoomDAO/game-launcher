@@ -7,7 +7,8 @@ import Option "mo:base/Option";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 
-import STMap "mo:StableTrieMap";
+import STMap "../../utils/StableTrieMap";
+
 
 import T "Types";
 import Utils "Utils";

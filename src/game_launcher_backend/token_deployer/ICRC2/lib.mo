@@ -8,8 +8,9 @@ import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import EC "mo:base/ExperimentalCycles";
 
-import Itertools "mo:itertools/Iter";
-import StableTrieMap "mo:StableTrieMap";
+import Itertools "../../utils/Iter";
+import StableTrieMap "../../utils/StableTrieMap";
+import StableBuffer "../../utils/StableBuffer";
 
 import T "Types";
 import Utils "Utils";

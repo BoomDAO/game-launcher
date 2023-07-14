@@ -13,10 +13,10 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 
-import ArrayModule "mo:array/Array";
-import Itertools "mo:itertools/Iter";
-import STMap "mo:StableTrieMap";
-import StableBuffer "mo:StableBuffer/StableBuffer";
+import ArrayModule "../../utils/ArrayUtil";
+import Itertools "../../utils/Iter";
+import STMap "../../utils/StableTrieMap";
+import StableBuffer "../../utils/StableBuffer";
 
 import Account "Account";
 import T "Types";

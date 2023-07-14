@@ -97,9 +97,9 @@ import Prelude "mo:base/Prelude";
 import PeekableIter "PeekableIter";
 import Deiter "Deiter";
 
-import ArrayMut_Utils "Utils/ArrayMut";
-import Nat_Utils "Utils/Nat";
-import TrieMap_Utils "Utils/TrieMap";
+import ArrayMut_Utils "ArrayUtil";
+import Nat_Utils "Nat";
+import TrieMap_Utils "TrieMap";
 
 module {
 

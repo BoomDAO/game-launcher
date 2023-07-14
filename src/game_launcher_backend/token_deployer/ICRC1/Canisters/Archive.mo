@@ -12,8 +12,8 @@ import Result "mo:base/Result";
 import ExperimentalCycles "mo:base/ExperimentalCycles";
 import ExperimentalStableMemory "mo:base/ExperimentalStableMemory";
 
-import Itertools "mo:itertools/Iter";
-import StableTrieMap "mo:StableTrieMap";
+import Itertools "../../../utils/Iter";
+import StableTrieMap "../../../utils/StableTrieMap";
 import U "../Utils";
 import T "../Types";
 
