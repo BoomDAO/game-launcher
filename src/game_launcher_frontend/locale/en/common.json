@@ -132,22 +132,22 @@
       "tabs": {
         "item_1": "View",
         "item_2": "Admin / Controller",
-        "item_3": "Burn",
+        "item_3": "Configure Images",
         "item_4": "Mint",
         "item_5": "Airdrop",
-        "item_6": "Configure Images"
+        "item_6": "Burn"
       },
       "assets": {
         "upload": {
           "title": "Upload Image Asset to NFT Collection",
           "assetId_input_placeholder": "Image Asset Id",
-          "assetId_input_helper": "Image asset id can be any text that uniquely idetifies this image, which can later be dynamically minted to users using this unique image asset id.",
+          "assetId_input_helper": "Image asset id can be any text that uniquely idetifies this image, which can later get used for mintting and airdropping images linked to these image asset ids",
           "upload_button": "Choose IMG",
           "upload_placeholder": "Image Asset File",
           "button": "Upload Image",
           "error": "Sorry something happend... try again later",
           "success": "Asset Image Uploaded successfully",
-          "input_helper_upload_asset": "An image asset getting uploaded to your NFT collection, which can be minted dynamically from your game to users directly using unique asset_id assigned to this image."
+          "input_helper_upload_asset": "Specify an image you would like to store in your NFT canister, which can be referenced using the Asset Id you assign to this image. You can use this Asset Id to mint an NFT with this image dynamically from in-game. Note: Only use PNG or JPG images if you're using Unity because Unity doesn't support SVG."
         },
         "view": {
           "title": "View All Image Asset Ids",
@@ -220,8 +220,8 @@
         "input_helper_burn": "If you specify a timestamp, the NFT will automatically get sent to the burn address when that timestamp is reached. You must specify the timestamp in milliseconds using the UNIX timestamp standard.",
         "textarea_addresses": "Comma-separated list of principals or addresses",
         "textarea_metadata": "NFT metadata",
-        "upload_placeholder": "NFT image file",
-        "upload_button": "Choose img",
+        "upload_placeholder": "NFT image asset id",
+        "upload_placeholder_helper": "NFT image asset id, which you used to upload your Nft image, from Configure Images Tab.",
         "button": "Mint NFT(s)"
       },
       "airdrop": {
@@ -269,17 +269,17 @@
     "token": {
       "title": "Manage Tokens",
       "tabs": {
-        "item_1": "Approve/Transfer_From",
-        "item_2": "Transfer"
+        "item_2": "Approve/Transfer_From",
+        "item_1": "Mint"
       },
       "transfer": {
-        "title": "Transfer Token",
-        "transfer_button": "Transfer",
-        "transfer_to": "Transfer To",
-        "input_helper_transfer_to": "Principal of user to transfer to. Transfer initiated by owner of token will mint new tokens instead of Transfer.",
-        "transfer_amount": "Amount To Transfer",
-        "error": "There was some error during Token Transfer. Please try again!",
-        "success": "Token Transferred"
+        "title": "Mint Token",
+        "transfer_button": "Mint",
+        "transfer_to": "Mint To",
+        "input_helper_transfer_to": "Principal of user to mint to.",
+        "transfer_amount": "Amount To Mint",
+        "error": "There was some error during Token Mint. Please try again!",
+        "success": "Token Minted"
       },
       "approve": {
         "title": "Approve Spender to Transfer on your behalf",

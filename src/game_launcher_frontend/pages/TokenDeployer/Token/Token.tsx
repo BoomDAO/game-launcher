@@ -28,14 +28,14 @@ const Token = () => {
 
       {activeTab === 1 && (
         <div className="w-full space-y-12">
-          < AllowTransfer />
-          <Divider/>
-          <TransferFrom/>
+          <Transfer/>
         </div>
       )}
       {activeTab === 2 && (
         <div className="w-full space-y-12">
-          < Transfer />
+          < AllowTransfer />
+          <Divider/>
+          <TransferFrom/>
         </div>
       )}
     </>

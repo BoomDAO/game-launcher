@@ -37,7 +37,7 @@ import EXTAsset "extAsset";
 import AccountIdentifier "../../utils/AccountIdentifier";
 
 
-actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
+shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   // EXT Types
   type EXTAssetService = EXTAsset.EXTAsset;
   type Order = { #less; #equal; #greater };
@@ -294,7 +294,7 @@ actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   private stable var cap_rootBucketId : ?Text = null;
 
   //CONFIG
-  private stable var config_deployers : [Text] = ["zeroy-xaaaa-aaaag-qb7da-cai"]; //NFT Deployer Canister Ids Boom
+  private stable var config_deployers : [Text] = [Principal.toText(_deployer)]; //NFT Deployer Canister Ids Boom
   private stable var config_core : [Text] = []; 
   private stable var config_owner : Principal = init_owner;
   private stable var config_admin : [Principal] = [config_owner];

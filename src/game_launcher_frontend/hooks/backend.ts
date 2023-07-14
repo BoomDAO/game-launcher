@@ -25,16 +25,16 @@ const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
 
 // Stag Backend Canisters
-const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";
-const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai";
-const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
-const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
+// const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";
+// const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai";
+// const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
+// const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
 
 // Prod Backend Canisters
-// const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
-// const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; 
-// const token_deployerId = "qx76v-6qaaa-aaaal-acmla-cai"; 
-// const world_deployerId = "a6t6i-riaaa-aaaal-acphq-cai"; 
+const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
+const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; 
+const token_deployerId = "qx76v-6qaaa-aaaal-acmla-cai"; 
+const world_deployerId = "a6t6i-riaaa-aaaal-acphq-cai"; 
 
 export const useWorldDeployerClient = async () => {
   const authClient = await getAuthClient();

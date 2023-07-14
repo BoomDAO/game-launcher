@@ -1,0 +1,8 @@
+[dependencies]
+base = "https://github.com/dfinity/motoko-base#moc-0.7.2"
+
+[package]
+name = "itertools"
+version = "0.1.1"
+description = "A library with utility functions and data types for creating efficient iterators in Motoko."
+repository = "https://github.com/NatLabs/Itertools"
