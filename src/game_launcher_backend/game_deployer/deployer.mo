@@ -31,7 +31,6 @@ import Binary "../utils/Binary";
 import Utils "../utils/Utils";
 
 actor Deployer {
-
     //Stable Memory
     //
     private func deployer() : Principal = Principal.fromActor(Deployer);

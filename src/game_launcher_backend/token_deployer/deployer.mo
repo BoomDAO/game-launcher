@@ -303,7 +303,7 @@ actor Deployer {
                 symbol = _symbol;
                 decimals = _decimals;
                 fee = tx_fee;
-                max_supply = 1000000000000000000; // Max supply is set to 10^18
+                max_supply = 1000000000000000000000000000000000000; // Max supply is set to 10^36
                 initial_balances = [(pre_mint_account, _amt)];
                 min_burn_amount = 0;
                 minting_account = ?pre_mint_account;
