@@ -20,6 +20,22 @@ You can use the Game Launcher here: http://launcher.boomdao.xyz
 
 To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
 
+## VERIFY CANISTER MODULE HASHES
+
+To get the hash for Game Launcher canisters:
+
+- Get the canister IDs from [`canister_ids.json`](https://github.com/BoomDAO/game-launcher/blob/staging/canister_ids.json).
+- Get hash using the DFX SDK by running: `dfx canister --network ic info <canister-id>`.
+
+- The output of the above command should contain `Module hash` followed up with the hash value. Example output:
+
+  ```
+  $ > dfx canister --network ic info 6rvbl-uqaaa-aaaal-ab24a-cai
+
+  Controllers: 2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe ...
+  Module hash: 0x9d32c5bc82e9784d61856c7fa265e9b3dda4e97ee8082b30069ff39ab8626255
+  ```
+
 
 
 <p align="center">
