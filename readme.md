@@ -20,7 +20,7 @@ You can use the Game Launcher here: http://launcher.boomdao.xyz
 
 To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
 
-## VERIFY CANISTER MODULE HASHES
+## VERIFY CANISTER'S MODULE HASH
 
 To get the hash for Game Launcher canisters:
 
