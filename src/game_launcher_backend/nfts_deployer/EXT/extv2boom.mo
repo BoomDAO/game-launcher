@@ -2205,6 +2205,14 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
     };
     return _extGetTokenMetadata(i);
   };
+  public query func getTokenMetadata(i : TokenIndex) : async ?Metadata {
+    var p : Principal = Principal.fromActor(this);
+    var token : TokenIdentifier = ExtCore.TokenIdentifier.fromText(Principal.toText(p), i);
+    if (ExtCore.TokenIdentifier.isPrincipal(token, Principal.fromActor(this)) == false) {
+      return null;
+    };
+    return _extGetTokenMetadata(i);
+  };
   public query func getTokens() : async [(TokenIndex, MetadataLegacy)] {
     Iter.toArray(
       HashMap.map<TokenIndex, Metadata, MetadataLegacy>(
