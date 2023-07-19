@@ -287,7 +287,7 @@ actor Deployer {
 
     //Updates
     //
-    public shared (msg) func create_game_canister(game_name : Text, data : Text, base64 : Text, _type : Text) : async (Text) {
+    public shared (msg) func create_game_canister(game_name : Text, data : Text, base64 : Text, _type : Text, _visibility : Text) : async (Text) {
         var canister_id : Text = await create_canister(msg.caller);
         var deployer_canister : Text = Principal.toText(deployer());
         _games := Trie.put(
@@ -303,7 +303,7 @@ actor Deployer {
                 cover = "https://" #deployer_canister #".raw.ic0.app/cover/" #canister_id;
                 lastUpdated = Time.now();
                 verified = false;
-                visibility = "public";
+                visibility = _visibility;
             },
         ).0;
         _covers := Trie.put(_covers, Utils.keyT(canister_id), Text.equal, base64).0;

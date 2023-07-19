@@ -18,7 +18,7 @@ import FormUploadButton from "@/components/form/FormUploadButton";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
-import { gameDataScheme, platform_types } from "@/shared";
+import { gameDataScheme, platform_types, visibility_types } from "@/shared";
 
 const scheme = z
   .object({
@@ -50,12 +50,14 @@ const CreateGame = () => {
       platform: "Browser",
       cover: "",
       files: [],
+      visibility: "public",
     },
     resolver: zodResolver(scheme),
   });
 
   const cover = watch("cover");
   const platform = watch("platform");
+  const visibility = watch("visibility");
 
   const {
     mutateAsync: mutateData,
@@ -161,6 +163,14 @@ const CreateGame = () => {
               body: <UploadGameHint />,
             }}
           />
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <FormSelect
+              data={visibility_types}
+              control={control}
+              name="visibility"
+              disabled={!!canisterId}
+            />
         </div>
 
         <div className="flex flex-col gap-2">
