@@ -320,7 +320,44 @@
       "success": "World created successfully",
       "error": "Sorry something happend... try again later"
     },
-    "no_worlds_at_all": "no worlds created yet..."
+    "no_worlds_at_all": "no worlds created yet...",
+    "manage_worlds": {
+      "title": "Manage Worlds",
+      "tabs": {
+        "item_1": {
+          "title": "Configure World",
+          "content": "Here Goes Configure World intro data ...",
+          "button_text": "Go to Configure World"
+        },
+        "item_2": {
+          "title": "Import World Data",
+          "import_user": {
+            "title": "Import All Users Data",
+            "input_placeholder": "Canister Id",
+            "input_hint": "To import all User's data from this canister id",
+            "error": "Import failed, Try again!",
+            "success": "Imported",
+            "button_text": "Import Users"
+          },
+          "import_config": {
+            "title": "Import World's Configs Data",
+            "input_placeholder": "Canister Id",
+            "input_hint": "To import all World entities and actions configs",
+            "error": "Import failed, Try again!",
+            "success": "Imported",
+            "button_text": "Import Configs"
+          },
+          "import_permissions": {
+            "title": "Import World's Permissions Data",
+            "input_placeholder": "Canister Id",
+            "input_hint": "To import all World permissions",
+            "error": "Import failed, Try again!",
+            "success": "Imported",
+            "button_text": "Import Permissions"
+          }
+        }
+      }
+    }
   },
   "sliderImages": [
     {

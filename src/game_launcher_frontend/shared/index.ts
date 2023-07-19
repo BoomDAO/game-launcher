@@ -16,7 +16,8 @@ export const navPaths = {
   token: "/token-deployer/token",
   world_deployer: "/world-deployer",
   create_new_world: "/world-deployer/create-world",
-  boomdao_candid_url: "https://5pati-hyaaa-aaaal-qb3yq-cai.raw.icp0.io/"
+  boomdao_candid_url: "https://5pati-hyaaa-aaaal-qb3yq-cai.raw.icp0.io/",
+  manage_worlds: "/world-deployer/manage-worlds"
 };
 
 export const platform_types: SelectOption[] = [

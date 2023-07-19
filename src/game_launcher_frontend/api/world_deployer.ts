@@ -16,7 +16,7 @@ import {
     useQueryClient
 } from "@tanstack/react-query";
 import { useAuthContext } from "@/context/authContext";
-import { useWorldDeployerClient } from "@/hooks";
+import { useWorldClient, useWorldDeployerClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import {
     formatCycleBalance,
@@ -191,3 +191,96 @@ export const useCreateWorldUpload = () => {
         },
     });
 };
+
+export const useImportUsersData = () => {
+    const { t } = useTranslation();
+  
+    return useMutation({
+      mutationFn: async ({
+        ofCanisterId,
+        canisterId
+      }: {
+        ofCanisterId: string;
+        canisterId?: string;
+      }) => {
+        try {
+          const { actor, methods } = await useWorldHubClient();
+  
+          return await actor[methods.importAllUsersDataOfWorld](ofCanisterId, canisterId);
+        } catch (error) {
+          if (error instanceof Error) {
+            throw error.message;
+          }
+          throw serverErrorMsg;
+        }
+      },
+      onError: () => {
+        toast.error(t("world_deployer.manage_worlds.tabs.item_2.import_user.error"));
+      },
+      onSuccess: () => {
+        toast.success(t("world_deployer.manage_worlds.tabs.item_2.import_user.success"));
+      },
+    });
+  };
+
+  export const useImportConfigsData = () => {
+    const { t } = useTranslation();
+  
+    return useMutation({
+      mutationFn: async ({
+        ofCanisterId,
+        canisterId
+      }: {
+        ofCanisterId: string;
+        canisterId?: string;
+      }) => {
+        try {
+          const { actor, methods } = await useWorldClient((canisterId != undefined)? canisterId : "");
+  
+          return await actor[methods.importAllConfigsOfWorld](ofCanisterId);
+        } catch (error) {
+          if (error instanceof Error) {
+            throw error.message;
+          }
+          throw serverErrorMsg;
+        }
+      },
+      onError: () => {
+        toast.error(t("world_deployer.manage_worlds.tabs.item_2.import_config.error"));
+      },
+      onSuccess: () => {
+        toast.success(t("world_deployer.manage_worlds.tabs.item_2.import_config.success"));
+      },
+    });
+  };
+
+  export const useImportPermissionsData = () => {
+    const { t } = useTranslation();
+  
+    return useMutation({
+      mutationFn: async ({
+        ofCanisterId,
+        canisterId
+      }: {
+        ofCanisterId: string;
+        canisterId?: string;
+      }) => {
+        try {
+          const { actor, methods } = await useWorldHubClient();
+  
+          return await actor[methods.importAllPermissionsOfWorld](ofCanisterId, canisterId);
+        } catch (error) {
+          if (error instanceof Error) {
+            throw error.message;
+          }
+          throw serverErrorMsg;
+        }
+      },
+      onError: () => {
+        toast.error(t("world_deployer.manage_worlds.tabs.item_2.import_permissions.error"));
+      },
+      onSuccess: () => {
+        toast.success(t("world_deployer.manage_worlds.tabs.item_2.import_permissions.success"));
+      },
+    });
+  };

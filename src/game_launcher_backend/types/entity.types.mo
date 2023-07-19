@@ -30,20 +30,29 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
-    public let Ledger = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
-    public let IC_Management = "aaaaa-aa"; //IC Management canister_id
-    public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai"; //ckBTC as ICRC-1 Token
 
-    public let WorldbHub = "j362g-ziaaa-aaaap-abf6a-cai"; 
-    public let admins = [
-        "26otq-bnbgp-bfbhy-i7ypc-czyxx-3rlax-yrrny-issrb-kwepg-vqtcs-pae",//JACK
-        "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe",
-    ]; //add admin principal for access control over DB
+    public type Entity = {
+        eid : Text;
+        gid : Text;
+        wid : Text;
+        attribute : ?Text;
+        quantity : ?Float;
+        expiration : ?Nat;
+    };
 
-    public let paymenthub_canister_id = "5hr3g-hqaaa-aaaap-abbxa-cai"; //!avoid changing this!
-    public let stakinghub_canister_id = "jozll-yaaaa-aaaap-abf5q-cai"; //!avoid changing this!
-    public let StakingHubAdmin = "";
+    public type EntityConfig = 
+    {
+        eid: Text;
+        gid: Text;
+        name: ?Text;
+        description: ?Text;
+        imageUrl: ?Text;
+        objectUrl: ?Text;
+        rarity: ?Text;
+        duration: ?Nat;
+        tag: Text;
+        metadata: Text;
+    };
 
-    public let NftDeployerCanisterId = "j474s-uqaaa-aaaap-abf6q-cai";
-    public let NftDeployerCanisterIdStaging = "fbkar-zaaaa-aaaal-qbzca-cai";
+    public type EntityPermission = {};
 };

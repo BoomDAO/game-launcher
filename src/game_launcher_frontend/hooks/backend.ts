@@ -18,6 +18,10 @@ import { idlFactory as TokenDeployerFactory } from "../dids/token_deployer.did.j
 import { idlFactory as TokenFactory } from "../dids/icrc.did.js";
 //@ts-ignore
 import { idlFactory as WorldDeployerFactory } from "../dids/world_deployer.did.js";
+//@ts-ignore
+import { idlFactory as WorldHubFactory } from "../dids/world_hub.did.js";
+//@ts-ignore
+import { idlFactory as WorldFactory } from "../dids/world.did.js";
 
 
 const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
@@ -29,12 +33,14 @@ const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";
 const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai";
 const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
 const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
+const worldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
 
 // Prod Backend Canisters
 // const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
-// const minting_canisterId = "zeroy-xaaaa-aaaag-qb7da-cai"; 
-// const token_deployerId = "qx76v-6qaaa-aaaal-acmla-cai"; 
-// const world_deployerId = "a6t6i-riaaa-aaaal-acphq-cai"; 
+// const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
+// const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
+// const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
+// const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
 
 export const useWorldDeployerClient = async () => {
   const authClient = await getAuthClient();
@@ -58,6 +64,37 @@ export const useWorldDeployerClient = async () => {
       create_world: "createWorldCanister",
       update_world_cover: "updateWorldCover",
       cycleBalance: "cycleBalance"
+    }
+  }
+};
+
+export const useWorldHubClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+  const agent = await getAgent(identity);
+  return {
+    actor: Actor.createActor(WorldHubFactory, {
+      agent,
+      canisterId: worldHubCanisterId,
+    }),
+    methods: {
+      importAllUsersDataOfWorld: "importAllUsersDataOfWorld",
+      importAllPermissionsOfWorld: "importAllPermissionsOfWorld"
+    }
+  }
+};
+
+export const useWorldClient = async (canisterId : string) => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+  const agent = await getAgent(identity);
+  return {
+    actor: Actor.createActor(WorldFactory, {
+      agent,
+      canisterId: canisterId,
+    }),
+    methods: {
+      importAllConfigsOfWorld: "importAllConfigsOfWorld",
     }
   }
 };

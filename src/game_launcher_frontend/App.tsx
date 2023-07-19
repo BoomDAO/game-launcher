@@ -20,6 +20,7 @@ import CreateWorld from "./pages/WorldDeployer/CreateWorld"
 import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
 import Game from "./pages/UploadGames/Games/Game";
+import ManageWorlds from "./pages/WorldDeployer/ManageWorlds";
 
 function App() {
   return (
@@ -69,6 +70,10 @@ function App() {
                 <Route
                   path={`${navPaths.world_deployer}/:canisterId`}
                   element={<CreateWorld />}
+                />
+                <Route
+                  path={`${navPaths.manage_worlds}/:canisterId`}
+                  element={<ManageWorlds />}
                 />
               </Route>
 
