@@ -33,7 +33,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'admin_remove_game' : IDL.Func([IDL.Text], [], []),
     'create_game_canister' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],
         [IDL.Text],
         [],
       ),

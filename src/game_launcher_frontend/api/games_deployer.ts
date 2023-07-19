@@ -116,6 +116,7 @@ export const useCreateGameData = () =>
           payload.description,
           payload.cover,
           payload.platform,
+          payload.visibility
         )) as string;
 
         return canisterId;
@@ -252,13 +253,13 @@ export const useCreateGameUpload = () => {
 
   return useMutation({
     mutationFn: async (payload: CreateGameSubmit) => {
-      const { cover, description, files, name, platform } = payload.values;
+      const { cover, description, files, name, platform, visibility } = payload.values;
 
       let canister_id = payload.canisterId;
 
       if (!canister_id) {
         canister_id = await payload.mutateData(
-          { description, name, cover, platform },
+          { description, name, cover, platform, visibility },
           {
             onError: (err) => {
               console.log("err", err);
@@ -268,7 +269,7 @@ export const useCreateGameUpload = () => {
       }
 
       await payload.mutateFiles(
-        { canister_id, description, name, platform, files },
+        { canister_id, description, name, platform, visibility, files },
         {
           onError: (err) => {
             console.log("err", err);
@@ -303,6 +304,7 @@ export const useUpdateGameSubmit = () => {
     mutationFn: async (payload: UpdateGameSubmit) => {
       const { canister_id, cover, description, files, name, platform } =
         payload.values;
+      const visibility = "public";
 
       await payload.mutateData(
         { description, canister_id, name, platform },
@@ -326,7 +328,7 @@ export const useUpdateGameSubmit = () => {
 
       if (files.length) {
         await payload.mutateFiles(
-          { canister_id, description, name, platform, files },
+          { canister_id, description, name, platform, files, visibility },
           {
             onError: (err) => {
               console.log("err", err);

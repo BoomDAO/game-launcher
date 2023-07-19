@@ -62,10 +62,10 @@ export interface CreateTokenTransferFrom
   extends Pick<TokenTransferFromArgs, "from" | "to" | "amount"> { }
 
 export interface CreateGameData
-  extends Pick<Game, "name" | "description" | "cover" | "platform"> { }
+  extends Pick<Game, "name" | "description" | "cover" | "platform" | "visibility"> { }
 
 export interface UploadGameFileData
-  extends Pick<Game, "canister_id" | "name" | "description" | "platform"> { }
+  extends Pick<Game, "canister_id" | "name" | "description" | "platform" | "visibility"> { }
 
 export interface CreateGameFiles extends UploadGameFileData {
   files: GameFile[];
