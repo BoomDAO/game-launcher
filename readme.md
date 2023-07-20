@@ -35,7 +35,9 @@ To get the hash for Game Launcher canisters:
   Controllers: 2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe ...
   Module hash: 0x9d32c5bc82e9784d61856c7fa265e9b3dda4e97ee8082b30069ff39ab8626255
   ```
-
+<p align="center">
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/e64d58f7-2f0c-4a4c-975f-bfdc131f57a9" alt="my banner"></a>
+</p>
 
 
 <p align="center">
