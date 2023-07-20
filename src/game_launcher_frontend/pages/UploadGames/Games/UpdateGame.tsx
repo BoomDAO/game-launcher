@@ -26,7 +26,7 @@ import FormUploadButton from "@/components/form/FormUploadButton";
 import Button from "@/components/ui/Button";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
-import { gameDataScheme, platform_types } from "@/shared";
+import { gameDataScheme, platform_types, visibility_types } from "@/shared";
 import { GameFile } from "@/types";
 
 const scheme = z
@@ -58,6 +58,7 @@ const UpdateGame = () => {
       description: "",
       platform: "Browser",
       cover: "",
+      visibility: "public",
       files: [],
     },
     resolver: zodResolver(scheme),
@@ -65,6 +66,7 @@ const UpdateGame = () => {
 
   const cover = watch("cover");
   const platform = watch("platform");
+  const visibility = watch("visibility");
 
   React.useEffect(() => {
     if (!data) return;
@@ -72,6 +74,7 @@ const UpdateGame = () => {
       name: data.name,
       description: data.description,
       platform: data.platform,
+      visibility: data.visibility,
     });
   }, [data]);
 
