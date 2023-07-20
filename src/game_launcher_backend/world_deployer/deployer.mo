@@ -213,6 +213,25 @@ actor Deployer {
         );
     };
 
+    private func _isController(collection_canister_id : Text, p : Principal) : async (Bool) {
+        var status : {
+            status : { #stopped; #stopping; #running };
+            memory_size : Nat;
+            cycles : Nat;
+            settings : definite_canister_settings;
+            module_hash : ?[Nat8];
+        } = await IC.canister_status({
+            canister_id = Principal.fromText(collection_canister_id);
+        });
+        var controllers : [Principal] = status.settings.controllers;
+        for (i in controllers.vals()) {
+            if (i == p) {
+                return true;
+            };
+        };
+        return false;
+    };
+
     //Queries
     //
     public query func getOwner(canister_id : Text) : async (?Text) {
@@ -288,6 +307,71 @@ actor Deployer {
 
     //Updates
     //
+    public shared ({ caller }) func addController(collection_canister_id : Text, p : Text) : async () {
+        var check : Bool = await _isController(collection_canister_id, caller);
+        if (check == false) {
+            return ();
+        };
+        var status : {
+            status : { #stopped; #stopping; #running };
+            memory_size : Nat;
+            cycles : Nat;
+            settings : definite_canister_settings;
+            module_hash : ?[Nat8];
+        } = await IC.canister_status({
+            canister_id = Principal.fromText(collection_canister_id);
+        });
+        var controllers : [Principal] = status.settings.controllers;
+        var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
+        for (i in controllers.vals()) {
+            if (i != Principal.fromText(p)) b.add(i);
+        };
+        b.add(Principal.fromText(p));
+        await (
+            IC.update_settings({
+                canister_id = Principal.fromText(collection_canister_id);
+                settings = {
+                    controllers = ?Buffer.toArray(b);
+                    compute_allocation = null;
+                    memory_allocation = null;
+                    freezing_threshold = ?31_540_000;
+                };
+            })
+        );
+    };
+
+    public shared ({ caller }) func removeController(collection_canister_id : Text, p : Text) : async () {
+        var check : Bool = await _isController(collection_canister_id, caller);
+        if (check == false) {
+            return ();
+        };
+        var status : {
+            status : { #stopped; #stopping; #running };
+            memory_size : Nat;
+            cycles : Nat;
+            settings : definite_canister_settings;
+            module_hash : ?[Nat8];
+        } = await IC.canister_status({
+            canister_id = Principal.fromText(collection_canister_id);
+        });
+        var controllers : [Principal] = status.settings.controllers;
+        var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
+        for (i in controllers.vals()) {
+            if (i != Principal.fromText(p)) b.add(i);
+        };
+        await (
+            IC.update_settings({
+                canister_id = Principal.fromText(collection_canister_id);
+                settings = {
+                    controllers = ?Buffer.toArray(b);
+                    compute_allocation = null;
+                    memory_allocation = null;
+                    freezing_threshold = ?31_540_000;
+                };
+            })
+        );
+    };
+
     public shared (msg) func createWorldCanister(_name : Text, cover_encoding : Text) : async (Text) {
         var canister_id : Text = await create_canister(msg.caller);
         _worlds := Trie.put(

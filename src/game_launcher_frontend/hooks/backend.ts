@@ -11,7 +11,7 @@ import { idlFactory as LedgerFactory } from "../dids/ledger.did.js";
 // @ts-ignore
 import { idlFactory as MintingDeployerFactory } from "../dids/minting_deployer.did.js";
 // @ts-ignore
-import { idlFactory as ManagementFactory } from "../dids/minting_deployer.did.js";
+import { idlFactory as ManagementFactory } from "../dids/management.did.js";
 //@ts-ignore
 import { idlFactory as TokenDeployerFactory } from "../dids/token_deployer.did.js";
 //@ts-ignore
@@ -63,7 +63,9 @@ export const useWorldDeployerClient = async () => {
       
       create_world: "createWorldCanister",
       update_world_cover: "updateWorldCover",
-      cycleBalance: "cycleBalance"
+      cycleBalance: "cycleBalance",
+      add_controller: "addController",
+      remove_controller: "removeController"
     }
   }
 };
@@ -271,6 +273,10 @@ export const useManagementClient = async () => {
       agent,
       canisterId: managenemt_canisterId,
     }),
-    methods: {},
+    methods: {
+      add_controller: "update_settings",
+      remove_controller: "update_settings",
+      canister_status: "canister_status"
+    },
   };
 };

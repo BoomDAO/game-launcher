@@ -355,6 +355,9 @@
             "success": "Imported",
             "button_text": "Import Permissions"
           }
+        },
+        "item_3": {
+          "title": "Change Controllers"
         }
       }
     }
