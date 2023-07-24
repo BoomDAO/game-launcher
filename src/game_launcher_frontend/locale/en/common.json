@@ -357,8 +357,38 @@
           }
         },
         "item_3": {
-          "title": "Change Controllers"
+          "title": "Admin / Controller"
         }
+      }
+    },
+    "admin": {
+      "title": "Add / Remove admin",
+      "add": {
+        "input_placeholder": "Principal id to add admin",
+        "button": "Add admin",
+        "error": "There was some error while adding admin. Please try again!",
+        "success": "Admin was added."
+      },
+      "remove": {
+        "input_placeholder": "Principal id to remove admin",
+        "button": "Remove admin",
+        "error": "There was some error while removing admin. Please try again!",
+        "success": "Admin was removed."
+      }
+    },
+    "controller": {
+      "title": "Add / Remove controller",
+      "add": {
+        "input_placeholder": "Principal id to add controller",
+        "button": "Add controller",
+        "error": "There was some error while adding controller. Please try again!",
+        "success": "Controller was added."
+      },
+      "remove": {
+        "input_placeholder": "Principal id to remove controller",
+        "button": "Remove controller",
+        "error": "There was some error while removing controller. Please try again!",
+        "success": "Controller was removed."
       }
     }
   },

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAddController, useRemoveController } from "@/api/world_deployer";
+import { useAddAdmin, useRemoveAdmin } from "@/api/world_deployer";
 import Form from "@/components/form/Form";
 import FormTextInput from "@/components/form/FormTextInput";
 import Button from "@/components/ui/Button";
@@ -16,14 +16,14 @@ const scheme = z.object({
 
 type Data = z.infer<typeof scheme>;
 
-const ManageController = () => {
+const ManageAdmin = () => {
   const { canisterId } = useParams();
 
   const { t } = useTranslation();
 
   const {
-    control: addControllerControl,
-    handleSubmit: handleAddController,
+    control: addAdminControl,
+    handleSubmit: handleAddAdmin,
     reset: resetAdd,
   } = useForm<Data>({
     defaultValues: {
@@ -33,8 +33,8 @@ const ManageController = () => {
   });
 
   const {
-    control: removeControllerControll,
-    handleSubmit: handleRemoveController,
+    control: removeAdminControll,
+    handleSubmit: handleRemoveAdmin,
     reset: resetRemove,
   } = useForm<Data>({
     defaultValues: {
@@ -43,20 +43,20 @@ const ManageController = () => {
     resolver: zodResolver(scheme),
   });
 
-  const { mutate: addController, isLoading: isLoadingAddController } =
-    useAddController();
-  const { mutate: removeController, isLoading: isLoadingRemoveController } =
-    useRemoveController();
+  const { mutate: addAdmin, isLoading: isLoadingAddAdmin } = useAddAdmin();
+  const { mutate: removeAdmin, isLoading: isLoadingRemoveAdmin } =
+    useRemoveAdmin();
 
-  const onAddController = (values: Data) =>
-    addController(
+  const onAddAdmin = (values: Data) =>
+    addAdmin(
       { ...values, canisterId },
       {
         onSuccess: () => resetAdd(),
       },
     );
-  const onRemoveController = (values: Data) =>
-    removeController(
+
+  const onRemoveAdmin = (values: Data) =>
+    removeAdmin(
       { ...values, canisterId },
       {
         onSuccess: () => resetRemove(),
@@ -65,37 +65,33 @@ const ManageController = () => {
 
   return (
     <div>
-      <SubHeading>{t("world_deployer.controller.title")}</SubHeading>
+      <SubHeading>{t("world_deployer.admin.title")}</SubHeading>
       <Space />
 
       <div className="flex w-full flex-col gap-12 md:flex-row">
-        <Form onSubmit={handleAddController(onAddController)}>
+        <Form onSubmit={handleAddAdmin(onAddAdmin)}>
           <FormTextInput
-            control={addControllerControl}
+            control={addAdminControl}
             name="principal"
-            placeholder={t(
-              "world_deployer.controller.add.input_placeholder",
-            )}
+            placeholder={t("world_deployer.admin.add.input_placeholder")}
             min={0}
           />
 
-          <Button size="big" rightArrow isLoading={isLoadingAddController}>
-            {t("world_deployer.controller.add.button")}
+          <Button size="big" rightArrow isLoading={isLoadingAddAdmin}>
+            {t("world_deployer.admin.add.button")}
           </Button>
         </Form>
 
-        <Form onSubmit={handleRemoveController(onRemoveController)}>
+        <Form onSubmit={handleRemoveAdmin(onRemoveAdmin)}>
           <FormTextInput
-            control={removeControllerControll}
+            control={removeAdminControll}
             name="principal"
-            placeholder={t(
-              "world_deployer.controller.remove.input_placeholder",
-            )}
+            placeholder={t("world_deployer.admin.remove.input_placeholder")}
             min={0}
           />
 
-          <Button size="big" rightArrow isLoading={isLoadingRemoveController}>
-            {t("world_deployer.controller.remove.button")}
+          <Button size="big" rightArrow isLoading={isLoadingRemoveAdmin}>
+            {t("world_deployer.admin.remove.button")}
           </Button>
         </Form>
       </div>
@@ -103,4 +99,4 @@ const ManageController = () => {
   );
 };
 
-export default ManageController;
+export default ManageAdmin;

@@ -9,6 +9,7 @@ import ImportUser from "./ImportUser";
 import ImportConfig from "./ImportConfig";
 import ImportPermissions from "./ImportPermissions";
 import ManageController from "./ManageController";
+import ManageAdmin from "./ManageAdmin";
 
 const ManageWorlds = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -45,6 +46,8 @@ const ManageWorlds = () => {
       {activeTab === 3 && (
         <div className="w-full space-y-12">
           < ManageController />
+          <Divider/>
+          <ManageAdmin/>
         </div>
       )}
     </>

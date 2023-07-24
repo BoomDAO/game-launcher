@@ -2,7 +2,7 @@ import { HttpAgent, Identity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
 import fetch from "cross-fetch";
 
-const APPLICATION_NAME = "BoomDAO";
+const APPLICATION_NAME = "BOOM DAO";
 const APPLICATION_LOGO_URL = "https://i.postimg.cc/L4f471FF/logo.png";
 const AUTH_PATH =
   "/authenticate/?applicationName=" + APPLICATION_NAME+"&applicationLogo="+APPLICATION_LOGO_URL+"#authorize";

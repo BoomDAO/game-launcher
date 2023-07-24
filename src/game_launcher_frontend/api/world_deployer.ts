@@ -344,3 +344,65 @@ export const useRemoveController = () => {
     },
   });
 };
+
+export const useAddAdmin = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useWorldClient((canisterId != undefined)? canisterId : "");
+
+        return await actor[methods.add_admin](principal);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.admin.add.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.admin.add.success"));
+    },
+  });
+};
+
+export const useRemoveAdmin = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useWorldClient((canisterId != undefined)? canisterId : "");
+
+        return await actor[methods.remove_admin](principal);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("manage_nfts.update.admin.remove.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("manage_nfts.update.admin.remove.success"));
+    },
+  });
+};
