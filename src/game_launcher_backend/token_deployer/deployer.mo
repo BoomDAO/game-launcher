@@ -116,7 +116,6 @@ actor Deployer {
             canister_id : Principal;
             settings : canister_settings;
         } -> async ();
-        // http_request : shared ICCanisterHttpRequestArgs -> async ICCanisterHttpResponsePayload;
     };
 
     //Utility Functions

@@ -606,18 +606,6 @@ actor Deployer {
         };
     };
 
-    // public func setOwner(c : Text, n : Text) : async (){
-    //     switch(Trie.find(_owners, Utils.keyT(c), Text.equal)){
-    //         case (?o){
-    //             // assert(Principal.fromText(o) == msg.caller);
-    //             _owners := Trie.put(_owners, Utils.keyT(c), Text.equal, n).0;
-    //         };
-    //         case null {
-    //             return ();
-    //         }
-    //     }
-    // };
-
     public query func get_all_games() : async [(Text, Game)] {
         var b = Buffer.Buffer<(Text, Game)> (0);
         for((i, v) in Trie.iter(_games)) {

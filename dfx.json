@@ -32,17 +32,5 @@
             "packtool": ""
         }
     },
-    "networks": {
-		"local": {
-			"bind": "127.0.0.1:8001",
-			"type": "ephemeral"
-		},
-		"stag": {
-			"providers": [
-				"https://icp0.io"
-			],
-			"type": "persistent"
-		}
-	},
     "version": 1
 }

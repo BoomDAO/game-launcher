@@ -662,8 +662,6 @@ actor Deployer {
     };
 
     public shared (msg) func getTokenMetadata(collection_canister_id : Text, index : TokenIndex) : async (Text) {
-        // var owner : Text = Option.get(Trie.find(_owner, keyT(collection_canister_id), Text.equal), "");
-        // assert (msg.caller == Principal.fromText(owner));
         let collection = actor (collection_canister_id) : actor {
             extGetTokenMetadata : (TokenIndex) -> async (?Metadata);
         };
