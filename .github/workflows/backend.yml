@@ -24,3 +24,7 @@ jobs:
           dfx deploy --network stag --no-wallet nfts_deployer
           dfx deploy --network stag --no-wallet token_deployer
           dfx deploy --network stag --no-wallet game_deployer
+          echo dfx canister --network ic info 6rvbl-uqaaa-aaaal-ab24a-cai
+          echo dfx canister --network ic info j474s-uqaaa-aaaap-abf6q-cai
+          echo dfx canister --network ic info jv4xo-cyaaa-aaaap-abf7a-cai
+          echo dfx canister --network ic info js5r2-paaaa-aaaap-abf7q-cai
