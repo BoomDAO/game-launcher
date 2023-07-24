@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .dfx
+secrets
 
 # Editor directories and files
 .vscode/*
