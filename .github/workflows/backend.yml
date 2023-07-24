@@ -24,4 +24,4 @@ jobs:
           dfx deploy --network stag --no-wallet nfts_deployer
           dfx deploy --network stag --no-wallet token_deployer
           dfx deploy --network stag --no-wallet game_deployer
-          dfx deploy --network stag --no-wallet world-launcher
+          dfx deploy --network stag --no-wallet game-launcher
