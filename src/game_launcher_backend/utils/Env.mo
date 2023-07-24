@@ -34,16 +34,11 @@ module {
     public let IC_Management = "aaaaa-aa"; //IC Management canister_id
     public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai"; //ckBTC as ICRC-1 Token
 
-    public let WorldbHub = "j362g-ziaaa-aaaap-abf6a-cai"; 
-    public let admins = [
-        "26otq-bnbgp-bfbhy-i7ypc-czyxx-3rlax-yrrny-issrb-kwepg-vqtcs-pae",//JACK
-        "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe",
-    ]; //add admin principal for access control over DB
+    public let admins = []; //add admin principal for access control over DB
 
-    public let paymenthub_canister_id = "5hr3g-hqaaa-aaaap-abbxa-cai"; //!avoid changing this!
-    public let stakinghub_canister_id = "jozll-yaaaa-aaaap-abf5q-cai"; //!avoid changing this!
-    public let StakingHubAdmin = "";
-
+    //!avoid changing this!
+    public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
+    public let PaymentHubCanisterId = "5hr3g-hqaaa-aaaap-abbxa-cai";
+    public let StakingHubCanisterId = "jozll-yaaaa-aaaap-abf5q-cai"; 
     public let NftDeployerCanisterId = "j474s-uqaaa-aaaap-abf6q-cai";
-    public let NftDeployerCanisterIdStaging = "fbkar-zaaaa-aaaal-qbzca-cai";
 };

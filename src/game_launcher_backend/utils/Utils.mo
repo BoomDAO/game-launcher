@@ -59,6 +59,17 @@ module {
         };
         return Nat64.fromNat(textToNat(Int.toText(Float.toInt(val * base))));
     };
+    public func convertToBaseUnit(val : Float, decimals : Nat8) : (Nat){
+        var baseUnitCount : Float = 10;
+        var i : Nat8 = 0;
+        let loopsCount = decimals - 1;
+        while(i < loopsCount){
+            baseUnitCount *= 10;
+            i += 1;
+        };
+        
+        return textToNat(Int.toText(Float.toInt(baseUnitCount * val)));
+    };
     //
     public func key(x : Nat32) : Trie.Key<Nat32> {
         return { hash = x; key = x };

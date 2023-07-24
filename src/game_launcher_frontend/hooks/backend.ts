@@ -11,7 +11,7 @@ import { idlFactory as LedgerFactory } from "../dids/ledger.did.js";
 // @ts-ignore
 import { idlFactory as MintingDeployerFactory } from "../dids/minting_deployer.did.js";
 // @ts-ignore
-import { idlFactory as ManagementFactory } from "../dids/minting_deployer.did.js";
+import { idlFactory as ManagementFactory } from "../dids/management.did.js";
 //@ts-ignore
 import { idlFactory as TokenDeployerFactory } from "../dids/token_deployer.did.js";
 //@ts-ignore
@@ -29,18 +29,18 @@ const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
 
 // Stag Backend Canisters
-// const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";
-// const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai";
-// const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
-// const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
-// const worldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
+const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";
+const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai";
+const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
+const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
+const worldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
 
 // Prod Backend Canisters
-const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
-const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
-const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
-const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
-const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
+// const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
+// const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
+// const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
+// const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
+// const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
 
 export const useWorldDeployerClient = async () => {
   const authClient = await getAuthClient();
@@ -63,7 +63,9 @@ export const useWorldDeployerClient = async () => {
       
       create_world: "createWorldCanister",
       update_world_cover: "updateWorldCover",
-      cycleBalance: "cycleBalance"
+      cycleBalance: "cycleBalance",
+      add_controller: "addController",
+      remove_controller: "removeController"
     }
   }
 };
@@ -95,6 +97,8 @@ export const useWorldClient = async (canisterId : string) => {
     }),
     methods: {
       importAllConfigsOfWorld: "importAllConfigsOfWorld",
+      add_admin: "addAdmin",
+      remove_admin: "removeAdmin",
     }
   }
 };
@@ -271,6 +275,10 @@ export const useManagementClient = async () => {
       agent,
       canisterId: managenemt_canisterId,
     }),
-    methods: {},
+    methods: {
+      add_controller: "update_settings",
+      remove_controller: "update_settings",
+      canister_status: "canister_status"
+    },
   };
 };
