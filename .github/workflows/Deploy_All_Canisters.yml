@@ -4,7 +4,7 @@ on:
     branches:
       - main
 jobs:
-  backend:
+  Deploy_All_Canisters:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -14,7 +14,8 @@ jobs:
           install-moc: true
         env:
           DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
-      - run: |
+      - name: Deploy All Canisters
+        run: |
           dfx identity use action
           for i in src/game_launcher_backend/game_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
           for i in src/game_launcher_backend/nfts_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done

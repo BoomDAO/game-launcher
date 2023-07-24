@@ -20,7 +20,7 @@ You can use the Game Launcher here: http://launcher.boomdao.xyz
 
 To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
 
-## VERIFY CANISTER'S MODULE HASH
+## VERIFYing CANISTERS BUILDS
 
 To get the hash for Game Launcher canisters:
 
@@ -35,6 +35,13 @@ To get the hash for Game Launcher canisters:
   Controllers: 2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe ...
   Module hash: 0x9d32c5bc82e9784d61856c7fa265e9b3dda4e97ee8082b30069ff39ab8626255
   ```
+To get the hash for Canisters deployment:
+
+- Go to [Github actions deployment runs](https://github.com/BoomDAO/game-launcher/actions)
+- Open the latest succesful run. ([Click to see an example run](https://github.com/BoomDAO/game-launcher/actions/runs/5641910908))
+- Go to any of the `Deploy all canisters` jobs. ([Click to see an example job](https://github.com/BoomDAO/game-launcher/actions/runs/5641910908/job/15280766674))
+- Open one of the `Deploy All Canisters` steps. Scroll to the end of this Job, you should find the `Module hash` in this step. This value should match the value you got locally. 
+
 
 ## TECHNICAL ARCHITECTURE
 <p align="center">
