@@ -2,7 +2,7 @@ name: Build and Deploy all BOOM DAO Game Launcher canisters
 on:
   push:
     branches:
-      - staging
+      - main
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -15,13 +15,16 @@ jobs:
         env:
           DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
       - run: |
+          dfx identity use action
           for i in src/game_launcher_backend/game_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
           for i in src/game_launcher_backend/nfts_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
           for i in src/game_launcher_backend/token_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
           for i in src/game_launcher_backend/world_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
-          dfx identity use action
-          dfx deploy --network stag --no-wallet world_deployer
-          dfx deploy --network stag --no-wallet nfts_deployer
-          dfx deploy --network stag --no-wallet token_deployer
-          dfx deploy --network stag --no-wallet game_deployer
-          dfx deploy --network stag --no-wallet world-launcher
+          dfx deploy --network ic --no-wallet world_deployer
+          dfx deploy --network ic --no-wallet nfts_deployer
+          dfx deploy --network ic --no-wallet token_deployer
+          dfx deploy --network ic --no-wallet game_deployer
+          dfx canister --network ic info 6rvbl-uqaaa-aaaal-ab24a-cai
+          dfx canister --network ic info j474s-uqaaa-aaaap-abf6q-cai
+          dfx canister --network ic info jv4xo-cyaaa-aaaap-abf7a-cai
+          dfx canister --network ic info js5r2-paaaa-aaaap-abf7q-cai
