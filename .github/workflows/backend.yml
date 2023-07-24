@@ -15,13 +15,12 @@ jobs:
         env:
           DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
       - run: |
+          dfx identity use action
           for i in src/game_launcher_backend/game_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
           for i in src/game_launcher_backend/nfts_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
           for i in src/game_launcher_backend/token_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
           for i in src/game_launcher_backend/world_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
-          dfx identity use action
           dfx deploy --network stag --no-wallet world_deployer
           dfx deploy --network stag --no-wallet nfts_deployer
           dfx deploy --network stag --no-wallet token_deployer
           dfx deploy --network stag --no-wallet game_deployer
-          dfx deploy --network stag --no-wallet game-launcher
