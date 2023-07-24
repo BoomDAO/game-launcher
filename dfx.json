@@ -1,0 +1,36 @@
+{
+    "canisters": {
+        "game-launcher": {
+            "frontend": {
+                "entrypoint": "dist/index.html"
+            },
+            "source": [
+                "dist/"
+            ],
+            "type": "assets"
+        },
+        "game_deployer": {
+            "main": "src/game_launcher_backend/game_deployer/deployer.mo",
+            "type": "motoko"
+        },
+        "nfts_deployer": {
+            "main": "src/game_launcher_backend/nfts_deployer/deployer.mo",
+            "type": "motoko"
+        },
+        "token_deployer": {
+            "main": "src/game_launcher_backend/token_deployer/deployer.mo",
+            "type": "motoko"
+        },
+        "world_deployer": {
+            "main": "src/game_launcher_backend/world_deployer/deployer.mo",
+            "type": "motoko"
+        }
+    },
+    "defaults": {
+        "build": {
+            "args": "",
+            "packtool": ""
+        }
+    },
+    "version": 1
+}

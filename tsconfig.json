@@ -17,16 +17,16 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/components/*": ["src/components/*"],
-      "@/context/*": ["src/context/*"],
-      "@/icons/*": ["src/icons/*"],
-      "@/api/*": ["src/api/*"],
-      "@/utils": ["src/utils/index.ts"],
-      "@/types": ["src/types/index.ts"],
-      "@/hooks": ["src/hooks/index.ts"],
-      "@/shared": ["src/shared/index.ts"]
+      "@/components/*": ["src/game_launcher_frontend/components/*"],
+      "@/context/*": ["src/game_launcher_frontend/context/*"],
+      "@/icons/*": ["src/game_launcher_frontend/icons/*"],
+      "@/api/*": ["src/game_launcher_frontend/api/*"],
+      "@/utils": ["src/game_launcher_frontend/utils/index.ts"],
+      "@/types": ["src/game_launcher_frontend/types/index.ts"],
+      "@/hooks": ["src/game_launcher_frontend/hooks/index.ts"],
+      "@/shared": ["src/game_launcher_frontend/shared/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["src/dids"]
+  "exclude": ["src/game_launcher_frontend/dids"]
 }

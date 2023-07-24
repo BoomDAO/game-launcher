@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,500;1,100;1,200;1,300;1,500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white font-poppins text-black dark:bg-dark dark:text-white;
+  }
+
+  input,
+  input[type="number"],
+  textarea,
+  select {
+    @apply w-full rounded-primary border border-black bg-transparent py-4 px-6 focus:border-lightPrimary focus:outline-none focus:ring-0 dark:border-white dark:focus:border-darkPrimary;
+  }
+
+  /* Chrome, Safari, Edge, Opera */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Firefox */
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .card-container {
+    @apply grid grid-cols-card gap-6;
+  }
+
+  .gradient-bg {
+    @apply bg-gradient-to-r from-darkPrimary to-lightPrimary;
+  }
+
+  .gradient-text {
+    @apply inline-block bg-gradient-to-r from-darkPrimary to-lightPrimary bg-clip-text text-transparent;
+  }
+
+  .form-error {
+    @apply border-error dark:border-error;
+  }
+}

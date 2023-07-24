@@ -1,0 +1,417 @@
+{
+  "error": "Sorry something happend... try again later",
+  "button_login": "Login via NFID",
+  "previous": "Previous",
+  "next": "Next",
+  "404": {
+    "title": "Are you lost?",
+    "message": "Sorry, we couldn’t find the page you’re looking for.",
+    "button_home": "Go back home"
+  },
+  "footer": {
+    "follow": "Follow us",
+    "copyright": ""
+  },
+  "navigation": {
+    "login": "Login",
+    "logout": "Logout",
+    "browse_games": "Browse games",
+    "upload_games": "Upload games",
+    "manage_NFTs": "DEPLOY NFTS",
+    "token_deployer": "DEPLOY TOKENS",
+    "world_deployer": "DEPLOY WORLDS"
+  },
+  "card": {
+    "platform": "Platform",
+    "canister_id": "Canister Id",
+    "cycles": "Cycles",
+    "loading_image": "Loading image...",
+    "no_image": "No image found"
+  },
+  "home": {
+    "loading": "Loading games...",
+    "button_upload": "Upload my game",
+    "no_games": "There was no games created yet...",
+    "title": {
+      "text_1": "Games",
+      "text_2": "hosted in",
+      "text_3": "smart contract canisters",
+      "text_4": "on the",
+      "text_5": "ICP",
+      "text_6": "blockchain"
+    }
+  },
+  "upload_games": {
+    "loading": "Loading games...",
+    "title": "Previously uploaded games",
+    "button_upload": "Upload new game",
+    "no_games": "You have no games created yet...",
+    "input_name": "Game name",
+    "input_description": "Game description",
+    "button_cover_upload": "Upload image",
+    "placeholder_cover_upload": "Upload new cover image",
+    "button_game_upload": "Upload file",
+    "placeholder_game_upload": "Upload new game files",
+    "create": {
+      "title": "Upload new game",
+      "button": "Upload game",
+      "success_update": "Game was created.",
+      "loading_game": "Uploading game data...",
+      "error_game": "There was some error while creating data. Please try again!",
+      "success_game": "Game data were saved.",
+      "loading_files": "Uploading game files... Please wait till finish.",
+      "error_files": "There was some error while uploading files, but game canister was created. Please try again!",
+      "success_files": "Game files were created."
+    },
+    "update": {
+      "title": "Update game",
+      "button": "Update game",
+      "loading": "Loading game...",
+      "error": "We did not found any game... :(",
+      "success_update": "Game was updated.",
+      "loading_game": "Uploading game data...",
+      "error_game": "There was some error while uploading data. Please try again!",
+      "success_game": "Game data were updated.",
+      "loading_cover": "Uploading game cover...",
+      "error_cover": "There was some error while uploading cover. Please try again!",
+      "success_cover": "Game cover was updated.",
+      "loading_files": "Uploading game files... Please wait till finish.",
+      "error_files": "There was some error while uploading files. Please try again!",
+      "success_files": "Game files were updated."
+    },
+    "hint": {
+      "browser": {
+        "title": "Browser upload:",
+        "list_item_1": "Put all of your game files into one folder and upload the folder.",
+        "list_item_2": "An index.html file MUST be included in the folder. The index.html can also be the entire game.",
+        "list_item_3": "If you're uploading a Unity WebGL game, then include the index.html, .data, .framework, .loader, and .wasm files in the folder."
+      },
+      "mobile_pc": {
+        "title": "Mobile/PC upload:",
+        "text": "Please zip your game files in a folder and then upload the zipped file. Players will be able to download the zipped file."
+      }
+    },
+    "Game": {
+      "title": "Manage Game",
+      "tab_1": {
+        "title": "Update Game Data"
+      },
+      "tab_2": {
+        "title": "Update Visibility",
+        "button": "Change visibility"
+      },
+      "tab_3": {
+        "title": "Release/Hold a Game",
+        "button": "Apply"
+      }
+    }
+  },
+  "manage_nfts": {
+    "button": "Create new NFT collection",
+    "title": "Previously created collections",
+    "loading": "Loading collections...",
+    "no_collections": "You have no collections created yet...",
+    "no_collections_at_all": "no collections created yet...",
+    "input_name": "Collection name",
+    "input_description": "Collection description",
+    "index": {
+      "tabs": {
+        "item_1": "Your Collections",
+        "item_2": "Everyone's Collections"
+      },
+      "title": "Game Launcher NFT Collections"
+    },
+    "create": {
+      "title": "Create new collection",
+      "button": "Create collection",
+      "success": "Collection was created.",
+      "error": "There was some error while creating collection. Please try again!"
+    },
+    "update": {
+      "title": "Manage collection",
+      "tabs": {
+        "item_1": "View",
+        "item_2": "Admin / Controller",
+        "item_3": "Configure Images",
+        "item_4": "Mint",
+        "item_5": "Airdrop",
+        "item_6": "Burn"
+      },
+      "assets": {
+        "upload": {
+          "title": "Upload Image Asset to NFT Collection",
+          "assetId_input_placeholder": "Image Asset Id",
+          "assetId_input_helper": "Image asset id can be any text that uniquely idetifies this image, which can later get used for mintting and airdropping images linked to these image asset ids",
+          "upload_button": "Choose IMG",
+          "upload_placeholder": "Image Asset File",
+          "button": "Upload Image",
+          "error": "Sorry something happend... try again later",
+          "success": "Asset Image Uploaded successfully",
+          "input_helper_upload_asset": "Specify an image you would like to store in your NFT canister, which can be referenced using the Asset Id you assign to this image. You can use this Asset Id to mint an NFT with this image dynamically from in-game. Note: Only use PNG or JPG images if you're using Unity because Unity doesn't support SVG."
+        },
+        "view": {
+          "title": "View All Image Asset Ids",
+          "button": "Get All Asset Ids of Collection",
+          "error": "No image assets uploaded..."
+        },
+        "asset": {
+          "title": "View Image Asset",
+          "input_placeholder": "Image Asset Id",
+          "button": "View",
+          "error": "No image asset with this asset id uploaded..."
+        }
+      },
+      "view": {
+        "registry": {
+          "title": "View holders",
+          "button": "Get token registry",
+          "error": "We did not find registry."
+        },
+        "token": {
+          "title": "View an NFT’s data",
+          "button": "Get data",
+          "input_placeholder": "Token index",
+          "error": "We did not find this token."
+        }
+      },
+      "admin": {
+        "title": "Add / Remove admin",
+        "add": {
+          "input_placeholder": "Principal id to add admin",
+          "button": "Add admin",
+          "error": "There was some error while adding admin. Please try again!",
+          "success": "Admin was added."
+        },
+        "remove": {
+          "input_placeholder": "Principal id to remove admin",
+          "button": "Remove admin",
+          "error": "There was some error while removing admin. Please try again!",
+          "success": "Admin was removed."
+        }
+      },
+      "controller": {
+        "title": "Add / Remove controller",
+        "add": {
+          "input_placeholder": "Principal id to add controller",
+          "button": "Add controller",
+          "error": "There was some error while adding controller. Please try again!",
+          "success": "Controller was added."
+        },
+        "remove": {
+          "input_placeholder": "Principal id to remove controller",
+          "button": "Remove controller",
+          "error": "There was some error while removing controller. Please try again!",
+          "success": "Controller was removed."
+        }
+      },
+      "burn": {
+        "title": "Burn an NFT",
+        "input_placeholder": "Token index",
+        "button": "Burn it",
+        "error": "There was some error while burning NFT. Please try again!",
+        "success": "NFT was burned."
+      },
+      "mint": {
+        "title": "Mint or Batch Mint NFTs",
+        "error": "There was some error during mint. Please try again!",
+        "success": "Mint was successful.",
+        "input_placeholder_mint_number": "Number of NFTs to mint per principal/address",
+        "input_placeholder_burn": "(Optional) NFT burn timestamp",
+        "input_helper_burn": "If you specify a timestamp, the NFT will automatically get sent to the burn address when that timestamp is reached. You must specify the timestamp in milliseconds using the UNIX timestamp standard.",
+        "textarea_addresses": "Comma-separated list of principals or addresses",
+        "textarea_metadata": "NFT metadata",
+        "upload_placeholder": "NFT image asset id",
+        "upload_placeholder_helper": "NFT image asset id, which you used to upload your Nft image, from Configure Images Tab.",
+        "button": "Mint NFT(s)"
+      },
+      "airdrop": {
+        "title": "Airdrop NFTs to holders of an NFT collection",
+        "error": "There was some error during airdrop. Please try again!",
+        "success": "Airdrop was successful.",
+        "checkbox_prevent": "Prevent a single principal receiving multiple NFTs",
+        "input_placeholder_canister": "Canister id of the NFT collection you want to airdrop to holders of",
+        "input_helper_canister": "We will fetch all the holders of the NFT collection canister id and mint an NFT to each of the holders. If you check the 'Prevent a single principal receiving multiple NFTs' checkbox then it will mint only one NFT to each holder even if they own multiple NFTs in the collection.",
+        "input_placeholder_burn": "(Optional) NFT burn timestamp",
+        "input_helper_burn": "If you specify a timestamp, the NFT will automatically get sent to the burn address when that timestamp is reached. You must specify the timestamp in milliseconds using the UNIX timestamp standard.",
+        "textarea_metadata": "NFT metadata",
+        "upload_placeholder": "NFT image file",
+        "upload_button": "Choose img",
+        "button": "Mint NFTs to holders of an NFT collection"
+      }
+    }
+  },
+  "token_deployer": {
+    "index": {
+      "title": "Game Launcher Tokens",
+      "tabs": {
+        "item_2": "Everyone's Tokens",
+        "item_1": "Your Tokens"
+      }
+    },
+    "button_token_deploy": "Create New Token",
+    "button_logo_upload": "Upload Token Logo",
+    "placeholder_logo_upload": "Token Logo",
+    "loading": "Loading Tokens ...",
+    "no_tokens": "you have no tokens created yet ...",
+    "title": "Previously created tokens",
+    "input_name": "Token Name",
+    "input_symbol": "Token Symbol",
+    "input_amount": "Total Supply",
+    "input_decimals": "Token Decimal Places",
+    "input_fee": "Token Transaction Fee (Use Precision Value)",
+    "input_description": "Token Description",
+    "deploy_token": {
+      "title": "Deploy New Token",
+      "deploy_button": "Deploy New Token",
+      "success": "Token created",
+      "error": "There was some error during deployment. Please try again!"
+    },
+    "token": {
+      "title": "Manage Tokens",
+      "tabs": {
+        "item_2": "Approve/Transfer_From",
+        "item_1": "Mint"
+      },
+      "transfer": {
+        "title": "Mint Token",
+        "transfer_button": "Mint",
+        "transfer_to": "Mint To",
+        "input_helper_transfer_to": "Principal of user to mint to.",
+        "transfer_amount": "Amount To Mint",
+        "error": "There was some error during Token Mint. Please try again!",
+        "success": "Token Minted"
+      },
+      "approve": {
+        "title": "Approve Spender to Transfer on your behalf",
+        "approve_button": "Approve",
+        "approve_to": "Spender account principal",
+        "input_helper_approve_to": "Entitles the Spender account to transfer token amount on behalf of the caller from account. The number of transfers the spender can initiate from the caller's account is unlimited as long as the total amounts and fees of these transfers do not exceed the allowance.",
+        "approve_amount": "Amount allowed to spend",
+        "error": "There was some error during Approval. Please try again!",
+        "success": "Spender Approved"
+      },
+      "transfer_from": {
+        "title": "Transfer Tokens on another's behalf",
+        "transfer_from_button": "Transfer",
+        "transfer_from": "From account principal",
+        "transfer_to": "To account principal",
+        "amount": "Amount to transfer"
+      }
+    }
+  },
+  "world_deployer": {
+    "index": {
+      "title": "Game Launcher Worlds",
+      "button_world_deployer": "Create new World",
+      "loading": "Loading Worlds ...",
+      "error": "you have no worlds created yet ...",
+      "tabs": {
+        "item_1": "Your Worlds",
+        "item_1_title": "Previously created worlds",
+        "item_2": "Everyone's Worlds"
+      }
+    },
+    "create_world": {
+      "title": "Create New World",
+      "input_name": "Your world name",
+      "button_cover_upload": "Upload Cover",
+      "placeholder_cover_upload": "Your world cover",
+      "create_button": "Create New World",
+      "success": "World created successfully",
+      "error": "Sorry something happend... try again later"
+    },
+    "no_worlds_at_all": "no worlds created yet...",
+    "manage_worlds": {
+      "title": "Manage Worlds",
+      "tabs": {
+        "item_1": {
+          "title": "Configure World",
+          "content": "Here Goes Configure World intro data ...",
+          "button_text": "Go to Configure World"
+        },
+        "item_2": {
+          "title": "Import World Data",
+          "import_user": {
+            "title": "Import All Users Data",
+            "input_placeholder": "Canister Id",
+            "input_hint": "To import all User's data from this canister id",
+            "error": "Import failed, Try again!",
+            "success": "Imported",
+            "button_text": "Import Users"
+          },
+          "import_config": {
+            "title": "Import World's Configs Data",
+            "input_placeholder": "Canister Id",
+            "input_hint": "To import all World entities and actions configs",
+            "error": "Import failed, Try again!",
+            "success": "Imported",
+            "button_text": "Import Configs"
+          },
+          "import_permissions": {
+            "title": "Import World's Permissions Data",
+            "input_placeholder": "Canister Id",
+            "input_hint": "To import all World permissions",
+            "error": "Import failed, Try again!",
+            "success": "Imported",
+            "button_text": "Import Permissions"
+          }
+        },
+        "item_3": {
+          "title": "Admin / Controller"
+        }
+      }
+    },
+    "admin": {
+      "title": "Add / Remove admin",
+      "add": {
+        "input_placeholder": "Principal id to add admin",
+        "button": "Add admin",
+        "error": "There was some error while adding admin. Please try again!",
+        "success": "Admin was added."
+      },
+      "remove": {
+        "input_placeholder": "Principal id to remove admin",
+        "button": "Remove admin",
+        "error": "There was some error while removing admin. Please try again!",
+        "success": "Admin was removed."
+      }
+    },
+    "controller": {
+      "title": "Add / Remove controller",
+      "add": {
+        "input_placeholder": "Principal id to add controller",
+        "button": "Add controller",
+        "error": "There was some error while adding controller. Please try again!",
+        "success": "Controller was added."
+      },
+      "remove": {
+        "input_placeholder": "Principal id to remove controller",
+        "button": "Remove controller",
+        "error": "There was some error while removing controller. Please try again!",
+        "success": "Controller was removed."
+      }
+    }
+  },
+  "sliderImages": [
+    {
+      "image": "/CubetopiaBanner.png",
+      "url": "https://kqwp7-2yaaa-aaaah-abyna-cai.raw.icp0.io/",
+      "name": "Cubetopia"
+    },
+    {
+      "image": "/UnfoldBanner.jpg",
+      "url": "https://jmorc-qiaaa-aaaam-aaeda-cai.icp0.io/",
+      "name": "Unfold VR"
+    },
+    {
+      "image": "/BountyRushBanner.png",
+      "url": "https://ovljn-raaaa-aaaal-acrdq-cai.raw.icp0.io/",
+      "name": "Bounty Rush"
+    },
+    {
+      "image": "/PawsArenaBanner.png",
+      "url": "https://knbkj-fiaaa-aaaan-qaadq-cai.ic0.app/",
+      "name": "Paws Arena"
+    }
+  ]
+}

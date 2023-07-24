@@ -1,0 +1,17 @@
+{
+  "game-launcher": {
+    "ic": "awcae-maaaa-aaaam-abmyq-cai"
+  },
+  "game_deployer": {
+    "ic": "6rvbl-uqaaa-aaaal-ab24a-cai"
+  },
+  "nfts_deployer": {
+    "ic": "j474s-uqaaa-aaaap-abf6q-cai"
+  },
+  "token_deployer": {
+    "ic": "jv4xo-cyaaa-aaaap-abf7a-cai"
+  },
+  "world_deployer": {
+    "ic": "js5r2-paaaa-aaaap-abf7q-cai"
+  }
+}
