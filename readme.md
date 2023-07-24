@@ -24,7 +24,7 @@ To dive deeper into the Game Launcher, read the tech docs here: https://docs.boo
 
 To get the hash for Game Launcher canisters:
 
-- Get the canister IDs from [`canister_ids.json`](https://github.com/BoomDAO/game-launcher/blob/staging/canister_ids.json).
+- Get the canister IDs from [`canister_ids.json`](https://github.com/BoomDAO/game-launcher/blob/main/canister_ids.json).
 - Get hash using the DFX SDK by running: `dfx canister --network ic info <canister-id>`.
 
 - The output of the above command should contain `Module hash` followed up with the hash value. Example output:
@@ -39,8 +39,8 @@ To get the hash for Canisters deployment:
 
 - Go to [Github actions deployment runs](https://github.com/BoomDAO/game-launcher/actions)
 - Open the latest succesful run. ([Click to see an example run](https://github.com/BoomDAO/game-launcher/actions/runs/5641910908))
-- Go to any of the `Deploy all canisters` jobs. ([Click to see an example job](https://github.com/BoomDAO/game-launcher/actions/runs/5641910908/job/15280766674))
-- Open one of the `Deploy All Canisters` steps. Scroll to the end of this Job, you should find the `Module hash` in this step. This value should match the value you got locally. 
+- Go to `Build and Deploy all BOOM DAO Game Launcher canisters` job.
+- Open `Deploy All Canisters` step. Scroll to the end of this Job, you should find the `Module hash` in this step. This value should match the value you got locally. 
 
 
 ## TECHNICAL ARCHITECTURE
