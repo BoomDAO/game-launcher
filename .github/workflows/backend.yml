@@ -1,3 +1,4 @@
+name: Build and Deploy all BOOM DAO Game Launcher canisters
 on:
   push:
     branches:
@@ -9,9 +10,18 @@ jobs:
       - uses: actions/checkout@v2
       - uses: aviate-labs/setup-dfx@v0.2.5
         with:
-          dfx-version: 0.13.1
+          dfx-version: 0.14.3
           install-moc: true
-      - run: for i in src/game_launcher_backend/game_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
-      - run: for i in src/game_launcher_backend/nfts_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
-      - run: for i in src/game_launcher_backend/token_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
-      - run: for i in src/game_launcher_backend/world_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+        env:
+          DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+      - run: |
+          for i in src/game_launcher_backend/game_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+          for i in src/game_launcher_backend/nfts_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+          for i in src/game_launcher_backend/token_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+          for i in src/game_launcher_backend/world_deployer/*.mo ; do moc --package base $(dfx cache show)/base --check $i ; done
+          dfx identity use action
+          dfx deploy --network stag --no-wallet world_deployer
+          dfx deploy --network stag --no-wallet nfts_deployer
+          dfx deploy --network stag --no-wallet token_deployer
+          dfx deploy --network stag --no-wallet game_deployer
+          dfx deploy --network stag --no-wallet world-launcher
