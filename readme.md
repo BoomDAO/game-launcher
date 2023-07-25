@@ -24,7 +24,7 @@ To dive deeper into the Game Launcher, read the tech docs here: https://docs.boo
   <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/7242c0b8-aae2-403a-9475-5ed22492bc4e" alt="my banner"></a>
 </p>
 
-## VERIFYing CANISTERS BUILDS
+## VERIFYING CANISTER BUILDS
 
 To get the hash for Game Launcher canisters:
 
