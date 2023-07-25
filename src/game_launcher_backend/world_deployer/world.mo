@@ -872,6 +872,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared ({caller}) func withdrawIcpFromPaymentHub() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
+        assert(caller == owner);
         let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
             withdrawIcp : () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>);
         };
@@ -879,6 +880,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared ({caller}) func withdrawIcrcFromPaymentHub(tokenCanisterId : Text) : async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>) {
+        assert(caller == owner);
         let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
             withdrawIcrc : (Text) -> async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>);
         };
@@ -900,6 +902,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared({caller}) func importAllUsersDataOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
+        assert(caller == owner);
         let worldHub = actor (ENV.WorldHubCanisterId) : actor {
             importAllUsersDataOfWorld : (Text) -> async (Result.Result<Text, Text>);
         };
@@ -907,6 +910,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared({caller}) func importAllPermissionsOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
+        assert(caller == owner);
         let worldHub = actor (ENV.WorldHubCanisterId) : actor {
             importAllPermissionsOfWorld : (Text) -> async (Result.Result<Text, Text>);
         };
