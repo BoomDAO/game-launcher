@@ -56,6 +56,7 @@ actor class WorldTemplate(owner : Principal) = this {
     private func WorldId() : Principal = Principal.fromActor(this);
 
     //Interfaces
+    type EntityPermission = {};
     type UserNode = actor {
         processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<[TEntity.Entity], Text>);
         getAllUserWorldEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TEntity.Entity], Text>);
@@ -869,4 +870,47 @@ actor class WorldTemplate(owner : Principal) = this {
         actionConfigs := Buffer.fromArray((await world.importActionConfigs()));
         return #ok("imported");
     };
+
+    public shared ({caller}) func withdrawIcpFromPaymentHub() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
+        let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
+            withdrawIcp : () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>);
+        };
+        await paymentHub.withdrawIcp();
+    };
+
+    public shared ({caller}) func withdrawIcrcFromPaymentHub(tokenCanisterId : Text) : async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>) {
+        let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
+            withdrawIcrc : (Text) -> async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>);
+        };
+        await paymentHub.withdrawIcrc(tokenCanisterId);
+    };
+
+    public shared ({caller}) func getEntityPermissionsOfWorld() : async [(Text, [(Text, EntityPermission)])] {
+        let worldHub = actor (ENV.WorldHubCanisterId) : actor {
+            getEntityPermissionsOfWorld : () -> async ([(Text, [(Text, EntityPermission)])]);
+        };
+        return (await worldHub.getEntityPermissionsOfWorld());
+    };
+
+    public shared ({caller}) func getGlobalPermissionsOfWorld() : async ([TGlobal.userId]) {
+        let worldHub = actor (ENV.WorldHubCanisterId) : actor {
+            getGlobalPermissionsOfWorld : () -> async [TGlobal.userId];
+        };
+        return (await worldHub.getGlobalPermissionsOfWorld());
+    };
+
+    public shared({caller}) func importAllUsersDataOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
+        let worldHub = actor (ENV.WorldHubCanisterId) : actor {
+            importAllUsersDataOfWorld : (Text) -> async (Result.Result<Text, Text>);
+        };
+        return (await worldHub.importAllUsersDataOfWorld(ofWorldId));
+    };
+
+    public shared({caller}) func importAllPermissionsOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
+        let worldHub = actor (ENV.WorldHubCanisterId) : actor {
+            importAllPermissionsOfWorld : (Text) -> async (Result.Result<Text, Text>);
+        };
+        return (await worldHub.importAllPermissionsOfWorld(ofWorldId));
+    };
+
 };
