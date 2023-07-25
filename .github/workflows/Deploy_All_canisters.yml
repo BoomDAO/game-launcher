@@ -2,7 +2,7 @@ name: Build and Deploy all BOOM DAO Game Launcher canisters
 on:
   push:
     branches:
-      - staging
+      - main
 jobs:
   backend:
     runs-on: ubuntu-latest

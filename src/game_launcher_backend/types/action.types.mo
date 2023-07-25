@@ -59,39 +59,39 @@ module{
             #mintToken : MintToken;
             #mintNft : MintNft;
             #setEntityAttribute : (
-                ? TGlobal.worldId,
-                TGlobal.groupId,
-                TGlobal.entityId,
-                attribute
+                wid : ? TGlobal.worldId,
+                gid: TGlobal.groupId,
+                eid: TGlobal.entityId,
+                attribute: attribute
             );
             #spendEntityQuantity : (
-                ? TGlobal.worldId,
-                TGlobal.groupId,
-                TGlobal.entityId,
-                quantity
+                wid : ? TGlobal.worldId,
+                gid: TGlobal.groupId,
+                eid: TGlobal.entityId,
+                quantity : quantity
             );
             #receiveEntityQuantity : (
-                ? TGlobal.worldId,
-                TGlobal.groupId,
-                TGlobal.entityId,
-                quantity
+                wid : ? TGlobal.worldId,
+                gid: TGlobal.groupId,
+                eid: TGlobal.entityId,
+                quantity : quantity
             );
             #renewEntityExpiration : (
-                ? TGlobal.worldId,
-                TGlobal.groupId,
-                TGlobal.entityId,
-                duration
+                wid : ? TGlobal.worldId,
+                gid: TGlobal.groupId,
+                eid: TGlobal.entityId,
+                duration : duration
             );
             #reduceEntityExpiration : (
-                ? TGlobal.worldId,
-                TGlobal.groupId,
-                TGlobal.entityId,
-                duration
+                wid : ? TGlobal.worldId,
+                gid: TGlobal.groupId,
+                eid: TGlobal.entityId,
+                duration : duration
             );
             #deleteEntity : (
-                ? TGlobal.worldId,
-                TGlobal.groupId,
-                TGlobal.entityId
+                wid : ? TGlobal.worldId,
+                gid: TGlobal.groupId,
+                eid: TGlobal.entityId
             );
         }
     };
