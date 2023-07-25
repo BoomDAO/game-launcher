@@ -204,9 +204,9 @@ export const useImportUsersData = () => {
       canisterId?: string;
     }) => {
       try {
-        const { actor, methods } = await useWorldHubClient();
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
 
-        return await actor[methods.importAllUsersDataOfWorld](ofCanisterId, canisterId);
+        return await actor[methods.importAllUsersDataOfWorld](ofCanisterId);
       } catch (error) {
         if (error instanceof Error) {
           throw error.message;
@@ -266,9 +266,8 @@ export const useImportPermissionsData = () => {
       canisterId?: string;
     }) => {
       try {
-        const { actor, methods } = await useWorldHubClient();
-
-        return await actor[methods.importAllPermissionsOfWorld](ofCanisterId, canisterId);
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
+        return await actor[methods.importAllPermissionsOfWorld](ofCanisterId);
       } catch (error) {
         if (error instanceof Error) {
           throw error.message;
