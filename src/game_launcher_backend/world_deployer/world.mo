@@ -112,6 +112,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
     system func preupgrade() {        
         tempUpdateEntityConfig := Buffer.toArray(entityConfigs);
+
         tempUpdateActionConfig := Buffer.toArray(actionConfigs);
     };
     system func postupgrade() {
@@ -367,55 +368,26 @@ actor class WorldTemplate(owner : Principal) = this {
     //Burn and Mint NFT's
     private func burnNft_(collectionCanisterId : Text, tokenindex : EXT.TokenIndex, uid : Principal) : async (Result.Result<(), Text>) {
         let accountId : Text = AccountIdentifier.fromPrincipal(uid, null);
-
         if(accountId == "") return #err("Issue getting aid from uid");
-
         var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(collectionCanisterId, tokenindex);
         let collection = actor (collectionCanisterId) : actor {
             ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
-            extGetTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
         };
         var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, accountId);
         switch (res) {
-            case (#ok) {
-                //notify server using http req
-                var m : ?EXT.Metadata = await collection.extGetTokenMetadata(tokenindex);
-                var json : Text = "";
-                switch (m) {
-                    case (?md) {
-                        switch (md) {
-                            case (#fungible _) {};
-                            case (#nonfungible d) {
-                                switch (d.metadata) {
-                                    case (?x) {
-                                        switch (x) {
-                                            case (#json j) { json := j };
-                                            case (#blob _) {};
-                                            case (#data _) {};
-                                        };
-                                    };
-                                    case _ {};
-                                };
-                            };
-                        };
-                    };
-                    case _ {};
-                };
-
-
+            case (#ok _) {
                 return #ok();
             };
-            case (#err(e)) {
+            case (#err e) {
                 return #err("Nft Burn, Something went wrong while burning nft");
             };
         };
     };
     //Payments : redirected to PaymentHub for verification and holding update.
     private func verifyTxIcp_(blockIndex : Nat64, toPrincipal : Text, fromPrincipal : Text, amt : Nat64) : async (Result.Result<(), Text>) {
-
+    
         switch (await paymentHub.verifyTxIcp(blockIndex, toPrincipal, fromPrincipal, amt)) {
             case (#Success s) {
-
                 return #ok();
             };
             case (#Err e) {

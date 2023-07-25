@@ -20,11 +20,15 @@ You can use the Game Launcher here: http://launcher.boomdao.xyz
 
 To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
 
-## VERIFY CANISTER'S MODULE HASH
+<p align="center">
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/7242c0b8-aae2-403a-9475-5ed22492bc4e" alt="my banner"></a>
+</p>
+
+## VERIFYING CANISTER BUILDS
 
 To get the hash for Game Launcher canisters:
 
-- Get the canister IDs from [`canister_ids.json`](https://github.com/BoomDAO/game-launcher/blob/staging/canister_ids.json).
+- Get the canister IDs from [`canister_ids.json`](https://github.com/BoomDAO/game-launcher/blob/main/canister_ids.json).
 - Get hash using the DFX SDK by running: `dfx canister --network ic info <canister-id>`.
 
 - The output of the above command should contain `Module hash` followed up with the hash value. Example output:
@@ -35,13 +39,16 @@ To get the hash for Game Launcher canisters:
   Controllers: 2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe ...
   Module hash: 0x9d32c5bc82e9784d61856c7fa265e9b3dda4e97ee8082b30069ff39ab8626255
   ```
+To get the hash for Canisters deployment:
+
+- Go to [Github actions deployment runs](https://github.com/BoomDAO/game-launcher/actions)
+- Open the latest succesful run. ([Click to see an example run](https://github.com/BoomDAO/game-launcher/actions/runs/5641910908))
+- Go to `Build and Deploy all BOOM DAO Game Launcher canisters` job.
+- Open `Deploy All Canisters` step. Scroll to the end of this Job, you should find the `Module hash` in this step. This value should match the value you got locally. 
+
 
 ## TECHNICAL ARCHITECTURE
+
 <p align="center">
   <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/e64d58f7-2f0c-4a4c-975f-bfdc131f57a9" alt="my banner"></a>
-</p>
-
-
-<p align="center">
-  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/world-template/assets/29381374/46aaa5e2-93b2-4b66-a654-527fd04c070a" alt="my banner"></a>
 </p>

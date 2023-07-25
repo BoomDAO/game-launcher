@@ -28,7 +28,6 @@ const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
 
-// Prod Backend Canisters
 const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
 const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
 const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
