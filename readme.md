@@ -20,6 +20,10 @@ You can use the Game Launcher here: http://launcher.boomdao.xyz
 
 To dive deeper into the Game Launcher, read the tech docs here: https://docs.boomdao.xyz/game-launcher
 
+<p align="center">
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/7242c0b8-aae2-403a-9475-5ed22492bc4e" alt="my banner"></a>
+</p>
+
 ## VERIFYing CANISTERS BUILDS
 
 To get the hash for Game Launcher canisters:
@@ -44,10 +48,6 @@ To get the hash for Canisters deployment:
 
 
 ## TECHNICAL ARCHITECTURE
-
-<p align="center">
-  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/7242c0b8-aae2-403a-9475-5ed22492bc4e" alt="my banner"></a>
-</p>
 
 <p align="center">
   <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/e64d58f7-2f0c-4a4c-975f-bfdc131f57a9" alt="my banner"></a>
