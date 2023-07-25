@@ -48,8 +48,6 @@ import TStaking "../types/staking.types";
 import Config "../modules/Configs";
 
 actor class WorldTemplate(owner : Principal) = this {
-// actor class WorldTemplate() = this {
-//     private var owner : Principal = Principal.fromText("26otq-bnbgp-bfbhy-i7ypc-czyxx-3rlax-yrrny-issrb-kwepg-vqtcs-pae"); 
     private stable var tokens_decimals : Trie.Trie<Text, Nat8> = Trie.empty();
     private stable var tokens_fees : Trie.Trie<Text, Nat> = Trie.empty();
     private stable var total_nft_count : Trie.Trie<Text, Nat32> = Trie.empty();
@@ -102,7 +100,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
     //stable memory
     private stable var _owner : Text = Principal.toText(owner);
-    private stable var _admins : [Text] = [Principal.toText(owner), "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"]; //here hitesh principal is temporary
+    private stable var _admins : [Text] = [Principal.toText(owner)]; 
 
     //Configs
     private var entityConfigs = Buffer.Buffer<TEntity.EntityConfig>(0);
@@ -369,55 +367,25 @@ actor class WorldTemplate(owner : Principal) = this {
     //Burn and Mint NFT's
     private func burnNft_(collectionCanisterId : Text, tokenindex : EXT.TokenIndex, uid : Principal) : async (Result.Result<(), Text>) {
         let accountId : Text = AccountIdentifier.fromPrincipal(uid, null);
-
         if(accountId == "") return #err("Issue getting aid from uid");
-
         var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(collectionCanisterId, tokenindex);
         let collection = actor (collectionCanisterId) : actor {
             ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
-            extGetTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
         };
         var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, accountId);
         switch (res) {
-            case (#ok) {
-                //notify server using http req
-                var m : ?EXT.Metadata = await collection.extGetTokenMetadata(tokenindex);
-                var json : Text = "";
-                switch (m) {
-                    case (?md) {
-                        switch (md) {
-                            case (#fungible _) {};
-                            case (#nonfungible d) {
-                                switch (d.metadata) {
-                                    case (?x) {
-                                        switch (x) {
-                                            case (#json j) { json := j };
-                                            case (#blob _) {};
-                                            case (#data _) {};
-                                        };
-                                    };
-                                    case _ {};
-                                };
-                            };
-                        };
-                    };
-                    case _ {};
-                };
-
-
+            case (#ok _) {
                 return #ok();
             };
-            case (#err(e)) {
+            case (#err e) {
                 return #err("Nft Burn, Something went wrong while burning nft");
             };
         };
     };
     //Payments : redirected to PaymentHub for verification and holding update.
     private func verifyTxIcp_(blockIndex : Nat64, toPrincipal : Text, fromPrincipal : Text, amt : Nat64) : async (Result.Result<(), Text>) {
-
         switch (await paymentHub.verifyTxIcp(blockIndex, toPrincipal, fromPrincipal, amt)) {
             case (#Success s) {
-
                 return #ok();
             };
             case (#Err e) {
