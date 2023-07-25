@@ -53,46 +53,58 @@ module{
         assetId: Text;
         metadata: Text;
     };
+    public type SetEntityAttribute =
+    {
+        wid : ? TGlobal.worldId;
+        gid: TGlobal.groupId;
+        eid: TGlobal.entityId;
+        attribute: attribute;
+    };
+    public type SpendEntityQuantity =
+    {
+        wid : ? TGlobal.worldId;
+        gid: TGlobal.groupId;
+        eid: TGlobal.entityId;
+        quantity: quantity;
+    };
+    public type ReceiveEntityQuantity =
+    {
+        wid : ? TGlobal.worldId;
+        gid: TGlobal.groupId;
+        eid: TGlobal.entityId;
+        quantity: quantity;
+    };
+    public type RenewEntityExpiration =
+    {
+        wid : ? TGlobal.worldId;
+        gid: TGlobal.groupId;
+        eid: TGlobal.entityId;
+        duration: duration;
+    };
+    public type ReduceEntityExpiration =
+    {
+        wid : ? TGlobal.worldId;
+        gid: TGlobal.groupId;
+        eid: TGlobal.entityId;
+        duration: duration;
+    };
+        public type DeleteEntity =
+    {
+        wid : ? TGlobal.worldId;
+        gid: TGlobal.groupId;
+        eid: TGlobal.entityId;
+    };
     public type ActionOutcomeOption = {
         weight: Float;
         option : {
             #mintToken : MintToken;
             #mintNft : MintNft;
-            #setEntityAttribute : (
-                wid : ? TGlobal.worldId,
-                gid: TGlobal.groupId,
-                eid: TGlobal.entityId,
-                attribute: attribute
-            );
-            #spendEntityQuantity : (
-                wid : ? TGlobal.worldId,
-                gid: TGlobal.groupId,
-                eid: TGlobal.entityId,
-                quantity : quantity
-            );
-            #receiveEntityQuantity : (
-                wid : ? TGlobal.worldId,
-                gid: TGlobal.groupId,
-                eid: TGlobal.entityId,
-                quantity : quantity
-            );
-            #renewEntityExpiration : (
-                wid : ? TGlobal.worldId,
-                gid: TGlobal.groupId,
-                eid: TGlobal.entityId,
-                duration : duration
-            );
-            #reduceEntityExpiration : (
-                wid : ? TGlobal.worldId,
-                gid: TGlobal.groupId,
-                eid: TGlobal.entityId,
-                duration : duration
-            );
-            #deleteEntity : (
-                wid : ? TGlobal.worldId,
-                gid: TGlobal.groupId,
-                eid: TGlobal.entityId
-            );
+            #setEntityAttribute : SetEntityAttribute;
+            #spendEntityQuantity : SpendEntityQuantity;
+            #receiveEntityQuantity : ReceiveEntityQuantity;
+            #renewEntityExpiration : RenewEntityExpiration;
+            #reduceEntityExpiration : ReduceEntityExpiration;
+            #deleteEntity : DeleteEntity;
         }
     };
     public type ActionOutcome = {
