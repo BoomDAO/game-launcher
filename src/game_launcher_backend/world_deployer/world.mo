@@ -48,8 +48,6 @@ import TStaking "../types/staking.types";
 import Config "../modules/Configs";
 
 actor class WorldTemplate(owner : Principal) = this {
-// actor class WorldTemplate() = this {
-//     private var owner : Principal = Principal.fromText("26otq-bnbgp-bfbhy-i7ypc-czyxx-3rlax-yrrny-issrb-kwepg-vqtcs-pae"); 
     private stable var tokens_decimals : Trie.Trie<Text, Nat8> = Trie.empty();
     private stable var tokens_fees : Trie.Trie<Text, Nat> = Trie.empty();
     private stable var total_nft_count : Trie.Trie<Text, Nat32> = Trie.empty();
@@ -103,7 +101,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
     //stable memory
     private stable var _owner : Text = Principal.toText(owner);
-    private stable var _admins : [Text] = [Principal.toText(owner), "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"]; //here hitesh principal is temporary
+    private stable var _admins : [Text] = [Principal.toText(owner)]; 
 
     //Configs
     private var entityConfigs = Buffer.Buffer<TEntity.EntityConfig>(0);
