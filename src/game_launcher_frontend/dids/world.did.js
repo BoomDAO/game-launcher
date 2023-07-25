@@ -184,6 +184,8 @@ export const idlFactory = ({ IDL }) => {
       'grantGlobalPermission' : IDL.Func([IDL.Text], [], []),
       'importActionConfigs' : IDL.Func([], [IDL.Vec(ActionConfig)], []),
       'importAllConfigsOfWorld' : IDL.Func([IDL.Text], [Result_1], []),
+      'importAllPermissionsOfWorld' : IDL.Func([IDL.Text], [Result_1], []),
+      'importAllUsersDataOfWorld' : IDL.Func([IDL.Text], [Result_1], []),
       'importEntityConfigs' : IDL.Func([], [IDL.Vec(EntityConfig)], []),
       'processAction' : IDL.Func([ActionArg], [Result_3], []),
       'removeAdmin' : IDL.Func([IDL.Text], [], []),

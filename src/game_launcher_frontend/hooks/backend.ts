@@ -89,6 +89,8 @@ export const useWorldClient = async (canisterId : string) => {
     }),
     methods: {
       importAllConfigsOfWorld: "importAllConfigsOfWorld",
+      importAllPermissionsOfWorld: "importAllPermissionsOfWorld",
+      importAllUsersDataOfWorld: "importAllUsersDataOfWorld",
       add_admin: "addAdmin",
       remove_admin: "removeAdmin",
     }
