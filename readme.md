@@ -44,11 +44,11 @@ To get the hash for Canisters deployment:
 
 
 ## TECHNICAL ARCHITECTURE
+
 <p align="center">
-  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/e64d58f7-2f0c-4a4c-975f-bfdc131f57a9" alt="my banner"></a>
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/7242c0b8-aae2-403a-9475-5ed22492bc4e" alt="my banner"></a>
 </p>
 
-
 <p align="center">
-  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/world-template/assets/29381374/46aaa5e2-93b2-4b66-a654-527fd04c070a" alt="my banner"></a>
+  <a href="logo" target="_blank" rel="noreferrer"><img src="https://github.com/BoomDAO/game-launcher/assets/29381374/e64d58f7-2f0c-4a4c-975f-bfdc131f57a9" alt="my banner"></a>
 </p>
