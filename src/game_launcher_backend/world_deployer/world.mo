@@ -220,7 +220,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     //CHECK CONFIG
-    private func _configEntityExist(eid : Text, gid : Text) : (Bool, Int){
+    private func configEntityExist_(eid : Text, gid : Text) : (Bool, Int){
         var index = 0;
         for(configElement in entityConfigs.vals()){
             if(configElement.eid == eid) {
@@ -232,7 +232,7 @@ actor class WorldTemplate(owner : Principal) = this {
         };
         return (false, -1);
     };
-    private func _configActionExist(aid : Text) : (Bool, Int){
+    private func configActionExist_(aid : Text) : (Bool, Int){
         var index = 0;
         for(configElement in actionConfigs.vals()){
             if(configElement.aid == aid) {
@@ -245,7 +245,7 @@ actor class WorldTemplate(owner : Principal) = this {
     //CREATE CONFIG
     public shared ({ caller }) func createEntityConfig(config : TEntity.EntityConfig) : async (Result.Result<Text, Text>) {
         assert(isAdmin_(caller));
-        let configExist = _configEntityExist(config.eid, config.gid);
+        let configExist = configEntityExist_(config.eid, config.gid);
         if(configExist.0 == false){
             entityConfigs.add(config);
             return #ok("all good :)");
@@ -254,7 +254,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     public shared ({ caller }) func createActionConfig(config : TAction.ActionConfig) : async (Result.Result<Text, Text>) {
         assert(isAdmin_(caller));
-        let configExist = _configActionExist(config.aid);
+        let configExist = configActionExist_(config.aid);
         if(configExist.0 == false){
             actionConfigs.add(config);
             return #ok("all good :)");
@@ -264,7 +264,7 @@ actor class WorldTemplate(owner : Principal) = this {
     //UPDATE CONFIG
     public shared ({ caller }) func updateEntityConfig(config : TEntity.EntityConfig) : async (Result.Result<Text, Text>) {
         assert(isAdmin_(caller));
-        let configExist = _configEntityExist(config.eid, config.gid);
+        let configExist = configEntityExist_(config.eid, config.gid);
         if(configExist.0){
             var index = Utils.intToNat(configExist.1);
             entityConfigs.put(index, config);
@@ -274,7 +274,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     public shared ({ caller }) func updateActionConfig(config : TAction.ActionConfig) : async (Result.Result<Text, Text>) {
         assert(isAdmin_(caller));
-        let configExist = _configActionExist(config.aid);
+        let configExist = configActionExist_(config.aid);
         if(configExist.0){
             var index = Utils.intToNat(configExist.1);
             actionConfigs.put(index, config);
@@ -285,7 +285,7 @@ actor class WorldTemplate(owner : Principal) = this {
     //DELETE CONFIG
     public shared ({ caller }) func deleteEntityConfig(eid : Text, gid : Text) : async (Result.Result<Text, Text>) {
         assert(isAdmin_(caller));
-        let configExist = _configEntityExist(eid, gid);
+        let configExist = configEntityExist_(eid, gid);
         if(configExist.0){
             ignore entityConfigs.remove(Utils.intToNat(configExist.1));
             return #ok("all good :)");
@@ -294,7 +294,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     public shared ({ caller }) func deleteActionConfig(aid : Text) : async (Result.Result<Text, Text>) {
         assert(isAdmin_(caller));
-        let configExist = _configActionExist(aid);
+        let configExist = configActionExist_(aid);
         if(configExist.0){
             ignore actionConfigs.remove(Utils.intToNat(configExist.1));
             return #ok("all good :)");
@@ -412,35 +412,135 @@ actor class WorldTemplate(owner : Principal) = this {
     private func generateActionResultOutcomes_(actionResult : TAction.ActionResult) : async ([TAction.ActionOutcomeOption]) {
         var outcomes = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
         for (outcome in actionResult.outcomes.vals()) {
-        var accumulated_weight : Float = 0;
+            var accumulated_weight : Float = 0;
+            var rand_perc : Float = 1;
 
-        //A) Compute total weight on the current outcome
-        for (outcomeOption in outcome.possibleOutcomes.vals()) {
-            accumulated_weight += outcomeOption.weight;
-        };
+            //A) Compute total weight on the current outcome
+            if(outcome.possibleOutcomes.size() > 1){
+                for (outcomeOption in outcome.possibleOutcomes.vals()) {
+                    accumulated_weight += outcomeOption.weight;
+                };
 
-        //B) Gen a random number using the total weight as max value
-        let rand_perc = await RandomUtil.get_random_perc();
-        var dice_outcome = (rand_perc * 1.0 * accumulated_weight);
-
-        //C Pick outcomes base on their weights
-        label outcome_loop for (outcomeOption in outcome.possibleOutcomes.vals()) {
-            let outcome_weight = outcomeOption.weight;
-            if (outcome_weight >= dice_outcome) {
-            outcomes.add(outcomeOption);
-            break outcome_loop;
-            } else {
-            dice_outcome -= outcome_weight;
+                //B) Gen a random number using the total weight as max value
+                rand_perc := await RandomUtil.get_random_perc();
             };
-        };
+
+            var dice_outcome = (rand_perc * 1.0 * accumulated_weight);
+
+            //C Pick outcomes base on their weights
+            label outcome_loop for (outcomeOption in outcome.possibleOutcomes.vals()) {
+                let outcome_weight = outcomeOption.weight;
+                if (outcome_weight >= dice_outcome) {
+                outcomes.add(outcomeOption);
+                break outcome_loop;
+                } else {
+                dice_outcome -= outcome_weight;
+                };
+            };
         };
 
         return Buffer.toArray(outcomes);
     };
+
+    private func mint_(nftCanisterId : Text, mintsToProcess : [(EXT.AccountIdentifier, EXT.Metadata)]) : async ([TAction.MintNft]){
+        let nftCollection : NFT = actor(nftCanisterId);
+
+        var amountToMint = mintsToProcess.size();
+        var mintedNfts = Buffer.Buffer<TAction.MintNft>(amountToMint);
+
+        switch (Trie.find(total_nft_count, Utils.keyT(nftCanisterId), Text.equal)) {
+            case (?collectionNftCount){
+                //MINT NFTs
+                ignore nftCollection.ext_mint(mintsToProcess);
+
+                //WE PREPARE THE RETURN VALUE
+                var loopIndex : Nat32 = 0;
+                for(mintToProcess in mintsToProcess.vals()){
+                    var assetId = "";
+                    var metadata = "";
+                    let optinalMetadata = mintToProcess.1;
+
+                    //HERE ASSET ID AND METADATA ARE EXTRACTED "IF ANY"
+                    switch(optinalMetadata){
+                        case (#nonfungible asNonfungible){
+                            //WE SET ASSET ID
+                            assetId := asNonfungible.asset;
+                            
+                            //WE SET METADATA "ONLY IF IT IS A JSON"
+                            switch(asNonfungible.metadata){
+                                case(? #json asJson){
+                                    metadata := asJson;
+                                };
+                                case _ { }; //WE DO NOTHING HERE
+                            };
+                        };
+                        case _ { }; //WE DO NOTHING HERE
+                    };
+
+                    //WE ADD THE MINTED NFT INTO THE BUFFER TO RETURN IT AS AN ARRAY
+                    mintedNfts.add({
+                        index = ? (collectionNftCount + loopIndex);
+                        canister  = nftCanisterId;
+                        assetId;
+                        metadata;
+                    });
+                    
+                    loopIndex += 1;
+                };
+
+                //WE STORE THE NEW COLLECTION NFT COUNT
+                total_nft_count := Trie.put(total_nft_count, Utils.keyT(nftCanisterId), Text.equal, collectionNftCount + Nat32.fromNat(amountToMint)).0;
+            };
+            case _ { //IF COLLECTION COUNT WASN'T STORED
+                //MINT NFTs
+                var mintedIndexes = await nftCollection.ext_mint(mintsToProcess);
+
+                //WE PREPARE THE RETURN VALUE
+                var loopIndex = 0;
+                for(mintedIndex in mintedIndexes.vals()){
+                    var assetId = "";
+                    var metadata = "";
+                    let optinalMetadata = mintsToProcess[loopIndex].1;
+
+                    //HERE ASSET ID AND METADATA ARE EXTRACTED "IF ANY"
+                    switch(optinalMetadata){
+                        case (#nonfungible asNonfungible){
+                            //WE SET ASSET ID
+                            assetId := asNonfungible.asset;
+                            
+                            //WE SET METADATA "ONLY IF IT IS A JSON"
+                            switch(asNonfungible.metadata){
+                                case(? #json asJson){
+                                    metadata := asJson;
+                                };
+                                case _ { }; //WE DO NOTHING HERE
+                            };
+                        };
+                        case _ { }; //WE DO NOTHING HERE
+                    };
+
+                    //WE ADD THE MINTED NFT INTO THE BUFFER TO RETURN IT AS AN ARRAY
+                    mintedNfts.add({
+                        index = ? mintedIndex;
+                        canister  = nftCanisterId;
+                        assetId;
+                        metadata;
+                    });
+
+                    loopIndex += 1;
+                };
+                
+                //WE STORE THE NEW COLLECTION NFT COUNT
+                total_nft_count := Trie.put(total_nft_count, Utils.keyT(nftCanisterId), Text.equal, mintedIndexes[mintedIndexes.size() - 1] + 1).0;
+            };
+        };
+
+        return Buffer.toArray(mintedNfts);
+    };
+
     private func handleOutcomes_(uid : Text, actionId: Text, actionConfig : TAction.ActionConfig) : async (Result.Result<[TAction.ActionOutcomeOption], Text>){
         
         let outcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes_(actionConfig.actionResult);
-
         var userNodeId : Text = "2vxsx-fae";
         switch (await worldHub.getUserNodeCanisterId(uid)){
             case (#ok c){
@@ -461,58 +561,53 @@ actor class WorldTemplate(owner : Principal) = this {
 
         var nftsToMint : Trie.Trie<Text, Buffer.Buffer<(EXT.AccountIdentifier, EXT.Metadata)>>  = Trie.empty();
 
+        //Group Nfts by collections
+        for(outcome in outcomes.vals()){
+            switch (outcome.option){
+                case (#mintNft val){
+                    switch(Trie.find(nftsToMint, Utils.keyT(val.canister), Text.equal)){
+                        case (? element){
+                            element.add((accountId, #nonfungible {
+                                name = "";
+                                asset = val.assetId;
+                                thumbnail = val.assetId;
+                                metadata = ? #json(val.metadata);
+                            }));
+
+                            nftsToMint := Trie.put(nftsToMint, Utils.keyT(val.canister), Text.equal, element).0;
+                        };
+                        case _{
+                            let newElement = Buffer.Buffer<(EXT.AccountIdentifier, EXT.Metadata)>(1);
+
+                            newElement.add((accountId, #nonfungible {
+                                name = "";
+                                asset = val.assetId;
+                                thumbnail = val.assetId;
+                                metadata = ? #json(val.metadata);
+                            }));
+                            nftsToMint := Trie.put(nftsToMint, Utils.keyT(val.canister), Text.equal, newElement).0;
+                        };
+                    };
+                };
+                case _ {};
+            };
+        };
+
+        //MintNfts and add them to processedResult
+        for((nftCanisterId, nftGroup) in Trie.iter(nftsToMint)) {
+            var mintedNfts = await mint_(nftCanisterId, Buffer.toArray(nftGroup));
+
+            for(mintedNft in mintedNfts.vals()){
+                processedResult.add({weight = 0; option = #mintNft mintedNft});
+            }
+        };
+
         //Mint Tokens and add them along with entities to the return value
         for(outcome in outcomes.vals()) {
             switch (outcome.option) {
                 case (#mintNft val){ 
-                    let nftCollection : NFT = actor(val.canister);
-                    switch (Trie.find(total_nft_count, Utils.keyT(val.canister), Text.equal)) {
-                        case (?collectionNftCount){
-                            ignore nftCollection.ext_mint([(accountId,
-                            #nonfungible {
-                                name = "";
-                                asset = val.assetId;
-                                thumbnail = val.assetId;
-                                metadata = ? #json(val.metadata);
-                            })]);
-
-                            processedResult.add({
-                                weight = outcome.weight;
-                                option = #mintNft {
-                                    index = ? collectionNftCount;
-                                    canister  = val.canister;
-                                    assetId = val.assetId;
-                                    metadata = val.metadata;
-                                };
-                            });
-
-                            ignore Trie.put(total_nft_count, Utils.keyT(val.canister), Text.equal, collectionNftCount + 1);
-                        };
-                        case _ {
-
-                            var mintResult = await nftCollection.ext_mint([(accountId,
-                            #nonfungible {
-                                name = "";
-                                asset = val.assetId;
-                                thumbnail = val.assetId;
-                                metadata = ? #json(val.metadata);
-                            })]);
-                            //
-                            processedResult.add({
-                                weight = outcome.weight;
-                                option = #mintNft {
-                                    index = ? mintResult[0];
-                                    canister  = val.canister;
-                                    assetId = val.assetId;
-                                    metadata = val.metadata;
-                                };
-                            });
-
-                            ignore Trie.put(total_nft_count, Utils.keyT(val.canister), Text.equal, mintResult[0] + 1).0;
-                        };
-                    };
-
-                }; //DO NOTHING HERE
+                    //DO NOTHING HERE
+                }; 
                 //Mint Tokens
                 case (#mintToken val){
                     //
