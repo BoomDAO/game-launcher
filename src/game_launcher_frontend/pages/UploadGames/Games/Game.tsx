@@ -7,6 +7,7 @@ import Space from "@/components/ui/Space";
 
 import Visibility from "./Visibility";
 import UpdateGame from "./UpdateGame";
+import ManageController from "./ManageController";
 
 const Game = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -16,6 +17,7 @@ const Game = () => {
   const tabItems = [
     { id: 1, name: t("upload_games.Game.tab_1.title") },
     { id: 2, name: t("upload_games.Game.tab_2.title") },
+    { id: 3, name: t("upload_games.Game.controller.title") },
   ];
 
   return (
@@ -34,6 +36,11 @@ const Game = () => {
       {activeTab === 2 && (
         <div className="w-full space-y-12">
           < Visibility />
+        </div>
+      )}
+      {activeTab === 3 && (
+        <div className="w-full space-y-12">
+          < ManageController />
         </div>
       )}
     </>
