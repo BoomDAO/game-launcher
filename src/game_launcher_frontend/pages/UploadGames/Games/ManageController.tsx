@@ -89,13 +89,13 @@ const ManageController = () => {
             control={removeControllerControll}
             name="principal"
             placeholder={t(
-              "manage_nfts.update.controller.remove.input_placeholder",
+              "upload_games.Game.controller.remove.input_placeholder",
             )}
             min={0}
           />
 
           <Button size="big" rightArrow isLoading={isLoadingRemoveController}>
-            {t("manage_nfts.update.controller.remove.button")}
+            {t("upload_games.Game.controller.remove.button")}
           </Button>
         </Form>
       </div>

@@ -226,10 +226,10 @@ export const useAddController = () => {
       }
     },
     onError: () => {
-      toast.error(t("manage_nfts.update.controller.add.error"));
+      toast.error(t("upload_games.Game.controller.add.error"));
     },
     onSuccess: () => {
-      toast.success(t("manage_nfts.update.controller.add.success"));
+      toast.success(t("upload_games.Game.controller.add.success"));
     },
   });
 };
@@ -257,10 +257,10 @@ export const useRemoveController = () => {
       }
     },
     onError: () => {
-      toast.error(t("manage_nfts.update.controller.remove.error"));
+      toast.error(t("upload_games.Game.controller.remove.error"));
     },
     onSuccess: () => {
-      toast.success(t("manage_nfts.update.controller.remove.success"));
+      toast.success(t("upload_games.Game.controller.remove.success"));
     },
   });
 };
