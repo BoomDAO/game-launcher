@@ -165,7 +165,7 @@ actor Deployer {
         Buffer.toArray(_b);
     };
 
-    private func _isController(collection_canister_id : Text, p : Principal) : async (Bool) {
+    private func _isController(game_canister_id : Text, p : Principal) : async (Bool) {
         var status : {
             status : { #stopped; #stopping; #running };
             memory_size : Nat;
@@ -173,7 +173,7 @@ actor Deployer {
             settings : definite_canister_settings;
             module_hash : ?[Nat8];
         } = await IC.canister_status({
-            canister_id = Principal.fromText(collection_canister_id);
+            canister_id = Principal.fromText(game_canister_id);
         });
         var controllers : [Principal] = status.settings.controllers;
         for (i in controllers.vals()) {
@@ -188,8 +188,8 @@ actor Deployer {
         Cycles.balance();
     };
     
-    public shared ({ caller }) func add_controller(collection_canister_id : Text, p : Text) : async () {
-        var check : Bool = await _isController(collection_canister_id, caller);
+    public shared ({ caller }) func add_controller(game_canister_id : Text, p : Text) : async () {
+        var check : Bool = await _isController(game_canister_id, caller);
         if (check == false) {
             return ();
         };
@@ -200,7 +200,7 @@ actor Deployer {
             settings : definite_canister_settings;
             module_hash : ?[Nat8];
         } = await IC.canister_status({
-            canister_id = Principal.fromText(collection_canister_id);
+            canister_id = Principal.fromText(game_canister_id);
         });
         var controllers : [Principal] = status.settings.controllers;
         var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
@@ -210,7 +210,7 @@ actor Deployer {
         b.add(Principal.fromText(p));
         await (
             IC.update_settings({
-                canister_id = Principal.fromText(collection_canister_id);
+                canister_id = Principal.fromText(game_canister_id);
                 settings = {
                     controllers = ?Buffer.toArray(b);
                     compute_allocation = null;
@@ -221,8 +221,8 @@ actor Deployer {
         );
     };
 
-    public shared ({ caller }) func remove_controller(collection_canister_id : Text, p : Text) : async () {
-        var check : Bool = await _isController(collection_canister_id, caller);
+    public shared ({ caller }) func remove_controller(game_canister_id : Text, p : Text) : async () {
+        var check : Bool = await _isController(game_canister_id, caller);
         if (check == false) {
             return ();
         };
@@ -233,7 +233,7 @@ actor Deployer {
             settings : definite_canister_settings;
             module_hash : ?[Nat8];
         } = await IC.canister_status({
-            canister_id = Principal.fromText(collection_canister_id);
+            canister_id = Principal.fromText(game_canister_id);
         });
         var controllers : [Principal] = status.settings.controllers;
         var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
@@ -242,7 +242,7 @@ actor Deployer {
         };
         await (
             IC.update_settings({
-                canister_id = Principal.fromText(collection_canister_id);
+                canister_id = Principal.fromText(game_canister_id);
                 settings = {
                     controllers = ?Buffer.toArray(b);
                     compute_allocation = null;
