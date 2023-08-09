@@ -35,7 +35,7 @@ const GetTokenRegistry = () => {
       ) : (
         <Box className="h-[300px] overflow-auto ">
           {data.map((item, index) => (
-            <div key={index}>{item}</div>
+            <div key={index}>{index} {" - "} {item}</div>
           ))}
         </Box>
       )}
