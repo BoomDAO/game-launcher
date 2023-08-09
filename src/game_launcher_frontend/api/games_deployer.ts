@@ -204,6 +204,67 @@ export const useUpdateGameVisibility = (
   });
 }
 
+export const useAddController = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useGameClient();
+        return await actor[methods.add_controller](canisterId, principal);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("upload_games.Game.controller.add.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("upload_games.Game.controller.add.success"));
+    },
+  });
+};
+
+export const useRemoveController = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      principal,
+      canisterId,
+    }: {
+      principal: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useGameClient();
+
+        return await actor[methods.remove_controller](canisterId, principal);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("upload_games.Game.controller.remove.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("upload_games.Game.controller.remove.success"));
+    },
+  });
+};
+
 export const useUpdateGameCover = () =>
   useMutation({
     mutationFn: async (payload: UpdateGameCover) => {

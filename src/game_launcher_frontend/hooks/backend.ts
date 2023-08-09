@@ -164,6 +164,9 @@ export const useGameClient = async () => {
       get_total_games: "get_total_games",
       get_total_visible_games: "get_total_visible_games",
       get_users_total_games: "get_users_total_games",
+      
+      add_controller: "add_controller",
+      remove_controller: "remove_controller",
 
       create_game: "create_game_canister",
       update_game_data: "update_game_data",

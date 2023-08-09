@@ -165,8 +165,92 @@ actor Deployer {
         Buffer.toArray(_b);
     };
 
+    private func _isController(game_canister_id : Text, p : Principal) : async (Bool) {
+        var status : {
+            status : { #stopped; #stopping; #running };
+            memory_size : Nat;
+            cycles : Nat;
+            settings : definite_canister_settings;
+            module_hash : ?[Nat8];
+        } = await IC.canister_status({
+            canister_id = Principal.fromText(game_canister_id);
+        });
+        var controllers : [Principal] = status.settings.controllers;
+        for (i in controllers.vals()) {
+            if (i == p) {
+                return true;
+            };
+        };
+        return false;
+    };
+
     public query func cycleBalance() : async Nat {
         Cycles.balance();
+    };
+    
+    public shared ({ caller }) func add_controller(game_canister_id : Text, p : Text) : async () {
+        var check : Bool = await _isController(game_canister_id, caller);
+        if (check == false) {
+            return ();
+        };
+        var status : {
+            status : { #stopped; #stopping; #running };
+            memory_size : Nat;
+            cycles : Nat;
+            settings : definite_canister_settings;
+            module_hash : ?[Nat8];
+        } = await IC.canister_status({
+            canister_id = Principal.fromText(game_canister_id);
+        });
+        var controllers : [Principal] = status.settings.controllers;
+        var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
+        for (i in controllers.vals()) {
+            if (i != Principal.fromText(p)) b.add(i);
+        };
+        b.add(Principal.fromText(p));
+        await (
+            IC.update_settings({
+                canister_id = Principal.fromText(game_canister_id);
+                settings = {
+                    controllers = ?Buffer.toArray(b);
+                    compute_allocation = null;
+                    memory_allocation = null;
+                    freezing_threshold = ?31_540_000;
+                };
+            })
+        );
+    };
+
+    public shared ({ caller }) func remove_controller(game_canister_id : Text, p : Text) : async () {
+        var check : Bool = await _isController(game_canister_id, caller);
+        if (check == false) {
+            return ();
+        };
+        var status : {
+            status : { #stopped; #stopping; #running };
+            memory_size : Nat;
+            cycles : Nat;
+            settings : definite_canister_settings;
+            module_hash : ?[Nat8];
+        } = await IC.canister_status({
+            canister_id = Principal.fromText(game_canister_id);
+        });
+        var controllers : [Principal] = status.settings.controllers;
+        var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
+        for (i in controllers.vals()) {
+            if (i != Principal.fromText(p)) b.add(i);
+        };
+        await (
+            IC.update_settings({
+                canister_id = Principal.fromText(game_canister_id);
+                settings = {
+                    controllers = ?Buffer.toArray(b);
+                    compute_allocation = null;
+                    memory_allocation = null;
+                    freezing_threshold = ?31_540_000;
+                };
+            })
+        );
     };
 
     public query func get_total_games() : async (Nat) {

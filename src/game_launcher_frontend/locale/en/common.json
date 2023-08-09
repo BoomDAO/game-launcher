@@ -103,6 +103,21 @@
       "tab_3": {
         "title": "Release/Hold a Game",
         "button": "Apply"
+      },
+      "controller": {
+        "title": "Add / Remove controller",
+        "add": {
+          "input_placeholder": "Principal id to add controller",
+          "button": "Add controller",
+          "error": "There was some error while adding controller. Please try again!",
+          "success": "Controller was added."
+        },
+        "remove": {
+          "input_placeholder": "Principal id to remove controller",
+          "button": "Remove controller",
+          "error": "There was some error while removing controller. Please try again!",
+          "success": "Controller was removed."
+        }
       }
     }
   },
