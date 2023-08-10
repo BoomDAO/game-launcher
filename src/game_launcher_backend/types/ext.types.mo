@@ -10,8 +10,18 @@ import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Float "mo:base/Float";
 import Nat64 "mo:base/Nat64";
+import Result "mo:base/Result";
 
 module {
+    //TransferRequest
+    public type User = {
+        #address : AccountIdentifier; 
+        #principal : Principal;
+    };
+    public type SubAccount = [Nat8];
+    public type Balance = Nat;
+    public type Memo = Blob;
+    //
     public type AccountIdentifier = Text;
     public type TokenIndex = Nat32;
     public type TokenIdentifier  = Text;
@@ -48,6 +58,24 @@ module {
         to : AccountIdentifier;
         asset : Nat32;
     };
+
+    public type TransferRequest = {
+        from : User;
+        to : User;
+        token : TokenIdentifier;
+        amount : Balance;
+        memo : Memo;
+        notify : Bool;
+        subaccount : ?SubAccount;
+    };
+    public type TransferResponse = Result.Result<Balance, {
+        #Unauthorized: AccountIdentifier;
+        #InsufficientBalance;
+        #Rejected; //Rejected by canister
+        #InvalidToken: TokenIdentifier;
+        #CannotNotify: AccountIdentifier;
+        #Other : Text;
+    }>;
 
     //Marketplace
     public type Transaction = {
