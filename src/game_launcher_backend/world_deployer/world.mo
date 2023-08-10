@@ -48,13 +48,14 @@ import TStaking "../types/staking.types";
 import Config "../modules/Configs";
 
 actor class WorldTemplate(owner : Principal) = this {
-    private stable var tokens_decimals : Trie.Trie<Text, Nat8> = Trie.empty();
-    private stable var tokens_fees : Trie.Trie<Text, Nat> = Trie.empty();
-    private stable var total_nft_count : Trie.Trie<Text, Nat32> = Trie.empty();
+
+    private stable var tokensDecimals : Trie.Trie<Text, Nat8> = Trie.empty();
+    private stable var tokensFees : Trie.Trie<Text, Nat> = Trie.empty();
+    private stable var totalNftCount : Trie.Trie<Text, Nat32> = Trie.empty();
+    private stable var userPrincipalToUserNode : Trie.Trie<Text, Text> = Trie.empty();
     private func WorldId() : Principal = Principal.fromActor(this);
 
     //Interfaces
-    type EntityPermission = {};
     type UserNode = actor {
         processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<[TEntity.Entity], Text>);
         getAllUserWorldEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TEntity.Entity], Text>);
@@ -64,29 +65,29 @@ actor class WorldTemplate(owner : Principal) = this {
         createNewUser : shared (Principal) -> async (Result.Result<Text, Text>);
         getUserNodeCanisterId : shared (Text) -> async (Result.Result<Text, Text>);
 
-        grantEntityPermission : shared (Text, Text, Text, TEntity.EntityPermission) -> async (); //args -> (groupId, entityId, principal, permissions)
-        removeEntityPermission : shared (Text, Text, Text) -> async (); //args -> (groupId, entityId, principal)
-        grantGlobalPermission : shared (Text) -> async (); //args -> (principal)
-        removeGlobalPermission : shared (Text) -> async (); //args -> (principal)
+        grantEntityPermission : shared (TEntity.EntityPermission) -> async ();
+        removeEntityPermission : shared (TEntity.EntityPermission) -> async ();
+        grantGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
+        removeGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
     };
-    let worldHub : WorldHub = actor(ENV.WorldHubCanisterId);
-    
+    let worldHub : WorldHub = actor (ENV.WorldHubCanisterId);
+
     type StakingHub = actor {
         getUserStakes : shared (Text) -> async ([TStaking.Stake]);
     };
-    let stakingHub : StakingHub = actor(ENV.StakingHubCanisterId);
-    
+    let stakingHub : StakingHub = actor (ENV.StakingHubCanisterId);
+
     type PaymentHub = actor {
         verifyTxIcp : shared (Nat64, Text, Text, Nat64) -> async ({
             #Success : Text;
             #Err : Text;
         });
         verifyTxIcrc : shared (Nat, Text, Text, Nat, Text) -> async ({
-                #Success : Text;
-                #Err : Text;
+            #Success : Text;
+            #Err : Text;
         });
     };
-    let paymentHub : PaymentHub = actor(ENV.PaymentHubCanisterId);
+    let paymentHub : PaymentHub = actor (ENV.PaymentHubCanisterId);
 
     type ICP = actor {
         transfer : shared ICP.TransferArgs -> async ICP.TransferResult;
@@ -98,10 +99,15 @@ actor class WorldTemplate(owner : Principal) = this {
         icrc1_decimals : shared query () -> async Nat8;
         icrc1_fee : shared query () -> async Nat;
     };
+    type EXTInterface = actor {
+        getTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
+        ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
+        ext_transfer : shared (request : EXT.TransferRequest) -> async EXT.TransferResponse;
+    };
 
     //stable memory
     private stable var _owner : Text = Principal.toText(owner);
-    private stable var _admins : [Text] = [Principal.toText(owner)]; 
+    private stable var _admins : [Text] = [Principal.toText(owner)];
 
     //Configs
     private var entityConfigs = Buffer.Buffer<TEntity.EntityConfig>(0);
@@ -110,7 +116,7 @@ actor class WorldTemplate(owner : Principal) = this {
     private var actionConfigs = Buffer.Buffer<TAction.ActionConfig>(0);
     private stable var tempUpdateActionConfig : Config.ActionConfigs = [];
 
-    system func preupgrade() {        
+    system func preupgrade() {
         tempUpdateEntityConfig := Buffer.toArray(entityConfigs);
 
         tempUpdateActionConfig := Buffer.toArray(actionConfigs);
@@ -135,31 +141,64 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     private func tokenFee_(tokenCanisterId : Text) : async (Nat) {
-        switch (Trie.find(tokens_fees, Utils.keyT(tokenCanisterId), Text.equal)) {
-            case (?f){
+        switch (Trie.find(tokensFees, Utils.keyT(tokenCanisterId), Text.equal)) {
+            case (?f) {
                 return f;
             };
             case _ {
                 let token : ICRC = actor (tokenCanisterId);
                 let fee = await token.icrc1_fee();
-                tokens_fees := Trie.put(tokens_fees, Utils.keyT(tokenCanisterId), Text.equal, fee).0;
+                tokensFees := Trie.put(tokensFees, Utils.keyT(tokenCanisterId), Text.equal, fee).0;
                 return fee;
             };
-        }
+        };
     };
 
     private func tokenDecimal_(tokenCanisterId : Text) : async (Nat8) {
-        switch (Trie.find(tokens_decimals, Utils.keyT(tokenCanisterId), Text.equal)) {
-            case (?d){
+        switch (Trie.find(tokensDecimals, Utils.keyT(tokenCanisterId), Text.equal)) {
+            case (?d) {
                 return d;
             };
             case _ {
                 let token : ICRC = actor (tokenCanisterId);
                 let decimals = await token.icrc1_decimals();
-                tokens_decimals := Trie.put(tokens_decimals, Utils.keyT(tokenCanisterId), Text.equal, decimals).0;
+                tokensDecimals := Trie.put(tokensDecimals, Utils.keyT(tokenCanisterId), Text.equal, decimals).0;
                 return decimals;
             };
-        }
+        };
+    };
+
+    private func getUserNode_(userPrincipalTxt : Text) : async (Result.Result<Text, Text>) {
+
+        switch (Trie.find(userPrincipalToUserNode, Utils.keyT(userPrincipalTxt), Text.equal)) {
+            case (?userNodeId) {
+                return #ok(userNodeId);
+            };
+            case _ {
+                switch (await worldHub.getUserNodeCanisterId(userPrincipalTxt)) {
+                    case (#ok(userNodeId)) {
+                        userPrincipalToUserNode := Trie.put(userPrincipalToUserNode, Utils.keyT(userPrincipalTxt), Text.equal, userNodeId).0;
+                        return #ok(userNodeId);
+                    };
+                    case (#err(errMsg0)) {
+                        var newUserNodeId = await worldHub.createNewUser(Principal.fromText(userPrincipalTxt));
+                        switch (newUserNodeId) {
+                            case (#ok(userNodeId)) {
+                                userPrincipalToUserNode := Trie.put(userPrincipalToUserNode, Utils.keyT(userPrincipalTxt), Text.equal, userNodeId).0;
+                                return #ok(userNodeId);
+                            };
+                            case (#err(errMsg1)) {
+                                return #err("user doesnt exist, thus, tried to created it, but failed on the attempt, msg: " # (errMsg0 # " " #errMsg1));
+                            };
+                        };
+                    };
+                };
+            };
+        };
+    };
+    public shared ({ caller }) func removeAllUserNodeRef() : async () {
+        assert (isAdmin_(caller));
+        userPrincipalToUserNode := Trie.empty();
     };
 
     //utils
@@ -181,50 +220,50 @@ actor class WorldTemplate(owner : Principal) = this {
         _admins := Buffer.toArray(b);
     };
 
-    public query func getOwner() : async Text {return Principal.toText(owner)};
+    public query func getOwner() : async Text { return Principal.toText(owner) };
 
     public query func cycleBalance() : async Nat {
         Cycles.balance();
     };
 
     //GET CONFIG
-    private func _getSpecificEntityConfig(eid : Text, gid : Text) : (? TEntity.EntityConfig) {
+    private func _getSpecificEntityConfig(eid : Text, gid : Text) : (?TEntity.EntityConfig) {
         for (config in entityConfigs.vals()) {
-            if(config.eid == eid) {
-                if(config.gid == gid){
-                    return ? config;
+            if (config.eid == eid) {
+                if (config.gid == gid) {
+                    return ?config;
                 };
             };
         };
         return null;
     };
-    private func _getSpecificActionConfig(aid : Text) : (? TAction.ActionConfig) {
+    private func _getSpecificActionConfig(aid : Text) : (?TAction.ActionConfig) {
         for (config in actionConfigs.vals()) {
-            if(config.aid == aid) return ? config;
+            if (config.aid == aid) return ?config;
         };
         return null;
     };
 
-    public query func getEntityConfigs() : async ([TEntity.EntityConfig]){
+    public query func getEntityConfigs() : async ([TEntity.EntityConfig]) {
         return Buffer.toArray(entityConfigs);
     };
-    public query func getActionConfigs() : async ([TAction.ActionConfig]){
+    public query func getActionConfigs() : async ([TAction.ActionConfig]) {
         return Buffer.toArray(actionConfigs);
     };
 
-    public func importEntityConfigs() : async ([TEntity.EntityConfig]){
+    public func importEntityConfigs() : async ([TEntity.EntityConfig]) {
         return Buffer.toArray(entityConfigs);
     };
-    public func importActionConfigs() : async ([TAction.ActionConfig]){
+    public func importActionConfigs() : async ([TAction.ActionConfig]) {
         return Buffer.toArray(actionConfigs);
     };
 
     //CHECK CONFIG
-    private func configEntityExist_(eid : Text, gid : Text) : (Bool, Int){
+    private func configEntityExist_(eid : Text, gid : Text) : (Bool, Int) {
         var index = 0;
-        for(configElement in entityConfigs.vals()){
-            if(configElement.eid == eid) {
-                if(configElement.gid == gid){
+        for (configElement in entityConfigs.vals()) {
+            if (configElement.eid == eid) {
+                if (configElement.gid == gid) {
                     return (true, index);
                 };
             };
@@ -232,10 +271,10 @@ actor class WorldTemplate(owner : Principal) = this {
         };
         return (false, -1);
     };
-    private func configActionExist_(aid : Text) : (Bool, Int){
+    private func configActionExist_(aid : Text) : (Bool, Int) {
         var index = 0;
-        for(configElement in actionConfigs.vals()){
-            if(configElement.aid == aid) {
+        for (configElement in actionConfigs.vals()) {
+            if (configElement.aid == aid) {
                 return (true, index);
             };
             index += 1;
@@ -244,18 +283,18 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     //CREATE CONFIG
     public shared ({ caller }) func createEntityConfig(config : TEntity.EntityConfig) : async (Result.Result<Text, Text>) {
-        assert(isAdmin_(caller));
+        assert (isAdmin_(caller));
         let configExist = configEntityExist_(config.eid, config.gid);
-        if(configExist.0 == false){
+        if (configExist.0 == false) {
             entityConfigs.add(config);
             return #ok("all good :)");
         };
         return #err("there is an entity already using that id, you can try updateConfig");
     };
     public shared ({ caller }) func createActionConfig(config : TAction.ActionConfig) : async (Result.Result<Text, Text>) {
-        assert(isAdmin_(caller));
+        assert (isAdmin_(caller));
         let configExist = configActionExist_(config.aid);
-        if(configExist.0 == false){
+        if (configExist.0 == false) {
             actionConfigs.add(config);
             return #ok("all good :)");
         };
@@ -263,9 +302,9 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     //UPDATE CONFIG
     public shared ({ caller }) func updateEntityConfig(config : TEntity.EntityConfig) : async (Result.Result<Text, Text>) {
-        assert(isAdmin_(caller));
+        assert (isAdmin_(caller));
         let configExist = configEntityExist_(config.eid, config.gid);
-        if(configExist.0){
+        if (configExist.0) {
             var index = Utils.intToNat(configExist.1);
             entityConfigs.put(index, config);
             return #ok("all good :)");
@@ -273,9 +312,9 @@ actor class WorldTemplate(owner : Principal) = this {
         return #err("there is no entity using that eid");
     };
     public shared ({ caller }) func updateActionConfig(config : TAction.ActionConfig) : async (Result.Result<Text, Text>) {
-        assert(isAdmin_(caller));
+        assert (isAdmin_(caller));
         let configExist = configActionExist_(config.aid);
-        if(configExist.0){
+        if (configExist.0) {
             var index = Utils.intToNat(configExist.1);
             actionConfigs.put(index, config);
             return #ok("all good :)");
@@ -284,18 +323,18 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     //DELETE CONFIG
     public shared ({ caller }) func deleteEntityConfig(eid : Text, gid : Text) : async (Result.Result<Text, Text>) {
-        assert(isAdmin_(caller));
+        assert (isAdmin_(caller));
         let configExist = configEntityExist_(eid, gid);
-        if(configExist.0){
+        if (configExist.0) {
             ignore entityConfigs.remove(Utils.intToNat(configExist.1));
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
     };
     public shared ({ caller }) func deleteActionConfig(aid : Text) : async (Result.Result<Text, Text>) {
-        assert(isAdmin_(caller));
+        assert (isAdmin_(caller));
         let configExist = configActionExist_(aid);
-        if(configExist.0){
+        if (configExist.0) {
             ignore actionConfigs.remove(Utils.intToNat(configExist.1));
             return #ok("all good :)");
         };
@@ -303,89 +342,147 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     //RESET CONFIG
     public shared ({ caller }) func resetConfig() : async (Result.Result<(), ()>) {
-        assert(isAdmin_(caller));
+        assert (isAdmin_(caller));
         entityConfigs := Buffer.fromArray(Config.entityConfigs);
         actionConfigs := Buffer.fromArray(Config.actionConfigs);
         return #ok();
     };
 
     //Get Actions
-    public shared ({ caller }) func getAllUserWorldActions() : async (Result.Result<[TAction.Action], Text>){
+    public shared ({ caller }) func getAllUserWorldActions() : async (Result.Result<[TAction.Action], Text>) {
         let worldId = WorldId();
 
-        var userNodeId : Text = "2vxsx-fae";
+        var userNodeId : Text = "";
 
-        let uid = Principal.toText(caller);
-        switch (await worldHub.getUserNodeCanisterId(uid)){
-            case (#ok(okMsg0)){
-                userNodeId := okMsg0;
-            };
-            case(#err(errMsg0)) {
+        let userPrincipalTxt = Principal.toText(caller);
 
-                var newUserNodeId = await worldHub.createNewUser(caller);
-                switch(newUserNodeId){
-                    case(#ok(okMsg1)){
-                        userNodeId := okMsg1;
-                    };
-                    case(#err(errMsg1)){
-                        return #err("user doesnt exist, thus, tried to created it, but failed on the attempt, msg: "#(errMsg0# " " #errMsg1));
-                    };
-                };
+        switch (await getUserNode_(userPrincipalTxt)) {
+            case (#ok(content)) { userNodeId := content };
+            case (#err(message)) {
+                return #err(message);
             };
         };
-        
-        let userNode : UserNode = actor(userNodeId);
-        return await userNode.getAllUserWorldActions(uid, Principal.toText(worldId))
+
+        let userNode : UserNode = actor (userNodeId);
+        return await userNode.getAllUserWorldActions(userPrincipalTxt, Principal.toText(worldId));
     };
     //Get Entities
-    public shared ({ caller }) func getAllUserWorldEntities() : async (Result.Result<[TEntity.Entity], Text>){
+    public shared ({ caller }) func getAllUserWorldEntities() : async (Result.Result<[TEntity.Entity], Text>) {
         let worldId = WorldId();
 
-        var userNodeId : Text = "2vxsx-fae";
+        var userNodeId : Text = "";
 
-        let uid = Principal.toText(caller);
-        switch (await worldHub.getUserNodeCanisterId(uid)){
-            case (#ok(okMsg0)){
-                userNodeId := okMsg0;
+        let userPrincipalTxt = Principal.toText(caller);
+
+        switch (await getUserNode_(userPrincipalTxt)) {
+            case (#ok(content)) { userNodeId := content };
+            case (#err(message)) {
+                return #err(message);
             };
-            case(#err(errMsg0)) {
+        };
 
-                var newUserNodeId = await worldHub.createNewUser(caller);
-                switch(newUserNodeId){
-                    case(#ok(okMsg1)){
-                        userNodeId := okMsg1;
-                    };
-                    case(#err(errMsg1)){
-                        return #err("user doesnt exist, thus, tried to created it, but failed on the attempt, msg: "#(errMsg0# " " #errMsg1));
+        let userNode : UserNode = actor (userNodeId);
+        return await userNode.getAllUserWorldEntities(userPrincipalTxt, Principal.toText(worldId));
+    };
+    //Send or Burn (it will burn if in the burn plugin config, the "to" field is null or empty)
+    private func verifyBurnNfts_(uid : Principal, burnActionArg : { actionId : Text; indexes : [Nat32] }, configs : TAction.ActionConfig, outcomes : [TAction.ActionOutcomeOption]) : async () {
+        switch (configs.actionPlugin) {
+            case (?#verifyBurnNfts(actionPluginConfig)) {
+                //
+                let accountId : Text = AccountIdentifier.fromPrincipal(uid, null);
+                if (accountId == "") return; //  WE RETURN DUE TO ISSUE GETTING THE aid FROM uid
+
+                let collection : EXTInterface = actor (actionPluginConfig.canister);
+
+                //Indexes to fetch metadata from
+                let indexes = burnActionArg.indexes;
+                //List of fetched metadata
+                var fetchedMetadata = Buffer.Buffer<Text>(0);
+                //We try to collect all metadata from the given indexes
+                for (index in indexes.vals()) {
+                    let optionalMetadata = await collection.getTokenMetadata(index);
+
+                    switch (optionalMetadata) {
+                        case (?metadataVariant) {
+                            switch (metadataVariant) {
+                                case (#nonfungible noneFungibleMetadata) {
+                                    switch (noneFungibleMetadata.metadata) {
+                                        case (?optionalMetadataContainer) {
+                                            switch (optionalMetadataContainer) {
+                                                case (#json metadataAsJson) {
+                                                    fetchedMetadata.add(metadataAsJson);
+                                                };
+                                                case _ {
+                                                    return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
+                                                };
+                                            };
+                                        };
+                                        case _ {
+                                            return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
+                                        };
+                                    };
+                                };
+                                case _ {
+                                    return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
+                                };
+                            };
+                        };
+                        case _ {
+                            return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
+                        };
                     };
                 };
+                //Metadata to compare against
+                var optionalRequiredNftMetadata = actionPluginConfig.requiredNftMetadata;
+                //Validation
+
+                switch (optionalRequiredNftMetadata) {
+                    case (?requiredNftMetadata) {
+                        for (requirement in requiredNftMetadata.vals()) {
+                            var hasRequirement = false;
+
+                            var innerLoopIndex = 0;
+                            label fetchedMetadataLoop for (metadata in fetchedMetadata.vals()) {
+                                if (requirement == metadata) {
+                                    ignore fetchedMetadata.remove(innerLoopIndex);
+                                    hasRequirement := true;
+                                    break fetchedMetadataLoop;
+                                };
+                                innerLoopIndex += 1;
+                            };
+
+                            if (hasRequirement == false) return; //IF USER DOESNT HAVE ANY OF THE REQUIREMENT WE FORCE THE OPERATION TO FAIL
+                        };
+                    };
+                    case _ {}; //DO NOTHING HERE
+                };
+
+                //There must be at least one specified index for the operation to succeed
+                if (indexes.size() == 0) return;
+
+                //Try burn all given nft indexes
+                for (index in indexes.vals()) {
+                    var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(actionPluginConfig.canister, index);
+                    var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, accountId);
+                    switch (res) {
+                        case (#ok _) {
+                            //DO NOTHING HERE
+                        };
+                        case (#err e) {
+                            return; //Skip cuz burning failed
+                        };
+                    };
+                };
+
+                ignore handleOutcomes_(Principal.toText(uid), burnActionArg.actionId, configs, ?outcomes);
             };
-        };
-        
-        let userNode : UserNode = actor(userNodeId);
-        return await userNode.getAllUserWorldEntities(uid, Principal.toText(worldId))
-    };
-    //Burn and Mint NFT's
-    private func burnNft_(collectionCanisterId : Text, tokenindex : EXT.TokenIndex, uid : Principal) : async (Result.Result<(), Text>) {
-        let accountId : Text = AccountIdentifier.fromPrincipal(uid, null);
-        if(accountId == "") return #err("Issue getting aid from uid");
-        var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(collectionCanisterId, tokenindex);
-        let collection = actor (collectionCanisterId) : actor {
-            ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
-        };
-        var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, accountId);
-        switch (res) {
-            case (#ok _) {
-                return #ok();
-            };
-            case (#err e) {
-                return #err("Nft Burn, Something went wrong while burning nft");
+            case (_) {
+                //WE DO NOTHING HERE
             };
         };
     };
     //Payments : redirected to PaymentHub for verification and holding update.
     private func verifyTxIcp_(blockIndex : Nat64, toPrincipal : Text, fromPrincipal : Text, amt : Nat64) : async (Result.Result<(), Text>) {
-    
         switch (await paymentHub.verifyTxIcp(blockIndex, toPrincipal, fromPrincipal, amt)) {
             case (#Success s) {
                 return #ok();
@@ -399,7 +496,6 @@ actor class WorldTemplate(owner : Principal) = this {
 
         switch (await paymentHub.verifyTxIcrc(blockIndex, toPrincipal, fromPrincipal, amt, tokenCanisterId)) {
             case (#Success s) {
-                
                 return #ok();
             };
             case (#Err e) {
@@ -416,7 +512,7 @@ actor class WorldTemplate(owner : Principal) = this {
             var rand_perc : Float = 1;
 
             //A) Compute total weight on the current outcome
-            if(outcome.possibleOutcomes.size() > 1){
+            if (outcome.possibleOutcomes.size() > 1) {
                 for (outcomeOption in outcome.possibleOutcomes.vals()) {
                     accumulated_weight += outcomeOption.weight;
                 };
@@ -431,10 +527,10 @@ actor class WorldTemplate(owner : Principal) = this {
             label outcome_loop for (outcomeOption in outcome.possibleOutcomes.vals()) {
                 let outcome_weight = outcomeOption.weight;
                 if (outcome_weight >= dice_outcome) {
-                outcomes.add(outcomeOption);
-                break outcome_loop;
+                    outcomes.add(outcomeOption);
+                    break outcome_loop;
                 } else {
-                dice_outcome -= outcome_weight;
+                    dice_outcome -= outcome_weight;
                 };
             };
         };
@@ -442,149 +538,164 @@ actor class WorldTemplate(owner : Principal) = this {
         return Buffer.toArray(outcomes);
     };
 
-    private func mint_(nftCanisterId : Text, mintsToProcess : [(EXT.AccountIdentifier, EXT.Metadata)]) : async ([TAction.MintNft]){
-        let nftCollection : NFT = actor(nftCanisterId);
+    private func mint_(nftCanisterId : Text, mintsToProcess : [(EXT.AccountIdentifier, EXT.Metadata)]) : async ([TAction.MintNft]) {
+        let nftCollection : NFT = actor (nftCanisterId);
 
         var amountToMint = mintsToProcess.size();
         var mintedNfts = Buffer.Buffer<TAction.MintNft>(amountToMint);
 
-        switch (Trie.find(total_nft_count, Utils.keyT(nftCanisterId), Text.equal)) {
-            case (?collectionNftCount){
+        switch (Trie.find(totalNftCount, Utils.keyT(nftCanisterId), Text.equal)) {
+            case (?collectionNftCount) {
                 //MINT NFTs
                 ignore nftCollection.ext_mint(mintsToProcess);
 
                 //WE PREPARE THE RETURN VALUE
                 var loopIndex : Nat32 = 0;
-                for(mintToProcess in mintsToProcess.vals()){
+                for (mintToProcess in mintsToProcess.vals()) {
                     var assetId = "";
                     var metadata = "";
                     let optinalMetadata = mintToProcess.1;
 
                     //HERE ASSET ID AND METADATA ARE EXTRACTED "IF ANY"
-                    switch(optinalMetadata){
-                        case (#nonfungible asNonfungible){
+                    switch (optinalMetadata) {
+                        case (#nonfungible asNonfungible) {
                             //WE SET ASSET ID
                             assetId := asNonfungible.asset;
-                            
+
                             //WE SET METADATA "ONLY IF IT IS A JSON"
-                            switch(asNonfungible.metadata){
-                                case(? #json asJson){
+                            switch (asNonfungible.metadata) {
+                                case (? #json asJson) {
                                     metadata := asJson;
                                 };
-                                case _ { }; //WE DO NOTHING HERE
+                                case _ {}; //WE DO NOTHING HERE
                             };
                         };
-                        case _ { }; //WE DO NOTHING HERE
+                        case _ {}; //WE DO NOTHING HERE
                     };
 
                     //WE ADD THE MINTED NFT INTO THE BUFFER TO RETURN IT AS AN ARRAY
                     mintedNfts.add({
-                        index = ? (collectionNftCount + loopIndex);
-                        canister  = nftCanisterId;
+                        index = ?(collectionNftCount + loopIndex);
+                        canister = nftCanisterId;
                         assetId;
                         metadata;
                     });
-                    
+
                     loopIndex += 1;
                 };
 
                 //WE STORE THE NEW COLLECTION NFT COUNT
-                total_nft_count := Trie.put(total_nft_count, Utils.keyT(nftCanisterId), Text.equal, collectionNftCount + Nat32.fromNat(amountToMint)).0;
+                totalNftCount := Trie.put(totalNftCount, Utils.keyT(nftCanisterId), Text.equal, collectionNftCount + Nat32.fromNat(amountToMint)).0;
             };
-            case _ { //IF COLLECTION COUNT WASN'T STORED
+            case _ {
+                //IF COLLECTION COUNT WASN'T STORED
                 //MINT NFTs
                 var mintedIndexes = await nftCollection.ext_mint(mintsToProcess);
 
                 //WE PREPARE THE RETURN VALUE
                 var loopIndex = 0;
-                for(mintedIndex in mintedIndexes.vals()){
+                for (mintedIndex in mintedIndexes.vals()) {
                     var assetId = "";
                     var metadata = "";
                     let optinalMetadata = mintsToProcess[loopIndex].1;
 
                     //HERE ASSET ID AND METADATA ARE EXTRACTED "IF ANY"
-                    switch(optinalMetadata){
-                        case (#nonfungible asNonfungible){
+                    switch (optinalMetadata) {
+                        case (#nonfungible asNonfungible) {
                             //WE SET ASSET ID
                             assetId := asNonfungible.asset;
-                            
+
                             //WE SET METADATA "ONLY IF IT IS A JSON"
-                            switch(asNonfungible.metadata){
-                                case(? #json asJson){
+                            switch (asNonfungible.metadata) {
+                                case (? #json asJson) {
                                     metadata := asJson;
                                 };
-                                case _ { }; //WE DO NOTHING HERE
+                                case _ {}; //WE DO NOTHING HERE
                             };
                         };
-                        case _ { }; //WE DO NOTHING HERE
+                        case _ {}; //WE DO NOTHING HERE
                     };
 
                     //WE ADD THE MINTED NFT INTO THE BUFFER TO RETURN IT AS AN ARRAY
                     mintedNfts.add({
-                        index = ? mintedIndex;
-                        canister  = nftCanisterId;
+                        index = ?mintedIndex;
+                        canister = nftCanisterId;
                         assetId;
                         metadata;
                     });
 
                     loopIndex += 1;
                 };
-                
+
                 //WE STORE THE NEW COLLECTION NFT COUNT
-                total_nft_count := Trie.put(total_nft_count, Utils.keyT(nftCanisterId), Text.equal, mintedIndexes[mintedIndexes.size() - 1] + 1).0;
+                totalNftCount := Trie.put(totalNftCount, Utils.keyT(nftCanisterId), Text.equal, mintedIndexes[mintedIndexes.size() - 1] + 1).0;
             };
         };
 
         return Buffer.toArray(mintedNfts);
     };
 
-    private func handleOutcomes_(uid : Text, actionId: Text, actionConfig : TAction.ActionConfig) : async (Result.Result<[TAction.ActionOutcomeOption], Text>){
-        
-        let outcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes_(actionConfig.actionResult);
-        var userNodeId : Text = "2vxsx-fae";
-        switch (await worldHub.getUserNodeCanisterId(uid)){
-            case (#ok c){
-                userNodeId := c;
+    private func handleOutcomes_(userPrincipalTxt : Text, actionId : Text, actionConfig : TAction.ActionConfig, preGeneratedOutcomes : ?[TAction.ActionOutcomeOption]) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
+
+        let outcomes = switch (preGeneratedOutcomes) {
+            case (?value) {
+                value;
             };
             case _ {
-                return #err("user node id not found");
+                await generateActionResultOutcomes_(actionConfig.actionResult);
             };
         };
-        
-        let userNode : UserNode = actor(userNodeId);
 
-        ignore userNode.processAction(uid, actionId, actionConfig.actionConstraint, outcomes);
+        //HERE
+        var userNodeId : Text = "2vxsx-fae";
 
-        let accountId : Text = AccountIdentifier.fromText(uid, null);
+        switch (await getUserNode_(userPrincipalTxt)) {
+            case (#ok(content)) { userNodeId := content };
+            case (#err(message)) {
+                return #err(message);
+            };
+        };
+
+        let userNode : UserNode = actor (userNodeId);
+
+        ignore userNode.processAction(userPrincipalTxt, actionId, actionConfig.actionConstraint, outcomes);
+
+        let accountId : Text = AccountIdentifier.fromText(userPrincipalTxt, null);
 
         var processedResult = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
 
-        var nftsToMint : Trie.Trie<Text, Buffer.Buffer<(EXT.AccountIdentifier, EXT.Metadata)>>  = Trie.empty();
+        var nftsToMint : Trie.Trie<Text, Buffer.Buffer<(EXT.AccountIdentifier, EXT.Metadata)>> = Trie.empty();
 
         //Group Nfts by collections
-        for(outcome in outcomes.vals()){
-            switch (outcome.option){
-                case (#mintNft val){
-                    switch(Trie.find(nftsToMint, Utils.keyT(val.canister), Text.equal)){
-                        case (? element){
-                            element.add((accountId, #nonfungible {
-                                name = "";
-                                asset = val.assetId;
-                                thumbnail = val.assetId;
-                                metadata = ? #json(val.metadata);
-                            }));
+        for (outcome in outcomes.vals()) {
+            switch (outcome.option) {
+                case (#mintNft val) {
+                    switch (Trie.find(nftsToMint, Utils.keyT(val.canister), Text.equal)) {
+                        case (?element) {
+                            element.add((
+                                accountId,
+                                #nonfungible {
+                                    name = "";
+                                    asset = val.assetId;
+                                    thumbnail = val.assetId;
+                                    metadata = ? #json(val.metadata);
+                                },
+                            ));
 
                             nftsToMint := Trie.put(nftsToMint, Utils.keyT(val.canister), Text.equal, element).0;
                         };
-                        case _{
+                        case _ {
                             let newElement = Buffer.Buffer<(EXT.AccountIdentifier, EXT.Metadata)>(1);
 
-                            newElement.add((accountId, #nonfungible {
-                                name = "";
-                                asset = val.assetId;
-                                thumbnail = val.assetId;
-                                metadata = ? #json(val.metadata);
-                            }));
+                            newElement.add((
+                                accountId,
+                                #nonfungible {
+                                    name = "";
+                                    asset = val.assetId;
+                                    thumbnail = val.assetId;
+                                    metadata = ? #json(val.metadata);
+                                },
+                            ));
                             nftsToMint := Trie.put(nftsToMint, Utils.keyT(val.canister), Text.equal, newElement).0;
                         };
                     };
@@ -594,35 +705,37 @@ actor class WorldTemplate(owner : Principal) = this {
         };
 
         //MintNfts and add them to processedResult
-        for((nftCanisterId, nftGroup) in Trie.iter(nftsToMint)) {
+        for ((nftCanisterId, nftGroup) in Trie.iter(nftsToMint)) {
             var mintedNfts = await mint_(nftCanisterId, Buffer.toArray(nftGroup));
 
-            for(mintedNft in mintedNfts.vals()){
-                processedResult.add({weight = 0; option = #mintNft mintedNft});
-            }
+            for (mintedNft in mintedNfts.vals()) {
+                processedResult.add({ weight = 0; option = #mintNft mintedNft });
+            };
         };
 
         //Mint Tokens and add them along with entities to the return value
-        for(outcome in outcomes.vals()) {
+        for (outcome in outcomes.vals()) {
             switch (outcome.option) {
-                case (#mintNft val){ 
+                case (#mintNft val) {
                     //DO NOTHING HERE
-                }; 
+                };
                 //Mint Tokens
-                case (#mintToken val){
+                case (#mintToken val) {
                     //
                     processedResult.add(outcome);
                     //
-                    let icrcLedger : ICRC.Self = actor(val.canister);
+                    let icrcLedger : ICRC.Self = actor (val.canister);
                     let fee = await tokenFee_(val.canister);
                     let decimals = await tokenDecimal_(val.canister);
 
-
                     //IF YOU WANT TO HANDLE ERRORS COMMENT OUT THIS CODE AND UNCOMMENT OUT THE ONE BELOW
                     ignore icrcLedger.icrc1_transfer({
-                        to  = {owner = Principal.fromText(uid); subaccount = null};
-                        fee = ? fee;
-                        memo = ? []; 
+                        to = {
+                            owner = Principal.fromText(userPrincipalTxt);
+                            subaccount = null;
+                        };
+                        fee = ?fee;
+                        memo = ?[];
                         from_subaccount = null;
                         created_at_time = null;
                         amount = Utils.convertToBaseUnit(val.quantity, decimals);
@@ -631,7 +744,7 @@ actor class WorldTemplate(owner : Principal) = this {
                     // var transferResult = await icrcLedger.icrc1_transfer({
                     //     to  = {owner = Principal.fromText(uid); subaccount = null};
                     //     fee = ? fee;
-                    //     memo = ? []; 
+                    //     memo = ? [];
                     //     from_subaccount = null;
                     //     created_at_time = null;
                     //     amount = Utils.convertToBaseUnit(val.quantity, decimals);
@@ -646,8 +759,8 @@ actor class WorldTemplate(owner : Principal) = this {
                     //             case(#Duplicate error){return #err("Duplicate")};
                     //             case(#BadFee error){return #err("BadFee")};
                     //             case(#CreatedInFuture error){return #err("CreatedInFuture")};
-                    //             case(#TooOld error){return #err("TooOld")}; 
-                    //             case(#InsufficientFunds error){return #err("InsufficientFunds")}; 
+                    //             case(#TooOld error){return #err("TooOld")};
+                    //             case(#InsufficientFunds error){return #err("InsufficientFunds")};
                     //         }
                     //     };
                     //     case(_){};
@@ -661,272 +774,275 @@ actor class WorldTemplate(owner : Principal) = this {
 
         return #ok(Buffer.toArray(processedResult));
     };
-    
-    public shared ({ caller }) func processAction(actionArg: TAction.ActionArg): async (Result.Result<[TAction.ActionOutcomeOption], Text>) { 
+
+    public shared ({ caller }) func processAction(actionArg : TAction.ActionArg) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
         //Todo: Check for each action the timeConstraint
-        switch(actionArg){
-            case(#default(arg)){
+        switch (actionArg) {
+            case (#default(arg)) {
                 var configType = _getSpecificActionConfig(arg.actionId);
- 
-                switch(configType){
-                    case(? configs){
-                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
+
+                switch (configType) {
+                    case (?configs) {
+
+                        switch (configs.actionPlugin) {
+                            case (null) {
+                                return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
+                            };
+                            case (_) {
+                                return #err("Something went wrong, argument type \"default\" must not have actionPlugin");
+                            };
+                        };
                     };
-                    case(_){
-                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    case (_) {
+                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
                     };
                 };
             };
-            case(#burnNft(arg)){
+            case (#verifyBurnNfts(arg)) {
                 var configType = _getSpecificActionConfig(arg.actionId);
 
-                switch(configType){
-                    case(? configs){
-                        switch(configs.actionPlugin){
-                            case(? #burnNft(actionPluginConfig)){
-                                switch(await burnNft_(actionPluginConfig.canister, arg.index, caller))
-                                {
-                                    case(#ok()){
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
-                                    };
-                                    case(#err(msg)){
-                                        return #err(msg)
-                                    };
-                                }
+                switch (configType) {
+                    case (?configs) {
+
+                        switch (configs.actionPlugin) {
+                            case (? #verifyBurnNfts(actionPluginConfig)) {
+                                let outcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes_(configs.actionResult);
+
+                                ignore verifyBurnNfts_(caller, arg, configs, outcomes);
+
+                                return #ok(outcomes);
                             };
-                            case(_){
-                                return #err("Something went wrong, argument type \"burnNft\" mismatches config type")
-                            }
-                        }
+                            case (_) {
+                                return #err("Something went wrong, argument type \"verifyBurnNfts\" mismatches config type");
+                            };
+                        };
                     };
-                    case(_){
-                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
-                    }
-                }
+                    case (_) {
+                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
+                    };
+                };
             };
-            case(#verifyTransferIcp(arg)){
+            case (#verifyTransferIcp(arg)) {
                 var configType = _getSpecificActionConfig(arg.actionId);
 
-                switch(configType){
-                    case(? configs){
-                        switch(configs.actionPlugin){
-                            case(? #verifyTransferIcp(actionPluginConfig)){
+                switch (configType) {
+                    case (?configs) {
+                        switch (configs.actionPlugin) {
+                            case (? #verifyTransferIcp(actionPluginConfig)) {
 
                                 let decimals = await tokenDecimal_(ENV.Ledger);
 
-                                switch(await verifyTxIcp_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller) , Nat64.fromNat(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)))){
-                                    case(#ok()){
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
+                                switch (await verifyTxIcp_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller), Nat64.fromNat(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)))) {
+                                    case (#ok()) {
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
                                     };
-                                    case(#err(msg)){
+                                    case (#err(msg)) {
                                         let fee = await tokenFee_(ENV.Ledger);
 
-                                        return #err(msg#", amount:"#Float.toText(actionPluginConfig.amt)#", baseUnitAmount: "#Nat.toText (Utils.convertToBaseUnit(actionPluginConfig.amt, decimals))#", decimals:"#Nat.toText (Nat8.toNat(decimals))#", fee:"#Nat.toText(fee))
-                                    };
-                                }
-                            };
-                            case(_){
-                                return #err("Something went wrong, argument type \"spendTokens\" mismatches config type")
-                            }
-                        }
-                    };
-                    case(_){
-                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
-                    }
-                };
-            };
-            case(#verifyTransferIcrc(arg)){
-                var configType = _getSpecificActionConfig(arg.actionId);
-
-                switch(configType){
-                    case(? configs){
-                        switch(configs.actionPlugin){
-                            case(? #verifyTransferIcrc(actionPluginConfig)){
-                                
-                                let decimals = await tokenDecimal_(actionPluginConfig.canister);
-
-                                switch(await verifyTxIcrc_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller), Utils.convertToBaseUnit(actionPluginConfig.amt, decimals), actionPluginConfig.canister))
-                                {
-                                    case(#ok()){
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
-                                    };
-                                    case(#err(msg)){
-                                        let fee = await tokenFee_(actionPluginConfig.canister);
-
-                                        return #err(msg#", amount:"#Float.toText(actionPluginConfig.amt)#", baseUnitAmount: "#Nat.toText (Utils.convertToBaseUnit(actionPluginConfig.amt, decimals))#", decimals:"#Nat.toText (Nat8.toNat(decimals))#", fee:"#Nat.toText(fee))
+                                        return #err(msg # ", amount:" #Float.toText(actionPluginConfig.amt) # ", baseUnitAmount: " #Nat.toText(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)) # ", decimals:" #Nat.toText(Nat8.toNat(decimals)) # ", fee:" #Nat.toText(fee));
                                     };
                                 };
                             };
-                            case(_){
-                                return #err("Something went wrong, argument type \"spendTokens\" mismatches config type")
-                            }
-                        }
+                            case (_) {
+                                return #err("Something went wrong, argument type \"verifyTransferIcp\" mismatches config type");
+                            };
+                        };
                     };
-                    case(_){
-                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
-                    }
+                    case (_) {
+                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
+                    };
                 };
             };
-            case(#claimStakingRewardNft(arg)){
+            case (#verifyTransferIcrc(arg)) {
                 var configType = _getSpecificActionConfig(arg.actionId);
- 
-                switch(configType){
-                    case(? configs){
-                        switch(configs.actionPlugin){
-                            case(? #claimStakingRewardNft(actionPluginConfig)){
+
+                switch (configType) {
+                    case (?configs) {
+                        switch (configs.actionPlugin) {
+                            case (? #verifyTransferIcrc(actionPluginConfig)) {
+
+                                let decimals = await tokenDecimal_(actionPluginConfig.canister);
+
+                                switch (await verifyTxIcrc_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller), Utils.convertToBaseUnit(actionPluginConfig.amt, decimals), actionPluginConfig.canister)) {
+                                    case (#ok()) {
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
+                                    };
+                                    case (#err(msg)) {
+                                        let fee = await tokenFee_(actionPluginConfig.canister);
+
+                                        return #err(msg # ", amount:" #Float.toText(actionPluginConfig.amt) # ", baseUnitAmount: " #Nat.toText(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)) # ", decimals:" #Nat.toText(Nat8.toNat(decimals)) # ", fee:" #Nat.toText(fee));
+                                    };
+                                };
+                            };
+                            case (_) {
+                                return #err("Something went wrong, argument type \"verifyTransferIcp\" mismatches config type");
+                            };
+                        };
+                    };
+                    case (_) {
+                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
+                    };
+                };
+            };
+            case (#claimStakingRewardNft(arg)) {
+                var configType = _getSpecificActionConfig(arg.actionId);
+
+                switch (configType) {
+                    case (?configs) {
+                        switch (configs.actionPlugin) {
+                            case (? #claimStakingRewardNft(actionPluginConfig)) {
 
                                 let callerText = Principal.toText(caller);
 
                                 let stakes = await stakingHub.getUserStakes(callerText);
 
-                                var foundStake : ? TStaking.Stake = null;
+                                var foundStake : ?TStaking.Stake = null;
 
-                                label stakesLoop for(stake in stakes.vals()){
-                                    if(stake.canister_id == actionPluginConfig.canister){
-                                        foundStake := ? stake;
+                                label stakesLoop for (stake in stakes.vals()) {
+                                    if (stake.canister_id == actionPluginConfig.canister) {
+                                        foundStake := ?stake;
                                         break stakesLoop;
                                     };
                                 };
-                                
-                                switch(foundStake){
-                                    case(? selectedStakeData){
-                                        if(selectedStakeData.amount < actionPluginConfig.requiredAmount)  return #err("stake of id: \""#actionPluginConfig.canister#"\" doesnt meet amount requirement");
+
+                                switch (foundStake) {
+                                    case (?selectedStakeData) {
+                                        if (selectedStakeData.amount < actionPluginConfig.requiredAmount) return #err("stake of id: \"" #actionPluginConfig.canister # "\" doesnt meet amount requirement");
                                         //
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
                                     };
-                                    case(_){
-                                        return #err("nft stake of id: \""#actionPluginConfig.canister#"\" could not be found");
+                                    case (_) {
+                                        return #err("nft stake of id: \"" #actionPluginConfig.canister # "\" could not be found");
                                     };
                                 };
                             };
-                            case(_){
+                            case (_) {
                                 return #err("Something went wrong, argument type \"claimStakingReward\" mismatches config type");
                             };
                         };
                     };
-                    case(_){
-                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    case (_) {
+                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
                     };
                 };
             };
-            case(#claimStakingRewardIcp(arg)){
+            case (#claimStakingRewardIcp(arg)) {
                 var configType = _getSpecificActionConfig(arg.actionId);
- 
-                switch(configType){
-                    case(? configs){
-                        switch(configs.actionPlugin){
-                            case(? #claimStakingRewardIcp(actionPluginConfig)){
+
+                switch (configType) {
+                    case (?configs) {
+                        switch (configs.actionPlugin) {
+                            case (? #claimStakingRewardIcp(actionPluginConfig)) {
 
                                 let callerText = Principal.toText(caller);
 
                                 let stakes = await stakingHub.getUserStakes(callerText);
 
-                                var foundStake : ? TStaking.Stake = null;
+                                var foundStake : ?TStaking.Stake = null;
 
-                                label stakesLoop for(stake in stakes.vals()){
-                                    if(stake.canister_id == ENV.Ledger){
-                                        foundStake := ? stake;
+                                label stakesLoop for (stake in stakes.vals()) {
+                                    if (stake.canister_id == ENV.Ledger) {
+                                        foundStake := ?stake;
                                         break stakesLoop;
                                     };
                                 };
-                                
-                                switch(foundStake){
-                                    case(? selectedStakeData){
-                                        
+
+                                switch (foundStake) {
+                                    case (?selectedStakeData) {
+
                                         let decimals = await tokenDecimal_(ENV.Ledger);
 
-                                        if(selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals))  return #err("icp stake doesnt meet amount requirement");
+                                        if (selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals)) return #err("icp stake doesnt meet amount requirement");
                                         //
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
                                     };
-                                    case(_){
+                                    case (_) {
                                         return #err("icp stake could not be found");
                                     };
                                 };
                             };
-                            case(_){
+                            case (_) {
                                 return #err("Something went wrong, argument type \"claimStakingReward\" mismatches config type");
                             };
                         };
                     };
-                    case(_){
-                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    case (_) {
+                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
                     };
                 };
             };
-            case(#claimStakingRewardIcrc(arg)){
+            case (#claimStakingRewardIcrc(arg)) {
                 var configType = _getSpecificActionConfig(arg.actionId);
- 
-                switch(configType){
-                    case(? configs){
-                        switch(configs.actionPlugin){
-                            case(? #claimStakingRewardIcrc(actionPluginConfig)){
+
+                switch (configType) {
+                    case (?configs) {
+                        switch (configs.actionPlugin) {
+                            case (? #claimStakingRewardIcrc(actionPluginConfig)) {
 
                                 let callerText = Principal.toText(caller);
 
                                 let stakes = await stakingHub.getUserStakes(callerText);
 
-                                var foundStake : ? TStaking.Stake = null;
+                                var foundStake : ?TStaking.Stake = null;
 
-                                label stakesLoop for(stake in stakes.vals()){
-                                    if(stake.canister_id == actionPluginConfig.canister){
-                                        foundStake := ? stake;
+                                label stakesLoop for (stake in stakes.vals()) {
+                                    if (stake.canister_id == actionPluginConfig.canister) {
+                                        foundStake := ?stake;
                                         break stakesLoop;
                                     };
                                 };
-                                
-                                switch(foundStake){
-                                    case(? selectedStakeData){
+
+                                switch (foundStake) {
+                                    case (?selectedStakeData) {
 
                                         let decimals = await tokenDecimal_(actionPluginConfig.canister);
 
-                                        if(selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals))  return #err("stake of id: \""#actionPluginConfig.canister#"\" doesnt meet amount requirement");
+                                        if (selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals)) return #err("stake of id: \"" #actionPluginConfig.canister # "\" doesnt meet amount requirement");
                                         //
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs);
+                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
                                     };
-                                    case(_){
-                                        return #err("icrc stake of id: \""#actionPluginConfig.canister#"\" could not be found");
+                                    case (_) {
+                                        return #err("icrc stake of id: \"" #actionPluginConfig.canister # "\" could not be found");
                                     };
                                 };
                             };
-                            case(_){
+                            case (_) {
                                 return #err("Something went wrong, argument type \"claimStakingReward\" mismatches config type");
                             };
                         };
                     };
-                    case(_){
-                        return #err("Config of id: \""#arg.actionId#"\" could not be found")
+                    case (_) {
+                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
                     };
                 };
             };
-        }
+        };
     };
 
     // for permissions
-    public shared ({ caller }) func grantEntityPermission(groupId : Text, entityId : Text, principal : Text, permission : TEntity.EntityPermission) : async () {
-        assert(isAdmin_(caller));
-        await worldHub.grantEntityPermission(groupId, entityId, principal, permission);
+    public shared ({ caller }) func grantEntityPermission(permission : TEntity.EntityPermission) : async () {
+        assert (isAdmin_(caller));
+        await worldHub.grantEntityPermission(permission);
     };
 
-    public shared ({ caller }) func removeEntityPermission(groupId : Text, entityId : Text, principal : Text) : async () {
-        assert(isAdmin_(caller));
-        await worldHub.removeEntityPermission(groupId, entityId, principal);
+    public shared ({ caller }) func removeEntityPermission(permission : TEntity.EntityPermission) : async () {
+        assert (isAdmin_(caller));
+        await worldHub.removeEntityPermission(permission);
     };
 
-    public shared ({ caller }) func grantGlobalPermission(principal : Text) : async () {
-        assert(isAdmin_(caller));
-        await worldHub.grantGlobalPermission(principal);
+    public shared ({ caller }) func grantGlobalPermission(permission : TEntity.GlobalPermission) : async () {
+        assert (isAdmin_(caller));
+        await worldHub.grantGlobalPermission(permission);
     };
 
-    public shared ({ caller }) func removeGlobalPermission(principal : Text) : async () {
-        assert(isAdmin_(caller));
-        await worldHub.removeGlobalPermission(principal);
+    public shared ({ caller }) func removeGlobalPermission(permission : TEntity.GlobalPermission) : async () {
+        assert (isAdmin_(caller));
+        await worldHub.removeGlobalPermission(permission);
     };
-
 
     // Import other worlds Configs endpoints
     public shared ({ caller }) func importAllConfigsOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
-        assert(caller == owner);
+        assert (caller == owner);
         let world = actor (ofWorldId) : actor {
             importEntityConfigs : shared () -> async ([TEntity.EntityConfig]);
             importActionConfigs : shared () -> async ([TAction.ActionConfig]);
@@ -936,46 +1052,46 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok("imported");
     };
 
-    public shared ({caller}) func withdrawIcpFromPaymentHub() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
-        assert(caller == owner);
+    public shared ({ caller }) func withdrawIcpFromPaymentHub() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
+        assert (caller == owner);
         let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
             withdrawIcp : () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>);
         };
         await paymentHub.withdrawIcp();
     };
 
-    public shared ({caller}) func withdrawIcrcFromPaymentHub(tokenCanisterId : Text) : async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>) {
-        assert(caller == owner);
+    public shared ({ caller }) func withdrawIcrcFromPaymentHub(tokenCanisterId : Text) : async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>) {
+        assert (caller == owner);
         let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
             withdrawIcrc : (Text) -> async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>);
         };
         await paymentHub.withdrawIcrc(tokenCanisterId);
     };
 
-    public shared ({caller}) func getEntityPermissionsOfWorld() : async [(Text, [(Text, EntityPermission)])] {
+    public shared ({ caller }) func getEntityPermissionsOfWorld() : async [(Text, [(Text, TEntity.EntityPermission)])] {
         let worldHub = actor (ENV.WorldHubCanisterId) : actor {
-            getEntityPermissionsOfWorld : () -> async ([(Text, [(Text, EntityPermission)])]);
+            getEntityPermissionsOfWorld : () -> async ([(Text, [(Text, TEntity.EntityPermission)])]);
         };
         return (await worldHub.getEntityPermissionsOfWorld());
     };
 
-    public shared ({caller}) func getGlobalPermissionsOfWorld() : async ([TGlobal.userId]) {
+    public shared ({ caller }) func getGlobalPermissionsOfWorld() : async ([TGlobal.worldId]) {
         let worldHub = actor (ENV.WorldHubCanisterId) : actor {
             getGlobalPermissionsOfWorld : () -> async [TGlobal.userId];
         };
         return (await worldHub.getGlobalPermissionsOfWorld());
     };
 
-    public shared({caller}) func importAllUsersDataOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
-        assert(caller == owner);
+    public shared ({ caller }) func importAllUsersDataOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
+        assert (caller == owner);
         let worldHub = actor (ENV.WorldHubCanisterId) : actor {
             importAllUsersDataOfWorld : (Text) -> async (Result.Result<Text, Text>);
         };
         return (await worldHub.importAllUsersDataOfWorld(ofWorldId));
     };
 
-    public shared({caller}) func importAllPermissionsOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
-        assert(caller == owner);
+    public shared ({ caller }) func importAllPermissionsOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
+        assert (caller == owner);
         let worldHub = actor (ENV.WorldHubCanisterId) : actor {
             importAllPermissionsOfWorld : (Text) -> async (Result.Result<Text, Text>);
         };

@@ -33,7 +33,7 @@ module{
     public type ActionArg = 
     {
         #default : {actionId: Text; };
-        #burnNft : {actionId: Text; index: Nat32; };
+        #verifyBurnNfts : {actionId: Text; indexes: [Nat32]; };
         #verifyTransferIcp : {actionId: Text; blockIndex: Nat64; };
         #verifyTransferIcrc : {actionId: Text; blockIndex: Nat; };
         #claimStakingRewardNft : {actionId: Text; };
@@ -88,7 +88,7 @@ module{
         eid: TGlobal.entityId;
         duration: duration;
     };
-        public type DeleteEntity =
+    public type DeleteEntity =
     {
         wid : ? TGlobal.worldId;
         gid: TGlobal.groupId;
@@ -116,27 +116,26 @@ module{
 
     public type ActionPlugin = 
     {
-        #burnNft : { canister: Text;};
+        #verifyBurnNfts : { canister: Text; requiredNftMetadata : ?[Text]; };
         #verifyTransferIcp : { amt: Float; toPrincipal : Text; };
         #verifyTransferIcrc : {canister: Text; amt: Float; toPrincipal : Text; };
         #claimStakingRewardNft : { canister: Text; requiredAmount : Nat; };
         #claimStakingRewardIcp : { requiredAmount : Float;  };
         #claimStakingRewardIcrc : { canister: Text; requiredAmount : Float; };
     };
-    public type ActionConstraint = 
-    {
-        timeConstraint: ? {
-            intervalDuration: Nat; 
-            actionsPerInterval: Nat; 
+    public type ActionConstraint = {
+        timeConstraint : ?{
+            intervalDuration : Nat;
+            actionsPerInterval : Nat;
         };
-        entityConstraint : ? [{ 
-            worldId: Text; 
-            groupId: Text; 
-            entityId: Text; 
-            equalToAttribute: ?Text; 
-            greaterThanOrEqualQuantity: ?Float; 
-            lessThanQuantity: ?Float; 
-            notExpired: ?Bool
+        entityConstraint : ?[{
+            wid : ?TGlobal.worldId;
+            gid : TGlobal.groupId;
+            eid : TGlobal.entityId;
+            equalToAttribute : ?Text;
+            greaterThanOrEqualQuantity : ?Float;
+            lessThanQuantity : ?Float;
+            notExpired : ?Bool;
         }];
     };
     public type ActionConfig = 

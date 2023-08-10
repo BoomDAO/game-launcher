@@ -1,5 +1,5 @@
-import ICP "../utils/icp.types";
-import ICRC1 "../utils/icrc.types";
+import ICP "../types/icp.types";
+import ICRC1 "../types/icrc.types";
 import EXTCORE "../utils/Core";
 
 module {
