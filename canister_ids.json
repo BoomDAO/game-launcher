@@ -1,9 +1,11 @@
 {
   "game-launcher": {
-    "ic": "awcae-maaaa-aaaam-abmyq-cai"
+    "ic": "awcae-maaaa-aaaam-abmyq-cai",
+    "stag": "n7z64-2yaaa-aaaam-abnsa-cai"
   },
   "game_deployer": {
-    "ic": "6rvbl-uqaaa-aaaal-ab24a-cai"
+    "ic": "6rvbl-uqaaa-aaaal-ab24a-cai",
+    "stag": "ltwhn-5iaaa-aaaao-askdq-cai"
   },
   "nfts_deployer": {
     "ic": "j474s-uqaaa-aaaap-abf6q-cai"

@@ -1,5 +1,5 @@
 import { useAssetClient, useGameClient } from "@/hooks";
-import { Base64, CreateGameFiles, GameFile, CreateChunkType } from "@/types";
+import { Base64, CreateGameFiles, GameFile, CreateChunkType, GameDistributedFile } from "@/types";
 
 export const b64toArrays = (base64: Base64) => {
   let encoded = base64.toString().replace(/^data:(.*,)?/, "");
@@ -131,7 +131,7 @@ export const gzip_compression_header = (name: string) => {
 };
 
 export const getGameFiles = async (file: File) => {
-  return new Promise<GameFile>((resolve, reject) => {
+  return new Promise<GameDistributedFile>((resolve, reject) => {
     const reader = new FileReader();
     // Convert the file to base64 text
     reader.readAsDataURL(file);
@@ -166,11 +166,11 @@ export const uploadGameFiles = async (
   await actor[methods.clear](r);
   console.log("Cleared State!");
   for (let i = 0; i < files.length; i++) {
-    console.log(files[i]);
+    let file = await getGameFiles(files[i]);
+    console.log(file);
     const batch = (await actor[methods.create_batch]()) as {
       batch_id: number;
     };
-    const file = files[i];
     let chunks = [];
     let chunkIds: Number[] = [];
     for (let i = 0; i < file.fileArr.length; i++) {
@@ -215,7 +215,6 @@ export const uploadGameFiles = async (
         "identity",
         etag.toString(),
       );
-      // console.log((res.err == undefined)? "1" : "2");
     } else if (_gch != "") {
       let res = await actor[methods.commit_asset_upload](
         batch.batch_id,
@@ -225,7 +224,6 @@ export const uploadGameFiles = async (
         "gzip",
         etag.toString(),
       );
-      // console.log((res.err == undefined)? "1" : "2");
     } else {
       let res = await actor[methods.commit_asset_upload](
         batch.batch_id,
@@ -235,12 +233,8 @@ export const uploadGameFiles = async (
         "br",
         etag.toString(),
       );
-      // console.log((res.err == undefined)? "1" : "2");
     }
   }
-  // await Promise.all(commits).then((values) => {
-  //   console.log(values);
-  // });
 };
 
 export const uploadZip = async ({
@@ -293,7 +287,7 @@ export const uploadZip = async ({
   );
 
   const batch1 = (await actor[methods.create_batch]()) as { batch_id: number };
-  const file = files[0];
+  const file = await getGameFiles(files[0]);
   const chunks = [];
 
   for (let i = 0; i < file.fileArr.length; i++) {
