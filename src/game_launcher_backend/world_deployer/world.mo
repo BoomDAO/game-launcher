@@ -251,6 +251,47 @@ actor class WorldTemplate(owner : Principal) = this {
         return Buffer.toArray(actionConfigs);
     };
 
+    public query func editActionConfig(arg : {aid : Text}) : async (TAction.ActionConfig) {
+        for (configElement in actionConfigs.vals()) {
+            if (configElement.aid == arg.aid) {
+                return configElement;
+            };
+        };
+        return {
+            aid = arg.aid;
+            name = null;
+            description = null;
+            imageUrl= null;
+            tag = null;
+            actionPlugin= null;
+            actionConstraint= null;
+            actionResult= {
+                outcomes = [];
+            };
+        };
+    };
+    public query func editEntityConfig(arg : {eid : Text; gid : Text;}) : async (TEntity.EntityConfig) {
+        for (configElement in entityConfigs.vals()) {
+            if (configElement.eid == arg.eid) {
+                if (configElement.gid == arg.gid) {
+                    return configElement;
+                };
+            };
+        };
+        return {
+            gid = arg.gid;
+            eid = arg.eid;
+            name = null;
+            description = null;
+            imageUrl = null;
+            objectUrl = null;
+            rarity = null;
+            duration = null;
+            tag = null;
+            metadata = null;
+        };
+    };
+
     public func importEntityConfigs() : async ([TEntity.EntityConfig]) {
         return Buffer.toArray(entityConfigs);
     };
