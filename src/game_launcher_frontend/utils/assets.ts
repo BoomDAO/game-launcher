@@ -46,15 +46,15 @@ export const b64toType = (base64: Base64) => {
   return type;
 };
 
-export const arrayTob64 = async (data : []) => {
+export const arrayTob64 = async (data: []) => {
   var buffer = new Uint8Array(data)
   // Use a FileReader to generate a base64 data URI
   var res = "";
   await new Promise((r) => {
-      const reader = new FileReader()
-      reader.onload = () => r(reader.result)
-      reader.readAsDataURL(new Blob([buffer]))
-  }).then (
+    const reader = new FileReader()
+    reader.onload = () => r(reader.result)
+    reader.readAsDataURL(new Blob([buffer]))
+  }).then(
     function (r) {
       res = r;
     }
@@ -259,10 +259,9 @@ export const uploadZip = async ({
     '" alt="logo" style="width:164px;"/></a></div><div style="border:solid 2px rgb(255, 255, 255);border-radius: 40px; width: 40%;text-align: center; margin-left: 30%;padding: 20px 20px 30px 20px; background-color: white;"><h1 style="width: 60%; margin-left: 20%;">' + name +
     '</h1><img src="' + cover +
     '" alt="GameLogo" style="width: 60%; height: 20%; background-repeat: no-repeat;background-size: cover; margin-bottom:20px;" /><p style="width:70%; padding-left: 15%;"><b>' + description +
-    '</b></p><p><b>Platform : </b> Android</p><div style="display: flex; justify-content: center; align-items: center;"><button style="display: flex; background-image:linear-gradient(90deg, #FEA002 7.32%, #E73BCF 100%); border: none; color: white; border-radius: 40px;"><a href="' + download_url +
+    '</b></p><p><b>Platform : </b> Android/Windows</p><div style="display: flex; justify-content: center; align-items: center;"><button style="display: flex; background-image:linear-gradient(90deg, #FEA002 7.32%, #E73BCF 100%); border: none; color: white; border-radius: 40px;"><a href="' + download_url +
     '" style="color: white; padding: 8px 0px 8px 50px; font-size: 18px;">DOWNLOAD GAME ON-CHAIN</a><svg style="padding: 10px 50px 0 15px;" width="16" height="16" viewBox="0 0 18 18" fill="none"xmlns="http://www.w3.org/2000/svg"><path d="M9.0001 1L9.00006 17M9.00006 17L17 9.04164M9.00006 17L1 8.95848" stroke="#F6F6F6"stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button></div></div></div></body></html>';
 
-  // const blob = new Blob([content], { type: "text/html" });
 
   const enc = new TextEncoder();
   const arrayBuffer = enc.encode(content);
@@ -275,6 +274,7 @@ export const uploadZip = async ({
   };
 
   const chunk = (await actor[methods.create_chunk](_r)) as { chunk_id: number };
+  console.log("chunk_id : " + chunk.chunk_id + " uploaded");
   _chunks.push(Number(chunk.chunk_id));
 
   await actor[methods.commit_asset_upload](
@@ -287,27 +287,52 @@ export const uploadZip = async ({
   );
 
   const batch1 = (await actor[methods.create_batch]()) as { batch_id: number };
-  const file = await getGameFiles(files[0]);
-  const chunks = [];
 
-  for (let i = 0; i < file.fileArr.length; i++) {
-    const _req2 = {
-      content: file.fileArr[i],
-      batch_id: Number(batch1.batch_id),
-    };
-
-    const res2 = (await actor[methods.create_chunk](_req2)) as {
-      chunk_id: number;
-    };
-    chunks.push(Number(res2.chunk_id));
-  }
-
+  //from here
+  const reader = new FileReader();
+  let file = files[0];
+  var chunks = [];
+  reader.readAsArrayBuffer(file);
+  console.log(file.name + " of size : " + file.size + " Bytes with number of chunks : " + Math.ceil(file.size/ 1800000) + "is getting uploaded! Do not refresh!");
+    
+  async function uploadChunks() {
+    return new Promise(() => {
+      reader.onloadend = async () => {
+        if (reader.result === null) {
+          throw new Error("file empty...");
+        }
+        let buffer = new Uint8Array(reader.result);
+        const sliceSize = 1800000;
+        for (let offset = 0; offset < buffer.length; offset += sliceSize) {
+          const byteArray = [];
+          let x = offset + sliceSize;
+          if (buffer.length < x) {
+            x = buffer.length;
+          }
+          for (let i = offset; i < x; i++) {
+            byteArray.push(buffer[i]);
+          }
+          const _req2 = {
+            content: byteArray,
+            batch_id: Number(batch1.batch_id),
+          };
+          const res2 = (await actor[methods.create_chunk](_req2)) as {
+            chunk_id: number;
+          };
+          chunks.push(Number(res2.chunk_id));
+          console.log("chunk_id : " + res2.chunk_id + " uploaded");
+        }
+      };
+    });
+  };
+  
+  await uploadChunks();
+  console.log(chunks);
   const _name = "/download";
-
   await actor[methods.commit_asset_upload](
     batch1.batch_id,
     String(_name),
-    file.fileType,
+    "application/zip",
     chunks,
     "identity",
     "",
