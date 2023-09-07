@@ -293,10 +293,9 @@ export const uploadZip = async ({
   let file = files[0];
   var chunks = [];
   reader.readAsArrayBuffer(file);
-  console.log(file.name + " of size : " + file.size + " Bytes with number of chunks : " + Math.ceil(file.size/ 1800000) + "is getting uploaded! Do not refresh!");
-    
-  async function uploadChunks() {
-    return new Promise(() => {
+  console.log(file.name + " of size : " + file.size + " Bytes with number of chunks : " + Math.ceil(file.size / 1800000) + "is getting uploaded! Do not refresh!");
+  async function isUploaded() : Promise<any>{
+    return new Promise((resolve, reject) => {
       reader.onloadend = async () => {
         if (reader.result === null) {
           throw new Error("file empty...");
@@ -322,19 +321,27 @@ export const uploadZip = async ({
           chunks.push(Number(res2.chunk_id));
           console.log("chunk_id : " + res2.chunk_id + " uploaded");
         }
+        resolve(chunks);
       };
-    });
+    }).then(
+      async (value) => {
+        const _name = "/download";
+        await actor[methods.commit_asset_upload](
+          batch1.batch_id,
+          String(_name),
+          "application/zip",
+          value,
+          "identity",
+          "",
+        );
+        console.log("upload done");
+      },
+      (err) => {
+        console.log(err);
+      }
+    );
   };
-  
-  await uploadChunks();
-  console.log(chunks);
-  const _name = "/download";
-  await actor[methods.commit_asset_upload](
-    batch1.batch_id,
-    String(_name),
-    "application/zip",
-    chunks,
-    "identity",
-    "",
-  );
+  await isUploaded().then(()=> {
+    console.log("completed!");
+  })
 };
