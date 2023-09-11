@@ -20,8 +20,9 @@ import State "State";
 import AssetStorage "AssetStorage";
 import SHA256 "../../utils/SHA256";
 
-actor class Assets(owner : Principal) = this {
+actor class Assets() = this {
     private let BATCH_EXPIRY_NANOS = 300_000_000_000;
+    private let owner : Principal = Principal.fromText("lgjp4-nfvab-rl4wt-77he2-3hnxe-24pvi-7rykv-6yyr4-sqwdd-4j2fz-fae");
     stable var stableAuthorized : [Principal] = [owner];
     stable var stableAssets : [(AssetStorage.Key, State.StableAsset)] = [];
     private stable var _etags : Trie.Trie<Text, Text> = Trie.empty();
@@ -406,6 +407,10 @@ actor class Assets(owner : Principal) = this {
 
     private func textToLower(t : Text) : Text {
         Text.map(t, Prim.charToLower);
+    };
+
+    public shared func getSize() : async Nat{
+        return Prim.rts_memory_size();
     };
 
     public shared query ({ caller }) func http_request_streaming_callback(

@@ -56,7 +56,7 @@ export const arrayTob64 = async (data: []) => {
     reader.readAsDataURL(new Blob([buffer]))
   }).then(
     function (r) {
-      res = r;
+      return r;
     }
   )
   return res;
@@ -289,19 +289,20 @@ export const uploadZip = async ({
   const batch1 = (await actor[methods.create_batch]()) as { batch_id: number };
 
   //from here
-  const reader = new FileReader();
+  const reader: FileReader = new FileReader();
   let file = files[0];
-  var chunks = [];
+  var chunks: Number[] = [];
   reader.readAsArrayBuffer(file);
-  console.log(file.name + " of size : " + file.size + " Bytes with number of chunks : " + Math.ceil(file.size / 1800000) + "is getting uploaded! Do not refresh!");
-  async function isUploaded() : Promise<any>{
+  console.log(file.name + " of size : " + file.size + " Bytes with number of chunks : " + (Math.ceil(file.size / 1800000) + 1) + "is getting uploaded! Do not refresh!");
+  async function isUploaded(): Promise<any> {
     return new Promise((resolve, reject) => {
       reader.onloadend = async () => {
         if (reader.result === null) {
           throw new Error("file empty...");
         }
-        let buffer = new Uint8Array(reader.result);
+        let buffer = new Uint8Array(<ArrayBuffer>reader.result);
         const sliceSize = 1800000;
+        let _chunks = [];
         for (let offset = 0; offset < buffer.length; offset += sliceSize) {
           const byteArray = [];
           let x = offset + sliceSize;
@@ -315,11 +316,32 @@ export const uploadZip = async ({
             content: byteArray,
             batch_id: Number(batch1.batch_id),
           };
-          const res2 = (await actor[methods.create_chunk](_req2)) as {
-            chunk_id: number;
-          };
-          chunks.push(Number(res2.chunk_id));
-          console.log("chunk_id : " + res2.chunk_id + " uploaded");
+          _chunks.push(actor[methods.create_chunk](_req2));
+          if (_chunks.length == 25 || offset == (buffer.length) - 1) {
+            await Promise.all(_chunks)
+              .then(
+                (res2: any) => {
+                  for (let k = 0; k < res2.length; k++) {
+                    chunks.push(Number(res2[k].chunk_id));
+                  };
+                  return res2;
+                },
+                (reason) => {
+                  console.log(reason);
+                  throw reason;
+                }
+              )
+              .then(
+                response => {
+                  console.log(response);
+                },
+                (reason) => {
+                  console.log(reason);
+                  throw reason;
+                }
+              )
+            _chunks = [];
+          }
         }
         resolve(chunks);
       };
@@ -338,10 +360,11 @@ export const uploadZip = async ({
       },
       (err) => {
         console.log(err);
+        throw err;
       }
     );
   };
-  await isUploaded().then(()=> {
+  await isUploaded().then(() => {
     console.log("completed!");
   })
 };
