@@ -293,7 +293,7 @@ export const uploadZip = async ({
   let file = files[0];
   var chunks: Number[] = [];
   reader.readAsArrayBuffer(file);
-  console.log(file.name + " of size : " + file.size + " Bytes with number of chunks : " + (Math.ceil(file.size / 1800000) + 1) + "is getting uploaded! Do not refresh!");
+  console.log(file.name + " of size : " + file.size + " Bits with number of chunks : " + (Math.ceil(file.size / 1800000)) + " is getting uploaded! Do not refresh!");
   async function isUploaded(): Promise<any> {
     return new Promise((resolve, reject) => {
       reader.onloadend = async () => {
@@ -317,7 +317,7 @@ export const uploadZip = async ({
             batch_id: Number(batch1.batch_id),
           };
           _chunks.push(actor[methods.create_chunk](_req2));
-          if (_chunks.length == 25 || offset == (buffer.length) - 1) {
+          if (_chunks.length == 50 || x == buffer.length) {
             await Promise.all(_chunks)
               .then(
                 (res2: any) => {

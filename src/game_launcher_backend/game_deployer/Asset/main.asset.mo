@@ -23,50 +23,34 @@ import SHA256 "../../utils/SHA256";
 actor class Assets() = this {
     private let BATCH_EXPIRY_NANOS = 300_000_000_000;
     private let owner : Principal = Principal.fromText("lgjp4-nfvab-rl4wt-77he2-3hnxe-24pvi-7rykv-6yyr4-sqwdd-4j2fz-fae");
-    stable var stableAuthorized : [Principal] = [owner];
-    stable var stableAssets : [(AssetStorage.Key, State.StableAsset)] = [];
-    private stable var _etags : Trie.Trie<Text, Text> = Trie.empty();
+    private stable var authorized : [Principal] = [owner];
+    private stable var etags : Trie.Trie<Text, Text> = Trie.empty();
+    private stable var assets : Trie.Trie<AssetStorage.Key, State.Asset> = Trie.empty();
+    private stable var chunks : Trie.Trie<AssetStorage.ChunkId, State.Chunk> = Trie.empty();
+    private stable var batches : Trie.Trie<AssetStorage.BatchId, State.Batch> = Trie.empty();
 
-    system func preupgrade() {
-        stableAuthorized := state.authorized;
-        let size = Trie.size(state.assets);
-        let assets = Array.init<(AssetStorage.Key, State.StableAsset)>(
-            size,
-            (
-                "",
-                {
-                    content_type = "";
-                    encodings = [];
-                },
-            ),
-        );
-
-        var i = 0;
-        for ((k, a) in Trie.iter(state.assets)) {
-            assets[i] := (
-                k,
-                {
-                    content_type = a.content_type;
-                    encodings = Iter.toArray(Trie.iter(a.encodings));
-                },
-            );
-            i += 1;
+    var nextChunkID : AssetStorage.ChunkId = 1;
+    var nextBatchID : AssetStorage.BatchId = 1;
+    func chunkID() : AssetStorage.ChunkId {
+        var cID = nextChunkID;
+        nextChunkID += 1;
+        cID;
+    };
+    func batchID() : AssetStorage.BatchId {
+        var bID = nextBatchID;
+        nextBatchID += 1;
+        bID;
+    };
+    func isAuthorized(p : Principal) : Result.Result<(), Text> {
+        for (a in authorized.vals()) {
+            if (a == p) return #ok();
         };
-        stableAssets := Array.freeze(assets);
+        #err("caller is not authorized");
     };
-
-    system func postupgrade() {
-        stableAuthorized := [];
-        stableAssets := [];
-    };
-
-    var state = State.State(stableAuthorized, stableAssets);
-    state.authorized := [owner];
-
-    private func keyT(x : Text) : Trie.Key<Text> {
-        return { hash = Text.hash(x); key = x };
-    };
-    private func key(x : Nat32) : Trie.Key<Nat32> {
+    func keyT(x : Text) : Trie.Key<Text> {
+            return { hash = Text.hash(x); key = x };
+        };
+    func key(x : Nat32) : Trie.Key<Nat32> {
         return { hash = x; key = x };
     };
 
@@ -75,13 +59,16 @@ actor class Assets() = this {
     };
 
     public shared ({ caller }) func authorize(p : Principal) : async () {
-        switch (state.isAuthorized(caller)) {
+        var b = Buffer.Buffer<Principal>(0);
+        switch (isAuthorized(caller)) {
             case (#err(e)) throw Error.reject(e);
             case (#ok()) {
-                for (a in state.authorized.vals()) {
-                    if (a == p) return;
+                for (a in authorized.vals()) {
+                    if (a == p) {return}
+                    else b.add(a);
                 };
-                state.authorized := Array.append(state.authorized, [p]);
+                b.add(p);
+                authorized := Buffer.toArray(b);
             };
         };
     };
@@ -89,7 +76,7 @@ actor class Assets() = this {
     public shared ({ caller }) func clear(
         a : AssetStorage.ClearArguments,
     ) : async () {
-        switch (state.isAuthorized(caller)) {
+        switch (isAuthorized(caller)) {
             case (#err(e)) throw Error.reject(e);
             case (#ok()) {
                 _clear();
@@ -98,14 +85,18 @@ actor class Assets() = this {
     };
 
     private func _clear() {
-        state := State.State(state.authorized, []);
-        _etags := Trie.empty();
+        assets := Trie.empty();
+        chunks := Trie.empty();
+        batches := Trie.empty();
+        etags := Trie.empty();
+        nextChunkID := 1;
+        nextBatchID := 1;
     };
 
     public shared ({ caller }) func commit_batch(
         a : AssetStorage.CommitBatchArguments,
     ) : async () {
-        switch (state.isAuthorized(caller)) {
+        switch (isAuthorized(caller)) {
             case (#err(e)) throw Error.reject(e);
             case (#ok()) {
                 let batch_id = a.batch_id;
@@ -137,18 +128,12 @@ actor class Assets() = this {
     private func _create_asset(
         a : AssetStorage.CreateAssetArguments,
     ) : Result.Result<(), Text> {
-        switch (Trie.find(state.assets, keyT(a.key), Text.equal)) {
+        switch (Trie.find(assets, keyT(a.key), Text.equal)) {
             case (null) {
-                let e : Trie.Trie<Text, State.AssetEncoding> = Trie.empty();
-                state.assets := Trie.put(
-                    state.assets,
-                    keyT(a.key),
-                    Text.equal,
-                    {
-                        content_type = a.content_type;
-                        encodings = e;
-                    },
-                ).0;
+                assets := Trie.put(assets, keyT(a.key), Text.equal, {
+                    content_type = a.content_type;
+                    encodings = Trie.empty();
+                }).0;
             };
             case (?asset) {
                 if (asset.content_type != a.content_type) {
@@ -162,26 +147,21 @@ actor class Assets() = this {
     public shared ({ caller }) func create_batch() : async {
         batch_id : AssetStorage.BatchId;
     } {
-        switch (state.isAuthorized(caller)) {
+        switch (isAuthorized(caller)) {
             case (#err(e)) throw Error.reject(e);
             case (#ok()) {
-                let batch_id = state.batchID();
+                let batch_id = batchID();
                 let now = Time.now();
-                state.batches := Trie.put(
-                    state.batches,
-                    key(batch_id),
-                    Nat32.equal,
-                    {
+                batches := Trie.put(batches, key(batch_id), Nat32.equal, {
                         expires_at = now + BATCH_EXPIRY_NANOS;
-                    },
-                ).0;
-                for ((k, b) in Trie.iter(state.batches)) {
-                    if (now > b.expires_at) state.batches := Trie.remove(state.batches, key(k), Nat32.equal).0;
+                    }).0;
+                for ((k, b) in Trie.iter(batches)) {
+                    if (now > b.expires_at) batches := Trie.remove(batches, key(k), Nat32.equal).0;
                 };
-                for ((k, c) in Trie.iter(state.chunks)) {
-                    switch (Trie.find(state.chunks, key(c.batch_id), Nat32.equal)) {
+                for ((k, c) in Trie.iter(chunks)) {
+                    switch (Trie.find(chunks, key(c.batch_id), Nat32.equal)) {
                         case (null) {
-                            state.chunks := Trie.remove(state.chunks, key(k), Nat32.equal).0;
+                            chunks := Trie.remove(chunks, key(k), Nat32.equal).0;
                         };
                         case (?batch) {};
                     };
@@ -197,78 +177,23 @@ actor class Assets() = this {
     }) : async {
         chunk_id : AssetStorage.ChunkId;
     } {
-        switch (state.isAuthorized(caller)) {
+        switch (isAuthorized(caller)) {
             case (#err(e)) throw Error.reject(e);
             case (#ok()) {
-                switch (Trie.find(state.batches, key(batch_id), Nat32.equal)) {
+                switch (Trie.find(batches, key(batch_id), Nat32.equal)) {
                     case (null) throw Error.reject("batch not found: " # Nat32.toText(batch_id));
                     case (?batch) {
-                        state.batches := Trie.put(
-                            state.batches,
-                            key(batch_id),
-                            Nat32.equal,
-                            {
+                        batches := Trie.put(batches, key(batch_id), Nat32.equal, {
                                 expires_at = Time.now() + BATCH_EXPIRY_NANOS;
-                            },
-                        ).0;
-                        let chunk_id = state.chunkID();
-                        state.chunks := Trie.put(
-                            state.chunks,
-                            key(chunk_id),
-                            Nat32.equal,
-                            {
-                                batch_id;
-                                content;
-                            },
-                        ).0;
+                            }).0;
+                        let chunk_id = chunkID();
+                        chunks := Trie.put(chunks, key(chunk_id), Nat32.equal, {
+                            batch_id; content;
+                        }).0;
                         { chunk_id };
                     };
                 };
             };
-        };
-    };
-
-    public shared query func get({
-        key : AssetStorage.Key;
-        accept_encodings : [Text];
-    }) : async {
-        content : [Nat8];
-        sha256 : ?[Nat8];
-        content_type : Text;
-        content_encoding : Text;
-        total_length : Nat;
-    } {
-        switch (Trie.find(state.assets, keyT(key), Text.equal)) {
-            case (null) throw Error.reject("asset not found: " # key);
-            case (?asset) {
-                for (e in accept_encodings.vals()) {
-                    switch (Trie.find(asset.encodings, keyT(e), Text.equal)) {
-                        case (null) {};
-                        case (?encoding) {
-                            return {
-                                content = encoding.content_chunks[0];
-                                sha256 = ?encoding.sha256;
-                                content_type = asset.content_type;
-                                content_encoding = e;
-                                total_length = encoding.total_length;
-                            };
-                        };
-                    };
-                };
-            };
-        };
-        throw Error.reject("no matching encoding found: " # debug_show (accept_encodings));
-    };
-
-    public shared query ({ caller }) func get_chunk({
-        index : Nat32;
-        batch : AssetStorage.BatchId;
-    }) : async Result.Result<State.Chunk, Text> {
-        switch (Trie.find(state.chunks, key(index), Nat32.equal)) {
-            case (?c) {
-                return #ok(c);
-            };
-            case (null) return #err("chunk not found.");
         };
     };
 
@@ -289,7 +214,7 @@ actor class Assets() = this {
         encodings.add("gzip");     //for gzip compressed files
 
         // TODO: url decode + remove path.
-        switch (Trie.find(state.assets, keyT(r.url), Text.equal)) {
+        switch (Trie.find(assets, keyT(r.url), Text.equal)) {
             case (null) {};
             case (?asset) {
                 for (encoding_name in encodings.vals()) {
@@ -416,7 +341,7 @@ actor class Assets() = this {
     public shared query ({ caller }) func http_request_streaming_callback(
         st : AssetStorage.StreamingCallbackToken,
     ) : async AssetStorage.StreamingCallbackHttpResponse {
-        switch (Trie.find(state.assets, keyT(st.key), Text.equal)) {
+        switch (Trie.find(assets, keyT(st.key), Text.equal)) {
             case (null) throw Error.reject("key not found: " # st.key);
             case (?asset) {
                 switch (Trie.find(asset.encodings, keyT(st.content_encoding), Text.equal)) {
@@ -461,8 +386,8 @@ actor class Assets() = this {
     };
 
     public shared query ({ caller }) func list({}) : async [AssetStorage.AssetDetails] {
-        let details = Buffer.Buffer<AssetStorage.AssetDetails>(Trie.size(state.assets));
-        for ((key, a) in Trie.iter(state.assets)) {
+        let details = Buffer.Buffer<AssetStorage.AssetDetails>(Trie.size(assets));
+        for ((key, a) in Trie.iter(assets)) {
             let encodingsBuffer = Buffer.Buffer<AssetStorage.AssetEncodingDetails>(Trie.size(a.encodings));
             for ((n, e) in Trie.iter(a.encodings)) {
                 encodingsBuffer.add({
@@ -490,55 +415,16 @@ actor class Assets() = this {
         Buffer.toArray(details);
     };
 
-    public shared query ({ caller }) func retrieve(
-        p : AssetStorage.Path,
-    ) : async AssetStorage.Contents {
-        switch (Trie.find(state.assets, keyT(p), Text.equal)) {
-            case (null) throw Error.reject("asset not found: " # p);
-            case (?asset) {
-                switch (Trie.find(asset.encodings, keyT("identity"), Text.equal)) {
-                    case (null) throw Error.reject("no identity encoding");
-                    case (?encoding) {
-                        if (encoding.content_chunks.size() > 1) {
-                            throw Error.reject("asset too large. use get() or get_chunk() instead");
-                        };
-                        encoding.content_chunks[0];
-                    };
-                };
-            };
-        };
-    };
-
-    public query func getAsset(key : Text) : async (Result.Result<State.Asset, Text>){
-        switch (Trie.find(state.assets, keyT(key), Text.equal)) {
-            case (null)#err("asset not found: " # key);
-            case (?a) return #ok(a);
-        };
-    };
-    public query func getEncoding(n : Text) : async (Result.Result<State.AssetEncoding, Text>){
-        switch (Trie.find(state.assets, keyT(n), Text.equal)) {
-            case (null) {#err("asset not found")};
-            case (?asset) {
-                    switch (Trie.find(asset.encodings, keyT("identity"), Text.equal)) {
-                        case (null) {#err("encoding not found")};
-                        case (?encoding) {
-                            return #ok(encoding);
-                        };
-                    };
-            };
-        };
-    };
-
     private func _set_asset_content(
         a : AssetStorage.SetAssetContentArguments,
     ) : Result.Result<(), Text> {
         if (a.chunk_ids.size() == 0) return #err("must have at least one chunk");
-        switch (Trie.find(state.assets, keyT(a.key), Text.equal)) {
+        switch (Trie.find(assets, keyT(a.key), Text.equal)) {
             case (null) #err("asset not found: " # a.key);
             case (?asset) {
                 var content_chunks : Buffer.Buffer<[Nat8]> = Buffer.Buffer<[Nat8]>(0);
                 for (chunkID in a.chunk_ids.vals()) {
-                    switch (Trie.find(state.chunks, key(chunkID), Nat32.equal)) {
+                    switch (Trie.find(chunks, key(chunkID), Nat32.equal)) {
                         case (null) return #err("chunk not found: " # Nat32.toText(chunkID));
                         case (?chunk) {
                             content_chunks.add(chunk.content);
@@ -546,34 +432,24 @@ actor class Assets() = this {
                     };
                 };
                 for (chunkID in a.chunk_ids.vals()) {
-                    state.chunks := Trie.remove(state.chunks, key(chunkID), Nat32.equal).0;
+                    chunks := Trie.remove(chunks, key(chunkID), Nat32.equal).0;
                 };
                 var sha256 : [Nat8] = [];
                 var total_length = 0;
                 for (chunk in content_chunks.vals()) total_length += chunk.size();
 
                 var encodings = asset.encodings;
-                encodings := Trie.put(
-                    encodings,
-                    keyT(a.content_encoding),
-                    Text.equal,
-                    {
+                encodings := Trie.put(encodings, keyT(a.content_encoding), Text.equal, {
                         modified = Time.now();
-                        content_chunks = content_chunks.toArray();
+                        content_chunks = Buffer.toArray(content_chunks);
                         certified = false;
                         total_length;
                         sha256;
-                    },
-                ).0;
-                state.assets := Trie.put(
-                    state.assets,
-                    keyT(a.key),
-                    Text.equal,
-                    {
+                    }).0;
+                assets := Trie.put(assets, keyT(a.key), Text.equal, {
                         content_type = asset.content_type;
                         encodings;
-                    },
-                ).0;
+                    }).0;
                 #ok();
             };
         };
@@ -599,7 +475,7 @@ actor class Assets() = this {
                 });
                 switch (res1) {
                     case (#err _) {
-                        _etags := Trie.put(_etags, keyT(_key), Text.equal, etag).0;
+                        etags := Trie.put(etags, keyT(_key), Text.equal, etag).0;
                         return #err("check _set_asset_content");
                     };
                     case (#ok) {
@@ -615,7 +491,7 @@ actor class Assets() = this {
     };
 
     func get_etag(key : Text) : (Text){
-        switch(Trie.find(_etags, keyT(key), Text.equal)){
+        switch(Trie.find(etags, keyT(key), Text.equal)){
             case(?e){
                 return e;
             };

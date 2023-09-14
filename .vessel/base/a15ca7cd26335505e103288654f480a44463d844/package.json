@@ -1,0 +1,33 @@
+{
+  "name": "@dfinity/motoko-base",
+  "version": "1.0.0",
+  "description": "The Motoko base library",
+  "private": "true",
+  "scripts": {
+    "prettier:check": "npx -p prettier -p pretty-quick pretty-quick --check",
+    "prettier:format": "npx -p prettier -p pretty-quick pretty-quick",
+    "test": "node test/js && mops test --reporter files",
+    "validate": "node test/js/validate",
+    "postinstall": "mops install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dfinity/motoko-base.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dfinity/motoko-base/issues"
+  },
+  "homepage": "https://github.com/dfinity/motoko-base#readme",
+  "devDependencies": {
+    "fast-glob": "^3.2.12",
+    "husky": "^8.0.2",
+    "ic-mops": "^0.22.0",
+    "mo-dev": "^0.9.0",
+    "prettier": "^2.8.1",
+    "prettier-plugin-motoko": "^0.2.3",
+    "pretty-quick": "^3.1.3"
+  }
+}
