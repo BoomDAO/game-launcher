@@ -20,9 +20,9 @@ import State "State";
 import AssetStorage "AssetStorage";
 import SHA256 "../../utils/SHA256";
 
-actor class Assets() = this {
+actor class Assets(_owner : Principal) = this {
     private let BATCH_EXPIRY_NANOS = 300_000_000_000;
-    private let owner : Principal = Principal.fromText("lgjp4-nfvab-rl4wt-77he2-3hnxe-24pvi-7rykv-6yyr4-sqwdd-4j2fz-fae");
+    private let owner : Principal = _owner;
     private stable var authorized : [Principal] = [owner];
     private stable var etags : Trie.Trie<Text, Text> = Trie.empty();
     private stable var assets : Trie.Trie<AssetStorage.Key, State.Asset> = Trie.empty();
