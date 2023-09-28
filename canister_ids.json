@@ -1,20 +1,18 @@
 {
   "game-launcher": {
-    "ic": "awcae-maaaa-aaaam-abmyq-cai",
     "stag": "n7z64-2yaaa-aaaam-abnsa-cai"
   },
   "game_deployer": {
-    "ic": "6rvbl-uqaaa-aaaal-ab24a-cai",
     "stag": "ltwhn-5iaaa-aaaao-askdq-cai"
   },
   "nfts_deployer": {
-    "ic": "j474s-uqaaa-aaaap-abf6q-cai"
+    "stag": "fbkar-zaaaa-aaaal-qbzca-cai"
   },
   "token_deployer": {
-    "ic": "jv4xo-cyaaa-aaaap-abf7a-cai"
+    "stag": "pffwa-eiaaa-aaaam-abn5a-cai"
   },
   "world_deployer": {
-    "ic": "js5r2-paaaa-aaaap-abf7q-cai"
+    "stag": "na2jz-uqaaa-aaaal-qbtfq-cai"
   },
   "game": {
     "stag": "tniyr-3iaaa-aaaao-a2hra-cai"
