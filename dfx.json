@@ -24,6 +24,10 @@
         "world_deployer": {
             "main": "src/game_launcher_backend/world_deployer/deployer.mo",
             "type": "motoko"
+        },
+        "world": {
+            "main": "src/game_launcher_backend/world_deployer/world.mo",
+            "type": "motoko"
         }
     },
     "defaults": {

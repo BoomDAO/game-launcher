@@ -28,6 +28,7 @@ import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 import { gameDataScheme, platform_types, visibility_types } from "@/shared";
 import { GameFile } from "@/types";
+import SubHeading from "@/components/ui/SubHeading";
 
 const scheme = z
   .object({
@@ -125,7 +126,7 @@ const UpdateGame = () => {
 
   return (
     <>
-      <H1>{t("upload_games.update.title")}</H1>
+      <SubHeading>{t("upload_games.update.title")}</SubHeading>
 
       {isLoadingGame ? (
         <LoadingResult>{t("upload_games.update.loading")}</LoadingResult>

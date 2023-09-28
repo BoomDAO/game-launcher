@@ -14,6 +14,7 @@ import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 import { visibility_types } from "@/shared";
 import { GameVisibility } from "@/types";
+import SubHeading from "@/components/ui/SubHeading";
 
 const scheme = z.object({
     visibility: z.string().min(1, "Visibility is required."),
@@ -46,7 +47,7 @@ const Visibility = () => {
 
     return (
         <>
-            <H1>{t("upload_games.Game.tab_2.title")}</H1>
+            <SubHeading>{t("upload_games.Game.tab_2.title")}</SubHeading>
             <Form onSubmit={handleSubmit(onSubmit)}>
                 <div className="w-6/12">
                     <FormSelect

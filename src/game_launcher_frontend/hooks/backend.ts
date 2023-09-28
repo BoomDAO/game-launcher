@@ -57,7 +57,8 @@ export const useWorldDeployerClient = async () => {
       update_world_cover: "updateWorldCover",
       cycleBalance: "cycleBalance",
       add_controller: "addController",
-      remove_controller: "removeController"
+      remove_controller: "removeController",
+      upgrade_world: "upgradeWorldToNewWasm"
     }
   }
 };
