@@ -292,10 +292,10 @@
   dependencies:
     idb "^7.0.2"
 
-"@dfinity/candid@^0.15.4":
-  version "0.15.4"
-  resolved "https://registry.npmjs.org/@dfinity/candid/-/candid-0.15.4.tgz"
-  integrity sha512-ImoZ18i95DDstn+EXm/Y1ms7RqF1KVS7+KqZLNvpHFTlcOgfAQc5Bq8W6l1nfkOqeh7wcehDYdjFJwLxBoeTlw==
+"@dfinity/candid@^0.15.4", "@dfinity/candid@^0.15.7":
+  version "0.15.7"
+  resolved "https://registry.npmjs.org/@dfinity/candid/-/candid-0.15.7.tgz"
+  integrity sha512-lTcjK/xrSyT7wvUQ2pApG+yklQAwxaofQ04D1IWv0/8gKbY0eUbh8G2w6+CypJ15Hb1CH24ijUj8nWdeX/z3jg==
   dependencies:
     ts-node "^10.8.2"
 

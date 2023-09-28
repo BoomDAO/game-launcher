@@ -3,11 +3,15 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
+import { getAuthClient } from "@/utils";
+import { IDL } from "@dfinity/candid";
 
 import {
   World,
   CreateWorldData,
-  CreateWorldSubmit
+  CreateWorldSubmit,
+  UpgradeWorldData,
+  WorldWasm
 } from "@/types";
 import {
   UseQueryResult,
@@ -19,6 +23,7 @@ import { useAuthContext } from "@/context/authContext";
 import { useManagementClient, useWorldClient, useWorldDeployerClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import {
+  b64toArrays,
   formatCycleBalance,
   getAgent,
 } from "@/utils";
@@ -192,6 +197,46 @@ export const useCreateWorldUpload = () => {
   });
 };
 
+export const useUpgradeWorld = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      wasm,
+      canisterId
+    }: {
+      wasm: string;
+      canisterId?: string;  
+    }) => {
+      try {
+        const { actor, methods } = await useWorldDeployerClient();
+        const authClient = await getAuthClient();
+        const identity = authClient?.getIdentity();
+        // const owner_principal = Principal.fromText(identity.getPrincipal().toString());
+        const owner_principal = Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe");
+        const owner = IDL.encode([IDL.Principal], [owner_principal]);
+        const arrayBufferOfWasm = b64toArrays(wasm);
+        (await actor[methods.upgrade_world](
+          canisterId,
+          owner,
+          arrayBufferOfWasm[0]
+        ));
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("world_deployer.manage_worlds.tabs.item_4.upgrade_error"));
+    },
+    onSuccess: () => {
+      toast.success(t("world_deployer.manage_worlds.tabs.item_4.upgrade_success"));
+    },
+  });
+};
+
 export const useImportUsersData = () => {
   const { t } = useTranslation();
 
@@ -356,7 +401,7 @@ export const useAddAdmin = () => {
       canisterId?: string;
     }) => {
       try {
-        const { actor, methods } = await useWorldClient((canisterId != undefined)? canisterId : "");
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
 
         return await actor[methods.add_admin](principal);
       } catch (error) {
@@ -387,7 +432,7 @@ export const useRemoveAdmin = () => {
       canisterId?: string;
     }) => {
       try {
-        const { actor, methods } = await useWorldClient((canisterId != undefined)? canisterId : "");
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
 
         return await actor[methods.remove_admin](principal);
       } catch (error) {

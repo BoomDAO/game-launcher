@@ -50,6 +50,9 @@ export interface CreateCollection {
 export interface CreateWorldData
   extends Pick<WorldData, "name" | "cover"> { }
 
+export interface UpgradeWorldData 
+  extends Pick<WorldWasm, "file"> {}
+
 
 export interface CreateTokenData
   extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "decimals" | "fee" | "amount"> { }
@@ -197,6 +200,10 @@ export interface World {
 export interface WorldData {
   name: string;
   cover: string;
+}
+
+export interface WorldWasm {
+  file : number []
 }
 
 

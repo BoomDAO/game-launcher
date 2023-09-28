@@ -19,9 +19,10 @@ import ActionTypes "../types/action.types";
 import EntityTypes "../types/entity.types";
 
 module{
-    public type EntityConfigs = [EntityTypes.EntityConfig]; 
-    public type ActionConfigs = [ActionTypes.ActionConfig]; 
+
+    public type StableConfigs = [EntityTypes.StableConfig]; 
+    public type Actions = [ActionTypes.Action]; 
     
-    public let entityConfigs : EntityConfigs = [];
-    public let actionConfigs : ActionConfigs = [];
+    public let configs : StableConfigs = [];
+    public let action : Actions = [];
 }

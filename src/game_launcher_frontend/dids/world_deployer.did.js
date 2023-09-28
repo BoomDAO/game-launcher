@@ -43,6 +43,11 @@ export const idlFactory = ({ IDL }) => {
     'removeAdmin' : IDL.Func([IDL.Text], [], []),
     'removeController' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateWorldCover' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
+    'upgradeWorldToNewWasm' : IDL.Func(
+        [IDL.Text, IDL.Vec(IDL.Nat8), IDL.Vec(IDL.Nat8)],
+        [],
+        [],
+      ),
   });
 };
 export const init = ({ IDL }) => { return []; };
