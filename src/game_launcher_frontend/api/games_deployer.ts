@@ -301,7 +301,6 @@ export const useGetGameCycleBalance = (
       });
 
       const balance = Number(await actor.cycleBalance());
-      console.log(balance);
       return `${formatCycleBalance(balance)}T`;
     },
   });

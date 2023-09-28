@@ -1,5 +1,5 @@
 import { useAssetClient, useGameClient } from "@/hooks";
-import { Base64, CreateGameFiles, GameFile, CreateChunkType } from "@/types";
+import { Base64, CreateGameFiles, GameFile, CreateChunkType, GameDistributedFile } from "@/types";
 
 export const b64toArrays = (base64: Base64) => {
   let encoded = base64.toString().replace(/^data:(.*,)?/, "");
@@ -46,17 +46,17 @@ export const b64toType = (base64: Base64) => {
   return type;
 };
 
-export const arrayTob64 = async (data : []) => {
+export const arrayTob64 = async (data: []) => {
   var buffer = new Uint8Array(data)
   // Use a FileReader to generate a base64 data URI
   var res = "";
   await new Promise((r) => {
-      const reader = new FileReader()
-      reader.onload = () => r(reader.result)
-      reader.readAsDataURL(new Blob([buffer]))
-  }).then (
+    const reader = new FileReader()
+    reader.onload = () => r(reader.result)
+    reader.readAsDataURL(new Blob([buffer]))
+  }).then(
     function (r) {
-      res = r;
+      return r;
     }
   )
   return res;
@@ -131,7 +131,7 @@ export const gzip_compression_header = (name: string) => {
 };
 
 export const getGameFiles = async (file: File) => {
-  return new Promise<GameFile>((resolve, reject) => {
+  return new Promise<GameDistributedFile>((resolve, reject) => {
     const reader = new FileReader();
     // Convert the file to base64 text
     reader.readAsDataURL(file);
@@ -166,11 +166,11 @@ export const uploadGameFiles = async (
   await actor[methods.clear](r);
   console.log("Cleared State!");
   for (let i = 0; i < files.length; i++) {
-    console.log(files[i]);
+    let file = await getGameFiles(files[i]);
+    console.log(file);
     const batch = (await actor[methods.create_batch]()) as {
       batch_id: number;
     };
-    const file = files[i];
     let chunks = [];
     let chunkIds: Number[] = [];
     for (let i = 0; i < file.fileArr.length; i++) {
@@ -215,7 +215,6 @@ export const uploadGameFiles = async (
         "identity",
         etag.toString(),
       );
-      // console.log((res.err == undefined)? "1" : "2");
     } else if (_gch != "") {
       let res = await actor[methods.commit_asset_upload](
         batch.batch_id,
@@ -225,7 +224,6 @@ export const uploadGameFiles = async (
         "gzip",
         etag.toString(),
       );
-      // console.log((res.err == undefined)? "1" : "2");
     } else {
       let res = await actor[methods.commit_asset_upload](
         batch.batch_id,
@@ -235,12 +233,8 @@ export const uploadGameFiles = async (
         "br",
         etag.toString(),
       );
-      // console.log((res.err == undefined)? "1" : "2");
     }
   }
-  // await Promise.all(commits).then((values) => {
-  //   console.log(values);
-  // });
 };
 
 export const uploadZip = async ({
@@ -265,10 +259,9 @@ export const uploadZip = async ({
     '" alt="logo" style="width:164px;"/></a></div><div style="border:solid 2px rgb(255, 255, 255);border-radius: 40px; width: 40%;text-align: center; margin-left: 30%;padding: 20px 20px 30px 20px; background-color: white;"><h1 style="width: 60%; margin-left: 20%;">' + name +
     '</h1><img src="' + cover +
     '" alt="GameLogo" style="width: 60%; height: 20%; background-repeat: no-repeat;background-size: cover; margin-bottom:20px;" /><p style="width:70%; padding-left: 15%;"><b>' + description +
-    '</b></p><p><b>Platform : </b> Android</p><div style="display: flex; justify-content: center; align-items: center;"><button style="display: flex; background-image:linear-gradient(90deg, #FEA002 7.32%, #E73BCF 100%); border: none; color: white; border-radius: 40px;"><a href="' + download_url +
+    '</b></p><p><b>Platform : </b> Android/Windows</p><div style="display: flex; justify-content: center; align-items: center;"><button style="display: flex; background-image:linear-gradient(90deg, #FEA002 7.32%, #E73BCF 100%); border: none; color: white; border-radius: 40px;"><a href="' + download_url +
     '" style="color: white; padding: 8px 0px 8px 50px; font-size: 18px;">DOWNLOAD GAME ON-CHAIN</a><svg style="padding: 10px 50px 0 15px;" width="16" height="16" viewBox="0 0 18 18" fill="none"xmlns="http://www.w3.org/2000/svg"><path d="M9.0001 1L9.00006 17M9.00006 17L17 9.04164M9.00006 17L1 8.95848" stroke="#F6F6F6"stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button></div></div></div></body></html>';
 
-  // const blob = new Blob([content], { type: "text/html" });
 
   const enc = new TextEncoder();
   const arrayBuffer = enc.encode(content);
@@ -281,6 +274,7 @@ export const uploadZip = async ({
   };
 
   const chunk = (await actor[methods.create_chunk](_r)) as { chunk_id: number };
+  console.log("chunk_id : " + chunk.chunk_id + " uploaded");
   _chunks.push(Number(chunk.chunk_id));
 
   await actor[methods.commit_asset_upload](
@@ -293,29 +287,84 @@ export const uploadZip = async ({
   );
 
   const batch1 = (await actor[methods.create_batch]()) as { batch_id: number };
-  const file = files[0];
-  const chunks = [];
 
-  for (let i = 0; i < file.fileArr.length; i++) {
-    const _req2 = {
-      content: file.fileArr[i],
-      batch_id: Number(batch1.batch_id),
-    };
-
-    const res2 = (await actor[methods.create_chunk](_req2)) as {
-      chunk_id: number;
-    };
-    chunks.push(Number(res2.chunk_id));
-  }
-
-  const _name = "/download";
-
-  await actor[methods.commit_asset_upload](
-    batch1.batch_id,
-    String(_name),
-    file.fileType,
-    chunks,
-    "identity",
-    "",
-  );
+  //from here
+  const reader: FileReader = new FileReader();
+  let file = files[0];
+  var chunks: Number[] = [];
+  reader.readAsArrayBuffer(file);
+  console.log(file.name + " of size : " + file.size + " Bits with number of chunks : " + (Math.ceil(file.size / 1800000)) + " is getting uploaded! Do not refresh!");
+  async function isUploaded(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      reader.onloadend = async () => {
+        if (reader.result === null) {
+          throw new Error("file empty...");
+        }
+        let buffer = new Uint8Array(<ArrayBuffer>reader.result);
+        const sliceSize = 1800000;
+        let _chunks = [];
+        for (let offset = 0; offset < buffer.length; offset += sliceSize) {
+          const byteArray = [];
+          let x = offset + sliceSize;
+          if (buffer.length < x) {
+            x = buffer.length;
+          }
+          for (let i = offset; i < x; i++) {
+            byteArray.push(buffer[i]);
+          }
+          const _req2 = {
+            content: byteArray,
+            batch_id: Number(batch1.batch_id),
+          };
+          _chunks.push(actor[methods.create_chunk](_req2));
+          if (_chunks.length == 50 || x == buffer.length) {
+            await Promise.all(_chunks)
+              .then(
+                (res2: any) => {
+                  for (let k = 0; k < res2.length; k++) {
+                    chunks.push(Number(res2[k].chunk_id));
+                  };
+                  return res2;
+                },
+                (reason) => {
+                  console.log(reason);
+                  throw reason;
+                }
+              )
+              .then(
+                response => {
+                  console.log(response);
+                },
+                (reason) => {
+                  console.log(reason);
+                  throw reason;
+                }
+              )
+            _chunks = [];
+          }
+        }
+        resolve(chunks);
+      };
+    }).then(
+      async (value) => {
+        const _name = "/download";
+        await actor[methods.commit_asset_upload](
+          batch1.batch_id,
+          String(_name),
+          "application/zip",
+          value,
+          "identity",
+          "",
+        );
+        console.log("upload done");
+      },
+      (err) => {
+        console.log(err);
+        throw err;
+      }
+    );
+  };
+  await isUploaded().then(() => {
+    console.log("completed!");
+  })
 };
