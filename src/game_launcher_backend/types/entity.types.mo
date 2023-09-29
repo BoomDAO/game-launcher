@@ -48,7 +48,7 @@ module {
     };
 
     public type Config = {
-        cid : TGlobal.groupId;
+        cid : TGlobal.configId;
         fields : Map.Map<Text, Text>;
     };
 

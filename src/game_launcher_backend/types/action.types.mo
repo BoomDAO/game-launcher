@@ -55,47 +55,52 @@ module {
         gid : TGlobal.groupId;
         eid : TGlobal.entityId;
     };
+    public type RenewTimestamp = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Nat;
+    };
+    public type SetString = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Text;
+    };
+    public type SetNumber = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Float;
+    };
+    public type DecrementNumber = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Float;
+    };
+    public type IncrementNumber = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        field : Text;
+        value : Float;
+    };
     public type ActionOutcomeOption = {
         weight : Float;
         option : {
             #mintToken : MintToken;
             #mintNft : MintNft;
             #deleteEntity : DeleteEntity;
-            #renewTimestamp : {
-                wid : ?TGlobal.worldId;
-                gid : TGlobal.groupId;
-                eid : TGlobal.entityId;
-                field : Text;
-                value : Nat;
-            };
-            #setString : {
-                wid : ?TGlobal.worldId;
-                gid : TGlobal.groupId;
-                eid : TGlobal.entityId;
-                field : Text;
-                value : Text;
-            };
-            #setNumber : {
-                wid : ?TGlobal.worldId;
-                gid : TGlobal.groupId;
-                eid : TGlobal.entityId;
-                field : Text;
-                value : Float;
-            };
-            #decrementNumber : {
-                wid : ?TGlobal.worldId;
-                gid : TGlobal.groupId;
-                eid : TGlobal.entityId;
-                field : Text;
-                value : Float;
-            };
-            #incrementNumber : {
-                wid : ?TGlobal.worldId;
-                gid : TGlobal.groupId;
-                eid : TGlobal.entityId;
-                field : Text;
-                value : Float;
-            };
+            #renewTimestamp : RenewTimestamp;
+            #setString : SetString;
+            #setNumber : SetNumber;
+            #decrementNumber : DecrementNumber;
+            #incrementNumber : IncrementNumber;
         };
     };
     public type ActionOutcome = {

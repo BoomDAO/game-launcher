@@ -37,8 +37,6 @@ actor Deployer {
     private stable var _owners : Trie.Trie<Text, Text> = Trie.empty(); //mapping  world_canister_id -> owner principal id
     private stable var _admins : [Text] = [];
 
-    private stable var world_wasm_module : Text = "";
-
     //Types
     //
     // type Asset = Asset.Assets;
