@@ -11,6 +11,7 @@ import ImportPermissions from "./ImportPermissions";
 import ManageController from "./ManageController";
 import ManageAdmin from "./ManageAdmin";
 import UpgradeWorld from "./UpgradeWorld";
+import ImportActions from "./ImportActions";
 
 const ManageWorlds = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -41,6 +42,8 @@ const ManageWorlds = () => {
           < ImportUser />
           <Divider/>
           < ImportConfig />
+          <Divider/>
+          <ImportActions />
           <Divider/>
           <ImportPermissions/>
         </div>

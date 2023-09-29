@@ -8,7 +8,7 @@ import FormTextInput from "@/components/form/FormTextInput";
 import Button from "@/components/ui/Button";
 import Space from "@/components/ui/Space";
 import SubHeading from "@/components/ui/SubHeading";
-import { useImportConfigsData, useImportUsersData } from "@/api/world_deployer";
+import { useImportActionsData } from "@/api/world_deployer";
 
 const scheme = z.object({
   ofCanisterId: z.string().min(1, "Canister Id is required."),
@@ -16,7 +16,7 @@ const scheme = z.object({
 
 type Data = z.infer<typeof scheme>;
 
-const ImportConfig = () => {
+const ImportActions = () => {
   const { canisterId } = useParams();
 
   const { t } = useTranslation();
@@ -32,7 +32,7 @@ const ImportConfig = () => {
     resolver: zodResolver(scheme),
   });
 
-  const { mutate: addOfCanisterId, isLoading: isLoadingOfCanisterId } = useImportConfigsData();
+  const { mutate: addOfCanisterId, isLoading: isLoadingOfCanisterId } = useImportActionsData();
 
   const onImportConfigs = (values: Data) =>
     addOfCanisterId(
@@ -44,7 +44,7 @@ const ImportConfig = () => {
 
   return (
     <div>
-      <SubHeading>{t("world_deployer.manage_worlds.tabs.item_2.import_config.title")}</SubHeading>
+      <SubHeading>{t("world_deployer.manage_worlds.tabs.item_2.import_action.title")}</SubHeading>
       <Space/>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -53,15 +53,15 @@ const ImportConfig = () => {
             control={addOfCanisterIdControl}
             name="ofCanisterId"
             placeholder={t(
-              "world_deployer.manage_worlds.tabs.item_2.import_config.input_placeholder",
+              "world_deployer.manage_worlds.tabs.item_2.import_action.input_placeholder",
             )}
             hint={{
-              body: t("world_deployer.manage_worlds.tabs.item_2.import_config.title"),
+              body: t("world_deployer.manage_worlds.tabs.item_2.import_action.title"),
             }}
           />
 
           <Button size="big" rightArrow isLoading={isLoadingOfCanisterId}>
-            {t("world_deployer.manage_worlds.tabs.item_2.import_config.button_text")}
+            {t("world_deployer.manage_worlds.tabs.item_2.import_action.button_text")}
           </Button>
         </Form>
       </div>
@@ -69,4 +69,4 @@ const ImportConfig = () => {
   );
 };
 
-export default ImportConfig;
+export default ImportActions;

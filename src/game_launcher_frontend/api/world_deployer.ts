@@ -298,6 +298,37 @@ export const useImportConfigsData = () => {
   });
 };
 
+export const useImportActionsData = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      ofCanisterId,
+      canisterId
+    }: {
+      ofCanisterId: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
+
+        return await actor[methods.importAllActionsOfWorld](ofCanisterId);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("world_deployer.manage_worlds.tabs.item_2.import_config.error"));
+    },
+    onSuccess: () => {
+      toast.success(t("world_deployer.manage_worlds.tabs.item_2.import_config.success"));
+    },
+  });
+};
+
 export const useImportPermissionsData = () => {
   const { t } = useTranslation();
 

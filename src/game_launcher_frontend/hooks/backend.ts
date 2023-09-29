@@ -89,6 +89,7 @@ export const useWorldClient = async (canisterId : string) => {
       canisterId: canisterId,
     }),
     methods: {
+      importAllActionsOfWorld: "importAllActionsOfWorld",
       importAllConfigsOfWorld: "importAllConfigsOfWorld",
       importAllPermissionsOfWorld: "importAllPermissionsOfWorld",
       importAllUsersDataOfWorld: "importAllUsersDataOfWorld",
