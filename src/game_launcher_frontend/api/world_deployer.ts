@@ -212,8 +212,7 @@ export const useUpgradeWorld = () => {
         const { actor, methods } = await useWorldDeployerClient();
         const authClient = await getAuthClient();
         const identity = authClient?.getIdentity();
-        // const owner_principal = Principal.fromText(identity.getPrincipal().toString());
-        const owner_principal = Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe");
+        const owner_principal = Principal.fromText(identity.getPrincipal().toString());
         const owner = IDL.encode([IDL.Principal], [owner_principal]);
         const arrayBufferOfWasm = b64toArrays(wasm);
         (await actor[methods.upgrade_world](
