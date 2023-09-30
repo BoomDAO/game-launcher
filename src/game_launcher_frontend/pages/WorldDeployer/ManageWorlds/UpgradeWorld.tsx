@@ -52,7 +52,7 @@ const UpgradeWorld = () => {
 
     return (
         <>  
-            <SubHeading>What is upgrading World and How to?</SubHeading>
+            <SubHeading>What is upgrading a World?</SubHeading>
             <br></br>
             Upgrading World means upgrade code of your World canister to get all latest features, changes and bug fixes.
             You can download latest release of World wasm file directly from our <a className="underline text-yellow-300" href="https://github.com/BoomDAO/game-launcher/tree/main/wasm_modules">Game Launcher github repo</a>. Use the wasm file below to upgrade your World canister.
