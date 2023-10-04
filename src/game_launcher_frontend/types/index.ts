@@ -4,7 +4,9 @@ export type Platform = "Browser" | "Android" | "Windows";
 
 export type Base64 = string | ArrayBuffer;
 
-export interface GameFile {
+export type GameFile = File
+
+export interface GameDistributedFile {
   fileArr: number[][];
   fileName: string;
   fileType: string;
@@ -14,7 +16,7 @@ export interface CreateChunkType {
   chunk_id: number;
 }
 
-type GameFiles = GameFile[];
+type GameFiles = File[];
 
 export interface Game {
   url: string;
@@ -47,6 +49,9 @@ export interface CreateCollection {
 
 export interface CreateWorldData
   extends Pick<WorldData, "name" | "cover"> { }
+
+export interface UpgradeWorldData 
+  extends Pick<WorldWasm, "file"> {}
 
 
 export interface CreateTokenData
@@ -195,6 +200,10 @@ export interface World {
 export interface WorldData {
   name: string;
   cover: string;
+}
+
+export interface WorldWasm {
+  file : number []
 }
 
 

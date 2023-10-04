@@ -411,7 +411,16 @@ actor Deployer {
         };
     };
 
-    //upgrade token details
+    public shared ({caller}) func upgradeWorldToNewWasm(canister_id : Text, owner : Blob, _wasm_module : [Nat8]) : async () {
+        assert ((await _isOwner(caller, canister_id)) == true);
+        await IC.install_code({
+            arg = owner;
+            wasm_module = Blob.fromArray(_wasm_module);
+            mode = #reinstall;
+            canister_id = Principal.fromText(canister_id);
+        });
+    };
+
     public shared (msg) func updateWorldCover(canister_id : Text, base64 : Text) : async (Result.Result<(), Text>) {
         assert ((await _isOwner(msg.caller, canister_id)) == true);
         switch (Trie.find(_owners, keyT(canister_id), Text.equal)) {

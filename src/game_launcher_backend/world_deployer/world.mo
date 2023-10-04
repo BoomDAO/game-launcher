@@ -27,13 +27,12 @@ import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
+import Map "../utils/Map";
 
-import JSON "../utils/Json";
 import Parser "../utils/Parser";
 import ENV "../utils/Env";
 import Utils "../utils/Utils";
 import Leaderboard "../modules/Leaderboard";
-import Json "../utils/Json";
 import RandomUtil "../utils/RandomUtil";
 import EXTCORE "../utils/Core";
 import EXT "../types/ext.types";
@@ -48,7 +47,6 @@ import TStaking "../types/staking.types";
 import Config "../modules/Configs";
 
 actor class WorldTemplate(owner : Principal) = this {
-
     private stable var tokensDecimals : Trie.Trie<Text, Nat8> = Trie.empty();
     private stable var tokensFees : Trie.Trie<Text, Nat> = Trie.empty();
     private stable var totalNftCount : Trie.Trie<Text, Nat32> = Trie.empty();
@@ -57,9 +55,9 @@ actor class WorldTemplate(owner : Principal) = this {
 
     //Interfaces
     type UserNode = actor {
-        processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<[TEntity.Entity], Text>);
-        getAllUserWorldEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TEntity.Entity], Text>);
-        getAllUserWorldActions : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.Action], Text>);
+        processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<[TEntity.StableEntity], Text>);
+        getAllUserEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TEntity.StableEntity], Text>);
+        getAllUserActionStates : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.ActionState], Text>);
     };
     type WorldHub = actor {
         createNewUser : shared (Principal) -> async (Result.Result<Text, Text>);
@@ -110,23 +108,36 @@ actor class WorldTemplate(owner : Principal) = this {
     private stable var _admins : [Text] = [Principal.toText(owner)];
 
     //Configs
-    private var entityConfigs = Buffer.Buffer<TEntity.EntityConfig>(0);
-    private stable var tempUpdateEntityConfig : Config.EntityConfigs = [];
+    private var configs = Buffer.Buffer<TEntity.Config>(0);
+    private stable var tempUpdateConfig : Config.StableConfigs = [];
 
-    private var actionConfigs = Buffer.Buffer<TAction.ActionConfig>(0);
-    private stable var tempUpdateActionConfig : Config.ActionConfigs = [];
+    private var action = Buffer.Buffer<TAction.Action>(0);
+    private stable var tempUpdateAction : Config.Actions = [];
 
     system func preupgrade() {
-        tempUpdateEntityConfig := Buffer.toArray(entityConfigs);
+        var b = Buffer.Buffer<TEntity.StableConfig>(0);
+        for(i in Buffer.toArray(configs).vals()) {
+            let fields_array : [(Text, Text)] = Map.toArray(i.fields);
+            b.add({
+                cid = i.cid;
+                fields = fields_array;
+            });
+        };
+        tempUpdateConfig := Buffer.toArray(b);
 
-        tempUpdateActionConfig := Buffer.toArray(actionConfigs);
+        tempUpdateAction := Buffer.toArray(action);
     };
     system func postupgrade() {
-        entityConfigs := Buffer.fromArray(tempUpdateEntityConfig);
-        tempUpdateEntityConfig := [];
-
-        actionConfigs := Buffer.fromArray(tempUpdateActionConfig);
-        tempUpdateActionConfig := [];
+        let { thash } = Map;
+        for(i in tempUpdateConfig.vals()) {
+            configs.add({
+                cid = i.cid;
+                fields = Map.fromIter(i.fields.vals(), thash);
+            });
+        };
+        tempUpdateConfig := [];
+        action := Buffer.fromArray(tempUpdateAction);
+        tempUpdateAction := [];
     };
 
     //Internal Functions
@@ -227,53 +238,65 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     //GET CONFIG
-    private func _getSpecificEntityConfig(eid : Text, gid : Text) : (?TEntity.EntityConfig) {
-        for (config in entityConfigs.vals()) {
-            if (config.eid == eid) {
-                if (config.gid == gid) {
-                    return ?config;
-                };
+    private func getSpecificConfig_(cid : Text) : (?TEntity.Config) {
+        for (config in configs.vals()) {
+            if (config.cid == cid) {
+                return ?config;
             };
         };
         return null;
     };
-    private func _getSpecificActionConfig(aid : Text) : (?TAction.ActionConfig) {
-        for (config in actionConfigs.vals()) {
+    private func getSpecificAction_(aid : Text) : (?TAction.Action) {
+        for (config in action.vals()) {
             if (config.aid == aid) return ?config;
         };
         return null;
     };
+    
+    public query func getAllConfigs() : async ([TEntity.StableConfig]) {
+        var b = Buffer.Buffer<TEntity.StableConfig>(0);
+        for(i in Buffer.toArray(configs).vals()) {
+            let fields_array : [(Text, Text)] = Map.toArray(i.fields);
+            b.add({
+                cid = i.cid;
+                fields = fields_array;
+            });
+        };
+        return Buffer.toArray(b);
+    };
+    public query func getAllActions() : async ([TAction.Action]) {
+        return Buffer.toArray(action);
+    };
 
-    public query func getEntityConfigs() : async ([TEntity.EntityConfig]) {
-        return Buffer.toArray(entityConfigs);
+    public func exportConfigs() : async ([TEntity.StableConfig]) {
+        var b = Buffer.Buffer<TEntity.StableConfig>(0);
+        for(i in Buffer.toArray(configs).vals()) {
+            let fields_array : [(Text, Text)] = Map.toArray(i.fields);
+            b.add({
+                cid = i.cid;
+                fields = fields_array;
+            });
+        };
+        return Buffer.toArray(b);
     };
-    public query func getActionConfigs() : async ([TAction.ActionConfig]) {
-        return Buffer.toArray(actionConfigs);
-    };
-
-    public func importEntityConfigs() : async ([TEntity.EntityConfig]) {
-        return Buffer.toArray(entityConfigs);
-    };
-    public func importActionConfigs() : async ([TAction.ActionConfig]) {
-        return Buffer.toArray(actionConfigs);
+    public func exportActions() : async ([TAction.Action]) {
+        return Buffer.toArray(action);
     };
 
     //CHECK CONFIG
-    private func configEntityExist_(eid : Text, gid : Text) : (Bool, Int) {
+    private func configExist_(cid : Text) : (Bool, Int) {
         var index = 0;
-        for (configElement in entityConfigs.vals()) {
-            if (configElement.eid == eid) {
-                if (configElement.gid == gid) {
-                    return (true, index);
-                };
+        for (configElement in configs.vals()) {
+            if (configElement.cid == cid) {
+                return (true, index);
             };
             index += 1;
         };
         return (false, -1);
     };
-    private func configActionExist_(aid : Text) : (Bool, Int) {
+    private func actionExist_(aid : Text) : (Bool, Int) {
         var index = 0;
-        for (configElement in actionConfigs.vals()) {
+        for (configElement in action.vals()) {
             if (configElement.aid == aid) {
                 return (true, index);
             };
@@ -282,60 +305,68 @@ actor class WorldTemplate(owner : Principal) = this {
         return (false, -1);
     };
     //CREATE CONFIG
-    public shared ({ caller }) func createEntityConfig(config : TEntity.EntityConfig) : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func createConfig(config : TEntity.StableConfig) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
-        let configExist = configEntityExist_(config.eid, config.gid);
+        let configExist = configExist_(config.cid);
         if (configExist.0 == false) {
-            entityConfigs.add(config);
+            let {thash} = Map;
+            configs.add({
+                cid = config.cid;
+                fields = Map.fromIter(config.fields.vals(), thash);
+            });
             return #ok("all good :)");
         };
         return #err("there is an entity already using that id, you can try updateConfig");
     };
-    public shared ({ caller }) func createActionConfig(config : TAction.ActionConfig) : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func createAction(config : TAction.Action) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
-        let configExist = configActionExist_(config.aid);
+        let configExist = actionExist_(config.aid);
         if (configExist.0 == false) {
-            actionConfigs.add(config);
+            action.add(config);
             return #ok("all good :)");
         };
         return #err("there is an action already using that id, you can try updateConfig");
     };
     //UPDATE CONFIG
-    public shared ({ caller }) func updateEntityConfig(config : TEntity.EntityConfig) : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func updateConfig(config : TEntity.StableConfig) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
-        let configExist = configEntityExist_(config.eid, config.gid);
+        let configExist = configExist_(config.cid);
         if (configExist.0) {
             var index = Utils.intToNat(configExist.1);
-            entityConfigs.put(index, config);
+            let {thash} = Map;
+            configs.put(index, {
+                cid = config.cid;
+                fields = Map.fromIter(config.fields.vals(), thash);
+            });
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
     };
-    public shared ({ caller }) func updateActionConfig(config : TAction.ActionConfig) : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func updateAction(config : TAction.Action) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
-        let configExist = configActionExist_(config.aid);
+        let configExist = actionExist_(config.aid);
         if (configExist.0) {
             var index = Utils.intToNat(configExist.1);
-            actionConfigs.put(index, config);
+            action.put(index, config);
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
     };
     //DELETE CONFIG
-    public shared ({ caller }) func deleteEntityConfig(eid : Text, gid : Text) : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func deleteConfig(cid : Text) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
-        let configExist = configEntityExist_(eid, gid);
+        let configExist = configExist_(cid);
         if (configExist.0) {
-            ignore entityConfigs.remove(Utils.intToNat(configExist.1));
+            ignore configs.remove(Utils.intToNat(configExist.1));
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
     };
-    public shared ({ caller }) func deleteActionConfig(aid : Text) : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func deleteAction(aid : Text) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
-        let configExist = configActionExist_(aid);
+        let configExist = actionExist_(aid);
         if (configExist.0) {
-            ignore actionConfigs.remove(Utils.intToNat(configExist.1));
+            ignore action.remove(Utils.intToNat(configExist.1));
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
@@ -343,18 +374,30 @@ actor class WorldTemplate(owner : Principal) = this {
     //RESET CONFIG
     public shared ({ caller }) func resetConfig() : async (Result.Result<(), ()>) {
         assert (isAdmin_(caller));
-        entityConfigs := Buffer.fromArray(Config.entityConfigs);
-        actionConfigs := Buffer.fromArray(Config.actionConfigs);
+        let { thash } = Map;
+        for(i in Config.configs.vals()) {
+            configs.add({
+                cid = i.cid;
+                fields = Map.fromIter(i.fields.vals(), thash);
+            });
+        };
+        action := Buffer.fromArray(Config.action);
+        return #ok();
+    };
+    
+    public shared ({ caller }) func resetActions() : async (Result.Result<(), ()>) {
+        assert (isAdmin_(caller));
+        action := Buffer.fromArray(Config.action);
         return #ok();
     };
 
     //Get Actions
-    public shared ({ caller }) func getAllUserWorldActions() : async (Result.Result<[TAction.Action], Text>) {
+    public func getAllUserActionStates(userPrincipal :Principal) : async (Result.Result<[TAction.ActionState], Text>) {
         let worldId = WorldId();
 
         var userNodeId : Text = "";
 
-        let userPrincipalTxt = Principal.toText(caller);
+        let userPrincipalTxt = Principal.toText(userPrincipal);
 
         switch (await getUserNode_(userPrincipalTxt)) {
             case (#ok(content)) { userNodeId := content };
@@ -364,15 +407,15 @@ actor class WorldTemplate(owner : Principal) = this {
         };
 
         let userNode : UserNode = actor (userNodeId);
-        return await userNode.getAllUserWorldActions(userPrincipalTxt, Principal.toText(worldId));
+        return await userNode.getAllUserActionStates(userPrincipalTxt, Principal.toText(worldId));
     };
     //Get Entities
-    public shared ({ caller }) func getAllUserWorldEntities() : async (Result.Result<[TEntity.Entity], Text>) {
+    public func getAllUserEntities(userPrincipal :Principal) : async (Result.Result<[TEntity.StableEntity], Text>) {
         let worldId = WorldId();
 
         var userNodeId : Text = "";
 
-        let userPrincipalTxt = Principal.toText(caller);
+        let userPrincipalTxt = Principal.toText(userPrincipal);
 
         switch (await getUserNode_(userPrincipalTxt)) {
             case (#ok(content)) { userNodeId := content };
@@ -382,15 +425,16 @@ actor class WorldTemplate(owner : Principal) = this {
         };
 
         let userNode : UserNode = actor (userNodeId);
-        return await userNode.getAllUserWorldEntities(userPrincipalTxt, Principal.toText(worldId));
+        return await userNode.getAllUserEntities(userPrincipalTxt, Principal.toText(worldId));
     };
     //Send or Burn (it will burn if in the burn plugin config, the "to" field is null or empty)
-    private func verifyBurnNfts_(uid : Principal, burnActionArg : { actionId : Text; indexes : [Nat32] }, configs : TAction.ActionConfig, outcomes : [TAction.ActionOutcomeOption]) : async () {
+    private func verifyBurnNfts_(userPrincipal : Principal, burnActionArg : { actionId : Text; indexes : [Nat32] }, configs : TAction.Action, outcomes : [TAction.ActionOutcomeOption]) : async () {
+
         switch (configs.actionPlugin) {
-            case (?#verifyBurnNfts(actionPluginConfig)) {
+            case (? #verifyBurnNfts(actionPluginConfig)) {
                 //
-                let accountId : Text = AccountIdentifier.fromPrincipal(uid, null);
-                if (accountId == "") return; //  WE RETURN DUE TO ISSUE GETTING THE aid FROM uid
+                let accountId : Text = AccountIdentifier.fromPrincipal(userPrincipal, null);
+                if (accountId == "") return; //  WE RETURN DUE TO ISSUE GETTING THE aid FROM userPrincipal
 
                 let collection : EXTInterface = actor (actionPluginConfig.canister);
 
@@ -474,7 +518,7 @@ actor class WorldTemplate(owner : Principal) = this {
                     };
                 };
 
-                ignore handleOutcomes_(Principal.toText(uid), burnActionArg.actionId, configs, ?outcomes);
+                ignore handleOutcomes_(Principal.toText(userPrincipal), burnActionArg.actionId, configs, ?outcomes);
             };
             case (_) {
                 //WE DO NOTHING HERE
@@ -635,7 +679,7 @@ actor class WorldTemplate(owner : Principal) = this {
         return Buffer.toArray(mintedNfts);
     };
 
-    private func handleOutcomes_(userPrincipalTxt : Text, actionId : Text, actionConfig : TAction.ActionConfig, preGeneratedOutcomes : ?[TAction.ActionOutcomeOption]) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
+    private func handleOutcomes_(userPrincipalTxt : Text, actionId : Text, actionConfig : TAction.Action, preGeneratedOutcomes : ?[TAction.ActionOutcomeOption]) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
 
         let outcomes = switch (preGeneratedOutcomes) {
             case (?value) {
@@ -646,7 +690,6 @@ actor class WorldTemplate(owner : Principal) = this {
             };
         };
 
-        //HERE
         var userNodeId : Text = "2vxsx-fae";
 
         switch (await getUserNode_(userPrincipalTxt)) {
@@ -779,7 +822,7 @@ actor class WorldTemplate(owner : Principal) = this {
         //Todo: Check for each action the timeConstraint
         switch (actionArg) {
             case (#default(arg)) {
-                var configType = _getSpecificActionConfig(arg.actionId);
+                var configType = getSpecificAction_(arg.actionId);
 
                 switch (configType) {
                     case (?configs) {
@@ -799,7 +842,7 @@ actor class WorldTemplate(owner : Principal) = this {
                 };
             };
             case (#verifyBurnNfts(arg)) {
-                var configType = _getSpecificActionConfig(arg.actionId);
+                var configType = getSpecificAction_(arg.actionId);
 
                 switch (configType) {
                     case (?configs) {
@@ -823,7 +866,7 @@ actor class WorldTemplate(owner : Principal) = this {
                 };
             };
             case (#verifyTransferIcp(arg)) {
-                var configType = _getSpecificActionConfig(arg.actionId);
+                var configType = getSpecificAction_(arg.actionId);
 
                 switch (configType) {
                     case (?configs) {
@@ -854,7 +897,7 @@ actor class WorldTemplate(owner : Principal) = this {
                 };
             };
             case (#verifyTransferIcrc(arg)) {
-                var configType = _getSpecificActionConfig(arg.actionId);
+                var configType = getSpecificAction_(arg.actionId);
 
                 switch (configType) {
                     case (?configs) {
@@ -885,7 +928,7 @@ actor class WorldTemplate(owner : Principal) = this {
                 };
             };
             case (#claimStakingRewardNft(arg)) {
-                var configType = _getSpecificActionConfig(arg.actionId);
+                var configType = getSpecificAction_(arg.actionId);
 
                 switch (configType) {
                     case (?configs) {
@@ -927,7 +970,7 @@ actor class WorldTemplate(owner : Principal) = this {
                 };
             };
             case (#claimStakingRewardIcp(arg)) {
-                var configType = _getSpecificActionConfig(arg.actionId);
+                var configType = getSpecificAction_(arg.actionId);
 
                 switch (configType) {
                     case (?configs) {
@@ -972,7 +1015,7 @@ actor class WorldTemplate(owner : Principal) = this {
                 };
             };
             case (#claimStakingRewardIcrc(arg)) {
-                var configType = _getSpecificActionConfig(arg.actionId);
+                var configType = getSpecificAction_(arg.actionId);
 
                 switch (configType) {
                     case (?configs) {
@@ -1044,11 +1087,23 @@ actor class WorldTemplate(owner : Principal) = this {
     public shared ({ caller }) func importAllConfigsOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
         assert (caller == owner);
         let world = actor (ofWorldId) : actor {
-            importEntityConfigs : shared () -> async ([TEntity.EntityConfig]);
-            importActionConfigs : shared () -> async ([TAction.ActionConfig]);
+            exportConfigs : shared () -> async ([TEntity.StableConfig]);
         };
-        entityConfigs := Buffer.fromArray((await world.importEntityConfigs()));
-        actionConfigs := Buffer.fromArray((await world.importActionConfigs()));
+        let { thash } = Map;
+        for(i in (await world.exportConfigs()).vals()) {
+            configs.add({
+                cid = i.cid;
+                fields = Map.fromIter(i.fields.vals(), thash);
+            });
+        };
+        return #ok("imported");
+    };
+    public shared ({ caller }) func importAllActionsOfWorld(ofWorldId : Text) : async (Result.Result<Text, Text>) {
+        assert (caller == owner);
+        let world = actor (ofWorldId) : actor {
+            exportActions : shared () -> async ([TAction.Action]);
+        };
+        action := Buffer.fromArray((await world.exportActions()));
         return #ok("imported");
     };
 

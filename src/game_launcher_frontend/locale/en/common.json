@@ -357,10 +357,17 @@
           "import_config": {
             "title": "Import World's Configs Data",
             "input_placeholder": "Canister Id",
-            "input_hint": "To import all World entities and actions configs",
+            "input_hint": "To import all World configs data",
             "error": "Import failed, Try again!",
             "success": "Imported",
             "button_text": "Import Configs"
+          },"import_action": {
+            "title": "Import World's Actions Data",
+            "input_placeholder": "Canister Id",
+            "input_hint": "To import all World actions data",
+            "error": "Import failed, Try again!",
+            "success": "Imported",
+            "button_text": "Import Actions"
           },
           "import_permissions": {
             "title": "Import World's Permissions Data",
@@ -373,6 +380,18 @@
         },
         "item_3": {
           "title": "Admin / Controller"
+        },
+        "item_4": {
+          "title": "Upgrade World",
+          "upgrade_world": {
+            "title": "Upgrade World",
+            "wasm_file_placeholder": "World wasm file",
+            "wasm_file_button": "Select Wasm Module",
+            "upgrade_world_button": "Upgrade World",
+            "upgrade_world_hint": "Select wasm file you want to upgrade your World canister to."
+          },
+          "upgrade_error": "World Upgrade is failed, contact dev team.",
+          "upgrade_success": "World Upgrade successful."
         }
       }
     },

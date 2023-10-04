@@ -10,6 +10,8 @@ import ImportConfig from "./ImportConfig";
 import ImportPermissions from "./ImportPermissions";
 import ManageController from "./ManageController";
 import ManageAdmin from "./ManageAdmin";
+import UpgradeWorld from "./UpgradeWorld";
+import ImportActions from "./ImportActions";
 
 const ManageWorlds = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -19,7 +21,8 @@ const ManageWorlds = () => {
   const tabItems = [
     { id: 1, name: t("world_deployer.manage_worlds.tabs.item_1.title") },
     { id: 2, name: t("world_deployer.manage_worlds.tabs.item_2.title") },
-    { id: 3, name: t("world_deployer.manage_worlds.tabs.item_3.title") }
+    { id: 3, name: t("world_deployer.manage_worlds.tabs.item_3.title") },
+    { id: 4, name: t("world_deployer.manage_worlds.tabs.item_4.title") }
   ];
 
   return (
@@ -40,6 +43,8 @@ const ManageWorlds = () => {
           <Divider/>
           < ImportConfig />
           <Divider/>
+          <ImportActions />
+          <Divider/>
           <ImportPermissions/>
         </div>
       )}
@@ -48,6 +53,11 @@ const ManageWorlds = () => {
           < ManageController />
           <Divider/>
           <ManageAdmin/>
+        </div>
+      )}
+      {activeTab === 4 && (
+        <div className="w-full space-y-12">
+          < UpgradeWorld />
         </div>
       )}
     </>

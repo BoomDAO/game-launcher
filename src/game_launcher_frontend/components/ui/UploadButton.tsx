@@ -1,6 +1,6 @@
 import React from "react";
 import { GameFile } from "@/types";
-import { convertToBase64, cx, getGameFiles } from "@/utils";
+import { convertToBase64, cx } from "@/utils";
 import Button from "./Button";
 import Hint from "./Hint";
 
@@ -71,14 +71,10 @@ const UploadButton = React.forwardRef<HTMLDivElement, UploadButtonProps>(
         const { files } = e.target;
         if (!files?.length) return;
         setUploadName(`${files?.length} files to upload`);
-
         const gameFiles: GameFile[] = [];
-
         for await (const file of files) {
-          const gameFile = await getGameFiles(file);
-          gameFiles.push(gameFile);
+          gameFiles.push(file);
         }
-
         onUpload && onUpload(gameFiles);
       }
 
