@@ -27,6 +27,8 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 import World "world";
+import Helper "../utils/Helpers";
+import Management "../types/management.types";
 
 actor Deployer {
 
@@ -37,111 +39,23 @@ actor Deployer {
     private stable var _owners : Trie.Trie<Text, Text> = Trie.empty(); //mapping  world_canister_id -> owner principal id
     private stable var _admins : [Text] = [];
 
-    //Types
-    //
-    // type Asset = Asset.Assets;
-    public type canister_id = Principal;
-    public type canister_settings = {
-        freezing_threshold : ?Nat;
-        controllers : ?[Principal];
-        memory_allocation : ?Nat;
-        compute_allocation : ?Nat;
-    };
-    public type definite_canister_settings = {
-        freezing_threshold : Nat;
-        controllers : [Principal];
-        memory_allocation : Nat;
-        compute_allocation : Nat;
-    };
-    public type user_id = Principal;
-    public type wasm_module = Blob;
+    let IC : Management.Management = actor ("aaaaa-aa") ;     //IC Management Canister
 
-    //for game
+    //Types
     public type World = {
         name : Text;
         cover : Text;
         canister : Text;
+        // version : Text;
+    };
+    public type Wasm = {
+        nextVersion : Text;
+        wasmModule : [Nat8];
+        createdAt : Int;
     };
 
-    public type headerField = (Text, Text);
-    public type HttpRequest = {
-        body : Blob;
-        headers : [headerField];
-        method : Text;
-        url : Text;
-    };
-    public type HttpResponse = {
-        body : Blob;
-        headers : [headerField];
-        status_code : Nat16;
-    };
-
-    //IC Management Canister
+    //Internal Functions
     //
-    let IC = actor ("aaaaa-aa") : actor {
-        canister_status : shared { canister_id : canister_id } -> async {
-            status : { #stopped; #stopping; #running };
-            memory_size : Nat;
-            cycles : Nat;
-            settings : definite_canister_settings;
-            module_hash : ?[Nat8];
-        };
-        create_canister : shared { settings : ?canister_settings } -> async {
-            canister_id : canister_id;
-        };
-        delete_canister : shared { canister_id : canister_id } -> async ();
-        deposit_cycles : shared { canister_id : canister_id } -> async ();
-        install_code : shared {
-            arg : Blob;
-            wasm_module : wasm_module;
-            mode : { #reinstall; #upgrade; #install };
-            canister_id : canister_id;
-        } -> async ();
-        provisional_create_canister_with_cycles : shared {
-            settings : ?canister_settings;
-            amount : ?Nat;
-        } -> async { canister_id : canister_id };
-        provisional_top_up_canister : shared {
-            canister_id : canister_id;
-            amount : Nat;
-        } -> async ();
-        raw_rand : shared () -> async [Nat8];
-        start_canister : shared { canister_id : canister_id } -> async ();
-        stop_canister : shared { canister_id : canister_id } -> async ();
-        uninstall_code : shared { canister_id : canister_id } -> async ();
-        update_settings : shared {
-            canister_id : Principal;
-            settings : canister_settings;
-        } -> async ();
-    };
-
-    //Utility Functions
-    private func key(x : Nat32) : Trie.Key<Nat32> {
-        return { hash = x; key = x };
-    };
-
-    private func keyT(x : Text) : Trie.Key<Text> {
-        return { hash = Text.hash(x); key = x };
-    };
-
-    private func textToNat(txt : Text) : Nat {
-        assert (txt.size() > 0);
-        let chars = txt.chars();
-
-        var num : Nat = 0;
-        for (v in chars) {
-            let charToNum = Nat32.toNat(Char.toNat32(v) -48);
-            assert (charToNum >= 0 and charToNum <= 9);
-            num := num * 10 + charToNum;
-        };
-
-        return num;
-    };
-
-    public query func cycleBalance() : async Nat {
-        Cycles.balance();
-    };
-
     private func _isAdmin(p : Text) : (Bool) {
         for (i in _admins.vals()) {
             if (i == p) {
@@ -151,35 +65,6 @@ actor Deployer {
         return false;
     };
 
-    public shared ({ caller }) func addAdmin(p : Text) : async () {
-        assert (_isAdmin(Principal.toText(caller)));
-        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-        for (i in _admins.vals()) {
-            if (p != i) {
-                b.add(i);
-            };
-        };
-        b.add(p);
-        _admins := Buffer.toArray(b);
-    };
-
-    public shared ({ caller }) func removeAdmin(p : Text) : async () {
-        assert (_isAdmin(Principal.toText(caller)));
-        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
-        for (i in _admins.vals()) {
-            if (p != i) {
-                b.add(i);
-            };
-        };
-        _admins := Buffer.toArray(b);
-    };
-
-    public query func getAllAdmins() : async ([Text]) {
-        return _admins;
-    };
-
-    //Internal Functions
-    //
     private func _isOwner(p : Principal, canister_id : Text) : async (Bool) {
         for ((i, v) in Trie.iter(_owners)) {
             if (canister_id == i and p == Principal.fromText(v)) {
@@ -217,7 +102,7 @@ actor Deployer {
             status : { #stopped; #stopping; #running };
             memory_size : Nat;
             cycles : Nat;
-            settings : definite_canister_settings;
+            settings : Management.definite_canister_settings;
             module_hash : ?[Nat8];
         } = await IC.canister_status({
             canister_id = Principal.fromText(collection_canister_id);
@@ -233,8 +118,16 @@ actor Deployer {
 
     //Queries
     //
+    public query func getAllAdmins() : async ([Text]) {
+        return _admins;
+    };
+
+    public query func cycleBalance() : async Nat {
+        Cycles.balance();
+    };
+
     public query func getOwner(canister_id : Text) : async (?Text) {
-        var owner : ?Text = Trie.find(_owners, keyT(canister_id), Text.equal);
+        var owner : ?Text = Trie.find(_owners, Helper.keyT(canister_id), Text.equal);
         return owner;
     };
 
@@ -254,7 +147,7 @@ actor Deployer {
         var b : Buffer.Buffer<World> = Buffer.Buffer<World>(0);
         for ((i, v) in Trie.iter(_owners)) {
             if (v == uid) {
-                switch (Trie.find(_worlds, keyT(i), Text.equal)) {
+                switch (Trie.find(_worlds, Helper.keyT(i), Text.equal)) {
                     case (?t) {
                         b.add(t);
                     };
@@ -280,7 +173,7 @@ actor Deployer {
         var upper : Nat = lower + 9;
         var b : Buffer.Buffer<World> = Buffer.Buffer<World>(0);
         for ((i, v) in Trie.iter(_owners)) {
-            switch (Trie.find(_worlds, keyT(i), Text.equal)) {
+            switch (Trie.find(_worlds, Helper.keyT(i), Text.equal)) {
                 case (?t) {
                     b.add(t);
                 };
@@ -304,8 +197,61 @@ actor Deployer {
         return Trie.size(_worlds);
     };
 
+    public query func getWorldDetails(canister_id : Text) : async (?World) {
+        switch (Trie.find(_worlds, Helper.keyT(canister_id), Text.equal)) {
+            case (?w) {
+                return ?w;
+            };
+            case _ {
+                return null;
+            };
+        };
+    };
+
+    public query func getWorldCover(canister_id : Text) : async (Text) {
+        switch (Trie.find(_covers, Helper.keyT(canister_id), Text.equal)) {
+            case (?c){
+                return c;
+            };
+            case _ {
+                return "";
+            };
+        };
+    };
+
+    public query func getAllWorlds() : async [(Text, Text)] {
+        var b : Buffer.Buffer<(Text, Text)> = Buffer.Buffer<(Text, Text)>(0);
+        for ((i, v) in Trie.iter(_worlds)) {
+            b.add((i, v.name));
+        };
+        return Buffer.toArray(b);
+    };
+
     //Updates
     //
+    public shared ({ caller }) func addAdmin(p : Text) : async () {
+        assert (_isAdmin(Principal.toText(caller)));
+        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+        for (i in _admins.vals()) {
+            if (p != i) {
+                b.add(i);
+            };
+        };
+        b.add(p);
+        _admins := Buffer.toArray(b);
+    };
+
+    public shared ({ caller }) func removeAdmin(p : Text) : async () {
+        assert (_isAdmin(Principal.toText(caller)));
+        var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+        for (i in _admins.vals()) {
+            if (p != i) {
+                b.add(i);
+            };
+        };
+        _admins := Buffer.toArray(b);
+    };
+
     public shared ({ caller }) func addController(collection_canister_id : Text, p : Text) : async () {
         var check : Bool = await _isController(collection_canister_id, caller);
         if (check == false) {
@@ -315,7 +261,7 @@ actor Deployer {
             status : { #stopped; #stopping; #running };
             memory_size : Nat;
             cycles : Nat;
-            settings : definite_canister_settings;
+            settings : Management.definite_canister_settings;
             module_hash : ?[Nat8];
         } = await IC.canister_status({
             canister_id = Principal.fromText(collection_canister_id);
@@ -348,7 +294,7 @@ actor Deployer {
             status : { #stopped; #stopping; #running };
             memory_size : Nat;
             cycles : Nat;
-            settings : definite_canister_settings;
+            settings : Management.definite_canister_settings;
             module_hash : ?[Nat8];
         } = await IC.canister_status({
             canister_id = Principal.fromText(collection_canister_id);
@@ -375,40 +321,18 @@ actor Deployer {
         var canister_id : Text = await create_canister(msg.caller);
         _worlds := Trie.put(
             _worlds,
-            keyT(canister_id),
+            Helper.keyT(canister_id),
             Text.equal,
             {
                 name = _name;
                 canister = canister_id;
-                cover = "https://" #Principal.toText(deployer()) #".raw.icp0.io/cover/" #canister_id; 
+                cover = "https://" #Principal.toText(deployer()) #".raw.icp0.io/cover/" #canister_id;
+                // version = _latestVersion; 
             },
         ).0;
-        _covers := Trie.put(_covers, keyT(canister_id), Text.equal, cover_encoding).0;
-        _owners := Trie.put(_owners, keyT(canister_id), Text.equal, Principal.toText(msg.caller)).0;
+        _covers := Trie.put(_covers, Helper.keyT(canister_id), Text.equal, cover_encoding).0;
+        _owners := Trie.put(_owners, Helper.keyT(canister_id), Text.equal, Principal.toText(msg.caller)).0;
         return canister_id;
-    };
-
-    //Queries
-    public query func getWorldDetails(canister_id : Text) : async (?World) {
-        switch (Trie.find(_worlds, keyT(canister_id), Text.equal)) {
-            case (?w) {
-                return ?w;
-            };
-            case _ {
-                return null;
-            };
-        };
-    };
-
-    public query func getWorldCover(canister_id : Text) : async (Text) {
-        switch (Trie.find(_covers, keyT(canister_id), Text.equal)) {
-            case (?c){
-                return c;
-            };
-            case _ {
-                return "";
-            };
-        };
     };
 
     public shared ({caller}) func upgradeWorldToNewWasm(canister_id : Text, owner : Blob, _wasm_module : [Nat8]) : async () {
@@ -423,10 +347,10 @@ actor Deployer {
 
     public shared (msg) func updateWorldCover(canister_id : Text, base64 : Text) : async (Result.Result<(), Text>) {
         assert ((await _isOwner(msg.caller, canister_id)) == true);
-        switch (Trie.find(_owners, keyT(canister_id), Text.equal)) {
+        switch (Trie.find(_owners, Helper.keyT(canister_id), Text.equal)) {
             case (?o) {
                 assert (Principal.fromText(o) == msg.caller);
-                _covers := Trie.put(_covers, keyT(canister_id), Text.equal, base64).0;
+                _covers := Trie.put(_covers, Helper.keyT(canister_id), Text.equal, base64).0;
                 return #ok();
             };
             case null {
@@ -435,12 +359,13 @@ actor Deployer {
         };
     };
 
-    public query func http_request(req : HttpRequest) : async (HttpResponse) {
+    // http request handler
+    public query func http_request(req : Management.HttpRequest) : async (Management.HttpResponse) {
         let path = Iter.toArray(Text.tokens(req.url, #text("/")));
         let collection = path[1];
         switch (req.method, (path[0] == "cover")) {
             case ("GET", true) {
-                switch (Trie.find(_covers, keyT(collection), Text.equal)) {
+                switch (Trie.find(_covers, Helper.keyT(collection), Text.equal)) {
                     case (?c) {
                         var content : Text = "<!DOCTYPE html><html lang=\"en\"><head><title>Cover</title></head><body><div style=\"text-align:center; margin-top:10vh\"><img src=\"" #c # "\" style=\"width:200px\"></img></div></body></html>";
                         return {
@@ -468,12 +393,57 @@ actor Deployer {
         };
     };
 
-    public query func getAllWorlds() : async [(Text, Text)] {
-        var b : Buffer.Buffer<(Text, Text)> = Buffer.Buffer<(Text, Text)>(0);
-        for ((i, v) in Trie.iter(_worlds)) {
-            b.add((i, v.name));
+    // state-management and wasm-management
+    private stable var _latestVersion : Text = "";
+    private stable var _wasms : Trie.Trie<Text, Wasm> = Trie.empty();
+
+    public shared({caller}) func updateWasmModule(req : { version : Text; wasmModule : [Nat8]; }) : async (Result.Result<(), Text>) {
+        // assert(caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+        switch (Trie.find(_wasms, Helper.keyT(_latestVersion), Text.equal)) {
+            case (?w) {
+                _wasms := Trie.put(_wasms, Helper.keyT(_latestVersion), Text.equal, {
+                    nextVersion = req.version;
+                    wasmModule = w.wasmModule;
+                    createdAt = w.createdAt;
+                }).0;
+                _wasms := Trie.put(_wasms, Helper.keyT(req.version), Text.equal, {
+                    nextVersion = "Latest";
+                    wasmModule = req.wasmModule;
+                    createdAt = Time.now();
+                }).0;
+                _latestVersion := req.version;
+                return #ok();
+            };
+            case _ {
+                return #err("latest wasm version not found");
+            };
         };
-        return Buffer.toArray(b);
+    } ;
+
+    private stable var _oldWorlds : Trie.Trie<Text, World> = Trie.empty();
+    system func preupgrade() : () {
+        for((i, v) in Trie.iter(_worlds)) {
+            _oldWorlds := Trie.put(_oldWorlds, Helper.keyT(i), Text.equal, {
+                name = v.name;
+                cover = v.cover;
+                canister = v.canister;
+                version = "1.0.2";
+            }).0;
+        };
     };
 
+    system func postupgrade() : () {
+        _worlds := _oldWorlds;
+        _oldWorlds := Trie.empty();
+    };
+
+    public query func getWorldVersion() : async (Text) {
+        return _latestVersion;
+    };
+
+
+
 };
+
+
+// irfpf-tqaaa-aaaal-qcemq-cai
