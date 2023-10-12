@@ -304,6 +304,44 @@ actor class WorldTemplate(owner : Principal) = this {
         };
         return (false, -1);
     };
+
+    //EDIT CONFIG to support Candid edit feature
+    public query func editAction(arg : {aid : Text}) : async (TAction.Action) {
+        for (configElement in action.vals()) {
+            if (configElement.aid == arg.aid) {
+                return configElement;
+            };
+        };
+        return {
+            aid = arg.aid;
+            name = null;
+            description = null;
+            imageUrl= null;
+            tag = null;
+            actionPlugin= null;
+            actionConstraint= null;
+            actionResult= {
+                outcomes = [];
+            };
+        };
+    };
+
+    public query func editConfig(arg : {cid : Text;}) : async (TEntity.StableConfig) {
+        for (configElement in configs.vals()) {
+            if (configElement.cid == arg.cid) {
+                let fields_array : [(Text, Text)] = Map.toArray(configElement.fields);
+                return {
+                    cid = configElement.cid;
+                    fields = fields_array;
+                };
+            };
+        };
+        return {
+            cid = arg.cid;
+            fields = [];
+        };
+    };
+
     //CREATE CONFIG
     public shared ({ caller }) func createConfig(config : TEntity.StableConfig) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
