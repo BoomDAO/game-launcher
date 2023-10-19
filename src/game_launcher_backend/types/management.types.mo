@@ -101,7 +101,9 @@ module {
         install_code : shared {
             arg : Blob;
             wasm_module : wasm_module;
-            mode : { #reinstall; #upgrade; #install };
+            mode : { #reinstall; #upgrade : ? {
+                skip_pre_upgrade : ?Bool;
+            }; #install };
             canister_id : canister_id;
         } -> async ();
         provisional_create_canister_with_cycles : shared {
