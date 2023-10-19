@@ -114,6 +114,8 @@ actor class WorldTemplate(owner : Principal) = this {
     private var action = Buffer.Buffer<TAction.Action>(0);
     private stable var tempUpdateAction : Config.Actions = [];
 
+    var x = "";
+
     system func preupgrade() {
         var b = Buffer.Buffer<TEntity.StableConfig>(0);
         for(i in Buffer.toArray(configs).vals()) {
@@ -138,6 +140,12 @@ actor class WorldTemplate(owner : Principal) = this {
         tempUpdateConfig := [];
         action := Buffer.fromArray(tempUpdateAction);
         tempUpdateAction := [];
+
+        x := "1";
+    };
+
+    public query func getX() : async (Text) {
+        return x;
     };
 
     //Internal Functions
