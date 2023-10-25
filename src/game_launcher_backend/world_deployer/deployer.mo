@@ -47,7 +47,6 @@ actor Deployer {
     name : Text;
     cover : Text;
     canister : Text;
-    // version : Text;
   };
   public type Wasm = {
     version : Text;
@@ -328,40 +327,11 @@ actor Deployer {
         name = _name;
         canister = canister_id;
         cover = "https://" #Principal.toText(deployer()) # ".raw.icp0.io/cover/" #canister_id;
-        // version = _latestVersion;
       },
     ).0;
     _covers := Trie.put(_covers, Helper.keyT(canister_id), Text.equal, cover_encoding).0;
     _owners := Trie.put(_owners, Helper.keyT(canister_id), Text.equal, Principal.toText(msg.caller)).0;
     return canister_id;
-  };
-
-  public shared ({ caller }) func upgradeWorldToNewWasm(canister_id : Text, owner : Blob) : async () {
-    assert ((await _isOwner(caller, canister_id)) == true);
-    let previous_version = Option.get(Trie.find(_versions, Helper.keyT(canister_id), Text.equal), "");
-    var next_version = "";
-    if (previous_version == "") {
-      next_version := _latestVersion;
-    } else {
-      next_version := Nat.toText(Helper.textToNat(previous_version) + 1);
-    };
-    var _wasm_module : [Nat8] = [];
-    switch (Trie.find(_wasms, Helper.keyT(next_version), Text.equal)) {
-      case (?w) {
-        _wasm_module := w.wasmModule;
-      };
-      case _ {};
-    };
-    _versions := Trie.put(_versions, Helper.keyT(canister_id), Text.equal, next_version).0;
-    let upgrade_bool = ?{
-      skip_pre_upgrade = ?false;
-    };
-    await IC.install_code({
-      arg = owner;
-      wasm_module = Blob.fromArray(_wasm_module);
-      mode = #upgrade upgrade_bool;
-      canister_id = Principal.fromText(canister_id);
-    });
   };
 
   public shared (msg) func updateWorldCover(canister_id : Text, base64 : Text) : async (Result.Result<(), Text>) {
@@ -416,7 +386,7 @@ actor Deployer {
   private stable var _latestVersion : Text = "";
   private stable var _wasms : Trie.Trie<Text, Wasm> = Trie.empty();
 
-  public shared ({ caller }) func updateWasmModule(req : { wasmModule : [Nat8] }) : async (Result.Result<(), Text>) {
+  public shared ({ caller }) func uploadNewWasmModule(req : { wasmModule : [Nat8] }) : async (Result.Result<(), Text>) {
     assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
     switch (Trie.find(_wasms, Helper.keyT(_latestVersion), Text.equal)) {
       case (?w) {
@@ -453,8 +423,55 @@ actor Deployer {
     };
   };
 
-  public query func getLatestWorldVersion() : async (Text) {
+  public shared ({ caller }) func upgradeWorldToNewWasm(canister_id : Text, owner : Blob, _ : [Nat8]) : async () {
+    assert ((await _isOwner(caller, canister_id)) == true);
+    let previous_version = Option.get(Trie.find(_versions, Helper.keyT(canister_id), Text.equal), "");
+    var next_version = "";
+    if (previous_version == "") {
+      next_version := _latestVersion;
+    } else {
+      next_version := Nat.toText(Helper.textToNat(previous_version) + 1);
+    };
+    var _wasm_module : [Nat8] = [];
+    switch (Trie.find(_wasms, Helper.keyT(_latestVersion), Text.equal)) {
+      case (?w) {
+        _wasm_module := w.wasmModule;
+      };
+      case _ {};
+    };
+    switch (Trie.find(_wasms, Helper.keyT(next_version), Text.equal)) {
+      case (?w) {
+        _wasm_module := w.wasmModule;
+      };
+      case _ {
+
+      };
+    };
+    _versions := Trie.put(_versions, Helper.keyT(canister_id), Text.equal, next_version).0;
+    let upgrade_bool = ?{
+      skip_pre_upgrade = ?false;
+    };
+    await IC.install_code({
+      arg = owner;
+      wasm_module = Blob.fromArray(_wasm_module);
+      mode = #upgrade upgrade_bool;
+      canister_id = Principal.fromText(canister_id);
+    });
+  };
+
+  public query func getLatestWorldWasmVersion() : async (Text) {
     return _latestVersion;
+  };
+
+  public query func getWorldVersion(world_canister_id : Text) : async (Text) {
+    switch (Trie.find(_versions, Helper.keyT(world_canister_id), Text.equal)) {
+      case (?version) {
+        return version;
+      };
+      case _ {
+        return "";
+      };
+    };
   };
 
 };

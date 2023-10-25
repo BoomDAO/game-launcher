@@ -58,6 +58,8 @@ export const useWorldDeployerClient = async () => {
       get_users_total_worlds: "getUserTotalWorlds",
       get_total_worlds: "getTotalWorlds",
       get_world_cover: "getWorldCover",
+      get_current_world_version: "getWorldVersion",
+      get_available_world_version: "getLatestWorldWasmVersion",
       
       create_world: "createWorldCanister",
       update_world_cover: "updateWorldCover",

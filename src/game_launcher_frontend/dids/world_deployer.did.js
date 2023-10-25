@@ -28,6 +28,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
         ['query'],
       ),
+    'getLatestWorldWasmVersion' : IDL.Func([], [IDL.Text], ['query']),
     'getOwner' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
     'getTotalWorlds' : IDL.Func([], [IDL.Nat], ['query']),
     'getUserTotalWorlds' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
@@ -38,6 +39,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getWorldCover' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
     'getWorldDetails' : IDL.Func([IDL.Text], [IDL.Opt(World)], ['query']),
+    'getWorldVersion' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
     'getWorlds' : IDL.Func([IDL.Nat], [IDL.Vec(World)], ['query']),
     'http_request' : IDL.Func([HttpRequest], [HttpResponse], ['query']),
     'removeAdmin' : IDL.Func([IDL.Text], [], []),
@@ -46,6 +48,11 @@ export const idlFactory = ({ IDL }) => {
     'upgradeWorldToNewWasm' : IDL.Func(
         [IDL.Text, IDL.Vec(IDL.Nat8), IDL.Vec(IDL.Nat8)],
         [],
+        [],
+      ),
+    'uploadNewWasmModule' : IDL.Func(
+        [IDL.Record({ 'wasmModule' : IDL.Vec(IDL.Nat8) })],
+        [Result],
         [],
       ),
   });

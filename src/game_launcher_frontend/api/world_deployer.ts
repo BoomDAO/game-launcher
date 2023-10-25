@@ -40,6 +40,8 @@ export const queryKeys = {
   user_worlds: "user_worlds",
   world_cover: "world_cover",
   cycle_balance: "cycle_balance",
+  current_world: "currentWorld",
+  available_world: "availableWorld"
 };
 
 export const useGetWorldCycleBalance = (
@@ -104,6 +106,30 @@ export const useGetUserWorlds = (page: number = 1): UseQueryResult<World[]> => {
     queryFn: async () => {
       const { actor, methods } = await useWorldDeployerClient();
       return await actor[methods.get_user_worlds](session?.address, page - 1);
+    },
+  });
+};
+
+export const useGetCurrentWorldVersion = (world_canister_id: string = ""): UseQueryResult<string> => {
+  return useQuery({
+    queryKey: [queryKeys.current_world],
+    queryFn: async () => {
+      const { actor, methods } = await useWorldDeployerClient();
+      const res = await actor[methods.get_current_world_version](world_canister_id);
+      console.log(res);
+      return res;
+    },
+  });
+};
+
+export const useGetAvailableWorldVersion = (): UseQueryResult<string> => {
+  return useQuery({
+    queryKey: [queryKeys.available_world],
+    queryFn: async () => {
+      const { actor, methods } = await useWorldDeployerClient();
+      const res = await actor[methods.get_available_world_version]();
+      console.log(res);
+      return res;
     },
   });
 };
@@ -202,10 +228,8 @@ export const useUpgradeWorld = () => {
 
   return useMutation({
     mutationFn: async ({
-      wasm,
       canisterId
     }: {
-      wasm: string;
       canisterId?: string;  
     }) => {
       try {
@@ -214,7 +238,7 @@ export const useUpgradeWorld = () => {
         const identity = authClient?.getIdentity();
         const owner_principal = Principal.fromText(identity.getPrincipal().toString());
         const owner = IDL.encode([IDL.Principal], [owner_principal]);
-        const arrayBufferOfWasm = b64toArrays(wasm);
+        const arrayBufferOfWasm = b64toArrays("");
         (await actor[methods.upgrade_world](
           canisterId,
           owner,
