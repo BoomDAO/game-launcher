@@ -1,6 +1,7 @@
 import Cycles "mo:base/ExperimentalCycles";
 import HashMap "mo:base/HashMap";
 import TrieMap "mo:base/TrieMap";
+import Trie "mo:base/Trie";
 import Hash "mo:base/Hash";
 import Nat64 "mo:base/Nat64";
 import Char "mo:base/Char";
@@ -36,8 +37,9 @@ import Queue "../../utils/Queue";
 import EXTAsset "extAsset";
 import AccountIdentifier "../../utils/AccountIdentifier";
 
+import Helper "../../utils/Helpers";
 
-shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
+shared ({ caller = _deployer }) actor class EXTNFT(init_owner : Principal, name : Text, data : Text) = this {
   // EXT Types
   type EXTAssetService = EXTAsset.EXTAsset;
   type Order = { #less; #equal; #greater };
@@ -260,6 +262,27 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
     token : ?HttpStreamingCallbackToken;
   };
 
+  // Tx Verification details
+  type Tx = {
+    index : TokenIndex;
+    previous_holder : AccountIdentifier;
+    current_holder : AccountIdentifier;
+  };
+
+  type TxInfo = {
+    txid : Text;
+    index : TokenIndex;
+    previous_holder : AccountIdentifier;
+    current_holder : AccountIdentifier;
+    kind : TxKind;
+    metadata : ?Text;
+  };
+
+  type TxKind = {
+    #hold;
+    #transfer;
+  };
+
   //Stable State
   private let EXTENSIONS : [Extension] = ["@ext/common", "@ext/nonfungible"];
   private stable var data_disbursementQueueState : [(TokenIndex, AccountIdentifier, SubAccount, Nat64)] = [];
@@ -295,7 +318,7 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
 
   //CONFIG
   private stable var config_deployers : [Text] = [Principal.toText(_deployer)]; //NFT Deployer Canister Ids Boom
-  private stable var config_core : [Text] = []; 
+  private stable var config_core : [Text] = [];
   private stable var config_owner : Principal = init_owner;
   private stable var config_admin : [Principal] = [config_owner];
   private stable var config_royalty_address : AccountIdentifier = AID.fromPrincipal(config_owner, null);
@@ -307,6 +330,9 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
   private stable var config_marketplace_open : Time = 0;
 
   private stable var config_canCreateAssetCanister : Bool = true;
+
+  private stable var txid : Nat = 0;
+  private stable var config_usernodes : [Text] = [];
 
   //Non-stable
   //Queues
@@ -323,6 +349,8 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
   var _tokenListing : TrieMap.TrieMap<TokenIndex, Listing> = TrieMap.fromEntries(data_tokenListingTableState.vals(), ExtCore.TokenIndex.equal, ExtCore.TokenIndex.hash);
   var _paymentSettlements : TrieMap.TrieMap<AccountIdentifier, Payment> = TrieMap.fromEntries(data_paymentSettlementsTableState.vals(), AID.equal, AID.hash);
   var _saleGroups : TrieMap.TrieMap<AccountIdentifier, Nat> = TrieMap.fromEntries(data_saleGroupsTableState.vals(), AID.equal, AID.hash);
+
+  var _txs : Trie.Trie<Text, Tx> = Trie.empty();
 
   //Variables
   let ASSET_CANISTER_CYCLES_TOPUP : Nat = 5_000_000_000_000;
@@ -491,7 +519,7 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
   public query func ext_assetExists(assetHandle : AssetHandle) : async Bool {
     Option.isSome(_assets.get(assetHandle));
   };
-  public shared (msg) func ext_assetAdd(assetHandle: AssetHandle, ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
+  public shared (msg) func ext_assetAdd(assetHandle : AssetHandle, ctype : Text, filename : Text, atype : AssetType, size : Nat) : async () {
     await _ext_internal_assetAdd(msg.caller, assetHandle, ctype, filename, atype, size);
   };
   public shared (msg) func ext_assetStream(assetHandle : AssetHandle, chunk : Blob, first : Bool) : async Bool {
@@ -1804,11 +1832,21 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
   func _transferTokenToUser(tindex : TokenIndex, receiver : AccountIdentifier) : () {
     let owner : ?AccountIdentifier = _getBearer(tindex);
     _registry.put(tindex, receiver);
+    var _owner = "";
     switch (owner) {
-      case (?o) _removeFromUserTokens(tindex, o);
+      case (?o) {
+        _removeFromUserTokens(tindex, o);
+        _owner := o;
+      };
       case (_) {};
     };
     _addToUserTokens(tindex, receiver);
+    _create_tx({
+      index = tindex;
+      previous_holder = _owner;
+      current_holder = receiver;
+      isVerified = false;
+    });
   };
   func _removeFromUserTokens(tindex : TokenIndex, owner : AccountIdentifier) : () {
     switch (_owners.get(owner)) {
@@ -2124,7 +2162,7 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
           };
           return false;
         },
-      ),
+      )
     ) {
       case (?a) {
         return await ext_marketplaceSettle(a.0);
@@ -2324,7 +2362,6 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
         };
         case (null) {};
       };
-      // b.add(a[Nat32.toNat(i)]);
       i := i + 1;
     };
     return Buffer.toArray(b);
@@ -2355,6 +2392,75 @@ shared ({caller = _deployer}) actor class EXTNFT(init_owner : Principal, name : 
         };
       };
     };
+  };
+
+  // Tx verification for Hold/Burn endpoints
+  func _create_tx(tx : Tx) : () {
+    _txs := Trie.put(_txs, Helper.keyT(Nat.toText(txid)), Text.equal, tx).0;
+    txid := txid + 1;
+  };
+
+  func _getJsonMetadata(token : TokenIndex) : (?Text) {
+    switch (_extGetTokenMetadata(token)) {
+      case (?md) {
+        switch (md) {
+          case (#fungible _) return null;
+          case (#nonfungible nmd) {
+            switch (nmd.metadata) {
+              case (?val) {
+                switch (val) {
+                  case (#json j) {
+                    return ?j;
+                  };
+                  case _ {
+                    return null;
+                  };
+                };
+              };
+              case _ {
+                return null;
+              };
+            };
+          };
+        };
+      };
+      case (_) return null;
+    };
+  };
+
+  public query func getUserNftTx(uid : Text, kind : TxKind) : async ([TxInfo]) {
+    var txs = Buffer.Buffer<TxInfo>(0);
+    switch (kind) {
+      case (#hold) {
+        for ((i, v) in Trie.iter(_txs)) {
+          if (v.current_holder == AccountIdentifier.fromText(uid, null)) {
+            txs.add({
+              txid = i;
+              index = v.index;
+              previous_holder = v.previous_holder;
+              current_holder = v.current_holder;
+              kind = kind;
+              metadata = _getJsonMetadata(v.index);
+            });
+          };
+        };
+      };
+      case (#transfer) {
+        for ((i, v) in Trie.iter(_txs)) {
+          if (v.previous_holder == AccountIdentifier.fromText(uid, null)) {
+            txs.add({
+              txid = i;
+              index = v.index;
+              previous_holder = v.previous_holder;
+              current_holder = v.current_holder;
+              kind = kind;
+              metadata = _getJsonMetadata(v.index);
+            });
+          };
+        };
+      };
+    };
+    return Buffer.toArray(txs);
   };
 
 };

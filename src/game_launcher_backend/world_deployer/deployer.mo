@@ -406,7 +406,7 @@ actor Deployer {
       };
       case _ {
         if (_latestVersion == "") {
-            _latestVersion := "1";
+          _latestVersion := "1";
           _wasms := Trie.put(
             _wasms,
             Helper.keyT(_latestVersion),
@@ -417,46 +417,64 @@ actor Deployer {
               createdAt = Time.now();
             },
           ).0;
+          return #ok();
         };
         return #err("latest wasm version not found");
       };
     };
   };
 
-  public shared ({ caller }) func upgradeWorldToNewWasm(canister_id : Text, owner : Blob, _ : [Nat8]) : async () {
-    assert ((await _isOwner(caller, canister_id)) == true);
+  public shared ({ caller }) func upgradeWorldToNewWasm(canister_id : Text, owner : Blob) : async (Result.Result<(), Text>) {
+    // assert ((await _isOwner(caller, canister_id)) == true);
     let previous_version = Option.get(Trie.find(_versions, Helper.keyT(canister_id), Text.equal), "");
     var next_version = "";
     if (previous_version == "") {
       next_version := _latestVersion;
+      let _wasm_module : [Nat8] = switch (Trie.find(_wasms, Helper.keyT(_latestVersion), Text.equal)) {
+        case (?w) {
+          w.wasmModule;
+        };
+        case _ {
+          return #err("latest version wasm module not available");
+        };
+      };
+      _versions := Trie.put(_versions, Helper.keyT(canister_id), Text.equal, next_version).0;
+      let upgrade_bool = ?{
+        skip_pre_upgrade = ?false;
+      };
+      await IC.install_code({
+        arg = owner;
+        wasm_module = Blob.fromArray(_wasm_module);
+        mode = #upgrade upgrade_bool;
+        canister_id = Principal.fromText(canister_id);
+      });
+      return #ok();
     } else {
       next_version := Nat.toText(Helper.textToNat(previous_version) + 1);
-    };
-    var _wasm_module : [Nat8] = [];
-    switch (Trie.find(_wasms, Helper.keyT(_latestVersion), Text.equal)) {
-      case (?w) {
-        _wasm_module := w.wasmModule;
+      if (Helper.textToNat(next_version) > Helper.textToNat(_latestVersion)) {
+        return #err("no new version of world wasm available");
+      } else {
+        let _wasm_module : [Nat8] = switch (Trie.find(_wasms, Helper.keyT(next_version), Text.equal)) {
+          case (?w) {
+            w.wasmModule;
+          };
+          case _ {
+            return #err("next version wasm module not available");
+          };
+        };
+        _versions := Trie.put(_versions, Helper.keyT(canister_id), Text.equal, next_version).0;
+        let upgrade_bool = ?{
+          skip_pre_upgrade = ?false;
+        };
+        await IC.install_code({
+          arg = owner;
+          wasm_module = Blob.fromArray(_wasm_module);
+          mode = #upgrade upgrade_bool;
+          canister_id = Principal.fromText(canister_id);
+        });
+        return #ok();
       };
-      case _ {};
     };
-    switch (Trie.find(_wasms, Helper.keyT(next_version), Text.equal)) {
-      case (?w) {
-        _wasm_module := w.wasmModule;
-      };
-      case _ {
-
-      };
-    };
-    _versions := Trie.put(_versions, Helper.keyT(canister_id), Text.equal, next_version).0;
-    let upgrade_bool = ?{
-      skip_pre_upgrade = ?false;
-    };
-    await IC.install_code({
-      arg = owner;
-      wasm_module = Blob.fromArray(_wasm_module);
-      mode = #upgrade upgrade_bool;
-      canister_id = Principal.fromText(canister_id);
-    });
   };
 
   public query func getLatestWorldWasmVersion() : async (Text) {
@@ -475,5 +493,3 @@ actor Deployer {
   };
 
 };
-
-// irfpf-tqaaa-aaaal-qcemq-cai

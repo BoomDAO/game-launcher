@@ -7,13 +7,13 @@ import Float "mo:base/Float";
 import Option "mo:base/Option";
 
 import JSON "../utils/Json";
-import RandomUtil "../utils/RandomUtil";
 import Utils "../utils/Utils";
 import Int "mo:base/Int";
 
 import ENV "../utils/Env";
 import Nat64 "mo:base/Nat64";
 import Debug "mo:base/Debug";
+import Principal "mo:base/Principal";
 
 import TEntity "./entity.types";
 import TGlobal "./global.types";
@@ -30,17 +30,14 @@ module {
         actionCount : Nat;
     };
 
+    //EDITED
     public type ActionArg = {
-        #default : { actionId : Text };
-        #verifyBurnNfts : { actionId : Text; indexes : [Nat32] };
-        #verifyTransferIcp : { actionId : Text; blockIndex : Nat64 };
-        #verifyTransferIcrc : { actionId : Text; blockIndex : Nat };
-        #claimStakingRewardNft : { actionId : Text };
-        #claimStakingRewardIcp : { actionId : Text };
-        #claimStakingRewardIcrc : { actionId : Text };
+        actionId : Text; 
+        targetPrincipalId : ?Text
     };
 
-    public type MintToken = {
+    //OTHER ACTION OUTCOMES
+    public type TransferIcrc = {
         quantity : Float;
         canister : Text;
     };
@@ -50,57 +47,69 @@ module {
         assetId : Text;
         metadata : Text;
     };
+    //ENTITY ACTION OUTCOMES TYPES
+    //EDITED
     public type DeleteEntity = {
-        wid : ?TGlobal.worldId;
-        gid : TGlobal.groupId;
-        eid : TGlobal.entityId;
     };
+    //EDITED
     public type RenewTimestamp = {
-        wid : ?TGlobal.worldId;
-        gid : TGlobal.groupId;
-        eid : TGlobal.entityId;
         field : Text;
-        value : Nat;
+        value : { #number : Float; #formula : Text };
     };
-    public type SetString = {
-        wid : ?TGlobal.worldId;
-        gid : TGlobal.groupId;
-        eid : TGlobal.entityId;
+    
+    //EDITED
+    public type SetText = {
         field : Text;
         value : Text;
     };
+    //EDITED
     public type SetNumber = {
-        wid : ?TGlobal.worldId;
-        gid : TGlobal.groupId;
-        eid : TGlobal.entityId;
         field : Text;
-        value : Float;
+        value : { #number : Float; #formula : Text };
     };
+    //EDITED
     public type DecrementNumber = {
-        wid : ?TGlobal.worldId;
-        gid : TGlobal.groupId;
-        eid : TGlobal.entityId;
         field : Text;
-        value : Float;
+        value : { #number : Float; #formula : Text };
     };
+    //EDITED
     public type IncrementNumber = {
+        field : Text;
+        value : { #number : Float; #formula : Text };
+    };
+
+    //NEW
+    public type ReplaceText = {
+        field : Text;
+        oldText : Text;
+        newText : Text;
+    };
+
+    //ENTITY ACTION OUTCOMES
+    //NEW
+    public type UpdateEntity  = {
         wid : ?TGlobal.worldId;
         gid : TGlobal.groupId;
         eid : TGlobal.entityId;
-        field : Text;
-        value : Float;
-    };
-    public type ActionOutcomeOption = {
-        weight : Float;
-        option : {
-            #mintToken : MintToken;
-            #mintNft : MintNft;
+        updateType : {
             #deleteEntity : DeleteEntity;
             #renewTimestamp : RenewTimestamp;
-            #setString : SetString;
+            #setText : SetText;
             #setNumber : SetNumber;
             #decrementNumber : DecrementNumber;
             #incrementNumber : IncrementNumber;
+            #replaceText : ReplaceText;
+        };
+    };
+
+
+    //OUTCOMES
+    public type ActionOutcomeOption = {
+        weight : Float;
+        option : {
+            #transferIcrc : TransferIcrc;
+            #mintNft : MintNft;
+            #updateEntity  : UpdateEntity ;
         };
     };
     public type ActionOutcome = {
@@ -110,50 +119,82 @@ module {
         outcomes : [ActionOutcome];
     };
 
-    public type ActionPlugin = {
-        #verifyBurnNfts : { canister : Text; requiredNftMetadata : ?[Text] };
-        #verifyTransferIcp : { amt : Float; toPrincipal : Text };
-        #verifyTransferIcrc : {
-            canister : Text;
-            amt : Float;
-            toPrincipal : Text;
-        };
-        #claimStakingRewardNft : { canister : Text; requiredAmount : Nat };
-        #claimStakingRewardIcp : { requiredAmount : Float };
-        #claimStakingRewardIcrc : { canister : Text; requiredAmount : Float };
+    //CONCSTRAINTS
+    //NEW
+    public type NftTransfer = { 
+        toPrincipal : Text;
     };
+
+    //NEW
+    public type NftTx = {
+        nftConstraintType : { #hold : { #boomEXT; #originalEXT}; #transfer: NftTransfer };
+        canister : Text;
+        metadata : ?Text;
+    };
+    //NEW
+    public type IcpTx = {
+        amount : Float;
+        toPrincipal : Text;
+    };
+    //NEW
+    public type IcrcTx = {
+        amount : Float;
+        toPrincipal : Text;
+        canister : Text;
+    };
+
+    public type EntityConstraint = {
+        wid : ?TGlobal.worldId;
+        gid : TGlobal.groupId;
+        eid : TGlobal.entityId;
+        fieldName : Text;
+        validation : {
+            #greaterThanNumber : Float;
+            #lessThanNumber : Float;
+            #greaterThanEqualToNumber : Float;
+            #lessThanEqualToNumber : Float;
+            #equalToNumber : Float;
+            #equalToText : Text;
+            #greaterThanNowTimestamp;
+            #lessThanNowTimestamp;
+            #containsText : Text;
+        };
+    };
+
+    //EDITED
     public type ActionConstraint = {
         timeConstraint : ?{
             intervalDuration : Nat;
             actionsPerInterval : Nat;
         };
-        entityConstraint : ?[{
-            wid : ?TGlobal.worldId;
-            gid : TGlobal.groupId;
-            eid : TGlobal.entityId;
-            fieldName : Text;
-            validation : {
-                #greaterThanNumber : Float;
-                #lessThanNumber : Float;
-                #greaterThanEqualToNumber : Float;
-                #lessThanEqualToNumber : Float;
-                #equalToNumber : Float;
-                #equalToString : Text;
-                #greaterThanNowTimestamp;
-                #lessThanNowTimestamp;
-            };
-        }];
+        entityConstraint : [EntityConstraint];
+        icpConstraint: ? IcpTx;
+        icrcConstraint: [IcrcTx];
+        nftConstraint: [NftTx];
     };
-    public type Action = {
-        aid : Text;
-        name : ?Text;
-        description : ?Text;
-        imageUrl : ?Text;
-        tag : ?Text;
-        actionPlugin : ?ActionPlugin;
+
+    //ACTIONS
+    //NEW
+    public type SubAction =
+    {
         actionConstraint : ?ActionConstraint;
         actionResult : ActionResult;
     };
 
-    public type ActionResponse = (ActionState, [TEntity.Entity], [MintNft], [MintToken]);
+    //EDITED
+    public type Action = {
+        aid : Text;
+        callerAction : ?SubAction;
+        targetAction : ?SubAction;
+        name : ?Text;
+        description : ?Text;
+        imageUrl : ?Text;
+        tag : ?Text;
+    };
+
+    public type ActionReturn =
+    {
+        callerOutcomes : ? [ActionOutcomeOption];
+        targetOutcomes : ? [ActionOutcomeOption];
+    };
 };

@@ -46,8 +46,8 @@ export const idlFactory = ({ IDL }) => {
     'removeController' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateWorldCover' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'upgradeWorldToNewWasm' : IDL.Func(
-        [IDL.Text, IDL.Vec(IDL.Nat8), IDL.Vec(IDL.Nat8)],
-        [],
+        [IDL.Text, IDL.Vec(IDL.Nat8)],
+        [Result],
         [],
       ),
     'uploadNewWasmModule' : IDL.Func(

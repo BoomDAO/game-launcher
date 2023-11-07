@@ -116,7 +116,6 @@ export const useGetCurrentWorldVersion = (world_canister_id: string = ""): UseQu
     queryFn: async () => {
       const { actor, methods } = await useWorldDeployerClient();
       const res = await actor[methods.get_current_world_version](world_canister_id);
-      console.log(res);
       return res;
     },
   });
@@ -128,7 +127,6 @@ export const useGetAvailableWorldVersion = (): UseQueryResult<string> => {
     queryFn: async () => {
       const { actor, methods } = await useWorldDeployerClient();
       const res = await actor[methods.get_available_world_version]();
-      console.log(res);
       return res;
     },
   });
@@ -238,12 +236,17 @@ export const useUpgradeWorld = () => {
         const identity = authClient?.getIdentity();
         const owner_principal = Principal.fromText(identity.getPrincipal().toString());
         const owner = IDL.encode([IDL.Principal], [owner_principal]);
-        const arrayBufferOfWasm = b64toArrays("");
-        (await actor[methods.upgrade_world](
+        let res = (await actor[methods.upgrade_world](
           canisterId,
-          owner,
-          arrayBufferOfWasm[0]
-        ));
+          owner
+        )) as {
+          ok : void; 
+          err : string;
+        };
+
+        if(res.err != undefined) {
+          throw (res.err)
+        }
       } catch (error) {
         if (error instanceof Error) {
           throw error.message;

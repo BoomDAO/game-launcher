@@ -390,7 +390,7 @@
             "upgrade_world_button": "Upgrade World",
             "upgrade_world_hint": "Select wasm file you want to upgrade your World canister to."
           },
-          "upgrade_error": "World Upgrade is failed, contact dev team.",
+          "upgrade_error": "World Upgrade failed, check if you are already on latest version or contact dev team.",
           "upgrade_success": "World Upgrade successful."
         }
       }
