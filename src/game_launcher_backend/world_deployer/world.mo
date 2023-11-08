@@ -27,13 +27,14 @@ import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
+import Deque "mo:base/Deque";
 import Map "../utils/Map";
 
 import Parser "../utils/Parser";
 import ENV "../utils/Env";
 import Utils "../utils/Utils";
 import Leaderboard "../modules/Leaderboard";
-import RandomUtil "../utils/RandomUtil";
+import RandomExt "../modules/RandomExt";
 import EXTCORE "../utils/Core";
 import EXT "../types/ext.types";
 import AccountIdentifier "../utils/AccountIdentifier";
@@ -43,19 +44,41 @@ import TGlobal "../types/global.types";
 import TEntity "../types/entity.types";
 import TAction "../types/action.types";
 import TStaking "../types/staking.types";
+import Hex "../utils/Hex";
+import Ledger "../modules/Ledger";
 
 import Config "../modules/Configs";
+import FormulaEvaluation "../modules/FormulaEvaluation";
 
 actor class WorldTemplate(owner : Principal) = this {
+
+    private func WorldId() : Principal = Principal.fromActor(this);
     private stable var tokensDecimals : Trie.Trie<Text, Nat8> = Trie.empty();
     private stable var tokensFees : Trie.Trie<Text, Nat> = Trie.empty();
     private stable var totalNftCount : Trie.Trie<Text, Nat32> = Trie.empty();
     private stable var userPrincipalToUserNode : Trie.Trie<Text, Text> = Trie.empty();
-    private func WorldId() : Principal = Principal.fromActor(this);
+
+    //stable memory
+    private stable var _owner : Text = Principal.toText(owner);
+    private stable var _admins : [Text] = [Principal.toText(owner)];
+
+    //Configs
+    private stable var configsStorage : Trie.Trie<Text, TEntity.Config> = Trie.empty();
+    private stable var actionsStorage : Trie.Trie<Text, TAction.Action> = Trie.empty();
+
+    private var configs = Buffer.Buffer<TEntity.Config>(0);
+    private stable var tempUpdateConfig : Config.StableConfigs = [];
+
+    private var action = Buffer.Buffer<TAction.Action>(0);
+    private stable var tempUpdateAction : Config.Actions = [];
+
+    private var randomGenerator = RandomExt.RandomLCG();
+    private var seedMod : ?Nat = null;
 
     //Interfaces
     type UserNode = actor {
-        processAction : shared (uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<[TEntity.StableEntity], Text>);
+        validateConstraints : shared query (uid : TGlobal.userId, wid : TGlobal.worldId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint) -> async (Result.Result<TAction.ActionState, Text>);
+        applyOutcomes : shared (uid : TGlobal.userId, actionState : TAction.ActionState, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<(), Text>);
         getAllUserEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TEntity.StableEntity], Text>);
         getAllUserActionStates : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.ActionState], Text>);
     };
@@ -68,24 +91,8 @@ actor class WorldTemplate(owner : Principal) = this {
         grantGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
         removeGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
     };
+
     let worldHub : WorldHub = actor (ENV.WorldHubCanisterId);
-
-    type StakingHub = actor {
-        getUserStakes : shared (Text) -> async ([TStaking.Stake]);
-    };
-    let stakingHub : StakingHub = actor (ENV.StakingHubCanisterId);
-
-    type PaymentHub = actor {
-        verifyTxIcp : shared (Nat64, Text, Text, Nat64) -> async ({
-            #Success : Text;
-            #Err : Text;
-        });
-        verifyTxIcrc : shared (Nat, Text, Text, Nat, Text) -> async ({
-            #Success : Text;
-            #Err : Text;
-        });
-    };
-    let paymentHub : PaymentHub = actor (ENV.PaymentHubCanisterId);
 
     type ICP = actor {
         transfer : shared ICP.TransferArgs -> async ICP.TransferResult;
@@ -101,22 +108,33 @@ actor class WorldTemplate(owner : Principal) = this {
         getTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
         ext_burn : (EXT.TokenIdentifier, EXT.AccountIdentifier) -> async (Result.Result<(), EXT.CommonError>);
         ext_transfer : shared (request : EXT.TransferRequest) -> async EXT.TransferResponse;
+
+        getRegistry : query () -> async [(EXT.TokenIndex, EXT.AccountIdentifier)];
+
+        supply : query (EXT.TokenIdentifier) -> async Result.Result<EXT.Balance, EXT.CommonError>;
+        get_paged_registry : query (page : Nat32) -> async [(EXT.TokenIndex, EXT.AccountIdentifier)];
     };
 
-    //stable memory
-    private stable var _owner : Text = Principal.toText(owner);
-    private stable var _admins : [Text] = [Principal.toText(owner)];
+    public func upgradeActionsAndConfigsData() : async (Text) {
+        for (i in Buffer.toArray(configs).vals()) {
+            let fields_array : [(Text, Text)] = Map.toArray(i.fields);
 
-    //Configs
-    private var configs = Buffer.Buffer<TEntity.Config>(0);
-    private stable var tempUpdateConfig : Config.StableConfigs = [];
+            ignore createConfig({
+                cid = i.cid;
+                fields = fields_array;
+            });
+        };
 
-    private var action = Buffer.Buffer<TAction.Action>(0);
-    private stable var tempUpdateAction : Config.Actions = [];
+        for (i in Buffer.toArray(action).vals()) {
+            ignore createAction(i);
+        };
+
+        return ":)";
+    };
 
     system func preupgrade() {
         var b = Buffer.Buffer<TEntity.StableConfig>(0);
-        for(i in Buffer.toArray(configs).vals()) {
+        for (i in Buffer.toArray(configs).vals()) {
             let fields_array : [(Text, Text)] = Map.toArray(i.fields);
             b.add({
                 cid = i.cid;
@@ -129,7 +147,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     system func postupgrade() {
         let { thash } = Map;
-        for(i in tempUpdateConfig.vals()) {
+        for (i in tempUpdateConfig.vals()) {
             configs.add({
                 cid = i.cid;
                 fields = Map.fromIter(i.fields.vals(), thash);
@@ -239,90 +257,150 @@ actor class WorldTemplate(owner : Principal) = this {
 
     //GET CONFIG
     private func getSpecificConfig_(cid : Text) : (?TEntity.Config) {
-        for (config in configs.vals()) {
-            if (config.cid == cid) {
-                return ?config;
+        switch (Trie.find(configsStorage, Utils.keyT(cid), Text.equal)) {
+            case (?c) {
+                return ?c;
+            };
+            case _ {
+                return null;
             };
         };
-        return null;
     };
     private func getSpecificAction_(aid : Text) : (?TAction.Action) {
-        for (config in action.vals()) {
-            if (config.aid == aid) return ?config;
+        switch (Trie.find(actionsStorage, Utils.keyT(aid), Text.equal)) {
+            case (?c) {
+                return ?c;
+            };
+            case _ {
+                return null;
+            };
         };
-        return null;
     };
-    
+
     public query func getAllConfigs() : async ([TEntity.StableConfig]) {
         var b = Buffer.Buffer<TEntity.StableConfig>(0);
-        for(i in Buffer.toArray(configs).vals()) {
-            let fields_array : [(Text, Text)] = Map.toArray(i.fields);
+
+        for ((cid, c) in Trie.iter(configsStorage)) {
+            let fields_array : [(Text, Text)] = Map.toArray(c.fields);
             b.add({
-                cid = i.cid;
+                cid = cid;
                 fields = fields_array;
             });
         };
         return Buffer.toArray(b);
     };
     public query func getAllActions() : async ([TAction.Action]) {
-        return Buffer.toArray(action);
+        var b = Buffer.Buffer<TAction.Action>(0);
+
+        for ((aid, a) in Trie.iter(actionsStorage)) {
+            b.add(a);
+        };
+        return Buffer.toArray(b);
     };
 
     public func exportConfigs() : async ([TEntity.StableConfig]) {
         var b = Buffer.Buffer<TEntity.StableConfig>(0);
-        for(i in Buffer.toArray(configs).vals()) {
-            let fields_array : [(Text, Text)] = Map.toArray(i.fields);
+
+        for ((cid, c) in Trie.iter(configsStorage)) {
+            let fields_array : [(Text, Text)] = Map.toArray(c.fields);
             b.add({
-                cid = i.cid;
+                cid = cid;
                 fields = fields_array;
             });
         };
         return Buffer.toArray(b);
     };
     public func exportActions() : async ([TAction.Action]) {
-        return Buffer.toArray(action);
+        var b = Buffer.Buffer<TAction.Action>(0);
+
+        for ((aid, a) in Trie.iter(actionsStorage)) {
+            b.add(a);
+        };
+        return Buffer.toArray(b);
     };
 
     //CHECK CONFIG
-    private func configExist_(cid : Text) : (Bool, Int) {
-        var index = 0;
-        for (configElement in configs.vals()) {
-            if (configElement.cid == cid) {
-                return (true, index);
-            };
-            index += 1;
+    private func configExist_(cid : Text) : (Bool) {
+        switch (Trie.find(configsStorage, Utils.keyT(cid), Text.equal)) {
+            case (?c) true;
+            case _ false;
         };
-        return (false, -1);
     };
-    private func actionExist_(aid : Text) : (Bool, Int) {
-        var index = 0;
+    private func actionExist_(aid : Text) : (Bool) {
+        switch (Trie.find(actionsStorage, Utils.keyT(aid), Text.equal)) {
+            case (?c) true;
+            case _ false;
+        };
+    };
+
+    // Edit endpoints to support Candid edit feature
+    public shared ({ caller }) func editAction(arg : { aid : Text }) : async (TAction.Action) {
+        assert (isAdmin_(caller));
+
         for (configElement in action.vals()) {
-            if (configElement.aid == aid) {
-                return (true, index);
+            if (configElement.aid == arg.aid) {
+                return configElement;
             };
-            index += 1;
         };
-        return (false, -1);
+        return {
+            aid = arg.aid;
+            callerAction = null;
+            targetAction = null;
+            name = null;
+            description = null;
+            imageUrl = null;
+            tag = null;
+        };
     };
+
+    public shared ({ caller }) func editConfig(arg : { cid : Text }) : async (TEntity.StableConfig) {
+        assert (isAdmin_(caller));
+
+        for (configElement in configs.vals()) {
+            if (configElement.cid == arg.cid) {
+                let fields_array : [(Text, Text)] = Map.toArray(configElement.fields);
+                return {
+                    cid = configElement.cid;
+                    fields = fields_array;
+                };
+            };
+        };
+        return {
+            cid = arg.cid;
+            fields = [];
+        };
+    };
+
     //CREATE CONFIG
     public shared ({ caller }) func createConfig(config : TEntity.StableConfig) : async (Result.Result<Text, Text>) {
-        assert (isAdmin_(caller));
+        assert (isAdmin_(caller) or caller == WorldId());
         let configExist = configExist_(config.cid);
-        if (configExist.0 == false) {
-            let {thash} = Map;
-            configs.add({
-                cid = config.cid;
-                fields = Map.fromIter(config.fields.vals(), thash);
-            });
+        if (configExist == false) {
+            let { thash } = Map;
+
+            let fields : Map.Map<Text, Text> = Map.fromIter(config.fields.vals(), thash);
+
+            configsStorage := Trie.put(
+                configsStorage,
+                Utils.keyT(config.cid),
+                Text.equal,
+                {
+                    cid = config.cid;
+                    fields = fields;
+                },
+            ).0;
+
             return #ok("all good :)");
         };
         return #err("there is an entity already using that id, you can try updateConfig");
     };
     public shared ({ caller }) func createAction(config : TAction.Action) : async (Result.Result<Text, Text>) {
-        assert (isAdmin_(caller));
+        assert (isAdmin_(caller) or caller == WorldId());
         let configExist = actionExist_(config.aid);
-        if (configExist.0 == false) {
-            action.add(config);
+        if (configExist == false) {
+
+            actionsStorage := Trie.put(actionsStorage, Utils.keyT(config.aid), Text.equal, config).0;
+
             return #ok("all good :)");
         };
         return #err("there is an action already using that id, you can try updateConfig");
@@ -331,13 +409,20 @@ actor class WorldTemplate(owner : Principal) = this {
     public shared ({ caller }) func updateConfig(config : TEntity.StableConfig) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
         let configExist = configExist_(config.cid);
-        if (configExist.0) {
-            var index = Utils.intToNat(configExist.1);
-            let {thash} = Map;
-            configs.put(index, {
-                cid = config.cid;
-                fields = Map.fromIter(config.fields.vals(), thash);
-            });
+        if (configExist) {
+            let { thash } = Map;
+            let fields : Map.Map<Text, Text> = Map.fromIter(config.fields.vals(), thash);
+
+            configsStorage := Trie.put(
+                configsStorage,
+                Utils.keyT(config.cid),
+                Text.equal,
+                {
+                    cid = config.cid;
+                    fields = fields;
+                },
+            ).0;
+
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
@@ -345,9 +430,9 @@ actor class WorldTemplate(owner : Principal) = this {
     public shared ({ caller }) func updateAction(config : TAction.Action) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
         let configExist = actionExist_(config.aid);
-        if (configExist.0) {
-            var index = Utils.intToNat(configExist.1);
-            action.put(index, config);
+        if (configExist) {
+            actionsStorage := Trie.put(actionsStorage, Utils.keyT(config.aid), Text.equal, config).0;
+
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
@@ -356,8 +441,10 @@ actor class WorldTemplate(owner : Principal) = this {
     public shared ({ caller }) func deleteConfig(cid : Text) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
         let configExist = configExist_(cid);
-        if (configExist.0) {
-            ignore configs.remove(Utils.intToNat(configExist.1));
+        if (configExist) {
+
+            configsStorage := Trie.remove(configsStorage, Utils.keyT(cid), Text.equal).0;
+
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
@@ -365,8 +452,10 @@ actor class WorldTemplate(owner : Principal) = this {
     public shared ({ caller }) func deleteAction(aid : Text) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
         let configExist = actionExist_(aid);
-        if (configExist.0) {
-            ignore action.remove(Utils.intToNat(configExist.1));
+        if (configExist) {
+
+            actionsStorage := Trie.remove(actionsStorage, Utils.keyT(aid), Text.equal).0;
+
             return #ok("all good :)");
         };
         return #err("there is no entity using that eid");
@@ -374,186 +463,66 @@ actor class WorldTemplate(owner : Principal) = this {
     //RESET CONFIG
     public shared ({ caller }) func resetConfig() : async (Result.Result<(), ()>) {
         assert (isAdmin_(caller));
+
+        configsStorage := Trie.empty();
         let { thash } = Map;
-        for(i in Config.configs.vals()) {
-            configs.add({
-                cid = i.cid;
-                fields = Map.fromIter(i.fields.vals(), thash);
-            });
+        for (i in Config.configs.vals()) {
+            ignore createConfig(i);
         };
-        action := Buffer.fromArray(Config.action);
         return #ok();
     };
-    
+
     public shared ({ caller }) func resetActions() : async (Result.Result<(), ()>) {
         assert (isAdmin_(caller));
-        action := Buffer.fromArray(Config.action);
+
+        actionsStorage := Trie.empty();
+
+        for (i in Config.action.vals()) {
+            ignore createAction(i);
+        };
+
         return #ok();
     };
 
     //Get Actions
-    public func getAllUserActionStates(userPrincipal :Principal) : async (Result.Result<[TAction.ActionState], Text>) {
+    public func getAllUserActionStates(userPrincipal : Text) : async (Result.Result<[TAction.ActionState], Text>) {
         let worldId = WorldId();
 
-        var userNodeId : Text = "";
+        switch (await getUserNode_(userPrincipal)) {
+            case (#ok(userNodeId)) {
 
-        let userPrincipalTxt = Principal.toText(userPrincipal);
+                let userNode : UserNode = actor (userNodeId);
 
-        switch (await getUserNode_(userPrincipalTxt)) {
-            case (#ok(content)) { userNodeId := content };
+                return await userNode.getAllUserActionStates(userPrincipal, Principal.toText(worldId));
+            };
             case (#err(message)) {
                 return #err(message);
             };
-        };
-
-        let userNode : UserNode = actor (userNodeId);
-        return await userNode.getAllUserActionStates(userPrincipalTxt, Principal.toText(worldId));
+        }; 
     };
     //Get Entities
-    public func getAllUserEntities(userPrincipal :Principal) : async (Result.Result<[TEntity.StableEntity], Text>) {
+    public func getAllUserEntities(userPrincipal : Text) : async (Result.Result<[TEntity.StableEntity], Text>) {
         let worldId = WorldId();
 
-        var userNodeId : Text = "";
+        switch (await getUserNode_(userPrincipal)) {
+            case (#ok(userNodeId)) {
 
-        let userPrincipalTxt = Principal.toText(userPrincipal);
+                let userNode : UserNode = actor (userNodeId);
 
-        switch (await getUserNode_(userPrincipalTxt)) {
-            case (#ok(content)) { userNodeId := content };
+                return await userNode.getAllUserEntities(userPrincipal, Principal.toText(worldId));
+            };
             case (#err(message)) {
                 return #err(message);
-            };
-        };
-
-        let userNode : UserNode = actor (userNodeId);
-        return await userNode.getAllUserEntities(userPrincipalTxt, Principal.toText(worldId));
-    };
-    //Send or Burn (it will burn if in the burn plugin config, the "to" field is null or empty)
-    private func verifyBurnNfts_(userPrincipal : Principal, burnActionArg : { actionId : Text; indexes : [Nat32] }, configs : TAction.Action, outcomes : [TAction.ActionOutcomeOption]) : async () {
-
-        switch (configs.actionPlugin) {
-            case (? #verifyBurnNfts(actionPluginConfig)) {
-                //
-                let accountId : Text = AccountIdentifier.fromPrincipal(userPrincipal, null);
-                if (accountId == "") return; //  WE RETURN DUE TO ISSUE GETTING THE aid FROM userPrincipal
-
-                let collection : EXTInterface = actor (actionPluginConfig.canister);
-
-                //Indexes to fetch metadata from
-                let indexes = burnActionArg.indexes;
-                //List of fetched metadata
-                var fetchedMetadata = Buffer.Buffer<Text>(0);
-                //We try to collect all metadata from the given indexes
-                for (index in indexes.vals()) {
-                    let optionalMetadata = await collection.getTokenMetadata(index);
-
-                    switch (optionalMetadata) {
-                        case (?metadataVariant) {
-                            switch (metadataVariant) {
-                                case (#nonfungible noneFungibleMetadata) {
-                                    switch (noneFungibleMetadata.metadata) {
-                                        case (?optionalMetadataContainer) {
-                                            switch (optionalMetadataContainer) {
-                                                case (#json metadataAsJson) {
-                                                    fetchedMetadata.add(metadataAsJson);
-                                                };
-                                                case _ {
-                                                    return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
-                                                };
-                                            };
-                                        };
-                                        case _ {
-                                            return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
-                                        };
-                                    };
-                                };
-                                case _ {
-                                    return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
-                                };
-                            };
-                        };
-                        case _ {
-                            return; //IF METADATA IS NOT FOUND FOR ANY OF THE GIVEN INDEXES WE FORCE THE OPERATION TO FAIL
-                        };
-                    };
-                };
-                //Metadata to compare against
-                var optionalRequiredNftMetadata = actionPluginConfig.requiredNftMetadata;
-                //Validation
-
-                switch (optionalRequiredNftMetadata) {
-                    case (?requiredNftMetadata) {
-                        for (requirement in requiredNftMetadata.vals()) {
-                            var hasRequirement = false;
-
-                            var innerLoopIndex = 0;
-                            label fetchedMetadataLoop for (metadata in fetchedMetadata.vals()) {
-                                if (requirement == metadata) {
-                                    ignore fetchedMetadata.remove(innerLoopIndex);
-                                    hasRequirement := true;
-                                    break fetchedMetadataLoop;
-                                };
-                                innerLoopIndex += 1;
-                            };
-
-                            if (hasRequirement == false) return; //IF USER DOESNT HAVE ANY OF THE REQUIREMENT WE FORCE THE OPERATION TO FAIL
-                        };
-                    };
-                    case _ {}; //DO NOTHING HERE
-                };
-
-                //There must be at least one specified index for the operation to succeed
-                if (indexes.size() == 0) return;
-
-                //Try burn all given nft indexes
-                for (index in indexes.vals()) {
-                    var tokenid : EXT.TokenIdentifier = EXTCORE.TokenIdentifier.fromText(actionPluginConfig.canister, index);
-                    var res : Result.Result<(), EXT.CommonError> = await collection.ext_burn(tokenid, accountId);
-                    switch (res) {
-                        case (#ok _) {
-                            //DO NOTHING HERE
-                        };
-                        case (#err e) {
-                            return; //Skip cuz burning failed
-                        };
-                    };
-                };
-
-                ignore handleOutcomes_(Principal.toText(userPrincipal), burnActionArg.actionId, configs, ?outcomes);
-            };
-            case (_) {
-                //WE DO NOTHING HERE
-            };
-        };
-    };
-    //Payments : redirected to PaymentHub for verification and holding update.
-    private func verifyTxIcp_(blockIndex : Nat64, toPrincipal : Text, fromPrincipal : Text, amt : Nat64) : async (Result.Result<(), Text>) {
-        switch (await paymentHub.verifyTxIcp(blockIndex, toPrincipal, fromPrincipal, amt)) {
-            case (#Success s) {
-                return #ok();
-            };
-            case (#Err e) {
-                return #err(e);
-            };
-        };
-    };
-    private func verifyTxIcrc_(blockIndex : Nat, toPrincipal : Text, fromPrincipal : Text, amt : Nat, tokenCanisterId : Text) : async (Result.Result<(), Text>) {
-
-        switch (await paymentHub.verifyTxIcrc(blockIndex, toPrincipal, fromPrincipal, amt, tokenCanisterId)) {
-            case (#Success s) {
-                return #ok();
-            };
-            case (#Err e) {
-                return #err(e);
             };
         };
     };
 
     //Process Action
-    private func generateActionResultOutcomes_(actionResult : TAction.ActionResult) : async ([TAction.ActionOutcomeOption]) {
+    private func generateActionResultOutcomes_(actionResult : TAction.ActionResult, caller : Text, worldData : [TEntity.StableEntity], callerData : [TEntity.StableEntity], targetData : ?[TEntity.StableEntity]) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
         var outcomes = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
         for (outcome in actionResult.outcomes.vals()) {
             var accumulated_weight : Float = 0;
-            var rand_perc : Float = 1;
+            var randPerc : Float = 1;
 
             //A) Compute total weight on the current outcome
             if (outcome.possibleOutcomes.size() > 1) {
@@ -562,16 +531,30 @@ actor class WorldTemplate(owner : Principal) = this {
                 };
 
                 //B) Gen a random number using the total weight as max value
-                rand_perc := await RandomUtil.get_random_perc();
+                switch seedMod {
+                    case (?_seedMod) {
+                        randPerc := randomGenerator.genAsPerc(_seedMod);
+                    };
+                    case _ {
+                        let trueRandom = await RandomExt.getRandomNat(999999999999);
+                        seedMod := ?trueRandom;
+                        randPerc := randomGenerator.genAsPerc(trueRandom);
+                    };
+                };
             };
 
-            var dice_outcome = (rand_perc * 1.0 * accumulated_weight);
+            var dice_outcome = (randPerc * 1.0 * accumulated_weight);
 
             //C Pick outcomes base on their weights
             label outcome_loop for (outcomeOption in outcome.possibleOutcomes.vals()) {
                 let outcome_weight = outcomeOption.weight;
                 if (outcome_weight >= dice_outcome) {
-                    outcomes.add(outcomeOption);
+
+                    switch (refineOutcome_(outcomeOption, caller, worldData, callerData, targetData)) {
+                        case (#ok refinedOutcome) outcomes.add(refinedOutcome);
+                        case (#err errMsg) return #err errMsg;
+                    };
+
                     break outcome_loop;
                 } else {
                     dice_outcome -= outcome_weight;
@@ -579,7 +562,167 @@ actor class WorldTemplate(owner : Principal) = this {
             };
         };
 
-        return Buffer.toArray(outcomes);
+        return #ok(Buffer.toArray(outcomes));
+    };
+
+    private func refineOutcome_(outcome : TAction.ActionOutcomeOption, caller : Text, worldData : [TEntity.StableEntity], callerData : [TEntity.StableEntity], targetData : ?[TEntity.StableEntity]) : (Result.Result<TAction.ActionOutcomeOption, Text>) {
+        switch (outcome.option) {
+
+            case (#updateEntity updateEntity) {
+
+                var gid = updateEntity.gid;
+                if (gid == "") gid := "general";
+                var eid = updateEntity.eid;
+                if (Text.contains(eid, #text "$caller")) eid := caller;
+
+                switch (updateEntity.updateType) {
+                    case (#setNumber updateType) {
+
+                        switch (updateType.value) {
+                            case (#formula formula) {
+
+                                var number = 0.0;
+                                switch (evaluateFormula(formula, worldData, callerData, targetData)) {
+                                    case (#ok(_number)) number := _number;
+                                    case (#err errMsg) return #err errMsg;
+                                };
+
+                                return #ok {
+                                    weight = outcome.weight;
+                                    option = #updateEntity {
+                                        wid = updateEntity.wid;
+                                        gid = gid;
+                                        eid = eid;
+                                        updateType = #setNumber {
+                                            field = updateType.field;
+                                            value = #number number;
+                                        };
+                                    };
+                                };
+                            };
+                            case (_) {};
+                        };
+
+                    };
+                    case (#decrementNumber updateType) {
+
+                        switch (updateType.value) {
+                            case (#formula formula) {
+
+                                var number = 0.0;
+                                switch (evaluateFormula(formula, worldData, callerData, targetData)) {
+                                    case (#ok(_number)) number := _number;
+                                    case (#err errMsg) return #err errMsg;
+                                };
+
+                                return #ok {
+                                    weight = outcome.weight;
+                                    option = #updateEntity {
+                                        wid = updateEntity.wid;
+                                        gid = gid;
+                                        eid = eid;
+                                        updateType = #decrementNumber {
+                                            field = updateType.field;
+                                            value = #number number;
+                                        };
+                                    };
+                                };
+                            };
+                            case (_) {};
+                        };
+
+                    };
+                    case (#incrementNumber updateType) {
+
+                        switch (updateType.value) {
+                            case (#formula formula) {
+
+                                var number = 0.0;
+                                switch (evaluateFormula(formula, worldData, callerData, targetData)) {
+                                    case (#ok(_number)) number := _number;
+                                    case (#err errMsg) return #err errMsg;
+                                };
+
+                                return #ok {
+                                    weight = outcome.weight;
+                                    option = #updateEntity {
+                                        wid = updateEntity.wid;
+                                        gid = gid;
+                                        eid = eid;
+                                        updateType = #incrementNumber {
+                                            field = updateType.field;
+                                            value = #number number;
+                                        };
+                                    };
+                                };
+                            };
+                            case (_) {};
+                        };
+
+                    };
+                    case (#renewTimestamp updateType) {
+
+                        switch (updateType.value) {
+                            case (#formula formula) {
+
+                                var number = 0.0;
+                                switch (evaluateFormula(formula, worldData, callerData, targetData)) {
+                                    case (#ok(_number)) number := _number;
+                                    case (#err errMsg) return #err errMsg;
+                                };
+
+                                return #ok {
+                                    weight = outcome.weight;
+                                    option = #updateEntity {
+                                        wid = updateEntity.wid;
+                                        gid = gid;
+                                        eid = eid;
+                                        updateType = #renewTimestamp {
+                                            field = updateType.field;
+                                            value = #number number;
+                                        };
+                                    };
+                                };
+                            };
+                            case (_) {};
+                        };
+
+                    };
+                    case (#setText updateType){
+
+                        if(Text.contains(updateType.value, #text "$caller")){
+                            return #ok {
+                                weight = outcome.weight;
+                                option = #updateEntity {
+                                    wid = updateEntity.wid;
+                                    gid = gid;
+                                    eid = eid;
+                                    updateType = #setText {
+                                        field = updateType.field;
+                                        value = caller;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                    case _ {};
+                };
+
+                return #ok {
+                    weight = outcome.weight;
+                    option = #updateEntity {
+                        wid = updateEntity.wid;
+                        gid = gid;
+                        eid = eid;
+                        updateType = updateEntity.updateType;
+                    };
+                };
+                //
+            };
+            case _ {};
+        };
+
+        return #ok outcome;
     };
 
     private func mint_(nftCanisterId : Text, mintsToProcess : [(EXT.AccountIdentifier, EXT.Metadata)]) : async ([TAction.MintNft]) {
@@ -679,29 +822,14 @@ actor class WorldTemplate(owner : Principal) = this {
         return Buffer.toArray(mintedNfts);
     };
 
-    private func handleOutcomes_(userPrincipalTxt : Text, actionId : Text, actionConfig : TAction.Action, preGeneratedOutcomes : ?[TAction.ActionOutcomeOption]) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
+    private func applyOutcomes_(userPrincipalTxt : Text, userNode : UserNode, actionState : TAction.ActionState, outcomes : [TAction.ActionOutcomeOption]) : async ([TAction.ActionOutcomeOption]) {
 
-        let outcomes = switch (preGeneratedOutcomes) {
-            case (?value) {
-                value;
-            };
-            case _ {
-                await generateActionResultOutcomes_(actionConfig.actionResult);
-            };
-        };
+        ignore userNode.applyOutcomes(userPrincipalTxt, actionState, outcomes);
 
-        var userNodeId : Text = "2vxsx-fae";
-
-        switch (await getUserNode_(userPrincipalTxt)) {
-            case (#ok(content)) { userNodeId := content };
-            case (#err(message)) {
-                return #err(message);
-            };
-        };
-
-        let userNode : UserNode = actor (userNodeId);
-
-        ignore userNode.processAction(userPrincipalTxt, actionId, actionConfig.actionConstraint, outcomes);
+        // switch applyOutcomeResult {
+        //     case (#ok(a)) {};
+        //     case (#err err) return #err err;
+        // };
 
         let accountId : Text = AccountIdentifier.fromText(userPrincipalTxt, null);
 
@@ -763,7 +891,7 @@ actor class WorldTemplate(owner : Principal) = this {
                     //DO NOTHING HERE
                 };
                 //Mint Tokens
-                case (#mintToken val) {
+                case (#transferIcrc val) {
                     //
                     processedResult.add(outcome);
                     //
@@ -815,251 +943,260 @@ actor class WorldTemplate(owner : Principal) = this {
             };
         };
 
-        return #ok(Buffer.toArray(processedResult));
+        return Buffer.toArray(processedResult);
     };
 
-    public shared ({ caller }) func processAction(actionArg : TAction.ActionArg) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
+    public shared ({ caller }) func processAction(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
         //Todo: Check for each action the timeConstraint
-        switch (actionArg) {
-            case (#default(arg)) {
-                var configType = getSpecificAction_(arg.actionId);
+        let actionId = actionArg.actionId;
+        let optTargetPrincipalId = actionArg.targetPrincipalId;
 
-                switch (configType) {
-                    case (?configs) {
+        var callerAction : TAction.SubAction = {
+            actionConstraint = null;
+            actionResult = { outcomes = [] };
+        };
+        var targetAction : TAction.SubAction = {
+            actionConstraint = null;
+            actionResult = { outcomes = [] };
+        };
 
-                        switch (configs.actionPlugin) {
-                            case (null) {
-                                return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
-                            };
-                            case (_) {
-                                return #err("Something went wrong, argument type \"default\" must not have actionPlugin");
-                            };
-                        };
+        var callerPrincipalId = Principal.toText(caller);
+        var validCallerSubAction = false;
+
+        var targetPrincipalId : Text = "";
+        var hasTargetPrincipalId = false;
+        var hasSubActionTarget = false;
+
+        //CHECK IF ACTION EXIST TO TRY SETUP BOTH CALLER AND TARGET SUB ACTIONS
+        switch (getSpecificAction_(actionId)) {
+            case (?_action) {
+
+                //SETUP CALLER ACTION
+                switch (_action.callerAction) {
+                    case (?_callerAction) {
+                        callerAction := _callerAction;
+                        validCallerSubAction := true;
                     };
-                    case (_) {
-                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
+                    case (_) {};
+                };
+
+                //TRY SETUP TARGET ACTION
+                switch (_action.targetAction) {
+                    case (?_targetAction) {
+                        targetAction := _targetAction;
+                        hasSubActionTarget := true;
                     };
+                    case (_) {};
                 };
             };
-            case (#verifyBurnNfts(arg)) {
-                var configType = getSpecificAction_(arg.actionId);
-
-                switch (configType) {
-                    case (?configs) {
-
-                        switch (configs.actionPlugin) {
-                            case (? #verifyBurnNfts(actionPluginConfig)) {
-                                let outcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes_(configs.actionResult);
-
-                                ignore verifyBurnNfts_(caller, arg, configs, outcomes);
-
-                                return #ok(outcomes);
-                            };
-                            case (_) {
-                                return #err("Something went wrong, argument type \"verifyBurnNfts\" mismatches config type");
-                            };
-                        };
-                    };
-                    case (_) {
-                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
-                    };
-                };
-            };
-            case (#verifyTransferIcp(arg)) {
-                var configType = getSpecificAction_(arg.actionId);
-
-                switch (configType) {
-                    case (?configs) {
-                        switch (configs.actionPlugin) {
-                            case (? #verifyTransferIcp(actionPluginConfig)) {
-
-                                let decimals = await tokenDecimal_(ENV.Ledger);
-
-                                switch (await verifyTxIcp_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller), Nat64.fromNat(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)))) {
-                                    case (#ok()) {
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
-                                    };
-                                    case (#err(msg)) {
-                                        let fee = await tokenFee_(ENV.Ledger);
-
-                                        return #err(msg # ", amount:" #Float.toText(actionPluginConfig.amt) # ", baseUnitAmount: " #Nat.toText(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)) # ", decimals:" #Nat.toText(Nat8.toNat(decimals)) # ", fee:" #Nat.toText(fee));
-                                    };
-                                };
-                            };
-                            case (_) {
-                                return #err("Something went wrong, argument type \"verifyTransferIcp\" mismatches config type");
-                            };
-                        };
-                    };
-                    case (_) {
-                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
-                    };
-                };
-            };
-            case (#verifyTransferIcrc(arg)) {
-                var configType = getSpecificAction_(arg.actionId);
-
-                switch (configType) {
-                    case (?configs) {
-                        switch (configs.actionPlugin) {
-                            case (? #verifyTransferIcrc(actionPluginConfig)) {
-
-                                let decimals = await tokenDecimal_(actionPluginConfig.canister);
-
-                                switch (await verifyTxIcrc_(arg.blockIndex, actionPluginConfig.toPrincipal, Principal.toText(caller), Utils.convertToBaseUnit(actionPluginConfig.amt, decimals), actionPluginConfig.canister)) {
-                                    case (#ok()) {
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
-                                    };
-                                    case (#err(msg)) {
-                                        let fee = await tokenFee_(actionPluginConfig.canister);
-
-                                        return #err(msg # ", amount:" #Float.toText(actionPluginConfig.amt) # ", baseUnitAmount: " #Nat.toText(Utils.convertToBaseUnit(actionPluginConfig.amt, decimals)) # ", decimals:" #Nat.toText(Nat8.toNat(decimals)) # ", fee:" #Nat.toText(fee));
-                                    };
-                                };
-                            };
-                            case (_) {
-                                return #err("Something went wrong, argument type \"verifyTransferIcp\" mismatches config type");
-                            };
-                        };
-                    };
-                    case (_) {
-                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
-                    };
-                };
-            };
-            case (#claimStakingRewardNft(arg)) {
-                var configType = getSpecificAction_(arg.actionId);
-
-                switch (configType) {
-                    case (?configs) {
-                        switch (configs.actionPlugin) {
-                            case (? #claimStakingRewardNft(actionPluginConfig)) {
-
-                                let callerText = Principal.toText(caller);
-
-                                let stakes = await stakingHub.getUserStakes(callerText);
-
-                                var foundStake : ?TStaking.Stake = null;
-
-                                label stakesLoop for (stake in stakes.vals()) {
-                                    if (stake.canister_id == actionPluginConfig.canister) {
-                                        foundStake := ?stake;
-                                        break stakesLoop;
-                                    };
-                                };
-
-                                switch (foundStake) {
-                                    case (?selectedStakeData) {
-                                        if (selectedStakeData.amount < actionPluginConfig.requiredAmount) return #err("stake of id: \"" #actionPluginConfig.canister # "\" doesnt meet amount requirement");
-                                        //
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
-                                    };
-                                    case (_) {
-                                        return #err("nft stake of id: \"" #actionPluginConfig.canister # "\" could not be found");
-                                    };
-                                };
-                            };
-                            case (_) {
-                                return #err("Something went wrong, argument type \"claimStakingReward\" mismatches config type");
-                            };
-                        };
-                    };
-                    case (_) {
-                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
-                    };
-                };
-            };
-            case (#claimStakingRewardIcp(arg)) {
-                var configType = getSpecificAction_(arg.actionId);
-
-                switch (configType) {
-                    case (?configs) {
-                        switch (configs.actionPlugin) {
-                            case (? #claimStakingRewardIcp(actionPluginConfig)) {
-
-                                let callerText = Principal.toText(caller);
-
-                                let stakes = await stakingHub.getUserStakes(callerText);
-
-                                var foundStake : ?TStaking.Stake = null;
-
-                                label stakesLoop for (stake in stakes.vals()) {
-                                    if (stake.canister_id == ENV.Ledger) {
-                                        foundStake := ?stake;
-                                        break stakesLoop;
-                                    };
-                                };
-
-                                switch (foundStake) {
-                                    case (?selectedStakeData) {
-
-                                        let decimals = await tokenDecimal_(ENV.Ledger);
-
-                                        if (selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals)) return #err("icp stake doesnt meet amount requirement");
-                                        //
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
-                                    };
-                                    case (_) {
-                                        return #err("icp stake could not be found");
-                                    };
-                                };
-                            };
-                            case (_) {
-                                return #err("Something went wrong, argument type \"claimStakingReward\" mismatches config type");
-                            };
-                        };
-                    };
-                    case (_) {
-                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
-                    };
-                };
-            };
-            case (#claimStakingRewardIcrc(arg)) {
-                var configType = getSpecificAction_(arg.actionId);
-
-                switch (configType) {
-                    case (?configs) {
-                        switch (configs.actionPlugin) {
-                            case (? #claimStakingRewardIcrc(actionPluginConfig)) {
-
-                                let callerText = Principal.toText(caller);
-
-                                let stakes = await stakingHub.getUserStakes(callerText);
-
-                                var foundStake : ?TStaking.Stake = null;
-
-                                label stakesLoop for (stake in stakes.vals()) {
-                                    if (stake.canister_id == actionPluginConfig.canister) {
-                                        foundStake := ?stake;
-                                        break stakesLoop;
-                                    };
-                                };
-
-                                switch (foundStake) {
-                                    case (?selectedStakeData) {
-
-                                        let decimals = await tokenDecimal_(actionPluginConfig.canister);
-
-                                        if (selectedStakeData.amount < Utils.convertToBaseUnit(actionPluginConfig.requiredAmount, decimals)) return #err("stake of id: \"" #actionPluginConfig.canister # "\" doesnt meet amount requirement");
-                                        //
-                                        return await handleOutcomes_(Principal.toText(caller), arg.actionId, configs, null);
-                                    };
-                                    case (_) {
-                                        return #err("icrc stake of id: \"" #actionPluginConfig.canister # "\" could not be found");
-                                    };
-                                };
-                            };
-                            case (_) {
-                                return #err("Something went wrong, argument type \"claimStakingReward\" mismatches config type");
-                            };
-                        };
-                    };
-                    case (_) {
-                        return #err("Config of id: \"" #arg.actionId # "\" could not be found");
-                    };
-                };
+            case (_) {
+                return #err("Failure to find action with key " # actionId);
             };
         };
+
+        //SETUP TARGET PRINCIPAL ID
+        switch (optTargetPrincipalId) {
+            case (?_targetPrincipalId) {
+                targetPrincipalId := _targetPrincipalId;
+                hasTargetPrincipalId := true;
+            };
+            case (_) {};
+        };
+
+        var worldData : [TEntity.StableEntity] = [];
+        var callerData : [TEntity.StableEntity] = [];
+        var targetData : ?[TEntity.StableEntity] = null;
+
+        var nodesResult = await getNodesData_(callerPrincipalId, optTargetPrincipalId);
+
+        switch nodesResult {
+            case (#ok(nodes)) {
+                worldData := nodes.0;
+                callerData := nodes.1;
+                targetData := nodes.2;
+            };
+            case (#err(errMsg)) return #err errMsg;
+        };
+
+        //CHECK IF IT IS COMPOUND ACTION OR NORMAL ACTION
+        let validTargetSubAction = hasTargetPrincipalId and hasSubActionTarget;
+
+        let isCompoundCall = validTargetSubAction and validCallerSubAction;
+
+        if (isCompoundCall) {
+
+            var worldId : Text = Principal.toText(Principal.fromActor(this));
+
+            //FETCH NODES IDS
+            var callerNodeId : Text = "2vxsx-fae";
+            var targetNodeId : Text = "2vxsx-fae";
+
+            switch (await getUserNode_(callerPrincipalId)) {
+                case (#ok(content)) { callerNodeId := content };
+                case (#err(message)) {
+                    return #err(message);
+                };
+            };
+
+            switch (await getUserNode_(targetPrincipalId)) {
+                case (#ok(content)) { targetNodeId := content };
+                case (#err(message)) {
+                    return #err(message);
+                };
+            };
+
+            let callerNode : UserNode = actor (callerNodeId);
+            let targetNode : UserNode = actor (targetNodeId);
+
+            //VALIDATE OUTCOMES AND FETCH ACTION STATES
+            var callerActionState : TAction.ActionState = {
+                actionId = "";
+                intervalStartTs = 0;
+                actionCount = 0;
+            };
+            var targetActionState : TAction.ActionState = {
+                actionId = "";
+                intervalStartTs = 0;
+                actionCount = 0;
+            };
+
+            var callerActionStateResultHandler = callerNode.validateConstraints(callerPrincipalId, worldId, actionId, callerAction.actionConstraint);
+            var targetActionStateResultHandler = targetNode.validateConstraints(targetPrincipalId, worldId, actionId, targetAction.actionConstraint);
+
+            switch (await callerActionStateResultHandler) {
+                case (#ok(result)) { callerActionState := result };
+                case (#err(message)) {
+                    return #err(message);
+                };
+            };
+
+            switch (await targetActionStateResultHandler) {
+                case (#ok(result)) { targetActionState := result };
+                case (#err(message)) {
+                    return #err(message);
+                };
+            };
+
+            //GENERATE OUTCOMES
+            var callerGeneratedOutcomesResultHandler = generateActionResultOutcomes_(callerAction.actionResult, callerPrincipalId, worldData, callerData, targetData);
+            var targetGeneratedOutcomesResultHandler = generateActionResultOutcomes_(targetAction.actionResult, callerPrincipalId, worldData, callerData, targetData);
+
+            var callerGeneratedOutcomesResult = await callerGeneratedOutcomesResultHandler;
+            var targetGeneratedOutcomesResult = await targetGeneratedOutcomesResultHandler;
+
+            switch callerGeneratedOutcomesResult {
+                case (#ok(callerGeneratedOutcomes)) {
+
+                    switch targetGeneratedOutcomesResult {
+                        case (#ok(targetGeneratedOutcomes)) {
+
+                            //APPLY OUTCOMES
+                            let callerOutcomesHandler = applyOutcomes_(callerPrincipalId, callerNode, callerActionState, callerGeneratedOutcomes);
+                            let targetOutcomesHandler = applyOutcomes_(targetPrincipalId, targetNode, targetActionState, targetGeneratedOutcomes);
+                            
+                            let callerOutcomes = await callerOutcomesHandler;
+                            let targetOutcomes = await targetOutcomesHandler;
+
+                            //RETURN CALLER OUTCOME
+                            return #ok({
+                                callerOutcomes = ? callerOutcomes;
+                                targetOutcomes = ? targetOutcomes;
+                            });
+                        };
+                        case (#err(errMsg)) return #err errMsg;
+                    };
+
+                };
+                case (#err(errMsg)) return #err errMsg;
+            };
+        } else if (validTargetSubAction) {
+            //GENERATE OUTCOMES
+            var targetGeneratedOutcomesResult = await generateActionResultOutcomes_(targetAction.actionResult, callerPrincipalId, worldData, callerData, targetData);
+
+            switch targetGeneratedOutcomesResult {
+                case (#ok(targetGeneratedOutcomes)) {
+
+                    var actionResult = await processAction_(targetPrincipalId, actionId, targetAction.actionConstraint, targetGeneratedOutcomes);
+
+                    switch actionResult {
+                        case (#ok(outcomes)) {
+
+                            //RETURN CALLER OUTCOME
+                            return #ok({
+                                callerOutcomes = null;
+                                targetOutcomes = ? outcomes;
+                            });
+
+                        };
+                        case (#err err) return #err err;
+                    };
+                };
+                case (#err(errMsg)) return #err errMsg;
+            };
+        } else if (validCallerSubAction) {
+            //GENERATE OUTCOMES
+            var callerGeneratedOutcomesResult = await generateActionResultOutcomes_(callerAction.actionResult, callerPrincipalId, worldData, callerData, targetData);
+
+            switch callerGeneratedOutcomesResult {
+                case (#ok(callerGeneratedOutcomes)) {
+
+                    var actionResult = await processAction_(callerPrincipalId, actionId, callerAction.actionConstraint, callerGeneratedOutcomes);
+
+                    switch actionResult {
+                        case (#ok outcomes) {
+
+                            //RETURN CALLER OUTCOME
+                            return #ok({
+                                callerOutcomes = ?outcomes;
+                                targetOutcomes = null;
+                            });
+
+                        };
+                        case (#err err) return #err err;
+                    };
+                };
+                case (#err(errMsg)) return #err errMsg;
+            };
+        } else {
+            return #err("Failure to execute action, it requires at least a subaction declared");
+        };
+    };
+
+    private func processAction_(principalId : Text, actionId : Text, actionConstraint : ?TAction.ActionConstraint, outcomes : [TAction.ActionOutcomeOption]) : async (Result.Result<[TAction.ActionOutcomeOption], Text>) {
+
+        var worldId : Text = Principal.toText(Principal.fromActor(this));
+
+        //FETCH NODES IDS
+        var nodeId : Text = "2vxsx-fae";
+
+        switch (await getUserNode_(principalId)) {
+            case (#ok(content)) { nodeId := content };
+            case (#err(message)) {
+                return #err message;
+            };
+        };
+
+        let node : UserNode = actor (nodeId);
+
+        //VALIDATE OUTCOMES AND FETCH ACTION STATES
+        var actionState : TAction.ActionState = {
+            actionId = "";
+            intervalStartTs = 0;
+            actionCount = 0;
+        };
+        var actionStateResult = await node.validateConstraints(principalId, worldId, actionId, actionConstraint);
+
+        switch (actionStateResult) {
+            case (#ok(content)) { actionState := content };
+            case (#err(message)) {
+                return #err message;
+            };
+        };
+
+        //APPLY OUTCOMES
+        var applyOutcomeResult = await applyOutcomes_(principalId, node, actionState, outcomes);
+
+        return #ok applyOutcomeResult;
     };
 
     // for permissions
@@ -1090,11 +1227,9 @@ actor class WorldTemplate(owner : Principal) = this {
             exportConfigs : shared () -> async ([TEntity.StableConfig]);
         };
         let { thash } = Map;
-        for(i in (await world.exportConfigs()).vals()) {
-            configs.add({
-                cid = i.cid;
-                fields = Map.fromIter(i.fields.vals(), thash);
-            });
+        configsStorage := Trie.empty();
+        for (i in (await world.exportConfigs()).vals()) {
+            ignore createConfig(i);
         };
         return #ok("imported");
     };
@@ -1103,24 +1238,77 @@ actor class WorldTemplate(owner : Principal) = this {
         let world = actor (ofWorldId) : actor {
             exportActions : shared () -> async ([TAction.Action]);
         };
-        action := Buffer.fromArray((await world.exportActions()));
+
+        actionsStorage := Trie.empty();
+
+        for (i in (await world.exportActions()).vals()) {
+            ignore createAction(i);
+        };
+
         return #ok("imported");
     };
 
-    public shared ({ caller }) func withdrawIcpFromPaymentHub() : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
+    public shared ({ caller }) func withdrawIcpFromWorld(toPrincipal : Text) : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
         assert (caller == owner);
-        let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
-            withdrawIcp : () -> async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>);
+        let ICP_Ledger : Ledger.ICP = actor (ENV.Ledger);
+        var _amt = await ICP_Ledger.account_balance({
+            account = Hex.decode(AccountIdentifier.fromText(Principal.toText(WorldId()), null));
+        });
+        _amt := {
+            e8s = _amt.e8s - 10000;
         };
-        await paymentHub.withdrawIcp();
+        var _req : ICP.TransferArgs = {
+            to = Hex.decode(AccountIdentifier.fromText(toPrincipal, null));
+            fee = {
+                e8s = 10000;
+            };
+            memo = 0;
+            from_subaccount = null;
+            created_at_time = null;
+            amount = _amt;
+        };
+        var res : ICP.TransferResult = await ICP_Ledger.transfer(_req);
+        switch (res) {
+            case (#Ok blockIndex) {
+                return #ok(res);
+            };
+            case (#Err e) {
+                let err : { #TxErr : ICP.TransferError; #Err : Text } = #TxErr e;
+                return #err(err);
+            };
+        };
     };
 
-    public shared ({ caller }) func withdrawIcrcFromPaymentHub(tokenCanisterId : Text) : async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>) {
+    public shared ({ caller }) func withdrawIcrcFromWorld(tokenCanisterId : Text, toPrincipal : Text) : async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>) {
         assert (caller == owner);
-        let paymentHub = actor (ENV.PaymentHubCanisterId) : actor {
-            withdrawIcrc : (Text) -> async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>);
+        let ICRC_Ledger : Ledger.ICRC1 = actor (tokenCanisterId);
+        var _amt = await ICRC_Ledger.icrc1_balance_of({
+            owner = WorldId();
+            subaccount = null;
+        });
+        var _fee = await ICRC_Ledger.icrc1_fee();
+        _amt := _amt - _fee;
+        var _req : ICRC.TransferArg = {
+            to = {
+                owner = Principal.fromText(toPrincipal);
+                subaccount = null;
+            };
+            fee = null;
+            memo = null;
+            from_subaccount = null;
+            created_at_time = null;
+            amount = _amt;
         };
-        await paymentHub.withdrawIcrc(tokenCanisterId);
+        var res : ICRC.Result = await ICRC_Ledger.icrc1_transfer(_req);
+        switch (res) {
+            case (#Ok blockIndex) {
+                return #ok(res);
+            };
+            case (#Err e) {
+                let err : { #TxErr : ICRC.TransferError; #Err : Text } = #TxErr e;
+                return #err(err);
+            };
+        };
     };
 
     public shared ({ caller }) func getEntityPermissionsOfWorld() : async [(Text, [(Text, TEntity.EntityPermission)])] {
@@ -1153,4 +1341,196 @@ actor class WorldTemplate(owner : Principal) = this {
         return (await worldHub.importAllPermissionsOfWorld(ofWorldId));
     };
 
+    public func testRecursion(index : Nat, count : Nat, failAt : Nat) : async (Result.Result<Text, Text>) {
+        return testRecursion_(index, count, failAt);
+    };
+
+    private func testRecursion_(index : Nat, count : Nat, failAt : Nat) : (Result.Result<Text, Text>) {
+        var name : Text = "Jack";
+        var extra : Text = "";
+
+        if (index == failAt) return #err("Failure success at " #Nat.toText(index));
+        if (index < count) {
+            switch (testRecursion_(index + 1, count, failAt)) {
+                case (#ok val) {
+                    extra := "," #val;
+                };
+                case (#err e) {
+                    return #err e;
+                };
+            };
+        };
+
+        return #ok(name #Nat.toText(index) #extra);
+    };
+
+    //HANDLE FORMULAS
+    private func getEntityField(entities : [TEntity.StableEntity], gid : Text, eid : Text, fieldName : Text) : (fieldValue : ?Text) {
+        for (entity in entities.vals()) {
+            if (entity.gid == gid and entity.eid == eid) {
+                var fields = entity.fields;
+
+                for (field in fields.vals()) {
+                    if (field.0 == fieldName) return ?field.1;
+                };
+            };
+        };
+
+        return null;
+    };
+
+    private func replaceVariables(formula : Text, worldData : [TEntity.StableEntity], callerData : [TEntity.StableEntity], targetData : ?[TEntity.StableEntity]) : (Result.Result<Text, Text>) {
+        var temp = "";
+        var isOpen = false;
+        var index = 0;
+        var returnValue = formula;
+        let formulaTokensLength : Int = Text.size(formula);
+        let tokens = Text.toArray(formula);
+
+        for (token in tokens.vals()) {
+            if (isOpen) {
+                temp := Text.concat(temp, Text.fromChar(token));
+
+            };
+
+            if (token == '{') {
+                isOpen := true;
+            } else if (index < formulaTokensLength - 1) {
+
+                var nextToken = tokens[index + 1];
+
+                if (nextToken == '}') {
+                    isOpen := false;
+                };
+            };
+
+            //
+
+            if (isOpen == false and Text.size(temp) > 0) {
+                let variable = temp;
+                temp := "";
+
+                var fieldNameElements = Iter.toArray(Text.split(variable, #char '.'));
+
+                //Entity field
+                if (fieldNameElements.size() == 4) {
+                    let source = fieldNameElements[0];
+                    let entityGroupId = fieldNameElements[1];
+                    let entityEntityId = fieldNameElements[2];
+                    let entityFieldName = fieldNameElements[3];
+                    var entityFieldValue = "";
+
+                    if (source == "$caller") {
+                        switch (getEntityField(callerData, entityGroupId, entityEntityId, entityFieldName)) {
+                            case (?_entityFieldValue) entityFieldValue := _entityFieldValue;
+                            case _ return #err("could not find field of source: " #source # " gid: " #entityGroupId # " eid: " #entityEntityId # " fieldName: " #entityFieldName);
+                        };
+                    } else if (source == "$target") {
+
+                        switch targetData {
+                            case (?value) {
+                                if (value.size() == 0) return #err "target data is empty";
+
+                                switch (getEntityField(value, entityGroupId, entityEntityId, entityFieldName)) {
+                                    case (?_entityFieldValue) entityFieldValue := _entityFieldValue;
+                                    case _ return #err("could not find field of source: " #source # " gid: " #entityGroupId # " eid: " #entityEntityId # " fieldName: " #entityFieldName);
+                                };
+                            };
+                            case _ return #err "target data is null";
+                        };
+                    } else if (source == "$world") {
+                        switch (getEntityField(worldData, entityGroupId, entityEntityId, entityFieldName)) {
+                            case (?_entityFieldValue) entityFieldValue := _entityFieldValue;
+                            case _ return #err("could not find field of source: " #source # " gid: " #entityGroupId # " eid: " #entityEntityId # " fieldName: " #entityFieldName);
+                        };
+                    };
+
+                    returnValue := Text.replace(returnValue, #text("{" #variable # "}"), entityFieldValue);
+                }
+                //Config field
+                else if (fieldNameElements.size() == 3) {
+                    if (fieldNameElements[0] == "$config") {
+
+                    };
+                };
+
+                // do variable replacement using the fieldName
+            };
+
+            index += 1;
+        };
+
+        return #ok returnValue;
+    };
+
+    private func getNodesData_(callerPrincipalId : Text, targetPrincipalId : ?Text) : async (Result.Result<(worldData : [TEntity.StableEntity], callerData : [TEntity.StableEntity], targetData : ?[TEntity.StableEntity]), Text>) {
+        var worldNodeId = "";
+        var callerNodeId = "";
+        var targetNodeId = "";
+
+        var worldData : [TEntity.StableEntity] = [];
+        var callerData : [TEntity.StableEntity] = [];
+        var targetData : ?[TEntity.StableEntity] = null;
+
+        let worldId : Text = Principal.toText(WorldId());
+
+        var hasTarget = false;
+        var _targetPrincipalId = "";
+
+        switch targetPrincipalId {
+            case (?value) {
+                hasTarget := true;
+                _targetPrincipalId := value;
+            };
+            case _ {};
+        };
+
+        //FETCH ENTITIES AND SETUP ENTITIES ARRAYS
+        let getWorldEntitiesHandler = getAllUserEntities(worldId);
+
+        let getCallerEntitiesHandler = getAllUserEntities(callerPrincipalId);
+
+        if (hasTarget) {
+            let getTargetEntitiesHandler = getAllUserEntities(_targetPrincipalId);
+
+            let targetDataResult = await getTargetEntitiesHandler;
+
+            switch targetDataResult {
+                case (#ok data) targetData := ?data;
+                case (#err errMessage) return #err errMessage;
+            };
+        };
+
+        let worldDataResult = await getWorldEntitiesHandler;
+
+        let callerDataResult = await getCallerEntitiesHandler;
+
+        switch worldDataResult {
+            case (#ok data) worldData := data;
+            case (#err errMessage) return #err errMessage;
+        };
+
+        switch callerDataResult {
+            case (#ok data) callerData := data;
+            case (#err errMessage) return #err errMessage;
+        };
+
+        return #ok(worldData, callerData, targetData);
+    };
+    //To be able to access entities fields of "caller" "target" and "world"; and to also be able to access configs
+    private func evaluateFormula(formula : Text, worldData : [TEntity.StableEntity], callerData : [TEntity.StableEntity], targetData : ?[TEntity.StableEntity]) : (Result.Result<Float, Text>) {
+        var _formula = Text.trimStart(formula, #char ' ');
+        _formula := Text.trimEnd(formula, #char ' ');
+        //REPLACE VARIABLES
+
+        switch (replaceVariables(_formula, worldData, callerData, targetData)) {
+            case (#ok value) {
+                _formula := value;
+            };
+            case (#err errMsg) return #err errMsg;
+        };
+
+        //EXECUTE FORMULA
+        return FormulaEvaluation.evaluate(_formula);
+    };
 };

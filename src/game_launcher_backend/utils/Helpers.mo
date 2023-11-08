@@ -47,17 +47,6 @@ module {
     };
 
     //utility functions
-    public func convertToBaseUnit(val : Float, decimals : Nat8) : (Nat){
-        var baseUnitCount : Float = 10;
-        var i : Nat8 = 0;
-        let loopsCount = decimals - 1;
-        while(i < loopsCount){
-            baseUnitCount *= 10;
-            i += 1;
-        };
-        
-        return textToNat(Int.toText(Float.toInt(baseUnitCount * val)));
-    };
     //
     public func key(x : Nat32) : Trie.Key<Nat32> {
         return { hash = x; key = x };
@@ -106,8 +95,6 @@ module {
             };
         };
 
-        if(Text.contains(t, #char '-')) return -f;
-
         return f;
     };
 
@@ -115,50 +102,5 @@ module {
         var blob : Blob = Text.encodeUtf8(text);
         var array : [Nat8] = Blob.toArray(blob);
         return array;
-    };
-
-    public func isResultError<R,E>(result : Result.Result<R,E>) : (Bool){
-        switch(result){
-            case(#err(msg)){
-                return true;
-            };
-            case(#ok(msg)){
-                return false;
-            };
-        };
-    };
-
-    public func intToNat(value : Int) : (Nat) {
-        if(value < 0) {
-            return 0;
-        };
-        return textToNat(Int.toText(value));
-    };
-
-    public func indexOf(sample : Text, element : Char) : (?Nat){
-
-        var index = 0;
-        for(item in Text.toIter(sample)){
-            if(item == element) return ?index;
-            index += 1;
-        };
-        
-        return null;
-    };
-    public func bufferTextIndexOf(sample : Buffer.Buffer<Text>, element : {#char : Char; #text: Text; }) : (?Nat){
-        var _element = "";
-
-        switch(element){
-            case(#char value) _element := Text.fromChar(value);
-            case(#text value) _element := value;
-        };
-
-        var index = 0;
-        for(item in sample.vals()){
-            if(item == _element) return ?index;
-            index += 1;
-        };
-        
-        return null;
     };
 };

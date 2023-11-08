@@ -27,17 +27,17 @@ const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
 
-// const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai"; 
-// const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; 
-// const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
-// const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
-// const worldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
+const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai"; 
+const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; 
+const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
+const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
+const worldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
 
-const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
-const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
-const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
-const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
-const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
+// const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
+// const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
+// const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
+// const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
+// const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
 
 
 export const useWorldDeployerClient = async () => {
@@ -58,6 +58,8 @@ export const useWorldDeployerClient = async () => {
       get_users_total_worlds: "getUserTotalWorlds",
       get_total_worlds: "getTotalWorlds",
       get_world_cover: "getWorldCover",
+      get_current_world_version: "getWorldVersion",
+      get_available_world_version: "getLatestWorldWasmVersion",
       
       create_world: "createWorldCanister",
       update_world_cover: "updateWorldCover",

@@ -278,7 +278,7 @@ module {
     };
 
     /// Retrieves the transactions specified by the given range
-    public func icrc3_get_transactions(token : T.TokenData, req : T.GetTransactionsRequest) : T.GetTransactionsResponse {
+    public func get_transactions(token : T.TokenData, req : T.GetTransactionsRequest) : T.GetTransactionsResponse {
         let { archive; transactions } = token;
 
         var first_index = 0xFFFF_FFFF_FFFF_FFFF; // returned if no transactions are found
