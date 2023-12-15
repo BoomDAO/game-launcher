@@ -18,5 +18,13 @@
   "world_deployer": {
     "ic": "js5r2-paaaa-aaaap-abf7q-cai",
     "stag": "na2jz-uqaaa-aaaal-qbtfq-cai"
+  },
+  "guilds_verifier": {
+    "stag": "yv22q-myaaa-aaaal-adeuq-cai",
+    "ic": "jvcsg-6aaaa-aaaan-qeqvq-cai"
+  },
+  "gaming_guilds": {
+    "stag": "6ehny-oaaaa-aaaal-qclyq-cai",
+    "ic": ""
   }
 }

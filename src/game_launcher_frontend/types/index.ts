@@ -50,8 +50,8 @@ export interface CreateCollection {
 export interface CreateWorldData
   extends Pick<WorldData, "name" | "cover"> { }
 
-export interface UpgradeWorldData 
-  extends Pick<WorldWasm, "file"> {}
+export interface UpgradeWorldData
+  extends Pick<WorldWasm, "file"> { }
 
 
 export interface CreateTokenData
@@ -203,7 +203,180 @@ export interface WorldData {
 }
 
 export interface WorldWasm {
-  file : number []
+  file: number[]
 }
 
+
+// Gaming Guilds Interfaces
+export interface GuildConfig {
+  cid: string;
+  fields: [{
+    fieldName: string;
+    fieldValue: string;
+  }];
+}
+
+export interface GuildCard {
+  aid: string;
+  title: string;
+  image: string;
+  rewards: { name: string; imageUrl: string; value: string; }[];
+  countCompleted: string;
+  gameUrl: string;
+  mustHave: { name: string; imageUrl: string; quantity: string; }[];
+  expiration: string;
+  type: "Completed" | "Incomplete" | "Claimed";
+}
+
+export interface Member {
+  imageUrl: string;
+  username: string;
+  guilds: string;
+  joinDate: string;
+}
+
+export interface MembersInfo {
+  members: Member[];
+  totalMembers: string;
+}
+
+export interface Field {
+  fieldName: string;
+  fieldValue: string;
+};
+
+export interface StableEntity {
+  wid: string;
+  eid: string;
+  fields: [Field];
+};
+
+export interface Action {
+  aid: string;
+  callerAction: {
+    actionConstraint: {
+      timeConstraint: {
+        intervalDuration: bigint;
+        actionsPerInterval: bigint;
+        actionExpirationTimestamp: bigint[];
+      }[];
+      entityConstraint: {
+        wid: string[];
+        eid: string;
+        entityConstraintType: {
+          greaterThanEqualToNumber: {
+            fieldName: string;
+            value: Number;
+          };
+        };
+      }[];
+    }[];
+    actionResult: {
+      outcomes: {
+        possibleOutcomes: {
+          weight: Number;
+          option: {
+            transferIcrc: {
+              quantity: Number;
+              canister: string;
+            };
+            mintNft: {
+              canister: string;
+              assetId: string;
+              metadata: string;
+            };
+            updateEntity: {
+              wid: string[];
+              eid: string;
+              updates: {
+                incrementNumber: {
+                  fieldName: Text;
+                  fieldValue: { number: Number; };
+                };
+              }[];
+            };
+          };
+        }[];
+      }[];
+    };
+  }[];
+};
+
+export interface ActionReturn {
+  callerPrincipalId: string;
+  targetPrincipalId: string[];
+  worldPrincipalId: string;
+  callerOutcomes: {
+    weight: Number;
+    option: {
+      transferIcrc: {
+        quantity: Number;
+        canister: string;
+      };
+      mintNft: {
+        canister: string;
+        assetId: string;
+        metadata: string;
+      };
+      updateEntity: {
+        wid: string[];
+        eid: string;
+        updates: {
+          incrementNumber: {
+            fieldName: Text;
+            fieldValue: { number: Number; };
+          };
+        }[];
+      };
+    };
+  }[]
+  targetOutcomes: {
+    weight: Number;
+    option: {
+      transferIcrc: {
+        quantity: Number;
+        canister: string;
+      };
+      mintNft: {
+        canister: string;
+        assetId: string;
+        metadata: string;
+      };
+      updateEntity: {
+        wid: string[];
+        eid: string;
+        updates: {
+          incrementNumber: {
+            fieldName: Text;
+            fieldValue: { number: Number; };
+          };
+        }[];
+      };
+    };
+  }[];
+  worldOutcomes: {
+    weight: Number;
+    option: {
+      transferIcrc: {
+        quantity: Number;
+        canister: string;
+      };
+      mintNft: {
+        canister: string;
+        assetId: string;
+        metadata: string;
+      };
+      updateEntity: {
+        wid: string[];
+        eid: string;
+        updates: {
+          incrementNumber: {
+            fieldName: Text;
+            fieldValue: { number: Number; };
+          };
+        }[];
+      };
+    };
+  }[];
+};
 

@@ -19,7 +19,18 @@
     "upload_games": "Upload games",
     "manage_NFTs": "DEPLOY NFTS",
     "token_deployer": "DEPLOY TOKENS",
-    "world_deployer": "DEPLOY WORLDS"
+    "world_deployer": "DEPLOY WORLDS",
+    "gaming_guilds": "GAMING GUILDS"
+  },
+  "verification": {
+    "button": "Send Verification Email",
+    "input_placeholder": "Email used for website registration",
+    "verification_error": "Email entered might not be registered in the Website. Contact dev team.",
+    "verification_success": "OTP sent to your registered email. Kindly proceed to verify.",
+    "otp_error": "OTP entered is wrong. Try again.",
+    "otp_success": "Congratulations! You've received an OG DAO member badge.",
+    "otp_input": "Enter 6-digit OTP received in your email",
+    "otp_button": "Verify OTP"
   },
   "card": {
     "platform": "Platform",
@@ -382,16 +393,31 @@
           "title": "Admin / Controller"
         },
         "item_4": {
-          "title": "Upgrade World",
-          "upgrade_world": {
-            "title": "Upgrade World",
-            "wasm_file_placeholder": "World wasm file",
-            "wasm_file_button": "Select Wasm Module",
-            "upgrade_world_button": "Upgrade World",
-            "upgrade_world_hint": "Select wasm file you want to upgrade your World canister to."
+          "title": "Trusted Origins",
+          "view": {
+            "title": "View all trusted origins",
+            "button": "Get All Trusted Origins",
+            "error": "No trusted origins found",
+            "not_found": "Upgrade your canister to support ICRC-28 trusted origins. Contact developer team via discord"
           },
-          "upgrade_error": "World Upgrade failed, check if you are already on latest version or contact dev team.",
-          "upgrade_success": "World Upgrade successful."
+          "manage": {
+            "title": "Add / Remove Trusted Origins",
+            "add_placeholder": "Url to add as trusted origin",
+            "add_button": "Add Url",
+            "remove_placeholder": "Url to remove from trusted origins",
+            "remove_button": "Remove Url",
+            "add_error": "Adding trusted origin failed. Contact developer team via discord",
+            "add_success": "Url added as trusted origin successfully",
+            "remove_error": "Removing Url from trusted origins failed. Contact developer team via discord",
+            "remove_success": "Removed url from trusted origins successfully"
+          }
+        },
+        "item_5": {
+          "title": "Update World Details",
+          "subtitle": "Update World's Name/Cover",
+          "button_placeholder": "Update World",
+          "success_msg": "Update World details successfully",
+          "error_msg": "Some error occured, Contact developer team via discord"
         }
       }
     },
@@ -452,5 +478,29 @@
       "url": "https://gi72u-lqaaa-aaaal-ac3ga-cai.raw.icp0.io/",
       "name": "ToyoWorld"
     }
-  ]
+  ],
+  "gaming_guilds": {
+    "banner_image": "/guilds-banner.png",
+    "items": {
+      "item_1": {
+        "title": "QUESTS",
+        "no_quest": "No Quests added yet ..."
+      },
+      "item_2": {
+        "title": "MEMBERS",
+        "loading": "Loading All Guild Members ...",
+        "no_members": "you can be the first to join Gaming Guilds ..."
+      },
+      "item_3": {
+        "verify_button": "VERIFY EMAIL"
+      }
+    },
+    "Quests": {
+      "loading": "Loading All Quests ...",
+      "complete_button": "CLAIM REWARDS",
+      "incomplete_button": "GO TO GAME",
+      "claimed_button": "CLAIMED",
+      "claim_reward_error": "Error in claiming reward, contact dev team in discord"
+    }
+  }
 }

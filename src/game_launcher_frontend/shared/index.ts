@@ -17,7 +17,9 @@ export const navPaths = {
   world_deployer: "/world-deployer",
   create_new_world: "/world-deployer/create-world",
   boomdao_candid_url: "https://5pati-hyaaa-aaaal-qb3yq-cai.raw.icp0.io/",
-  manage_worlds: "/world-deployer/manage-worlds"
+  manage_worlds: "/world-deployer/manage-worlds",
+  gaming_guilds: "/gaming-guilds",
+  gaming_guilds_verification: "/gaming_guilds/verify"
 };
 
 export const platform_types: SelectOption[] = [

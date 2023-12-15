@@ -25,3 +25,4 @@ secrets
 *.sln
 *.sw?
 *.tsbuildinfo
+sendgrid.env

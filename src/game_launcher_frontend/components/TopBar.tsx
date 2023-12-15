@@ -32,6 +32,10 @@ const TopBar = () => {
       path: navPaths.home,
     },
     {
+      name: t("navigation.gaming_guilds"),
+      path: navPaths.gaming_guilds
+    },
+    {
       name: t("navigation.upload_games"),
       path: navPaths.upload_games,
     },

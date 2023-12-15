@@ -1,0 +1,8 @@
+[dependencies]
+base = "https://github.com/dfinity/motoko-base#moc-0.7.4"
+
+[package]
+name = "xtended-numbers"
+version = "0.1.1"
+description = "Extended functionality for motoko number types, such as byte encoding"
+repository = "https://github.com/edjCase/motoko_numbers"

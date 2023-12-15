@@ -22,16 +22,32 @@ import { idlFactory as WorldDeployerFactory } from "../dids/world_deployer.did.j
 import { idlFactory as WorldHubFactory } from "../dids/world_hub.did.js";
 //@ts-ignore
 import { idlFactory as WorldFactory } from "../dids/world.did.js";
+//@ts-ignore
+import { idlFactory as GuildsVerifierFactory } from "../dids/guilds_verifier.did.js"
+// @ts-ignore 
+import { idlFactory as GamingGuildsFactory } from "../dids/gaming_guilds.did.js"
+// @ts-ignore
+import { idlFactory as BOOMLedgerFactory } from "../dids/boom_ledger.did.js"
+// @ts-ignore
+import { idlFactory as GamingGuildsWorldNodeFactory } from "../dids/gaming_guilds_worldnode.did.js";
 
 const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
+const boom_ledger_canisterId = "vtrom-gqaaa-aaaaq-aabia-cai";
+
+//Staging
 
 const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai"; 
 const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; 
 const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
 const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
 const worldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
+const guildsVerifierCanisterId = "yv22q-myaaa-aaaal-adeuq-cai"
+export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
+const gamingGuildsWorldNodeCanisterId = "ooocm-sqaaa-aaaag-acbuq-cai";
+
+//Production
 
 // const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
 // const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
@@ -66,7 +82,9 @@ export const useWorldDeployerClient = async () => {
       cycleBalance: "cycleBalance",
       add_controller: "addController",
       remove_controller: "removeController",
-      upgrade_world: "upgradeWorldToNewWasm"
+      upgrade_world: "upgradeWorldToNewWasm",
+      update_name: "updateWorldName",
+      update_cover: "updateWorldCover"
     }
   }
 };
@@ -103,6 +121,9 @@ export const useWorldClient = async (canisterId : string) => {
       importAllUsersDataOfWorld: "importAllUsersDataOfWorld",
       add_admin: "addAdmin",
       remove_admin: "removeAdmin",
+      addTrustedOrigin: "addTrustedOrigins",
+      removeTrustedOrigin: "removeTrustedOrigins",
+      getTrustedOrigins: "get_trusted_origins"
     }
   }
 };
@@ -286,6 +307,82 @@ export const useManagementClient = async () => {
       add_controller: "update_settings",
       remove_controller: "update_settings",
       canister_status: "canister_status"
+    },
+  };
+};
+
+
+export const useGuildsVerifierClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(GuildsVerifierFactory, {
+      agent,
+      canisterId: guildsVerifierCanisterId,
+    }),
+    methods: {
+      sendVerificationEmail: "sendVerificationEmail",
+      verifyOTP: "verifyOTP"
+    },
+  };
+};
+
+export const useGamingGuildsClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(GamingGuildsFactory, {
+      agent,
+      canisterId: gamingGuildsCanisterId,
+    }),
+    methods: {
+      getAllConfigs: "getAllConfigs",
+      getAllActions: "getAllActions",
+      getAllUserEntities: "getAllUserEntities",
+      validateEntityConstraints: "validateEntityConstraints",
+      processAction: "processAction"
+    },
+  };
+};
+
+export const useGamingGuildsWorldNodeClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(GamingGuildsWorldNodeFactory, {
+      agent,
+      canisterId: gamingGuildsWorldNodeCanisterId,
+    }),
+    methods: {
+      getAllUserEntities: "getAllUserEntities",
+      getSpecificUserEntities: "getSpecificUserEntities",
+      getAllUserEntitiesOfSpecificWorlds: "getAllUserEntitiesOfSpecificWorlds"
+    },
+  };
+};
+
+export const useBoomLedgerClient = async () => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+
+  const agent = await getAgent(identity);
+
+  return {
+    actor: Actor.createActor(BOOMLedgerFactory, {
+      agent,
+      canisterId: boom_ledger_canisterId,
+    }),
+    methods: {
+      icrc1_balance_of: "icrc1_balance_of"
     },
   };
 };

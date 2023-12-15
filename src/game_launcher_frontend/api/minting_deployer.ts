@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAuthContext } from "@/context/authContext";
-import { useExtClient, useMintingDeployerClient } from "@/hooks";
+import { useExtClient, useGuildsVerifierClient, useMintingDeployerClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { Airdrop, Collection, CreateCollection, Mint, AssetUpload } from "@/types";
 import { b64toType, arrayTob64, b64toArrays, formatCycleBalance, getAgent } from "@/utils";

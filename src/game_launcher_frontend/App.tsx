@@ -21,6 +21,11 @@ import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
 import Game from "./pages/UploadGames/Games/Game";
 import ManageWorlds from "./pages/WorldDeployer/ManageWorlds";
+import Guilds from "./pages/GamingGuilds";
+import VerifyPage from "./pages/GamingGuilds/VerifyOtpPage";
+import EmailPage from "./pages/GamingGuilds/EmailPage";
+import VerifyOtpPage from "./pages/GamingGuilds/VerifyOtpPage";
+import VerifyEmailPage from "./pages/GamingGuilds/VerifyEmailPage";
 
 function App() {
   return (
@@ -31,6 +36,10 @@ function App() {
             <Toast />
             <Routes>
               <Route path={navPaths.home} element={<Home />} />
+              <Route
+                path={`${navPaths.gaming_guilds}`}
+                element={<Guilds />}
+              />
 
               <Route element={<ProtectedRoute />}>
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
@@ -74,6 +83,14 @@ function App() {
                 <Route
                   path={`${navPaths.manage_worlds}/:canisterId`}
                   element={<ManageWorlds />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_verification}/:email`}
+                  element={<VerifyOtpPage />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_verification}`}
+                  element={<VerifyEmailPage />}
                 />
               </Route>
 

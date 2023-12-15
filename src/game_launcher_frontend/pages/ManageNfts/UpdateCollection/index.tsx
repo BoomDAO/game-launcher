@@ -14,6 +14,8 @@ import Mint from "./components/Mint";
 import UploadAsset from "./components/UploadAsset";
 import ViewAssets from "./components/ViewAssets";
 import ViewAsset from "./components/ViewAsset";
+import ViewTrustedOrigins from "../../WorldDeployer/ManageWorlds/ViewTrustedOrigins";
+import TrustedOrigins from "../../WorldDeployer/ManageWorlds/TrustedOrigins";
 
 const UpdateCollection = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -27,6 +29,7 @@ const UpdateCollection = () => {
     { id: 4, name: t("manage_nfts.update.tabs.item_4") },
     { id: 5, name: t("manage_nfts.update.tabs.item_5") },
     { id: 6, name: t("manage_nfts.update.tabs.item_6") },
+    { id: 7, name: t("world_deployer.manage_worlds.tabs.item_5.title") }
   ];
 
   return (
@@ -78,6 +81,14 @@ const UpdateCollection = () => {
       {activeTab === 6 && (
         <div className="w-full space-y-12">
           <BurnNft/>
+        </div>
+      )}
+
+      {activeTab === 7 && (
+        <div className="w-full space-y-12">
+          <ViewTrustedOrigins/>
+          <Divider/>
+          <TrustedOrigins/>
         </div>
       )}
     </>

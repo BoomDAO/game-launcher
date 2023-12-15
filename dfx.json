@@ -24,12 +24,32 @@
         "world_deployer": {
             "main": "src/game_launcher_backend/world_deployer/deployer.mo",
             "type": "motoko"
+        },
+        "gaming_guilds": {
+            "main": "src/game_launcher_backend/gaming_guilds/guilds.mo",
+            "type": "motoko"
+        },
+        "guilds_verifier": {
+            "main": "src/game_launcher_backend/gaming_guilds/verifier.mo",
+            "type": "motoko"
+        },
+        "world": {
+            "main": "src/game_launcher_backend/world_deployer/world.mo",
+            "type": "motoko"
+        },
+        "nft": {
+            "main": "src/game_launcher_backend/nfts_deployer/EXT/extv2boom.mo",
+            "type": "motoko"
+        },
+        "token": {
+            "main": "src/game_launcher_backend/token_deployer/ICRC3/Canisters/Token.mo",
+            "type": "motoko"
         }
     },
     "defaults": {
         "build": {
             "args": "",
-            "packtool": ""
+            "packtool": "mops sources"
         }
     },
     "networks": {

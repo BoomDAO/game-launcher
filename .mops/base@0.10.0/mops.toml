@@ -1,0 +1,9 @@
+[package]
+name = "base"
+version = "0.10.0"
+description = "The Motoko base library"
+repository = "https://github.com/dfinity/motoko-base"
+license = "Apache-2.0"
+
+[dev-dependencies]
+matchers = "https://github.com/kritzcreek/motoko-matchers#v1.3.0"
