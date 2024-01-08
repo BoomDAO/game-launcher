@@ -1,32 +1,4 @@
 export const idlFactory = ({ IDL }) => {
-<<<<<<< HEAD
-  const entityId = IDL.Text;
-  const groupId = IDL.Text;
-  const worldId = IDL.Text;
-  const ActionConstraint = IDL.Record({
-    'entityConstraint' : IDL.Opt(
-      IDL.Vec(
-        IDL.Record({
-          'eid' : entityId,
-          'gid' : groupId,
-          'wid' : IDL.Opt(worldId),
-          'fieldName' : IDL.Text,
-          'validation' : IDL.Variant({
-            'greaterThanNumber' : IDL.Float64,
-            'lessThanEqualToNumber' : IDL.Float64,
-            'lessThanNumber' : IDL.Float64,
-            'equalToString' : IDL.Text,
-            'greaterThanNowTimestamp' : IDL.Null,
-            'lessThanNowTimestamp' : IDL.Null,
-            'equalToNumber' : IDL.Float64,
-            'greaterThanEqualToNumber' : IDL.Float64,
-          }),
-        })
-      )
-    ),
-    'timeConstraint' : IDL.Opt(
-      IDL.Record({
-=======
   const IcrcTx = IDL.Record({
     'toPrincipal' : IDL.Text,
     'canister' : IDL.Text,
@@ -108,31 +80,12 @@ export const idlFactory = ({ IDL }) => {
     'timeConstraint' : IDL.Opt(
       IDL.Record({
         'actionExpirationTimestamp' : IDL.Opt(IDL.Nat),
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
         'intervalDuration' : IDL.Nat,
         'actionsPerInterval' : IDL.Nat,
       })
     ),
   });
   const SetNumber = IDL.Record({
-<<<<<<< HEAD
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : IDL.Opt(worldId),
-    'field' : IDL.Text,
-    'value' : IDL.Float64,
-  });
-  const MintToken = IDL.Record({
-    'canister' : IDL.Text,
-    'quantity' : IDL.Float64,
-  });
-  const IncrementNumber = IDL.Record({
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : IDL.Opt(worldId),
-    'field' : IDL.Text,
-    'value' : IDL.Float64,
-=======
     'fieldName' : IDL.Text,
     'fieldValue' : IDL.Variant({
       'number' : IDL.Float64,
@@ -190,107 +143,24 @@ export const idlFactory = ({ IDL }) => {
   const TransferIcrc = IDL.Record({
     'canister' : IDL.Text,
     'quantity' : IDL.Float64,
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
   });
   const MintNft = IDL.Record({
     'assetId' : IDL.Text,
     'metadata' : IDL.Text,
     'canister' : IDL.Text,
-<<<<<<< HEAD
-    'index' : IDL.Opt(IDL.Nat32),
-  });
-  const DeleteEntity = IDL.Record({
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : IDL.Opt(worldId),
-  });
-  const SetString = IDL.Record({
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : IDL.Opt(worldId),
-    'field' : IDL.Text,
-    'value' : IDL.Text,
-  });
-  const DecrementNumber = IDL.Record({
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : IDL.Opt(worldId),
-    'field' : IDL.Text,
-    'value' : IDL.Float64,
-  });
-  const RenewTimestamp = IDL.Record({
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : IDL.Opt(worldId),
-    'field' : IDL.Text,
-    'value' : IDL.Nat,
-=======
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
   });
   const ActionOutcomeOption = IDL.Record({
     'weight' : IDL.Float64,
     'option' : IDL.Variant({
-<<<<<<< HEAD
-      'setNumber' : SetNumber,
-      'mintToken' : MintToken,
-      'incrementNumber' : IncrementNumber,
-      'mintNft' : MintNft,
-      'deleteEntity' : DeleteEntity,
-      'setString' : SetString,
-      'decrementNumber' : DecrementNumber,
-      'renewTimestamp' : RenewTimestamp,
-=======
       'updateEntity' : UpdateEntity,
       'transferIcrc' : TransferIcrc,
       'mintNft' : MintNft,
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
     }),
   });
   const ActionOutcome = IDL.Record({
     'possibleOutcomes' : IDL.Vec(ActionOutcomeOption),
   });
   const ActionResult = IDL.Record({ 'outcomes' : IDL.Vec(ActionOutcome) });
-<<<<<<< HEAD
-  const ActionPlugin = IDL.Variant({
-    'verifyTransferIcp' : IDL.Record({
-      'amt' : IDL.Float64,
-      'toPrincipal' : IDL.Text,
-    }),
-    'verifyTransferIcrc' : IDL.Record({
-      'amt' : IDL.Float64,
-      'toPrincipal' : IDL.Text,
-      'canister' : IDL.Text,
-    }),
-    'claimStakingRewardIcp' : IDL.Record({ 'requiredAmount' : IDL.Float64 }),
-    'claimStakingRewardNft' : IDL.Record({
-      'canister' : IDL.Text,
-      'requiredAmount' : IDL.Nat,
-    }),
-    'verifyBurnNfts' : IDL.Record({
-      'canister' : IDL.Text,
-      'requiredNftMetadata' : IDL.Opt(IDL.Vec(IDL.Text)),
-    }),
-    'claimStakingRewardIcrc' : IDL.Record({
-      'canister' : IDL.Text,
-      'requiredAmount' : IDL.Float64,
-    }),
-  });
-  const Action = IDL.Record({
-    'aid' : IDL.Text,
-    'tag' : IDL.Opt(IDL.Text),
-    'actionConstraint' : IDL.Opt(ActionConstraint),
-    'name' : IDL.Opt(IDL.Text),
-    'actionResult' : ActionResult,
-    'description' : IDL.Opt(IDL.Text),
-    'imageUrl' : IDL.Opt(IDL.Text),
-    'actionPlugin' : IDL.Opt(ActionPlugin),
-  });
-  const Result_2 = IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text });
-  const configId = IDL.Text;
-  const StableConfig = IDL.Record({
-    'cid' : configId,
-    'fields' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
-=======
   const SubAction = IDL.Record({
     'actionConstraint' : IDL.Opt(ActionConstraint),
     'actionResult' : ActionResult,
@@ -323,7 +193,6 @@ export const idlFactory = ({ IDL }) => {
     'eid' : entityId,
     'wid' : worldId,
     'fields' : IDL.Vec(Field),
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
   });
   const ActionState = IDL.Record({
     'actionCount' : IDL.Nat,
@@ -334,50 +203,10 @@ export const idlFactory = ({ IDL }) => {
     'ok' : IDL.Vec(ActionState),
     'err' : IDL.Text,
   });
-<<<<<<< HEAD
-  const StableEntity = IDL.Record({
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : worldId,
-    'fields' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
-  });
-=======
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
   const Result_5 = IDL.Variant({
     'ok' : IDL.Vec(StableEntity),
     'err' : IDL.Text,
   });
-<<<<<<< HEAD
-  const EntityPermission = IDL.Record({
-    'eid' : entityId,
-    'gid' : groupId,
-    'wid' : worldId,
-  });
-  const GlobalPermission = IDL.Record({ 'wid' : worldId });
-  const ActionArg = IDL.Variant({
-    'verifyTransferIcp' : IDL.Record({
-      'blockIndex' : IDL.Nat64,
-      'actionId' : IDL.Text,
-    }),
-    'verifyTransferIcrc' : IDL.Record({
-      'blockIndex' : IDL.Nat,
-      'actionId' : IDL.Text,
-    }),
-    'claimStakingRewardIcp' : IDL.Record({ 'actionId' : IDL.Text }),
-    'claimStakingRewardNft' : IDL.Record({ 'actionId' : IDL.Text }),
-    'verifyBurnNfts' : IDL.Record({
-      'indexes' : IDL.Vec(IDL.Nat32),
-      'actionId' : IDL.Text,
-    }),
-    'default' : IDL.Record({ 'actionId' : IDL.Text }),
-    'claimStakingRewardIcrc' : IDL.Record({ 'actionId' : IDL.Text }),
-  });
-  const Result_4 = IDL.Variant({
-    'ok' : IDL.Vec(ActionOutcomeOption),
-    'err' : IDL.Text,
-  });
-  const Result_3 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Null });
-=======
   const EntityPermission = IDL.Record({ 'eid' : entityId, 'wid' : worldId });
   const GlobalPermission = IDL.Record({ 'wid' : worldId });
   const ActionArg = IDL.Record({
@@ -393,7 +222,6 @@ export const idlFactory = ({ IDL }) => {
     'callerOutcomes' : IDL.Opt(IDL.Vec(ActionOutcomeOption)),
   });
   const Result_3 = IDL.Variant({ 'ok' : ActionReturn, 'err' : IDL.Text });
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
   const BlockIndex = IDL.Nat64;
   const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
   const TransferError__1 = IDL.Variant({
@@ -551,30 +379,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getGlobalPermissionsOfWorld' : IDL.Func([], [IDL.Vec(worldId)], []),
     'getOwner' : IDL.Func([], [IDL.Text], ['query']),
-<<<<<<< HEAD
-    'grantEntityPermission' : IDL.Func([EntityPermission], [], []),
-    'grantGlobalPermission' : IDL.Func([GlobalPermission], [], []),
-    'importAllActionsOfWorld' : IDL.Func([IDL.Text], [Result_2], []),
-    'importAllConfigsOfWorld' : IDL.Func([IDL.Text], [Result_2], []),
-    'importAllPermissionsOfWorld' : IDL.Func([IDL.Text], [Result_2], []),
-    'importAllUsersDataOfWorld' : IDL.Func([IDL.Text], [Result_2], []),
-    'processAction' : IDL.Func([ActionArg], [Result_4], []),
-    'removeAdmin' : IDL.Func([IDL.Text], [], []),
-    'removeAllUserNodeRef' : IDL.Func([], [], []),
-    'removeEntityPermission' : IDL.Func([EntityPermission], [], []),
-    'removeGlobalPermission' : IDL.Func([GlobalPermission], [], []),
-    'resetActions' : IDL.Func([], [Result_3], []),
-    'resetConfig' : IDL.Func([], [Result_3], []),
-    'updateAction' : IDL.Func([Action], [Result_2], []),
-    'updateConfig' : IDL.Func([StableConfig], [Result_2], []),
-    'withdrawIcpFromPaymentHub' : IDL.Func([], [Result_1], []),
-    'withdrawIcrcFromPaymentHub' : IDL.Func([IDL.Text], [Result], []),
-  });
-  return WorldTemplate;
-};
-  export const init = ({ IDL }) => { return []; };
-  
-=======
     'getProcessActionCount' : IDL.Func([], [IDL.Nat], ['query']),
     'get_trusted_origins' : IDL.Func([], [IDL.Vec(IDL.Text)], []),
     'grantEntityPermission' : IDL.Func([EntityPermission], [], []),
@@ -654,4 +458,3 @@ export const idlFactory = ({ IDL }) => {
   return WorldTemplate;
 };
 export const init = ({ IDL }) => { return []; };
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)

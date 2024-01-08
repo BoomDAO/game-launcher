@@ -459,13 +459,8 @@ export const useAddAdmin = () => {
     }) => {
       try {
         const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
-<<<<<<< HEAD
-
-        return await actor[methods.add_admin](principal);
-=======
         console.log(principal + " " + canisterId);
         return await actor[methods.add_admin]({principal : principal});
->>>>>>> 8a40884 (adding gaming guilds feat-under testing)
       } catch (error) {
         if (error instanceof Error) {
           throw error.message;

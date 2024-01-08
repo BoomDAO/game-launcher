@@ -372,7 +372,8 @@
             "error": "Import failed, Try again!",
             "success": "Imported",
             "button_text": "Import Configs"
-          },"import_action": {
+          },
+          "import_action": {
             "title": "Import World's Actions Data",
             "input_placeholder": "Canister Id",
             "input_hint": "To import all World actions data",

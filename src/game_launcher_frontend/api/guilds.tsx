@@ -35,7 +35,6 @@ export const useGetBoomBalance = (): UseQueryResult<string> => {
                 owner: Principal.fromText(gamingGuildsCanisterId),
                 subaccount: [],
             }) as bigint;
-            console.log(balance);
             balance = BigInt(balance) / BigInt(100000000);
             return balance.toString();
         },
@@ -107,7 +106,9 @@ export const useVerifyEmail = () => {
         },
         onSuccess: () => {
             toast.success(t("verification.otp_success"));
-            queryClient.refetchQueries({ queryKey: [queryKeys.verified_status] });
+            window.setTimeout(() => {
+                queryClient.refetchQueries({ queryKey: [queryKeys.verified_status] });
+            }, 5000);
         }
     });
 };
@@ -181,7 +182,6 @@ export const useGetAllMembersInfo = (): UseQueryResult<MembersInfo> => {
                     actionId: "join_guild"
                 });
             };
-            console.log(response);
             return response;
         },
     });
@@ -379,18 +379,17 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                     };
                 };
             };
-            let final_response : GuildCard[] = [];
-            for(let x = 0; x < response.length; x += 1) {
-                if(response[x].type != "Claimed") {
+            let final_response: GuildCard[] = [];
+            for (let x = 0; x < response.length; x += 1) {
+                if (response[x].type != "Claimed") {
                     final_response.push(response[x]);
                 }
             };
-            for(let x = 0; x < response.length; x += 1) {
-                if(response[x].type == "Claimed") {
+            for (let x = 0; x < response.length; x += 1) {
+                if (response[x].type == "Claimed") {
                     final_response.push(response[x]);
                 }
             };
-            console.log(final_response);
             return final_response;
         },
     });
@@ -399,21 +398,21 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
 export const useGetUserVerifiedStatus = (): UseQueryResult<boolean> => {
     const { session } = useAuthContext();
     return useQuery({
-      queryKey: [queryKeys.verified_status],
-      queryFn: async () => {
-        const { actor, methods } = await useGamingGuildsWorldNodeClient();
-        let current_user_principal = (session?.identity?.getPrincipal())? ((session?.identity?.getPrincipal()).toString()) :  "2vxsx-fae";
-        let res = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["ogBadge"]) as {
-          ok: [StableEntity] | undefined;
-        };
-        if((res.ok)?(res.ok).length : 0 > 0) {
-          return true;
-        } else {
-          return false;
-        };
-      },
+        queryKey: [queryKeys.verified_status],
+        queryFn: async () => {
+            const { actor, methods } = await useGamingGuildsWorldNodeClient();
+            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
+            let res = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["ogBadge"]) as {
+                ok: [StableEntity] | undefined;
+            };
+            if ((res.ok) ? (res.ok).length : 0 > 0) {
+                return true;
+            } else {
+                return false;
+            };
+        },
     });
-  };
+};
 
 export const useClaimReward = () => {
     const queryClient = useQueryClient();
@@ -432,7 +431,6 @@ export const useClaimReward = () => {
                     ok: ActionReturn[];
                     err: string | undefined;
                 };
-                console.log(result);
                 if (result.ok == undefined) {
                     throw (result.err);
                 }
@@ -448,7 +446,7 @@ export const useClaimReward = () => {
         },
         onSuccess: (undefined, { aid: aid, rewards: rewards }) => {
             toast.custom((t) => (
-                <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-40">
+                <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-40 backdrop-blur-sm">
                     <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
                         <p className="mt-2 font-semibold text-3xl">Congratulations! You received : </p>
                         <div className="flex justify-center">
@@ -474,9 +472,11 @@ export const useClaimReward = () => {
             ), {
                 position: 'top-center'
             });
-            queryClient.refetchQueries({ queryKey: [queryKeys.boom_token_balance] });
-            queryClient.refetchQueries({ queryKey: [queryKeys.all_guild_members_info] });
-            queryClient.refetchQueries({ queryKey: [queryKeys.all_quests_info] });
+            window.setTimeout(() => {
+                queryClient.refetchQueries({ queryKey: [queryKeys.boom_token_balance] });
+                queryClient.refetchQueries({ queryKey: [queryKeys.all_guild_members_info] });
+                queryClient.refetchQueries({ queryKey: [queryKeys.all_quests_info] });
+            }, 15000);
         },
     });
 };

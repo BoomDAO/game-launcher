@@ -28,7 +28,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
         ['query'],
       ),
-    'getLatestWorldWasmVersion' : IDL.Func([], [IDL.Text], ['query']),
     'getOwner' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
     'getTotalWorlds' : IDL.Func([], [IDL.Nat], ['query']),
     'getUserTotalWorlds' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
