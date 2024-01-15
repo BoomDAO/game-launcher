@@ -34,11 +34,11 @@ import Constants "../utils/Env";
 import TGlobal "../types/global.types";
 import TEntity "../types/entity.types";
 import TAction "../types/action.types";
+import Proxy "proxyCanister";
 
 actor Verifier {
 
   private stable var auth_header : Text = "";
-  private stable var idempotent_key : Nat = 0;
   private stable var _emails : Trie.Trie<Text, Text> = Trie.empty(); // email -> otp
 
   type TransformType = {
@@ -87,6 +87,8 @@ actor Verifier {
     http_request : shared CanisterHttpRequestArgs -> async CanisterHttpResponsePayload;
   };
 
+  let ProxyCanister : Proxy.Proxy = actor (Constants.ProxyCanisterId);
+
   private func generateOTP_() : async (Text) {
     let seed : Blob = await Random.blob();
     let rand : Nat = Random.rangeFrom(32, seed);
@@ -114,42 +116,25 @@ actor Verifier {
     return number;
   };
 
-  public query func transform(raw : TransformArgs) : async CanisterHttpResponsePayload {
-    let transformed : CanisterHttpResponsePayload = {
-      status = 200;
-      body = [];
-      headers = [];
-    };
-    transformed;
-  };
-
-  private func ping_server_to_email(arg : { email : Text; otp : Text }) : async (CanisterHttpResponsePayload) {
-    let MAX_RESPONSE_BYTES : Nat64 = 1000;
-    let transform_context : TransformContext = {
-      function = transform;
-      context = Blob.fromArray([]);
-    };
-
+  public func ping_server_to_email(arg : { email : Text; otp : Text }) : async (Proxy.HttpRequestEndpointResult) {
     var request_headers : [HttpHeader] = [
       { name = "authorization"; value = auth_header },
-      { name = "x-idempotence-key"; value = Nat.toText(idempotent_key) },
       { name = "email"; value = arg.email },
       { name = "otp"; value = arg.otp },
     ];
     var req_body : Text = "";
     var request_body : [Nat8] = Blob.toArray(Text.encodeUtf8(req_body));
-
-    let request : CanisterHttpRequestArgs = {
-      url = "https://lovely-beignet-bb36a2.netlify.app/.netlify/functions/server/verify";
-      max_response_bytes = ?MAX_RESPONSE_BYTES;
-      headers = request_headers;
-      body = request_body;
-      method = #post;
-      transform = ?transform_context;
-    };
-    Cycles.add(100_000_000);
-    var res : CanisterHttpResponsePayload = await IC.http_request(request);
-    return res;
+    let response = await ProxyCanister.http_request({
+      request = {
+        url = "https://lovely-beignet-bb36a2.netlify.app/.netlify/functions/server/verify";
+        method = #POST;
+        body = ?Text.encodeUtf8(req_body);
+        headers = request_headers;
+      };
+      timeout_ms = null;
+      callback_method_name = null;
+    });
+    return response;
   };
 
   public shared ({ caller }) func generateOTP(email : Text) : async Result.Result<Text, Text> {
@@ -161,10 +146,9 @@ actor Verifier {
   };
 
   public shared ({ caller }) func sendVerificationEmail(_email : Text) : async (Result.Result<Text, Text>) {
-    // assert (caller != Principal.fromText("2vxsx-fae"));
+    assert (caller != Principal.fromText("2vxsx-fae"));
     switch (await generateOTP(_email)) {
       case (#ok _otp) {
-        idempotent_key := idempotent_key + 1;
         let res = await ping_server_to_email({ email = _email; otp = _otp });
         return #ok("");
       };
@@ -222,7 +206,6 @@ actor Verifier {
 
   public func cleanUp() : async () {
     _emails := Trie.empty();
-    idempotent_key := 0;
   };
 
 };

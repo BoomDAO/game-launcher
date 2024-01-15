@@ -42,4 +42,6 @@ module {
     public let StakingHubCanisterId = "jozll-yaaaa-aaaap-abf5q-cai"; 
     public let NftDeployerCanisterId = "j474s-uqaaa-aaaap-abf6q-cai";
     public let WorldDeployerCanisterId = "js5r2-paaaa-aaaap-abf7q-cai";
+
+    public let ProxyCanisterId = "iustv-tiaaa-aaaao-a3aga-cai";
 };
