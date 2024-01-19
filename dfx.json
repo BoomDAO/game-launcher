@@ -44,6 +44,15 @@
         "token": {
             "main": "src/game_launcher_backend/token_deployer/ICRC3/Canisters/Token.mo",
             "type": "motoko"
+        },
+        "swap": {
+            "main": "src/game_launcher_backend/launchpad/swap.mo",
+            "type": "motoko"
+        },
+        "icrc_ledger": {
+            "type": "custom",
+            "wasm": "src/game_launcher_backend/launchpad/icrc/ic-icrc1-ledger.wasm",
+            "candid": "src/game_launcher_backend/launchpad/icrc/ledger.did"
         }
     },
     "defaults": {
