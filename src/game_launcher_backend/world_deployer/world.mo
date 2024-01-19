@@ -53,7 +53,10 @@ import Config "../modules/Configs";
 import FormulaEvaluation "../modules/FormulaEvaluation";
 
 import TConstraints "../types/constraints.types";
-import IcWebSocketCdk "mo:ic-websocket-cdk";
+
+// import IcWebSocketCdk "mo:ic-websocket-cdk";
+// import IcWebSocketCdkState "mo:ic-websocket-cdk/State";
+// import IcWebSocketCdkTypes "mo:ic-websocket-cdk/Types";
 
 import V1TGlobal "../migrations/v1.global.types";
 import V1TEntity "../migrations/v1.entity.types";
@@ -91,8 +94,6 @@ actor class WorldTemplate() = this {
     private var seedMod : ?Nat = null;
 
     let { ihash; nhash; thash; phash; calcHash } = Map;
-
-    var worldPrincipalId = "";
 
     //# INTERFACES
     type UserNode = actor {
@@ -159,7 +160,11 @@ actor class WorldTemplate() = this {
         v1actionsStorage := actionsStorage;
     };
     system func postupgrade() {
-        worldPrincipalId := Principal.toText(WorldId());
+
+    };
+
+    private func worldPrincipalId() : Text{
+        return Principal.toText(WorldId());
     };
 
     //# INTERNAL FUNCTIONS
@@ -494,9 +499,9 @@ actor class WorldTemplate() = this {
 
         actionsStorage := Trie.empty();
 
-        for (i in Config.action.vals()) {
-            ignore createAction(i);
-        };
+        // for (i in Config.action.vals()) {
+        //     ignore createAction(i);
+        // };
 
         return #ok();
     };
@@ -510,7 +515,7 @@ actor class WorldTemplate() = this {
 
                 let userNode : UserNode = actor (userNodeId);
 
-                return await userNode.getAllUserActionStates(args.uid, worldPrincipalId);
+                return await userNode.getAllUserActionStates(args.uid, worldPrincipalId());
             };
             case (#err(errMsg)) {
                 return #err(errMsg);
@@ -522,7 +527,7 @@ actor class WorldTemplate() = this {
         switch (await getUserNode_(args.uid)) {
             case (#ok(userNodeId)) {
                 let userNode : UserNode = actor (userNodeId);
-                return await userNode.getAllUserEntities(args.uid, worldPrincipalId, args.page);
+                return await userNode.getAllUserEntities(args.uid, worldPrincipalId(), args.page);
             };
             case (#err(errMsg)) {
                 return #err(errMsg);
@@ -558,12 +563,12 @@ actor class WorldTemplate() = this {
     };
 
     public shared ({ caller }) func createEntity(entitySchema : TEntity.EntitySchema) : async (Result.Result<Text, Text>) {
-        assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId);
+        assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId());
 
         switch (await getUserNode_(entitySchema.uid)) {
             case (#ok(userNodeId)) {
                 let userNode : UserNode = actor (userNodeId);
-                return await userNode.createEntity(entitySchema.uid, worldPrincipalId, entitySchema.eid, entitySchema.fields);
+                return await userNode.createEntity(entitySchema.uid, worldPrincipalId(), entitySchema.eid, entitySchema.fields);
             };
             case (#err(errMsg)) {
                 return #err(errMsg);
@@ -572,11 +577,11 @@ actor class WorldTemplate() = this {
     };
 
     public shared ({ caller }) func deleteEntity(args : { uid : Text; eid : Text }) : async (Result.Result<Text, Text>) {
-        assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId);
+        assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId());
         switch (await getUserNode_(args.uid)) {
             case (#ok(userNodeId)) {
                 let userNode : UserNode = actor (userNodeId);
-                return await userNode.deleteEntity(args.uid, worldPrincipalId, args.eid);
+                return await userNode.deleteEntity(args.uid, worldPrincipalId(), args.eid);
             };
             case (#err(errMsg)) {
                 return #err(errMsg);
@@ -590,7 +595,7 @@ actor class WorldTemplate() = this {
 
                 let userNode : UserNode = actor (userNodeId);
 
-                return await userNode.editEntity(entitySchema.uid, worldPrincipalId, entitySchema.eid, entitySchema.fields);
+                return await userNode.editEntity(entitySchema.uid, worldPrincipalId(), entitySchema.eid, entitySchema.fields);
             };
             case (#err(errMsg)) {
                 return #err(errMsg);
@@ -603,7 +608,7 @@ actor class WorldTemplate() = this {
         switch (await getUserNode_(arg.userId)) {
             case (#ok(userNodeId)) {
                 let userNode : UserNode = actor (userNodeId);
-                let entities = await userNode.getEntity(arg.userId, worldPrincipalId, arg.entityId);
+                let entities = await userNode.getEntity(arg.userId, worldPrincipalId(), arg.entityId);
                 return {
                     uid = arg.userId;
                     eid = arg.entityId;
@@ -1437,7 +1442,7 @@ actor class WorldTemplate() = this {
 
         for (e in entityConstraints.vals()) {
 
-            var wid = Option.get(e.wid, worldPrincipalId);
+            var wid = Option.get(e.wid, worldPrincipalId());
 
             switch (e.entityConstraintType) {
                 case (#greaterThanNumber val) {
@@ -2003,6 +2008,7 @@ actor class WorldTemplate() = this {
             };
             case (_) {
                 changeActionLockState_(callerPrincipalId, actionId, false);
+                debugLog("The '" #actionId # "' action failed to be executed, because it doesn't exist.");
                 return #err("The '" #actionId # "' action failed to be executed, because it doesn't exist");
             };
         };
@@ -2016,6 +2022,7 @@ actor class WorldTemplate() = this {
                 };
                 case (#err(errMsg)) {
                     changeActionLockState_(callerPrincipalId, actionId, false);
+                    debugLog("The '" #actionId # "' action failed to be executed, ecause this is a compound action, thus requires as ActionArg.field a fieldName of 'targetPrincipalId' whose value is the target principal");
                     return #err("The '" #actionId # "' action failed to be executed, because this is a compound action, thus requires as ActionArg.field a fieldName of 'targetPrincipalId' whose value is the target principal ");
                 };
             };
@@ -2056,7 +2063,7 @@ actor class WorldTemplate() = this {
             let outcomes = {
                 callerPrincipalId = callerPrincipalId;
                 targetPrincipalId = ?targetPrincipalId;
-                worldPrincipalId = worldPrincipalId;
+                worldPrincipalId = worldPrincipalId();
                 callerOutcomes = ?callerOutcomes;
                 targetOutcomes = ?targetOutcomes;
                 worldOutcomes = worldOutcomes;
@@ -2089,7 +2096,7 @@ actor class WorldTemplate() = this {
             let outcomes = {
                 callerPrincipalId = callerPrincipalId;
                 targetPrincipalId = ?targetPrincipalId;
-                worldPrincipalId = worldPrincipalId;
+                worldPrincipalId = worldPrincipalId();
                 callerOutcomes = null;
                 targetOutcomes = ?targetOutcomes;
                 worldOutcomes = worldOutcomes;
@@ -2120,7 +2127,7 @@ actor class WorldTemplate() = this {
             let outcomes = {
                 callerPrincipalId = callerPrincipalId;
                 targetPrincipalId = null;
-                worldPrincipalId = worldPrincipalId;
+                worldPrincipalId = worldPrincipalId();
                 callerOutcomes = ?callerOutcomes;
                 targetOutcomes = null;
                 worldOutcomes = worldOutcomes;
@@ -2132,12 +2139,12 @@ actor class WorldTemplate() = this {
         } else if (hasSubActionWorld) {
             //GENERATE OUTCOMES
             var worldOutcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes_(worldAction.actionResult);
-            ignore processAction_(actionId, actionArg.fields, callerPrincipalId, worldPrincipalId, worldAction.actionConstraint, null, worldOutcomes, null);
+            ignore processAction_(actionId, actionArg.fields, callerPrincipalId, worldPrincipalId(), worldAction.actionConstraint, null, worldOutcomes, null);
 
             let outcomes = {
                 callerPrincipalId = callerPrincipalId;
                 targetPrincipalId = null;
-                worldPrincipalId = worldPrincipalId;
+                worldPrincipalId = worldPrincipalId();
                 callerOutcomes = null;
                 targetOutcomes = null;
                 worldOutcomes = ?worldOutcomes;
@@ -2185,7 +2192,7 @@ actor class WorldTemplate() = this {
             };
         };
 
-        if (targetPrincipalId == worldPrincipalId) {
+        if (targetPrincipalId == worldPrincipalId()) {
             targetNodeId := worldNodeId;
         } else {
             switch (await getTargetNodeHandler) {
@@ -2222,9 +2229,9 @@ actor class WorldTemplate() = this {
             actionCount = 0;
         };
 
-        let oldCallerActionStateResultHandler = callerNode.getActionState(callerPrincipalId, worldPrincipalId, actionId);
-        let oldTargetActionStateResultHandler = targetNode.getActionState(targetPrincipalId, worldPrincipalId, actionId);
-        let oldWorldActionStateResultHandler = targetNode.getActionState(worldPrincipalId, worldPrincipalId, actionId);
+        let oldCallerActionStateResultHandler = callerNode.getActionState(callerPrincipalId, worldPrincipalId(), actionId);
+        let oldTargetActionStateResultHandler = targetNode.getActionState(targetPrincipalId, worldPrincipalId(), actionId);
+        let oldWorldActionStateResultHandler = targetNode.getActionState(worldPrincipalId(), worldPrincipalId(), actionId);
 
         //FETCH ENTITIES DATA SETUP
         var worldData : [TEntity.StableEntity] = [];
@@ -2241,9 +2248,9 @@ actor class WorldTemplate() = this {
                 var worldEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
                 for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId);
+                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
                     if(Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId));
+                        worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId()));
                 };
                 worldEntityConstraintsWorldIds := Buffer.toArray(worldEntityConstraintsWorldIds_);
             };
@@ -2258,7 +2265,7 @@ actor class WorldTemplate() = this {
                 var callerEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
                 for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId);
+                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
                     if(Buffer.contains(callerEntityConstraintsWorldIds_, _wid, Text.equal) == false)
                         callerEntityConstraintsWorldIds_.add(_wid);
                 };
@@ -2275,9 +2282,9 @@ actor class WorldTemplate() = this {
                 var targetEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
                 for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId);
+                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
                     if(Buffer.contains(targetEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        targetEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId));
+                        targetEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId()));
                 };
                 targetEntityConstraintsWorldIds := Buffer.toArray(targetEntityConstraintsWorldIds_);
             };
@@ -2286,7 +2293,7 @@ actor class WorldTemplate() = this {
 
         //FETCH DATA
 
-        let worldEntityResultHandler = worldNode.getAllUserEntitiesOfSpecificWorlds(worldPrincipalId, worldEntityConstraintsWorldIds, null);
+        let worldEntityResultHandler = worldNode.getAllUserEntitiesOfSpecificWorlds(worldPrincipalId(), worldEntityConstraintsWorldIds, null);
         let callerEntityResultHandler = callerNode.getAllUserEntitiesOfSpecificWorlds(callerPrincipalId, callerEntityConstraintsWorldIds, null);
         let targetEntityResultHandler = targetNode.getAllUserEntitiesOfSpecificWorlds(targetPrincipalId, targetEntityConstraintsWorldIds, null);
 
@@ -2323,7 +2330,7 @@ actor class WorldTemplate() = this {
             };
         };
 
-        if (targetPrincipalId == worldPrincipalId) {
+        if (targetPrincipalId == worldPrincipalId()) {
             targetData := worldData;
         } else {
             switch (await targetEntityResultHandler) {
@@ -2419,7 +2426,7 @@ actor class WorldTemplate() = this {
         var targetActionStateResultHandler = validateConstraints_(targetData, targetPrincipalId, actionId, targetRefinedConstraints, oldTargetActionStateResult);
 
         if (worldHasOutcomes) {
-            var worldActionStateResultHandler = validateConstraints_(worldData, worldPrincipalId, actionId, worldRefinedConstraints, oldWorldActionStateResult);
+            var worldActionStateResultHandler = validateConstraints_(worldData, worldPrincipalId(), actionId, worldRefinedConstraints, oldWorldActionStateResult);
 
             switch (await worldActionStateResultHandler) {
                 case (#ok(result)) { newWorldActionState := result };
@@ -2518,9 +2525,11 @@ actor class WorldTemplate() = this {
             switch worldRefinedOutcomeResult {
                 case (#ok(_worldRefinedOutcome)) worldRefinedOutcome := _worldRefinedOutcome;
                 case (#err(errMsg)) {
-                    debugLog(errMsg);
+                    debugLog("Refine World Outcome Error "#errMsg);
                     //UNLOCK ACTION
                     changeActionLockState_(callerPrincipalId, actionId, false);
+
+                    return;
                 };
             };
         };
@@ -2532,7 +2541,7 @@ actor class WorldTemplate() = this {
         let callerApplyOutcomes = await callerApplyOutcomesHandler;
         let targetApplyOutcomes = await targetApplyOutcomesHandler;
 
-        if (worldHasOutcomes) let worldApplyOutcomes = applyOutcomes_(worldPrincipalId, worldNode, newWorldActionState, worldRefinedOutcome);
+        if (worldHasOutcomes) let worldApplyOutcomes = applyOutcomes_(worldPrincipalId(), worldNode, newWorldActionState, worldRefinedOutcome);
 
         //UNLOCK ACTION
         changeActionLockState_(callerPrincipalId, actionId, false);
@@ -2541,6 +2550,7 @@ actor class WorldTemplate() = this {
     };
 
     private func processAction_(actionId : Text, actionFields : [TGlobal.Field], callerPrincipalId : Text, sourcePrincipalId : Text, sourceActionConstraint : ?TAction.ActionConstraint, worldActionConstraint : ?TAction.ActionConstraint, sourceOutcomes : [TAction.ActionOutcomeOption], worldOutcomes : ?[TAction.ActionOutcomeOption]) : async () {
+        
         var worldHasOutcomes = worldOutcomes != null;
 
         //FETCH NODES IDS
@@ -2560,7 +2570,7 @@ actor class WorldTemplate() = this {
             };
         };
 
-        if (sourcePrincipalId == worldPrincipalId) {
+        if (sourcePrincipalId == worldPrincipalId()) {
             sourceNodeId := worldNodeId;
         } else {
             switch (await getSourceNodeHandler) {
@@ -2591,8 +2601,8 @@ actor class WorldTemplate() = this {
             actionCount = 0;
         };
 
-        let oldCallerActionStateResultHandler = sourceNode.getActionState(sourcePrincipalId, worldPrincipalId, actionId);
-        let oldWorldActionStateResultHandler = worldNode.getActionState(worldPrincipalId, worldPrincipalId, actionId);
+        let oldCallerActionStateResultHandler = sourceNode.getActionState(sourcePrincipalId, worldPrincipalId(), actionId);
+        let oldWorldActionStateResultHandler = worldNode.getActionState(worldPrincipalId(), worldPrincipalId(), actionId);
 
         //FETCH ENTITIES DATA SETUP
         var worldData : [TEntity.StableEntity] = [];
@@ -2607,9 +2617,9 @@ actor class WorldTemplate() = this {
                 var worldEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
                 for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId);
+                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
                     if(Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId));
+                        worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId()));
                 };
                 worldEntityConstraintsWorldIds := Buffer.toArray(worldEntityConstraintsWorldIds_);
             };
@@ -2624,7 +2634,7 @@ actor class WorldTemplate() = this {
                 var sourceEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
                 for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId);
+                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
                     if(Buffer.contains(sourceEntityConstraintsWorldIds_, _wid, Text.equal) == false)
                         sourceEntityConstraintsWorldIds_.add(_wid);
                 };
@@ -2636,7 +2646,7 @@ actor class WorldTemplate() = this {
 
         //FETCH DATA
 
-        let worldEntityResultHandler = worldNode.getAllUserEntitiesOfSpecificWorlds(worldPrincipalId, worldEntityConstraintsWorldIds, null);
+        let worldEntityResultHandler = worldNode.getAllUserEntitiesOfSpecificWorlds(worldPrincipalId(), worldEntityConstraintsWorldIds, null);
         let sourceEntityResultHandler = sourceNode.getAllUserEntitiesOfSpecificWorlds(sourcePrincipalId, sourceEntityConstraintsWorldIds, null);
 
 
@@ -2657,7 +2667,7 @@ actor class WorldTemplate() = this {
             };
         };
 
-        if (sourcePrincipalId == worldPrincipalId) {
+        if (sourcePrincipalId == worldPrincipalId()) {
             sourceData := worldData;
         } else {
             switch (await sourceEntityResultHandler) {
@@ -2727,7 +2737,7 @@ actor class WorldTemplate() = this {
         var newCallerActionStateResultHandler = validateConstraints_(sourceData, sourcePrincipalId, actionId, sourceRefinedConstraints, oldCallerActionStateResult);
 
         if (worldHasOutcomes) {
-            var worldActionStateResultHandler = validateConstraints_(worldData, worldPrincipalId, actionId, worldRefinedConstraints, oldWorldActionStateResult);
+            var worldActionStateResultHandler = validateConstraints_(worldData, worldPrincipalId(), actionId, worldRefinedConstraints, oldWorldActionStateResult);
 
             switch (await worldActionStateResultHandler) {
                 case (#ok(result)) { newWorldActionState := result };
@@ -2794,9 +2804,10 @@ actor class WorldTemplate() = this {
             switch worldRefinedOutcomeResult {
                 case (#ok(_worldRefinedOutcome)) worldRefinedOutcome := _worldRefinedOutcome;
                 case (#err(errMsg)) {
-                    debugLog(errMsg);
+                    debugLog("Refine World Outcome Error "#errMsg);
                     //UNLOCK ACTION
                     changeActionLockState_(callerPrincipalId, actionId, false);
+                    return;
                 };
             };
         };
@@ -2807,7 +2818,7 @@ actor class WorldTemplate() = this {
 
         let sourceApplyOutcomes = await sourceApplyOutcomesHandler;
 
-        if (worldHasOutcomes) let worldApplyOutcomes = applyOutcomes_(worldPrincipalId, worldNode, newWorldActionState, worldRefinedOutcome);
+        if (worldHasOutcomes) let worldApplyOutcomes = applyOutcomes_(worldPrincipalId(), worldNode, newWorldActionState, worldRefinedOutcome);
 
         //UNLOCK ACTION
         changeActionLockState_(callerPrincipalId, actionId, false);
@@ -2830,11 +2841,14 @@ actor class WorldTemplate() = this {
                     if (e != actionCallerPrincipalId) {
                         let otherUserPrincipalId = e;
                         //send outcomes to the otherUser
-                        ignore send_app_message(Principal.fromText(otherUserPrincipalId), #actionOutcomes outcomes);
+                        //ignore send_app_message(Principal.fromText(otherUserPrincipalId), #actionOutcomes outcomes);
                     };
                 };
             };
-            case (#err errMsg) {};
+            case (#err errMsg)
+            {
+                debugLog("Error, source: tryBroadcastOutcomes_, extra details "#errMsg);
+            };
         };
     };
     private func tryBroadcastFetchUsersDataRequest_(uid : Text) : async () {
@@ -2843,10 +2857,13 @@ actor class WorldTemplate() = this {
 
                 for (e in Iter.fromArray(users)) {
                     let otherUserPrincipalId = e;
-                    ignore send_app_message(Principal.fromText(otherUserPrincipalId), #userIdsToFetchDataFrom(users));
+                    //ignore send_app_message(Principal.fromText(otherUserPrincipalId), #userIdsToFetchDataFrom(users));
                 };
             };
-            case (#err errMsg) {};
+            case (#err errMsg) 
+            {
+                debugLog("Error, source: tryBroadcastFetchUsersDataRequest_, extra details "#errMsg);
+            };
         };
     };
 
@@ -2856,7 +2873,7 @@ actor class WorldTemplate() = this {
         //FETCH NODES IDS
         var worldNodeId : Text = "2vxsx-fae";
 
-        let getWorldNodeHandler = getUserNode_(worldNodeId);
+        let getWorldNodeHandler = getUserNode_(worldPrincipalId());
 
         switch (await getWorldNodeHandler) {
             case (#ok(content)) { worldNodeId := content };
@@ -2869,7 +2886,7 @@ actor class WorldTemplate() = this {
 
         var worldData : [TEntity.StableEntity] = [];
 
-        let worldEntityResultHandler = worldNode.getAllUserEntities(worldPrincipalId, worldPrincipalId, null);
+        let worldEntityResultHandler = worldNode.getAllUserEntities(worldPrincipalId(), worldPrincipalId(), null);
 
         switch (await worldEntityResultHandler) {
             case (#ok data) worldData := data;
@@ -2916,7 +2933,7 @@ actor class WorldTemplate() = this {
         switch (await getWorldNodeHandler) {
             case (#ok(content)) { worldNodeId := content };
             case (#err(errMsg)) {
-                return #err(errMsg);
+                return #err("World Node not found, details: "#errMsg);
             };
         };
 
@@ -2924,7 +2941,7 @@ actor class WorldTemplate() = this {
 
         var worldData : [TEntity.StableEntity] = [];
 
-        let worldEntityResultHandler = worldNode.getAllUserEntities(worldPrincipalId, worldPrincipalId, null);
+        let worldEntityResultHandler = worldNode.getAllUserEntities(worldPrincipalId(), worldPrincipalId(), null);
 
         switch (await worldEntityResultHandler) {
             case (#ok data) worldData := data;
@@ -3151,7 +3168,7 @@ actor class WorldTemplate() = this {
                     var variableValue = "";
 
                     if (source == "$caller") {
-                        switch (getEntityField_(callerData, worldPrincipalId, id, variableName)) {
+                        switch (getEntityField_(callerData, worldPrincipalId(), id, variableName)) {
                             case (?_entityFieldValue) variableValue := _entityFieldValue;
                             case _ return #err("could not find field of source: " #source # " eid: " #id # " fieldName: " #variableName);
                         };
@@ -3161,7 +3178,7 @@ actor class WorldTemplate() = this {
                             case (?value) {
                                 if (value.size() == 0) return #err "target data is empty";
 
-                                switch (getEntityField_(value, worldPrincipalId, id, variableName)) {
+                                switch (getEntityField_(value, worldPrincipalId(), id, variableName)) {
                                     case (?_entityFieldValue) variableValue := _entityFieldValue;
                                     case _ return #err("could not find field of source: " #source # " eid: " #id # " fieldName: " #variableName);
                                 };
@@ -3169,7 +3186,7 @@ actor class WorldTemplate() = this {
                             case _ return #err "target data is null";
                         };
                     } else if (source == "$world") {
-                        switch (getEntityField_(worldData, worldPrincipalId, id, variableName)) {
+                        switch (getEntityField_(worldData, worldPrincipalId(), id, variableName)) {
                             case (?_entityFieldValue) variableValue := _entityFieldValue;
                             case _ return #err("could not find field of source: " #source # "  eid: " #id # " fieldName: " #variableName);
                         };
@@ -3251,7 +3268,7 @@ actor class WorldTemplate() = this {
 
         //FETCH ENTITIES AND SETUP ENTITIES ARRAYS
         let getWorldEntitiesHandler = getAllUserEntities({
-            uid = worldPrincipalId;
+            uid = worldPrincipalId();
             page = null;
         });
 
@@ -3351,157 +3368,156 @@ actor class WorldTemplate() = this {
         };
         trusted_origins := Buffer.toArray(b);
     };
+    
     //# Websocket
 
-    let gateway_principal : Text = "3656s-3kqlj-dkm5d-oputg-ymybu-4gnuq-7aojd-w2fzw-5lfp2-4zhx3-4ae";
+    // let gateway_principal : Text = "3656s-3kqlj-dkm5d-oputg-ymybu-4gnuq-7aojd-w2fzw-5lfp2-4zhx3-4ae";
 
-    var ws_state = IcWebSocketCdk.IcWebSocketState([gateway_principal]);
+    // public type WSSentArg = {
+    //     #actionOutcomes : TAction.ActionReturn;
+    //     #userIdsToFetchDataFrom : [Text];
+    // };
 
-    public type WSSentArg = {
-        #actionOutcomes : TAction.ActionReturn;
-        #userIdsToFetchDataFrom : [Text];
-    };
+    // /// A custom function to send the message to the client
+    // func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {
+    //     // here we call the ws_send from the CDK!!
+    //     switch (await IcWebSocketCdk.send(ws_state, client_principal, to_candid (msg))) {
+    //         case (#Err(errMsg)) {
+    //             debugLog("Websocket Error -> " #errMsg);
+    //         };
+    //         case (_) {};
+    //     };
+    // };
 
-    /// A custom function to send the message to the client
-    func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {
-        // here we call the ws_send from the CDK!!
-        switch (await IcWebSocketCdk.ws_send(ws_state, client_principal, to_candid (msg))) {
-            case (#Err(errMsg)) {
-                debugLog("Websocket Error -> " #errMsg);
-            };
-            case (_) {};
-        };
-    };
+    // func on_open(args : IcWebSocketCdk.OnOpenCallbackArgs) : async () {
 
-    func on_open(args : IcWebSocketCdk.OnOpenCallbackArgs) : async () {
+    //     let uid = Principal.toText(args.client_principal);
 
-        let uid = Principal.toText(args.client_principal);
+    //     ignore tryBroadcastFetchUsersDataRequest_(uid);
+    // };
 
-        ignore tryBroadcastFetchUsersDataRequest_(uid);
-    };
+    // func on_message(args : IcWebSocketCdk.OnMessageCallbackArgs) : async () {};
 
-    func on_message(args : IcWebSocketCdk.OnMessageCallbackArgs) : async () {};
+    // func on_close(args : IcWebSocketCdk.OnCloseCallbackArgs) : async () {
+    //     let uid = Principal.toText(args.client_principal);
 
-    func on_close(args : IcWebSocketCdk.OnCloseCallbackArgs) : async () {
-        let uid = Principal.toText(args.client_principal);
+    //     //CHECK IF USER IS IN ANY ROOM
+    //     switch (await isUserInRoom_(uid)) {
+    //         case (#ok(room)) {
 
-        //CHECK IF USER IS IN ANY ROOM
-        switch (await isUserInRoom_(uid)) {
-            case (#ok(room)) {
+    //             //TRY RECREATE FIELDS WHERE USER IS REMOVED FROM USERS FIELD
+    //             //WE DONT ADD USERS FIELD TO THE BUFFER UNTIL THE END
+    //             var newFields = Buffer.Buffer<TGlobal.Field>(0);
 
-                //TRY RECREATE FIELDS WHERE USER IS REMOVED FROM USERS FIELD
-                //WE DONT ADD USERS FIELD TO THE BUFFER UNTIL THE END
-                var newFields = Buffer.Buffer<TGlobal.Field>(0);
+    //             var newUsersValue : ?Text = null;
+    //             label fieldsLoop for (field in Iter.fromArray(room.fields)) {
 
-                var newUsersValue : ?Text = null;
-                label fieldsLoop for (field in Iter.fromArray(room.fields)) {
+    //                 let fieldName = field.fieldName;
+    //                 let fieldValue = field.fieldValue;
 
-                    let fieldName = field.fieldName;
-                    let fieldValue = field.fieldValue;
+    //                 if (fieldName == "tag") {
 
-                    if (fieldName == "tag") {
+    //                     if (fieldValue == "room") {
 
-                        if (fieldValue == "room") {
+    //                         for (field1 in Iter.fromArray(room.fields)) {
 
-                            for (field1 in Iter.fromArray(room.fields)) {
+    //                             let fieldName1 = field1.fieldName;
+    //                             let fieldValue1 = field1.fieldValue;
 
-                                let fieldName1 = field1.fieldName;
-                                let fieldValue1 = field1.fieldValue;
+    //                             if (fieldName == "users") {
 
-                                if (fieldName == "users") {
+    //                                 if (Text.contains(fieldValue, #text uid)) {
 
-                                    if (Text.contains(fieldValue, #text uid)) {
+    //                                     let users = Text.split(fieldValue, #char ',');
 
-                                        let users = Text.split(fieldValue, #char ',');
+    //                                     var elementRemoved = false;
 
-                                        var elementRemoved = false;
+    //                                     label usersLoop for (e in users) {
 
-                                        label usersLoop for (e in users) {
+    //                                         if (elementRemoved == false) {
 
-                                            if (elementRemoved == false) {
+    //                                             if (e == uid) {
+    //                                                 elementRemoved := true;
+    //                                                 continue usersLoop;
+    //                                             };
+    //                                         };
 
-                                                if (e == uid) {
-                                                    elementRemoved := true;
-                                                    continue usersLoop;
-                                                };
-                                            };
+    //                                         if (newUsersValue != ?"") {
+    //                                             newUsersValue := ?(Option.get(newUsersValue, "") # "," #e);
+    //                                         } else newUsersValue := ?e;
+    //                                     };
 
-                                            if (newUsersValue != ?"") {
-                                                newUsersValue := ?(Option.get(newUsersValue, "") # "," #e);
-                                            } else newUsersValue := ?e;
-                                        };
+    //                                     continue fieldsLoop;
+    //                                 };
+    //                             };
+    //                         };
+    //                     };
+    //                 };
 
-                                        continue fieldsLoop;
-                                    };
-                                };
-                            };
-                        };
-                    };
+    //                 newFields.add({
+    //                     fieldName = fieldName;
+    //                     fieldValue = fieldValue;
+    //                 });
+    //             };
 
-                    newFields.add({
-                        fieldName = fieldName;
-                        fieldValue = fieldValue;
-                    });
-                };
+    //             //THIS IS TO CHECK IF THERE IS ANY USER IN THE ROOM OR WHETHER OR NOT THE ROOM REALLY EXIST
+    //             switch (newUsersValue) {
+    //                 case (?users) {
+    //                     //HERE WE ADD THE USERS FIELD
+    //                     newFields.add({
+    //                         fieldName = "users";
+    //                         fieldValue = users;
+    //                     });
 
-                //THIS IS TO CHECK IF THERE IS ANY USER IN THE ROOM OR WHETHER OR NOT THE ROOM REALLY EXIST
-                switch (newUsersValue) {
-                    case (?users) {
-                        //HERE WE ADD THE USERS FIELD
-                        newFields.add({
-                            fieldName = "users";
-                            fieldValue = users;
-                        });
+    //                     ignore editEntity_({
+    //                         uid = worldPrincipalId();
+    //                         eid = room.eid;
+    //                         fields = Buffer.toArray(newFields);
+    //                     });
+    //                 };
+    //                 case _ {} // No need to do anything here
+    //             };
+    //         };
+    //         case (#err errMsg) {
+    //             debugLog("Websocket Error -> " #errMsg);
+    //         };
+    //     };
+    // };
 
-                        ignore editEntity_({
-                            uid = worldPrincipalId;
-                            eid = room.eid;
-                            fields = Buffer.toArray(newFields);
-                        });
-                    };
-                    case _ {} // No need to do anything here
-                };
-            };
-            case (#err errMsg) {
-                debugLog("Websocket Error -> " #errMsg);
-            };
-        };
-    };
+    // let params = IcWebSocketCdkTypes.WsInitParams(
+    //     null,
+    //     null,
+    // );
 
-    let handlers = IcWebSocketCdk.WsHandlers(
-        ?on_open,
-        ?on_message,
-        ?on_close,
-    );
+    // let ws_state = IcWebSocketCdkState.IcWebSocketState(params);
 
-    let params = IcWebSocketCdk.WsInitParams(
-        handlers,
-        null,
-        null,
-        null,
-    );
+    // let handlers = IcWebSocketCdkTypes.WsHandlers(
+    //     ?on_open,
+    //     ?on_message,
+    //     ?on_close
+    // );
 
-    var ws = IcWebSocketCdk.IcWebSocket(ws_state, params);
+    // var ws = IcWebSocketCdk.IcWebSocket(ws_state, params, handlers);
 
-    // method called by the WS Gateway after receiving FirstMessage from the client
-    public shared ({ caller }) func ws_open(args : IcWebSocketCdk.CanisterWsOpenArguments) : async IcWebSocketCdk.CanisterWsOpenResult {
-        await ws.ws_open(caller, args);
-    };
+    // // method called by the WS Gateway after receiving FirstMessage from the client
+    // public shared ({ caller }) func ws_open(args : IcWebSocketCdk.CanisterWsOpenArguments) : async IcWebSocketCdk.CanisterWsOpenResult {
+    //     await ws.ws_open(caller, args);
+    // };
 
-    // method called by the Ws Gateway when closing the IcWebSocket connection
-    public shared ({ caller }) func ws_close(args : IcWebSocketCdk.CanisterWsCloseArguments) : async IcWebSocketCdk.CanisterWsCloseResult {
-        await ws.ws_close(caller, args);
-    };
+    // // method called by the Ws Gateway when closing the IcWebSocket connection
+    // public shared ({ caller }) func ws_close(args : IcWebSocketCdk.CanisterWsCloseArguments) : async IcWebSocketCdk.CanisterWsCloseResult {
+    //     await ws.ws_close(caller, args);
+    // };
 
-    // method called by the frontend SDK to send a message to the canister
-    public shared ({ caller }) func ws_message(args : IcWebSocketCdk.CanisterWsMessageArguments, msg : ?WSSentArg) : async IcWebSocketCdk.CanisterWsMessageResult {
-        await ws.ws_message(caller, args, msg);
-    };
+    // // method called by the frontend SDK to send a message to the canister
+    // public shared ({ caller }) func ws_message(args : IcWebSocketCdk.CanisterWsMessageArguments, msg : ?WSSentArg) : async IcWebSocketCdk.CanisterWsMessageResult {
+    //     await ws.ws_message(caller, args, msg);
+    // };
 
-    // method called by the WS Gateway to get messages for all the clients it serves
-    public shared query ({ caller }) func ws_get_messages(args : IcWebSocketCdk.CanisterWsGetMessagesArguments) : async IcWebSocketCdk.CanisterWsGetMessagesResult {
-        ws.ws_get_messages(caller, args);
-    };
+    // // method called by the WS Gateway to get messages for all the clients it serves
+    // public shared query ({ caller }) func ws_get_messages(args : IcWebSocketCdk.CanisterWsGetMessagesArguments) : async IcWebSocketCdk.CanisterWsGetMessagesResult {
+    //     ws.ws_get_messages(caller, args);
+    // };
 
     // method to validate Entities and EntityConstraints for User Quest Status
     public query func validateEntityConstraints(entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Bool) {
@@ -3510,5 +3526,4 @@ actor class WorldTemplate() = this {
             case _ return true;
         };
     };
-
 };
