@@ -103,4 +103,14 @@ module {
         var array : [Nat8] = Blob.toArray(blob);
         return array;
     };
+
+    public func nat64ToFloat(num : Nat64) : (Float) {
+        let nat : Nat = Nat64.toNat(num);
+        return Float.fromInt(nat);
+    };
+
+    public func intToNat(num : Int) : Nat{
+        let int_text : Text = Int.toText(num);
+        return textToNat(int_text);
+    };
 };
