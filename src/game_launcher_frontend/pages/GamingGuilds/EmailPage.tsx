@@ -40,7 +40,7 @@ const EmailPage = () => {
             {
                 onSuccess: () => {
                     resetAdd()
-                    navigate((navPaths.gaming_guilds_verification) + "/" + values.email);
+                    navigate((navPaths.gaming_guilds_email_verification) + "/" + values.email);
                 },
                 onError: () => {
                     console.log("error");

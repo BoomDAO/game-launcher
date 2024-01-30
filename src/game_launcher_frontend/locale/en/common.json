@@ -14,9 +14,11 @@
   },
   "navigation": {
     "login": "Login",
+    "profile": "Profile",
+    "wallet": "Wallet",
     "logout": "Logout",
     "browse_games": "Browse games",
-    "upload_games": "Upload games",
+    "upload_games": "UPLOAD GAMES",
     "manage_NFTs": "DEPLOY NFTS",
     "token_deployer": "DEPLOY TOKENS",
     "world_deployer": "DEPLOY WORLDS",
@@ -24,11 +26,17 @@
   },
   "verification": {
     "button": "Send Verification Email",
+    "button_phone": "Send Verification SMS",
     "input_placeholder": "Email used for website registration",
+    "input_placeholder_phone": "Your Phone number",
     "verification_error": "Email entered might not be registered in the Website. Contact dev team.",
     "verification_success": "OTP sent to your registered email. Kindly proceed to verify.",
+    "verification_error_phone": "Entered Phone number may be wrong, recheck. Contact dev team.",
+    "verification_success_phone": "OTP sent to entered phone number via SMS. Kindly proceed to verify.",
     "otp_error": "OTP entered is wrong. Try again.",
     "otp_success": "Congratulations! You've received an OG DAO member badge.",
+    "otp_success_sms": "Congratulations! You've received a Phone badge.",
+    "otp_input_sms": "Enter 6-digit OTP received in your sms",
     "otp_input": "Enter 6-digit OTP received in your email",
     "otp_button": "Verify OTP"
   },
@@ -493,7 +501,8 @@
         "no_members": "you can be the first to join Gaming Guilds ..."
       },
       "item_3": {
-        "verify_button": "VERIFY EMAIL"
+        "verify_email_button": "VERIFY EMAIL",
+        "verify_phone_button": "VERIFY PHONE"
       }
     },
     "Quests": {
@@ -502,6 +511,40 @@
       "incomplete_button": "GO TO GAME",
       "claimed_button": "CLAIMED",
       "claim_reward_error": "Error in claiming reward, contact dev team in discord"
+    }
+  },
+  "wallet": {
+    "token_heading": "Your Currencies",
+    "tokens_loading": "Loading your Currencies...",
+    "token_transfer_button_placeholder": "Withdraw",
+    "token_receiver_button_placeholder": "Deposit",
+    "no_tokens": "No tokens listed in Game Launcher yet.",
+    "transfer": {
+      "heading": "Withdraw Token",
+      "success": "ICRC Withdrawal successfull.",
+      "error": "Some error occured. Contact dev team for support."
+    }
+  },
+  "profile": {
+    "edit": {
+      "title": "Edit Profile Details",
+      "tab_1": {
+        "title": "Profile Picture",
+        "subtitle": "Update Your Profile Picture",
+        "input_placeholder": "Select Image",
+        "select_button": "Choose IMG",
+        "upload_button": "Upload",
+        "error": "Some error occured. Contact dev team",
+        "success": "Profile picture updated successfully."
+      },
+      "tab_2": {
+        "title": "Username",
+        "subtitle": "Update Username",
+        "input_placeholder": "Enter your new username",
+        "update_button": "Update",
+        "error": "Some error occured. Contact dev team for support.",
+        "success": "Username updated successfully"
+      }
     }
   }
 }

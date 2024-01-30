@@ -100,7 +100,10 @@ export const useWorldHubClient = async () => {
     }),
     methods: {
       importAllUsersDataOfWorld: "importAllUsersDataOfWorld",
-      importAllPermissionsOfWorld: "importAllPermissionsOfWorld"
+      importAllPermissionsOfWorld: "importAllPermissionsOfWorld",
+      getUserProfile: "getUserProfile",
+      setUsername: "setUsername",
+      uploadProfilePicture: "uploadProfilePicture"
     }
   }
 };
@@ -325,7 +328,9 @@ export const useGuildsVerifierClient = async () => {
     }),
     methods: {
       sendVerificationEmail: "sendVerificationEmail",
-      verifyOTP: "verifyOTP"
+      sendVerificationSMS: "sendVerificationSMS",
+      verifyOTP: "verifyOTP",
+      verifySmsOTP: "verifySmsOTP"
     },
   };
 };
@@ -383,6 +388,23 @@ export const useBoomLedgerClient = async () => {
     }),
     methods: {
       icrc1_balance_of: "icrc1_balance_of"
+    },
+  };
+};
+
+
+export const useICRCLedgerClient = async (canister_id: string) => {
+  const authClient = await getAuthClient();
+  const identity = authClient?.getIdentity();
+  const agent = await getAgent(identity);
+  return {
+    actor: Actor.createActor(BOOMLedgerFactory, {
+      agent,
+      canisterId: canister_id,
+    }),
+    methods: {
+      icrc1_balance_of: "icrc1_balance_of",
+      icrc1_transfer: "icrc1_transfer"
     },
   };
 };

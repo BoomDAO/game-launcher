@@ -28,30 +28,53 @@ const Quests = () => {
 
     const { session } = useAuthContext();
     const { data: configs = [], isError, isLoading } = useGetAllQuestsInfo();
-    const { data: isVerified = false } = useGetUserVerifiedStatus();
+    const { data: status = { emailVerified: false, phoneVerified: false } } = useGetUserVerifiedStatus();
 
     const onVerifyEmailButtonClick = () => {
         if (!session) {
             return setIsOpenNavSidebar(true);
         }
-        return navigate((navPaths.gaming_guilds_verification));
+        return navigate((navPaths.gaming_guilds_email_verification));
+    };
+
+    const onVerifyPhoneButtonClick = () => {
+        if (!session) {
+            return setIsOpenNavSidebar(true);
+        }
+        return navigate((navPaths.gaming_guilds_phone_verification));
     };
 
     return (
         <>
-            <div className="w-auto h-fit dark:text-black text-white flex float-right dark:bg-white bg-dark rounded-full text-center p-2 justify-around">
-                <img src="/ogicon.png" className="w-8 h-8 mt-0.5" />
-                <p className="text-lg p-1">OG Badge : {(isVerified) ? "Verified" : "Unverified"}</p>
-                {
-                    (isVerified) ? <></> : <Button
-                        onClick={onVerifyEmailButtonClick}
-                        className="py-2 px-3"
-                        rightArrow
-                        size="normal"
-                    >
-                        {t("gaming_guilds.items.item_3.verify_button")}
-                    </Button>
-                }
+            <div className="flex w-auto h-fit float-right">
+                <div className="dark:text-black text-white flex dark:bg-white bg-dark rounded-full text-center p-2 justify-around">
+                    <img src="/ogicon.png" className="w-8 h-8 mt-0.5" />
+                    <p className="text-lg p-1">OG Badge : {(status.emailVerified) ? "Verified" : "Unverified"}</p>
+                    {
+                        (status.emailVerified) ? <></> : <Button
+                            onClick={onVerifyEmailButtonClick}
+                            className="py-2 px-3"
+                            rightArrow
+                            size="normal"
+                        >
+                            {t("gaming_guilds.items.item_3.verify_email_button")}
+                        </Button>
+                    }
+                </div>
+                <div className="dark:text-black text-white flex dark:bg-white bg-dark rounded-full text-center p-2 justify-around ml-3 mr-2">
+                    <img src="/phoneicon.png" className="w-8 h-8 mt-0.5" />
+                    <p className="text-lg p-1">Phone Badge : {(status.phoneVerified) ? "Verified" : "Unverified"}</p>
+                    {
+                        (status.phoneVerified) ? <></> : <Button
+                            onClick={onVerifyPhoneButtonClick}
+                            className="py-2 px-3"
+                            rightArrow
+                            size="normal"
+                        >
+                            {t("gaming_guilds.items.item_3.verify_phone_button")}
+                        </Button>
+                    }
+                </div>
             </div>
             <Space />
             <div className="">

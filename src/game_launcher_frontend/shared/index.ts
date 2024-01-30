@@ -19,7 +19,11 @@ export const navPaths = {
   boomdao_candid_url: "https://5pati-hyaaa-aaaal-qb3yq-cai.raw.icp0.io/",
   manage_worlds: "/world-deployer/manage-worlds",
   gaming_guilds: "/gaming-guilds",
-  gaming_guilds_verification: "/gaming_guilds/verify"
+  gaming_guilds_email_verification: "/gaming-guilds/verify-email",
+  gaming_guilds_phone_verification: "/gaming-guilds/verify-phone",
+  profile: "/profile",
+  wallet: "/wallet",
+  transfer: "/wallet/transfer"
 };
 
 export const platform_types: SelectOption[] = [

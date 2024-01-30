@@ -26,6 +26,11 @@ import VerifyPage from "./pages/GamingGuilds/VerifyOtpPage";
 import EmailPage from "./pages/GamingGuilds/EmailPage";
 import VerifyOtpPage from "./pages/GamingGuilds/VerifyOtpPage";
 import VerifyEmailPage from "./pages/GamingGuilds/VerifyEmailPage";
+import VerifyPhoneOtpPage from "./pages/GamingGuilds/VerifyPhoneOtpPage";
+import VerifyPhonePage from "./pages/GamingGuilds/VerifyPhonePage";
+import Wallet from "./pages/Profile/Wallet";
+import Profile from "./pages/Profile";
+import Transfer from "./pages/Profile/WalletTransfer";
 
 function App() {
   return (
@@ -85,12 +90,32 @@ function App() {
                   element={<ManageWorlds />}
                 />
                 <Route
-                  path={`${navPaths.gaming_guilds_verification}/:email`}
+                  path={`${navPaths.gaming_guilds_email_verification}/:email`}
                   element={<VerifyOtpPage />}
                 />
                 <Route
-                  path={`${navPaths.gaming_guilds_verification}`}
+                  path={`${navPaths.gaming_guilds_email_verification}`}
                   element={<VerifyEmailPage />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_phone_verification}/:phone`}
+                  element={<VerifyPhoneOtpPage />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_phone_verification}`}
+                  element={<VerifyPhonePage />}
+                />
+                <Route
+                  path={`${navPaths.profile}`}
+                  element={<Profile />}
+                />
+                <Route
+                  path={`${navPaths.wallet}`}
+                  element={<Wallet />}
+                />
+                <Route
+                  path={`${navPaths.transfer}/:canisterId`}
+                  element={<Transfer/>}
                 />
               </Route>
 

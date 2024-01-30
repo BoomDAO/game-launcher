@@ -9,7 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAuthContext } from "@/context/authContext";
-import { useGameClient } from "@/hooks";
+import { useGameClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import {
   CreateGameData,
@@ -38,6 +38,7 @@ export const queryKeys = {
   user_games: "user_games",
   game_cover: "game_cover",
   cycle_balance: "cycle_balance",
+  user_profile: "user_profile"
 };
 
 export const useGetTotalGames = () =>

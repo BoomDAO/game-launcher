@@ -38,8 +38,13 @@ import Proxy "proxyCanister";
 
 actor Verifier {
 
-  private stable var auth_header : Text = "";
+  private stable var twilioProps = {
+    auth : Text = "";
+    sid : Text = "";
+    from : Text = "";
+  };
   private stable var _emails : Trie.Trie<Text, Text> = Trie.empty(); // email -> otp
+  private stable var _phones: Trie.Trie<Text, Text> = Trie.empty(); // phone -> otp
 
   type TransformType = {
     #function : shared CanisterHttpResponsePayload -> async CanisterHttpResponsePayload;
@@ -116,9 +121,16 @@ actor Verifier {
     return number;
   };
 
-  public func ping_server_to_email(arg : { email : Text; otp : Text }) : async (Proxy.HttpRequestEndpointResult) {
+  public shared({caller}) func setTwilioProps(arg : { auth : Text; sid : Text; from : Text; }) : async () {
+    assert(caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+    twilioProps := arg;
+    return ();
+  };
+
+  public shared({caller}) func ping_server_to_email(arg : { email : Text; otp : Text }) : async (Proxy.HttpRequestEndpointResult) {
+    assert (caller == Principal.fromActor(Verifier));
     var request_headers : [HttpHeader] = [
-      { name = "authorization"; value = auth_header },
+      { name = "authorization"; value = twilioProps.auth },
       { name = "email"; value = arg.email },
       { name = "otp"; value = arg.otp },
     ];
@@ -137,6 +149,32 @@ actor Verifier {
     return response;
   };
 
+  public shared({caller}) func ping_server_to_sms(arg : { phone : Text; otp : Text }) : async (Proxy.HttpRequestEndpointResult) {
+    assert (caller == Principal.fromActor(Verifier));
+    let _url : Text = "https://api.twilio.com/2010-04-01/Accounts/" #twilioProps.sid #"/Messages.json";
+
+    var request_headers : [HttpHeader] = [
+      { name = "content-type"; value = "application/x-www-form-urlencoded" },
+      { name = "authorization"; value = twilioProps.auth },
+      { name = "phone"; value = arg.phone },
+      { name = "otp"; value = arg.otp },
+    ];
+
+    var req_body = "To=" #arg.phone #"&From=" #twilioProps.from #"&Body=Hi BOOM DAO Gamer, Here is your OTP : " #arg.otp #". Do Not share this with anyone.";
+    var request_body : [Nat8] = Blob.toArray(Text.encodeUtf8(req_body));
+    let response = await ProxyCanister.http_request({
+      request = {
+        url = _url;
+        method = #POST;
+        body = ?Text.encodeUtf8(req_body);
+        headers = request_headers;
+      };
+      timeout_ms = null;
+      callback_method_name = null;
+    });
+    return response;
+  };
+
   public shared ({ caller }) func generateOTP(email : Text) : async Result.Result<Text, Text> {
     assert (caller == Principal.fromActor(Verifier));
     let ?found = Trie.find(_emails, Utils.keyT(email), Text.equal) else return #err("email not valid");
@@ -145,11 +183,31 @@ actor Verifier {
     return #ok(otp);
   };
 
+  public shared ({ caller }) func generateSmsOTP(phone : Text) : async Result.Result<Text, Text> {
+    assert (caller == Principal.fromActor(Verifier));
+    var otp : Text = await generateOTP_();
+    _phones := Trie.put(_phones, Utils.keyT(phone), Text.equal, otp).0;
+    return #ok(otp);
+  };
+
   public shared ({ caller }) func sendVerificationEmail(_email : Text) : async (Result.Result<Text, Text>) {
     assert (caller != Principal.fromText("2vxsx-fae"));
     switch (await generateOTP(_email)) {
       case (#ok _otp) {
         let res = await ping_server_to_email({ email = _email; otp = _otp });
+        return #ok("");
+      };
+      case (#err e) {
+        return #err(e);
+      };
+    };
+  };
+
+  public shared ({ caller }) func sendVerificationSMS(_phone : Text) : async (Result.Result<Text, Text>) {
+    assert (caller != Principal.fromText("2vxsx-fae"));
+    switch (await generateSmsOTP(_phone)) {
+      case (#ok _otp) {
+        let res = await ping_server_to_sms({ phone = _phone; otp = _otp });
         return #ok("");
       };
       case (#err e) {
@@ -184,6 +242,32 @@ actor Verifier {
     };
   };
 
+  public shared ({ caller }) func verifySmsOTP(arg : { phone : Text; otp : Text }) : async (Result.Result<Text, Text>) {
+    switch (Trie.find(_phones, Utils.keyT(arg.phone), Text.equal)) {
+      case (?otp) {
+        if (arg.otp == otp) {
+          _phones := Trie.remove(_phones, Utils.keyT(arg.phone), Text.equal).0;
+          let gaming_guild_canister = actor ("6ehny-oaaaa-aaaal-qclyq-cai") : actor {
+            processAction : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
+          };
+          let res = await gaming_guild_canister.processAction({
+            actionId = "grant_phone_badge";
+            fields = [{
+              fieldName = "targetPrincipalId";
+              fieldValue = Principal.toText(caller);
+            }];
+          });
+          return #ok("");
+        } else {
+          return #err("OTP not valid");
+        };
+      };
+      case _ {
+        return #err("Phone not valid");
+      };
+    };
+  };
+
   public query func getTotalEmails() : async Nat {
     return Trie.size(_emails);
   };
@@ -204,8 +288,10 @@ actor Verifier {
     return Buffer.toArray(b);
   };
 
-  public func cleanUp() : async () {
+  public shared({caller}) func cleanUp() : async () {
+    assert(caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
     _emails := Trie.empty();
+    _phones := Trie.empty();
   };
 
 };

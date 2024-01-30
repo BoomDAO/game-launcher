@@ -61,7 +61,7 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     if (isAuthenticated) return assignSession(authClient);
 
     await nfidLogin(authClient!);
-
+    window.location.reload();
     return checkAuth();
   };
 

@@ -41,7 +41,7 @@ export default function Slider() {
                         <div>
                             <div
                                 className={ind === activeImageNum ? "currentSlide active" : "currentSlide"}
-                                key={ind}
+                                key={currentSlide.url}
                             >
                                 <a href={currentSlide.url} className="cursor: pointer" target="_blank">
                                     {ind === activeImageNum && <img src={currentSlide.image} className="h-72 w-full rounded-primary object-cover shadow md:h-96" />}

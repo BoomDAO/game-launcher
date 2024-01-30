@@ -17,26 +17,26 @@ import {
     EmptyFunctionType,
     StateTypes
 } from "../../types/dialogTypes";
-import { useVerifyEmail } from "@/api/guilds";
+import { useVerifyEmail, useVerifyPhone } from "@/api/guilds";
 
 const scheme = z.object({
-    email: z.string().min(1, "Email is required."),
+    phone: z.string().min(1, "Phone is required."),
     otp: z.string().min(1, "OTP is required."),
 });
 type Data = z.infer<typeof scheme>;
 
-const VerifyOtpPage = () => {
-    const { email } = useParams();
+const VerifyPhoneOtpPage = () => {
+    const { phone } = useParams();
     const { t } = useTranslation();
     const navigate = useNavigate();
 
     const {
-        control: verifyEmailControl,
-        handleSubmit: handleVerifyEmail,
+        control: verifyPhoneControl,
+        handleSubmit: handleVerifyPhone,
         reset: resetAdd,
     } = useForm<Data>({
         defaultValues: {
-            email: email,
+            phone: phone,
             otp: "",
         },
         resolver: zodResolver(scheme),
@@ -72,10 +72,10 @@ const VerifyOtpPage = () => {
         navigate(navPaths.gaming_guilds);
     };
 
-    const { data: result = "", mutate: verifyEmail, isLoading: isLoadingVerifyEmail } = useVerifyEmail();
+    const { data: result = "", mutate: verifyPhone, isLoading: isLoadingVerifyPhone } = useVerifyPhone();
 
-    const onVerifyEmail = (values: Data) => {
-        verifyEmail(
+    const onVerifyPhone = (values: Data) => {
+        verifyPhone(
             { ...values },
             {
                 onSuccess: () => {
@@ -91,20 +91,20 @@ const VerifyOtpPage = () => {
 
     const [state, setState] = React.useState<StateTypes>({
         component: <div>
-            <Form className="w-6/12 m-auto items-center" onSubmit={handleVerifyEmail(onVerifyEmail)}>
+            <Form className="w-6/12 m-auto items-center" onSubmit={handleVerifyPhone(onVerifyPhone)}>
                 <FormTextInput
                     className="dark:border-gray-600"
-                    control={verifyEmailControl}
+                    control={verifyPhoneControl}
                     name="otp"
-                    placeholder={t("verification.otp_input",)}
+                    placeholder={t("verification.otp_input_sms",)}
                 />
-                <Button size="big" className="cursor-pointer" rightArrow isLoading={isLoadingVerifyEmail}>
+                <Button size="big" className="cursor-pointer" rightArrow isLoading={isLoadingVerifyPhone}>
                     {t("verification.otp_button")}
                 </Button>
             </Form>
         </div>,
         isOpen: true,
-        title: "Verify Email to Receive OG Badge",
+        title: "Verify OTP to Receive Phone Badge",
         okText: "Ok",
         cancelText: "Cancel",
         width: "md",
@@ -125,4 +125,4 @@ const VerifyOtpPage = () => {
     );
 }
 
-export default VerifyOtpPage;
+export default VerifyPhoneOtpPage;

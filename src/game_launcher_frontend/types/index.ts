@@ -18,6 +18,13 @@ export interface CreateChunkType {
 
 type GameFiles = File[];
 
+export interface UserProfile {
+  uid: string;
+  username: string;
+  xp: string;
+  image: string;
+};
+
 export interface Game {
   url: string;
   name: string;
@@ -208,6 +215,11 @@ export interface WorldWasm {
 
 
 // Gaming Guilds Interfaces
+export interface VerifiedStatus {
+  emailVerified: boolean;
+  phoneVerified: boolean;
+};
+
 export interface GuildConfig {
   cid: string;
   fields: [{
@@ -220,16 +232,17 @@ export interface GuildCard {
   aid: string;
   title: string;
   image: string;
-  rewards: { name: string; imageUrl: string; value: string; }[];
+  rewards: { name: string; imageUrl: string; value: string; description: string; }[];
   countCompleted: string;
   gameUrl: string;
-  mustHave: { name: string; imageUrl: string; quantity: string; }[];
+  mustHave: { name: string; imageUrl: string; quantity: string; description: string; }[];
   expiration: string;
   type: "Completed" | "Incomplete" | "Claimed";
 }
 
 export interface Member {
-  imageUrl: string;
+  uid: string;
+  image: string;
   username: string;
   guilds: string;
   joinDate: string;
@@ -380,3 +393,19 @@ export interface ActionReturn {
   }[];
 };
 
+export interface UserTokenInfo {
+  name: string;
+  logo: string;
+  balance: string;
+  symbol: string;
+  fee: number;
+  decimals: number;
+  ledger: string;
+};
+
+export interface  Profile {
+  principal: string;
+  username: string;
+  image: string;
+  tokens: UserTokenInfo[];
+};

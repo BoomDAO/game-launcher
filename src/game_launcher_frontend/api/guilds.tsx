@@ -9,10 +9,10 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { gamingGuildsCanisterId, useBoomLedgerClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient } from "@/hooks";
+import { gamingGuildsCanisterId, useBoomLedgerClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn } from "@/types";
+import { GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 
@@ -20,7 +20,7 @@ export const queryKeys = {
     all_guild_members_info: "all_guild_members_info",
     boom_token_balance: "boom_token_balance",
     all_quests_info: "all_quests_info",
-    verified_status: "verified_status"
+    verified_status: "verified_status",
 };
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -74,6 +74,39 @@ export const useSubmitEmail = () => {
     });
 };
 
+export const useSubmitPhone = () => {
+    const { t } = useTranslation();
+    return useMutation({
+        mutationFn: async ({
+            phone,
+        }: {
+            phone: string;
+        }) => {
+            try {
+                const { actor, methods } = await useGuildsVerifierClient();
+                let result = await actor[methods.sendVerificationSMS](phone) as {
+                    ok: string | undefined;
+                    err: string | undefined;
+                };
+                if (result.ok == undefined) {
+                    throw (result.err);
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+            toast.error(t("verification.verification_error_phone"));
+        },
+        onSuccess: () => {
+            toast.success(t("verification.verification_success_phone"));
+        },
+    });
+};
+
 export const useVerifyEmail = () => {
     const queryClient = useQueryClient();
     const { t } = useTranslation();
@@ -113,21 +146,51 @@ export const useVerifyEmail = () => {
     });
 };
 
+export const useVerifyPhone = () => {
+    const queryClient = useQueryClient();
+    const { t } = useTranslation();
+    return useMutation({
+        mutationFn: async ({
+            phone,
+            otp,
+        }: {
+            phone: string;
+            otp: string;
+        }) => {
+            try {
+                const { actor, methods } = await useGuildsVerifierClient();
+                let result = await actor[methods.verifySmsOTP]({ phone: phone, otp: otp }) as {
+                    ok: string | undefined;
+                    err: string | undefined;
+                };
+                if (result.ok == undefined) {
+                    throw (result.err);
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+            toast.error(t("verification.otp_error"));
+        },
+        onSuccess: () => {
+            toast.success(t("verification.otp_success"));
+            window.setTimeout(() => {
+                queryClient.refetchQueries({ queryKey: [queryKeys.verified_status] });
+            }, 5000);
+        }
+    });
+};
+
 const getUserInfo = (fields: Field[]) => {
     let res = {
-        imageUrl: "",
-        username: "",
         guilds: "",
         joinDate: "",
     };
-
     for (let j = 0; j < fields.length; j += 1) {
-        if (fields[j].fieldName == "imageUrl") {
-            res.imageUrl = fields[j].fieldValue;
-        };
-        if (fields[j].fieldName == "username") {
-            res.username = fields[j].fieldValue;
-        };
         if (fields[j].fieldName == "xp") {
             res.guilds = fields[j].fieldValue;
         };
@@ -148,40 +211,66 @@ export const useGetAllMembersInfo = (): UseQueryResult<MembersInfo> => {
                 members: [],
             };
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
+            const worldHub = await useWorldHubClient();
             // fetching totalMembers
             let totalMembersEntity = await actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["totalMembers"]) as { ok: [StableEntity]; };
             let entities = await actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as { ok: [StableEntity] };
+            console.log(entities);
             let fields = totalMembersEntity.ok[0].fields;
             for (let i = 0; i < fields.length; i += 1) {
                 if (fields[i].fieldName == "quantity") {
                     response.totalMembers = (((fields[i].fieldValue).split("."))[0]).toString();
                 }
             };
+            let members_info: Member[] = [];
             // processing members info
             let current_user_principal = (session?.identity?.getPrincipal())?.toString();
-            let isCurrentUserAlreadyGuildMember = false;
             for (let i = 0; i < entities.ok.length; i += 1) {
                 fields = entities.ok[i].fields;
-                let member = getUserInfo(fields);
+                let memberInfo = getUserInfo(fields);
+                let current_member: Member = {
+                    uid: "",
+                    image: "/usericon.jpeg",
+                    username: "",
+                    guilds: "0",
+                    joinDate: ""
+                };
                 if (entities.ok[i].eid.length >= 63) {
-                    if ((entities.ok[i].eid) == current_user_principal) {
-                        isCurrentUserAlreadyGuildMember = true;
-                    };
-                    member.username = (entities.ok[i].eid).substring(0, 20) + ".....";
-                    let reg_time: number = Number(member.joinDate) / (1000000);
+                    current_member.username = (entities.ok[i].eid).substring(0, 20) + ".....";
+                    current_member.uid = entities.ok[i].eid;
+                    let reg_time: number = Number(memberInfo.joinDate) / (1000000);
                     let date = new Date(reg_time);
-                    member.joinDate = months[(date.getMonth())] + ' ' + date.getFullYear();
-                    member.guilds = (member.guilds).split(".")[0];
-                    response.members.push(member);
+                    current_member.joinDate = months[(date.getMonth())] + ' ' + date.getFullYear();
+                    current_member.guilds = (memberInfo.guilds).split(".")[0];
+                    members_info.push(current_member);
                 };
             };
-            if (!isCurrentUserAlreadyGuildMember) {
-                let guildCanister = await useGamingGuildsClient();
-                let res = await guildCanister.actor[guildCanister.methods.processAction]({
-                    fields: [],
-                    actionId: "join_guild"
-                });
+
+            let users_profile = [];
+            for (let i = 0; i < members_info.length; i += 1) {
+                users_profile.push(worldHub.actor[worldHub.methods.getUserProfile]({ uid: members_info[i].uid }));
             };
+            await Promise.all(users_profile).then(
+                (res2: any) => {
+                    for (let k = 0; k < res2.length; k++) {
+                        if (res2[k].image != "") {
+                            members_info[k].image = res2[k].image;
+                        };
+                        if (res2[k].username != members_info[k].uid) {
+                            members_info[k].username = res2[k].username;
+                            if (members_info[k].username.length > 20) {
+                                members_info[k].username = members_info[k].username.substring(0, 20) + "...";
+                            }
+                        };
+                    };
+                    return res2;
+                }
+            ).then(
+                response => {
+                    users_profile = response;
+                }
+            );
+            response.members = members_info;
             return response;
         },
     });
@@ -202,7 +291,8 @@ const getFieldsOfConfig = (configs: GuildConfig[], config: string) => {
     let res = {
         name: "",
         imageUrl: "",
-        gameUrl: ""
+        gameUrl: "",
+        description: ""
     };
     for (let i = 0; i < configs.length; i += 1) {
         if (configs[i].cid == config) {
@@ -215,6 +305,9 @@ const getFieldsOfConfig = (configs: GuildConfig[], config: string) => {
                 };
                 if (configs[i].fields[j].fieldName == "gameUrl") {
                     res.gameUrl = configs[i].fields[j].fieldValue;
+                };
+                if (configs[i].fields[j].fieldName == "description") {
+                    res.description = configs[i].fields[j].fieldValue;
                 };
             };
         };
@@ -285,7 +378,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                     };
                     if (configs[i].cid == actions[k].aid) {
                         let diff: bigint = 0n;
-                        let config_fields: { name: string; imageUrl: string; gameUrl: string; } = getFieldsOfConfig(configs, configs[i].cid);
+                        let config_fields: { name: string; imageUrl: string; gameUrl: string; description: string; } = getFieldsOfConfig(configs, configs[i].cid);
                         entry.aid = actions[k].aid;
                         entry.title = config_fields.name;
                         entry.image = config_fields.imageUrl;
@@ -315,8 +408,11 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                     };
                                 };
                                 let current_user_entities_of_specific_worlds = await worldNode.actor[worldNode.methods.getAllUserEntitiesOfSpecificWorlds](current_user_principal, world_ids, []) as { ok: [StableEntity] | undefined };
-                                let isQuestCompleted = await actor[methods.validateEntityConstraints](current_user_entities_of_specific_worlds.ok, entitiesCons) as boolean;
-
+                                // Edge case
+                                var isQuestCompleted = false;
+                                if (current_user_entities_of_specific_worlds.ok != undefined) {
+                                    isQuestCompleted = await actor[methods.validateEntityConstraints](current_user_entities_of_specific_worlds.ok, entitiesCons) as boolean;
+                                };
                                 if (isQuestCompleted) {
                                     entry.type = "Completed";
                                 } else {
@@ -328,8 +424,10 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         let mustHaveEntry = {
                                             name: config_fields.name,
                                             imageUrl: config_fields.imageUrl,
-                                            quantity: ""
+                                            quantity: "",
+                                            description: ""
                                         };
+                                        mustHaveEntry.description = config_fields.description;
                                         if (entitiesCons[f].entityConstraintType.greaterThanEqualToNumber != null && entitiesCons[f].entityConstraintType.greaterThanEqualToNumber.fieldName == "quantity") {
                                             mustHaveEntry.quantity = (entitiesCons[f].entityConstraintType.greaterThanEqualToNumber.value).toString();
                                         };
@@ -349,7 +447,8 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         entry.rewards.push({
                                             name: "BOOM",
                                             imageUrl: "/boom-logo.png",
-                                            value: (possible_outcome_type.transferIcrc.quantity).toString()
+                                            value: (possible_outcome_type.transferIcrc.quantity).toString(),
+                                            description: "BOOM Dao ICRC Token $BOOM."
                                         });
                                     };
                                     if (possible_outcome_type.updateEntity != undefined) {
@@ -358,7 +457,8 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                             entry.rewards.push({
                                                 name: config_fields.name,
                                                 imageUrl: config_fields.imageUrl,
-                                                value: ((possible_outcome_type.updateEntity.updates[0].incrementNumber.fieldValue.number) ? (possible_outcome_type.updateEntity.updates[0].incrementNumber.fieldValue.number).toString() : "")
+                                                value: ((possible_outcome_type.updateEntity.updates[0].incrementNumber.fieldValue.number) ? (possible_outcome_type.updateEntity.updates[0].incrementNumber.fieldValue.number).toString() : ""),
+                                                description: config_fields.description
                                             });
                                         };
                                     };
@@ -395,21 +495,30 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
     });
 };
 
-export const useGetUserVerifiedStatus = (): UseQueryResult<boolean> => {
+export const useGetUserVerifiedStatus = (): UseQueryResult<VerifiedStatus> => {
     const { session } = useAuthContext();
     return useQuery({
         queryKey: [queryKeys.verified_status],
         queryFn: async () => {
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
             let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
-            let res = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["ogBadge"]) as {
+            var res: VerifiedStatus = {
+                emailVerified: false,
+                phoneVerified: false
+            };
+            let res_email = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["ogBadge"]) as {
                 ok: [StableEntity] | undefined;
             };
-            if ((res.ok) ? (res.ok).length : 0 > 0) {
-                return true;
-            } else {
-                return false;
+            let res_phone = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["phoneBadge"]) as {
+                ok: [StableEntity] | undefined;
             };
+            if ((res_email.ok) ? (res_email.ok).length : 0 > 0) {
+                res.emailVerified = true;
+            };
+            if ((res_phone.ok) ? (res_phone.ok).length : 0 > 0) {
+                res.phoneVerified = true;
+            };
+            return res;
         },
     });
 };

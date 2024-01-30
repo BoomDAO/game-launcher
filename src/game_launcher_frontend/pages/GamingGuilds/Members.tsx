@@ -48,13 +48,13 @@ const Members = () => {
                     totalMembersInfo.members.length ? (
                         <>
                             <div className="w-full">
-                                {totalMembersInfo.members.map(({ username, joinDate, imageUrl, guilds }) => (
+                                {totalMembersInfo.members.map(({ username, joinDate, image, guilds }) => (
                                     <div key={username}>
                                         <div className="flex justify-around my-2.5">
-                                            <div className="w-1/4 pl-2"><img src={imageUrl} className="h-8" /></div>
-                                            <p className="w-1/4 font-light pl-1 pt-1">{username}</p>
-                                            <p className="w-1/4 font-light pl-1 pt-1">{guilds}</p>
-                                            <p className="w-1/4 font-light pl-1 pt-1">{joinDate}</p>
+                                            <div className="w-1/4 pl-10"><img src={image} className="h-10 w-10 rounded-3xl" /></div>
+                                            <p className="w-1/4 font-light pl-1 pt-2">{username}</p>
+                                            <p className="w-1/4 font-light pl-1 pt-2">{guilds}</p>
+                                            <p className="w-1/4 font-light pl-1 pt-2">{joinDate}</p>
                                         </div>
                                         <div className="w-full h-px gradient-bg opacity-25"></div>
                                     </div>

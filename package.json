@@ -1,7 +1,7 @@
 {
   "name": "game_launcher",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -12,12 +12,15 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@dfinity/agent": "^0.15.7",
-    "@dfinity/auth-client": "^0.15.7",
-    "@dfinity/candid": "^0.15.7",
-    "@dfinity/identity": "^0.15.7",
+    "@dfinity/agent": "^0.20.2",
+    "@dfinity/auth-client": "^0.20.2",
+    "@dfinity/candid": "^0.20.2",
+    "@dfinity/identity": "^0.20.2",
     "@dfinity/identity-secp256k1": "^0.20.2",
-    "@dfinity/principal": "^0.15.4",
+    "@dfinity/ledger-icp": "^2.1.1",
+    "@dfinity/nns": "^3.1.0",
+    "@dfinity/nns-proto": "^1.0.0",
+    "@dfinity/principal": "^0.20.2",
     "@emotion/core": "^11.0.0",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",

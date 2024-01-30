@@ -41,7 +41,7 @@ actor Deployer {
   private stable var _versions : Trie.Trie<Text, Text> = Trie.empty(); // mapping of world_canister_id -> world_wasm_version
   private stable var _admins : [Text] = [];
 
-  let IC : Management.Management = actor ("aaaaa-aa"); //IC Management Canister
+  let IC : Management.Self = actor ("aaaaa-aa"); //IC Management Canister
 
   //Types
   public type World = {
@@ -94,6 +94,7 @@ actor Deployer {
           memory_allocation = null;
           freezing_threshold = ?31_540_000;
         };
+        sender_canister_version = null;
       })
     );
     let world = actor (Principal.toText(cid.canister_id)) : actor {
@@ -108,7 +109,8 @@ actor Deployer {
       memory_size : Nat;
       cycles : Nat;
       settings : Management.definite_canister_settings;
-      module_hash : ?[Nat8];
+      idle_cycles_burned_per_day : Nat;
+      module_hash : ?Blob;
     } = await IC.canister_status({
       canister_id = Principal.fromText(collection_canister_id);
     });
@@ -267,7 +269,8 @@ actor Deployer {
       memory_size : Nat;
       cycles : Nat;
       settings : Management.definite_canister_settings;
-      module_hash : ?[Nat8];
+      idle_cycles_burned_per_day : Nat;
+      module_hash : ?Blob;
     } = await IC.canister_status({
       canister_id = Principal.fromText(collection_canister_id);
     });
@@ -286,6 +289,7 @@ actor Deployer {
           memory_allocation = null;
           freezing_threshold = ?31_540_000;
         };
+        sender_canister_version = null;
       })
     );
   };
@@ -300,7 +304,8 @@ actor Deployer {
       memory_size : Nat;
       cycles : Nat;
       settings : Management.definite_canister_settings;
-      module_hash : ?[Nat8];
+      idle_cycles_burned_per_day : Nat;
+      module_hash : ?Blob;
     } = await IC.canister_status({
       canister_id = Principal.fromText(collection_canister_id);
     });
@@ -318,6 +323,7 @@ actor Deployer {
           memory_allocation = null;
           freezing_threshold = ?31_540_000;
         };
+        sender_canister_version = null;
       })
     );
   };
@@ -458,7 +464,7 @@ actor Deployer {
       };
     };
     for ((worldId, ownerId) in worlds_and_owners.vals()) {
-      let IC : Management.Management = actor (ENV.IC_Management);
+      let IC : Management.Self = actor (ENV.IC_Management);
       let upgrade_bool = ?{
         skip_pre_upgrade = ?false;
       };

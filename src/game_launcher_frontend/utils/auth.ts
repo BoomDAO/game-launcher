@@ -37,7 +37,7 @@ export const getAuthClient = async () =>
 
 export const getAgent = async (identity?: Identity) =>
   new HttpAgent({
-    host: "https://ic0.app/",
+    host: "https://icp0.io/",
     fetch,
     identity,
   });

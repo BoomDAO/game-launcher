@@ -105,7 +105,7 @@ actor class WorldTemplate() = this {
         getAllUserActionStates : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.ActionState], Text>);
         getActionState : query (uid : TGlobal.userId, wid : TGlobal.worldId, aid : TGlobal.actionId) -> async (?TAction.ActionState);
         getEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId) -> async (TEntity.StableEntity);
-        getAllUserEntitiesOfSpecificWorlds : shared (uid : TGlobal.userId, wids : [TGlobal.worldId], page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>)
+        getAllUserEntitiesOfSpecificWorlds : shared (uid : TGlobal.userId, wids : [TGlobal.worldId], page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
     };
     type WorldHub = actor {
         createNewUser : shared (Principal) -> async (Result.Result<Text, Text>);
@@ -133,7 +133,7 @@ actor class WorldTemplate() = this {
     let paymentHub : PaymentHub = actor (ENV.PaymentHubCanisterId);
 
     type ICP = actor {
-        transfer : shared ICP.TransferArgs -> async ICP.TransferResult;
+        transfer : shared ICP.TransferArgs -> async ICP.Result_5;
     };
     type NFT = actor {
         ext_mint : ([(EXT.AccountIdentifier, EXT.Metadata)]) -> async [EXT.TokenIndex];
@@ -163,7 +163,7 @@ actor class WorldTemplate() = this {
 
     };
 
-    private func worldPrincipalId() : Text{
+    private func worldPrincipalId() : Text {
         return Principal.toText(WorldId());
     };
 
@@ -496,13 +496,7 @@ actor class WorldTemplate() = this {
 
     public shared ({ caller }) func deleteAllActions() : async (Result.Result<(), ()>) {
         assert (isAdmin_(caller));
-
         actionsStorage := Trie.empty();
-
-        // for (i in Config.action.vals()) {
-        //     ignore createAction(i);
-        // };
-
         return #ok();
     };
 
@@ -686,7 +680,7 @@ actor class WorldTemplate() = this {
                 subaccount = null;
             };
             fee = ?fee;
-            memo = ?[];
+            memo = null;
             from_subaccount = null;
             created_at_time = null;
             amount = Utils.convertToBaseUnit(transferData.quantity, decimals);
@@ -811,7 +805,7 @@ actor class WorldTemplate() = this {
                     var variableFieldNameElements = Iter.toArray(Text.split(eid, #char '.'));
 
                     if (variableFieldNameElements.size() == 2) {
-                        let argFieldName = variableFieldNameElements[1];
+                        let argFieldName = Text.trimEnd(variableFieldNameElements[1], #char '}');
 
                         switch (getActionArgByFieldName_(argFieldName, actionFields)) {
                             case (#ok(fieldValue)) {
@@ -978,7 +972,7 @@ actor class WorldTemplate() = this {
                                 var variableFieldNameElements = Iter.toArray(Text.split(update.fieldValue, #char '.'));
 
                                 if (variableFieldNameElements.size() == 2) {
-                                    let argFieldName = variableFieldNameElements[1];
+                                    let argFieldName = Text.trimEnd(variableFieldNameElements[1], #char '}');
 
                                     switch (getActionArgByFieldName_(argFieldName, actionFields)) {
                                         case (#ok(fieldValue)) {
@@ -1031,7 +1025,7 @@ actor class WorldTemplate() = this {
                                 var variableFieldNameElements = Iter.toArray(Text.split(update.value, #char '.'));
 
                                 if (variableFieldNameElements.size() == 2) {
-                                    let argFieldName = variableFieldNameElements[1];
+                                    let argFieldName = Text.trimEnd(variableFieldNameElements[1], #char '}');
 
                                     switch (getActionArgByFieldName_(argFieldName, actionFields)) {
                                         case (#ok(fieldValue)) {
@@ -1083,7 +1077,7 @@ actor class WorldTemplate() = this {
                                 var variableFieldNameElements = Iter.toArray(Text.split(update.value, #char '.'));
 
                                 if (variableFieldNameElements.size() == 2) {
-                                    let argFieldName = variableFieldNameElements[1];
+                                    let argFieldName = Text.trimEnd(variableFieldNameElements[1], #char '}');
 
                                     switch (getActionArgByFieldName_(argFieldName, actionFields)) {
                                         case (#ok(fieldValue)) {
@@ -1148,7 +1142,7 @@ actor class WorldTemplate() = this {
                             var variableFieldNameElements = Iter.toArray(Text.split(e.eid, #char '.'));
 
                             if (variableFieldNameElements.size() == 2) {
-                                let argFieldName = variableFieldNameElements[1];
+                                let argFieldName = Text.trimEnd(variableFieldNameElements[1], #char '}');
 
                                 switch (getActionArgByFieldName_(argFieldName, actionFields)) {
                                     case (#ok(fieldValue)) {
@@ -1181,7 +1175,7 @@ actor class WorldTemplate() = this {
                                     var variableFieldNameElements = Iter.toArray(Text.split(val.value, #char '.'));
 
                                     if (variableFieldNameElements.size() == 2) {
-                                        let argFieldName = variableFieldNameElements[1];
+                                        let argFieldName = Text.trimEnd(variableFieldNameElements[1], #char '}');
 
                                         switch (getActionArgByFieldName_(argFieldName, actionFields)) {
                                             case (#ok(fieldValue)) {
@@ -1215,7 +1209,7 @@ actor class WorldTemplate() = this {
                                     var variableFieldNameElements = Iter.toArray(Text.split(val.value, #char '.'));
 
                                     if (variableFieldNameElements.size() == 2) {
-                                        let argFieldName = variableFieldNameElements[1];
+                                        let argFieldName = Text.trimEnd(variableFieldNameElements[1], #char '}');
 
                                         switch (getActionArgByFieldName_(argFieldName, actionFields)) {
                                             case (#ok(fieldValue)) {
@@ -1260,20 +1254,20 @@ actor class WorldTemplate() = this {
         return #ok(actionConstraint);
     };
 
-    private func validateICPTransfer_(fromAccountId : Text, toAccountId : Text, amt : ICP.Tokens, base_block : ICP.Block, block_index : ICP.BlockIndex) : Result.Result<Text, Text> {
+    private func validateICPTransfer_(fromAccountId : Text, toAccountId : Text, amt : ICP.Tokens, base_block : ICP.CandidBlock, block_index : Nat64) : Result.Result<Text, Text> {
         switch (Trie.find(_icp_blocks, Utils.keyT(Nat64.toText(block_index)), Text.equal)) {
             case (?_) {
                 return #err("block already verified before");
             };
             case _ {};
         };
-        var tx : ICP.Transaction = base_block.transaction;
-        var op : ?ICP.Operation = tx.operation;
+        var tx : ICP.CandidTransaction = base_block.transaction;
+        var op : ?ICP.CandidOperation = tx.operation;
         switch (op) {
             case (?op) {
                 switch (op) {
                     case (#Transfer { to; fee; from; amount }) {
-                        if (Hex.encode(Blob.toArray(Blob.fromArray(to))) == toAccountId and Hex.encode(Blob.toArray(Blob.fromArray(from))) == fromAccountId and amount == amt) {
+                        if (Hex.encode(Blob.toArray(to)) == toAccountId and Hex.encode(Blob.toArray(from)) == fromAccountId and amount == amt) {
                             _icp_blocks := Trie.put(_icp_blocks, Utils.keyT(Nat64.toText(block_index)), Text.equal, "").0;
                             return #ok("verified!");
                         } else {
@@ -1285,6 +1279,9 @@ actor class WorldTemplate() = this {
                     };
                     case (#Mint {}) {
                         return #err("mint tx!");
+                    };
+                    case (#Approve _ ){
+                        return #err("Approve tx!");
                     };
                 };
             };
@@ -1681,8 +1678,8 @@ actor class WorldTemplate() = this {
                             case _ {};
                         };
 
-                        switch(t.actionTimeInterval){
-                            case (? actionTimeInterval){
+                        switch (t.actionTimeInterval) {
+                            case (?actionTimeInterval) {
 
                                 //intervalDuration is expected example (24hrs in nanoseconds)
                                 if (actionTimeInterval.actionsPerInterval == 0) {
@@ -1930,7 +1927,7 @@ actor class WorldTemplate() = this {
             if (e.fieldName == fieldName) return #ok(e.fieldValue);
         };
 
-        return #err("Requires action argument of fieldName: " #fieldName);
+        return #err("Requires action argument of fieldName: \"" #fieldName # "\"");
     };
 
     //
@@ -2238,19 +2235,17 @@ actor class WorldTemplate() = this {
         var callerData : [TEntity.StableEntity] = [];
         var targetData : [TEntity.StableEntity] = [];
 
-
         //GET WORLD IDS TO FETCH ENTITIES FROM
         var worldEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (worldActionConstraint) {
-            case(? constraints){
+            case (?constraints) {
 
                 var worldEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
-                for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
-                    if(Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId()));
+                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
+                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
+                    if (Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false) worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid, worldPrincipalId()));
                 };
                 worldEntityConstraintsWorldIds := Buffer.toArray(worldEntityConstraintsWorldIds_);
             };
@@ -2258,16 +2253,15 @@ actor class WorldTemplate() = this {
         };
 
         var callerEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (callerActionConstraint) {
-            case(? constraints){
+            case (?constraints) {
 
                 var callerEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
-                for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
-                    if(Buffer.contains(callerEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        callerEntityConstraintsWorldIds_.add(_wid);
+                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
+                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
+                    if (Buffer.contains(callerEntityConstraintsWorldIds_, _wid, Text.equal) == false) callerEntityConstraintsWorldIds_.add(_wid);
                 };
                 callerEntityConstraintsWorldIds := Buffer.toArray(callerEntityConstraintsWorldIds_);
             };
@@ -2275,16 +2269,15 @@ actor class WorldTemplate() = this {
         };
 
         var targetEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (targetActionConstraint) {
-            case(? constraints){
+            case (?constraints) {
 
                 var targetEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
-                for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
-                    if(Buffer.contains(targetEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        targetEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId()));
+                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
+                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
+                    if (Buffer.contains(targetEntityConstraintsWorldIds_, _wid, Text.equal) == false) targetEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid, worldPrincipalId()));
                 };
                 targetEntityConstraintsWorldIds := Buffer.toArray(targetEntityConstraintsWorldIds_);
             };
@@ -2525,7 +2518,7 @@ actor class WorldTemplate() = this {
             switch worldRefinedOutcomeResult {
                 case (#ok(_worldRefinedOutcome)) worldRefinedOutcome := _worldRefinedOutcome;
                 case (#err(errMsg)) {
-                    debugLog("Refine World Outcome Error "#errMsg);
+                    debugLog("Refine World Outcome Error " #errMsg);
                     //UNLOCK ACTION
                     changeActionLockState_(callerPrincipalId, actionId, false);
 
@@ -2550,7 +2543,7 @@ actor class WorldTemplate() = this {
     };
 
     private func processAction_(actionId : Text, actionFields : [TGlobal.Field], callerPrincipalId : Text, sourcePrincipalId : Text, sourceActionConstraint : ?TAction.ActionConstraint, worldActionConstraint : ?TAction.ActionConstraint, sourceOutcomes : [TAction.ActionOutcomeOption], worldOutcomes : ?[TAction.ActionOutcomeOption]) : async () {
-        
+
         var worldHasOutcomes = worldOutcomes != null;
 
         //FETCH NODES IDS
@@ -2610,16 +2603,15 @@ actor class WorldTemplate() = this {
 
         //GET WORLD IDS TO FETCH ENTITIES FROM
         var worldEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (worldActionConstraint) {
-            case(? constraints){
+            case (?constraints) {
 
                 var worldEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
-                for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
-                    if(Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid , worldPrincipalId()));
+                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
+                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
+                    if (Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false) worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid, worldPrincipalId()));
                 };
                 worldEntityConstraintsWorldIds := Buffer.toArray(worldEntityConstraintsWorldIds_);
             };
@@ -2627,28 +2619,25 @@ actor class WorldTemplate() = this {
         };
 
         var sourceEntityConstraintsWorldIds : [Text] = [];
-        
+
         switch (sourceActionConstraint) {
-            case(? constraints){
+            case (?constraints) {
 
                 var sourceEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
 
-                for(entityConstraint in Iter.fromArray(constraints.entityConstraint)){
-                    let _wid = Option.get(entityConstraint.wid , worldPrincipalId());
-                    if(Buffer.contains(sourceEntityConstraintsWorldIds_, _wid, Text.equal) == false)
-                        sourceEntityConstraintsWorldIds_.add(_wid);
+                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
+                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
+                    if (Buffer.contains(sourceEntityConstraintsWorldIds_, _wid, Text.equal) == false) sourceEntityConstraintsWorldIds_.add(_wid);
                 };
                 sourceEntityConstraintsWorldIds := Buffer.toArray(sourceEntityConstraintsWorldIds_);
             };
             case _ {};
         };
 
-
         //FETCH DATA
 
         let worldEntityResultHandler = worldNode.getAllUserEntitiesOfSpecificWorlds(worldPrincipalId(), worldEntityConstraintsWorldIds, null);
         let sourceEntityResultHandler = sourceNode.getAllUserEntitiesOfSpecificWorlds(sourcePrincipalId, sourceEntityConstraintsWorldIds, null);
-
 
         let oldCallerActionStateResult = await oldCallerActionStateResultHandler;
         var oldWorldActionStateResult : ?TAction.ActionState = null;
@@ -2804,7 +2793,7 @@ actor class WorldTemplate() = this {
             switch worldRefinedOutcomeResult {
                 case (#ok(_worldRefinedOutcome)) worldRefinedOutcome := _worldRefinedOutcome;
                 case (#err(errMsg)) {
-                    debugLog("Refine World Outcome Error "#errMsg);
+                    debugLog("Refine World Outcome Error " #errMsg);
                     //UNLOCK ACTION
                     changeActionLockState_(callerPrincipalId, actionId, false);
                     return;
@@ -2845,9 +2834,8 @@ actor class WorldTemplate() = this {
                     };
                 };
             };
-            case (#err errMsg)
-            {
-                debugLog("Error, source: tryBroadcastOutcomes_, extra details "#errMsg);
+            case (#err errMsg) {
+                debugLog("Error, source: tryBroadcastOutcomes_, extra details " #errMsg);
             };
         };
     };
@@ -2860,9 +2848,8 @@ actor class WorldTemplate() = this {
                     //ignore send_app_message(Principal.fromText(otherUserPrincipalId), #userIdsToFetchDataFrom(users));
                 };
             };
-            case (#err errMsg) 
-            {
-                debugLog("Error, source: tryBroadcastFetchUsersDataRequest_, extra details "#errMsg);
+            case (#err errMsg) {
+                debugLog("Error, source: tryBroadcastFetchUsersDataRequest_, extra details " #errMsg);
             };
         };
     };
@@ -2933,7 +2920,7 @@ actor class WorldTemplate() = this {
         switch (await getWorldNodeHandler) {
             case (#ok(content)) { worldNodeId := content };
             case (#err(errMsg)) {
-                return #err("World Node not found, details: "#errMsg);
+                return #err("World Node not found, details: " #errMsg);
             };
         };
 
@@ -3033,17 +3020,17 @@ actor class WorldTemplate() = this {
         return #ok("imported");
     };
 
-    public shared ({ caller }) func withdrawIcpFromWorld(args : { toPrincipal : Text }) : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
+    public shared ({ caller }) func withdrawIcpFromWorld(args : { toPrincipal : Text }) : async (Result.Result<ICP.Result_5, { #TxErr : ICP.TransferError_1; #Err : Text }>) {
         assert (caller == owner);
         let ICP_Ledger : Ledger.ICP = actor (ENV.Ledger);
         var _amt = await ICP_Ledger.account_balance({
-            account = Hex.decode(AccountIdentifier.fromText(Principal.toText(WorldId()), null));
+            account = Blob.fromArray(Hex.decode(AccountIdentifier.fromText(Principal.toText(WorldId()), null)));
         });
         _amt := {
             e8s = _amt.e8s - 10000;
         };
         var _req : ICP.TransferArgs = {
-            to = Hex.decode(AccountIdentifier.fromText(args.toPrincipal, null));
+            to = Blob.fromArray(Hex.decode(AccountIdentifier.fromText(args.toPrincipal, null)));
             fee = {
                 e8s = 10000;
             };
@@ -3052,19 +3039,19 @@ actor class WorldTemplate() = this {
             created_at_time = null;
             amount = _amt;
         };
-        var res : ICP.TransferResult = await ICP_Ledger.transfer(_req);
+        var res : ICP.Result_5 = await ICP_Ledger.transfer(_req);
         switch (res) {
             case (#Ok blockIndex) {
                 return #ok(res);
             };
             case (#Err e) {
-                let err : { #TxErr : ICP.TransferError; #Err : Text } = #TxErr e;
+                let err : { #TxErr : ICP.TransferError_1; #Err : Text } = #TxErr e;
                 return #err(err);
             };
         };
     };
 
-    public shared ({ caller }) func withdrawIcrcFromWorld(args : { tokenCanisterId : Text; toPrincipal : Text }) : async (Result.Result<ICRC.Result, { #TxErr : ICRC.TransferError; #Err : Text }>) {
+    public shared ({ caller }) func withdrawIcrcFromWorld(args : { tokenCanisterId : Text; toPrincipal : Text }) : async (Result.Result<ICRC.TransferResult, { #TxErr : ICRC.TransferError; #Err : Text }>) {
         assert (caller == owner);
         let ICRC_Ledger : Ledger.ICRC1 = actor (args.tokenCanisterId);
         var _amt = await ICRC_Ledger.icrc1_balance_of({
@@ -3084,7 +3071,7 @@ actor class WorldTemplate() = this {
             created_at_time = null;
             amount = _amt;
         };
-        var res : ICRC.Result = await ICRC_Ledger.icrc1_transfer(_req);
+        var res : ICRC.TransferResult = await ICRC_Ledger.icrc1_transfer(_req);
         switch (res) {
             case (#Ok blockIndex) {
                 return #ok(res);
@@ -3190,7 +3177,7 @@ actor class WorldTemplate() = this {
                             case (?_entityFieldValue) variableValue := _entityFieldValue;
                             case _ return #err("could not find field of source: " #source # "  eid: " #id # " fieldName: " #variableName);
                         };
-                    } else if (source == "$config") {
+                    } else if (source == "$configs") {
 
                         var configResult = getSpecificConfig_(id);
 
@@ -3310,6 +3297,7 @@ actor class WorldTemplate() = this {
     //To be able to access entities fields of "caller" "target" and "world"; and to also be able to access configs
     private func evaluateFormula(formula : Text, actionFields : [TGlobal.Field], worldData : [TEntity.StableEntity], callerData : [TEntity.StableEntity], targetData : ?[TEntity.StableEntity]) : (Result.Result<Float, Text>) {
         var _formula = Text.replace(formula, #char ' ', "");
+
         //REPLACE VARIABLES
 
         switch (replaceVariables(_formula, actionFields, worldData, callerData, targetData)) {
@@ -3368,7 +3356,7 @@ actor class WorldTemplate() = this {
         };
         trusted_origins := Buffer.toArray(b);
     };
-    
+
     //# Websocket
 
     // let gateway_principal : Text = "3656s-3kqlj-dkm5d-oputg-ymybu-4gnuq-7aojd-w2fzw-5lfp2-4zhx3-4ae";
@@ -3379,6 +3367,12 @@ actor class WorldTemplate() = this {
     // };
 
     // /// A custom function to send the message to the client
+    public query func validateEntityConstraints(entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Bool) {
+        switch (validateEntityConstraints_(entities, entityConstraints)) {
+            case (#err(errMsg)) return false;
+            case _ return true;
+        };
+    };
     // func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {
     //     // here we call the ws_send from the CDK!!
     //     switch (await IcWebSocketCdk.send(ws_state, client_principal, to_candid (msg))) {
@@ -3520,10 +3514,271 @@ actor class WorldTemplate() = this {
     // };
 
     // method to validate Entities and EntityConstraints for User Quest Status
-    public query func validateEntityConstraints(entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Bool) {
-        switch (validateEntityConstraints_(entities, entityConstraints)) {
-            case (#err(errMsg)) return false;
-            case _ return true;
-        };
-    };
+
+    // public query func validateEntityConstraints(entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Result.Result<(), [TConstraints.EntityConstraint]>) {
+
+    //     var invalidConstraint = Buffer.Buffer<TConstraints.EntityConstraint>(0);
+
+    //     label constraintLoop for (e in entityConstraints.vals()) {
+
+    //         var wid = Option.get(e.wid, worldPrincipalId());
+
+    //         switch (e.entityConstraintType) {
+    //             case (#greaterThanNumber val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         let current_val_in_float = Utils.textToFloat(currentVal);
+
+    //                         if (current_val_in_float <= val.value) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         invalidConstraint.add(e);
+    //                         continue constraintLoop;
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#lessThanNumber val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         let current_val_in_float = Utils.textToFloat(currentVal);
+
+    //                         if (current_val_in_float >= val.value) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         //We are not longer returning false if entity or field doesnt exist
+    //                         //return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#equalToNumber val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         let current_val_in_float = Utils.textToFloat(currentVal);
+
+    //                         if (val.equal) {
+    //                             if (current_val_in_float != val.value) {
+    //                                 invalidConstraint.add(e);
+    //                                 continue constraintLoop;
+    //                             }
+    //                         } else {
+    //                             if (current_val_in_float == val.value) {
+    //                                 invalidConstraint.add(e);
+    //                                 continue constraintLoop;
+    //                             }
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         if (val.equal) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         }
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#equalToText val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         if (val.equal) {
+    //                             if (currentVal != val.value) {
+    //                                 invalidConstraint.add(e);
+    //                                 continue constraintLoop;
+    //                             }
+    //                         } else {
+    //                             if (currentVal == val.value) {
+    //                                 invalidConstraint.add(e);
+    //                                 continue constraintLoop;
+    //                             }
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         if (val.equal) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         }
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#containsText val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         if (val.contains) {
+
+    //                             if (Text.contains(currentVal, #text(val.value)) == false) {
+    //                                 invalidConstraint.add(e);
+    //                                 continue constraintLoop;
+    //                             };
+    //                         } else {
+
+    //                             if (Text.contains(currentVal, #text(val.value))) {
+    //                                 invalidConstraint.add(e);
+    //                                 continue constraintLoop;
+    //                             };
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         if (val.contains) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         }
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#greaterThanNowTimestamp val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         let current_val_in_Nat = Utils.textToNat(currentVal);
+    //                         if (current_val_in_Nat < Time.now()) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         invalidConstraint.add(e);
+    //                         continue constraintLoop;
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#lessThanNowTimestamp val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         let current_val_in_Nat = Utils.textToNat(currentVal);
+    //                         if (current_val_in_Nat > Time.now()) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         //We are not longer returning false if entity or field doesnt exist
+    //                         //return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#greaterThanEqualToNumber val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         let current_val_in_float = Utils.textToFloat(currentVal);
+
+    //                         if (current_val_in_float < val.value) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         invalidConstraint.add(e);
+    //                         continue constraintLoop;
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#lessThanEqualToNumber val) {
+
+    //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                     case (?currentVal) {
+
+    //                         let current_val_in_float = Utils.textToFloat(currentVal);
+
+    //                         if (current_val_in_float > val.value) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         //We are not longer returning false if entity or field doesnt exist
+    //                         // return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+    //                     };
+    //                 };
+
+    //             };
+    //             case (#existField val) {
+
+    //                 switch (getEntity_(entities, wid, e.eid)) {
+    //                     case (?entity) {
+
+    //                         switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
+    //                             case (?currentVal) {
+    //                                 if (val.value == false) {
+    //                                     invalidConstraint.add(e);
+    //                                     continue constraintLoop;
+    //                                 }
+    //                             };
+    //                             case _ {
+    //                                 if (val.value) {
+    //                                     invalidConstraint.add(e);
+    //                                     continue constraintLoop;
+    //                                 }
+    //                             };
+    //                         };
+
+    //                     };
+    //                     case _ {
+    //                         if (val.value) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         }
+    //                     };
+    //                 };
+    //             };
+    //             case (#exist val) {
+    //                 switch (getEntity_(entities, wid, e.eid)) {
+    //                     case (?entity) {
+    //                         if (val.value == false) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         }
+    //                     };
+    //                     case _ {
+    //                         if (val.value) {
+    //                             invalidConstraint.add(e);
+    //                             continue constraintLoop;
+    //                         }
+    //                     };
+    //                 };
+    //             };
+    //         };
+
+    //     };
+
+    //     if(invalidConstraint.size() == 0){
+    //         return #ok();
+    //     }
+    //     else return #err(Buffer.toArray(invalidConstraint));
+    // };
 };

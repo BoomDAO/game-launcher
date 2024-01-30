@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Disclosure } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/solid";
 import { useScrollPosition } from "@todayweb/hooks";
@@ -12,9 +12,13 @@ import { cx } from "@/utils";
 import SideBar from "./SideBar";
 import ThemeSwitcher from "./ThemeSwitcher";
 import Button from "./ui/Button";
+import DialogProvider from "@/components/DialogProvider";
+import { useGetUserProfileDetail } from "@/api/profile";
+import Loader from "./ui/Loader";
 
 const TopBar = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const { isOpenNavSidebar, setIsOpenNavSidebar } = useGlobalContext();
   const { session, login, logout } = useAuthContext();
@@ -34,7 +38,10 @@ const TopBar = () => {
     {
       name: t("navigation.gaming_guilds"),
       path: navPaths.gaming_guilds
-    },
+    }
+  ];
+
+  const dev_tools = [
     {
       name: t("navigation.upload_games"),
       path: navPaths.upload_games,
@@ -52,6 +59,15 @@ const TopBar = () => {
       path: navPaths.token_deployer,
     }
   ];
+
+  const [selectedOption, setSelectedOption] = React.useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+
+  const { data: userProfile, isLoading } = useGetUserProfileDetail();
+
+  const handleOptionClickLoggedIn = () => {
+    setIsDropdownOpen(false);
+  };
 
   return (
     <Disclosure as="nav">
@@ -81,7 +97,7 @@ const TopBar = () => {
               </div>
               <div className="hidden sm:ml-6 md:block">
                 <div className="flex items-center gap-6">
-                  <div className="hidden space-x-4 text-sm uppercase md:flex">
+                  <div className="hidden space-x-4 text-base uppercase md:flex">
                     {(session) ? (
                       paths.map(({ name, path }) => (
                         <NavLink
@@ -90,6 +106,7 @@ const TopBar = () => {
                             isActive ? "gradient-text" : ""
                           }
                           to={path}
+                          onClick={() => { setIsDropdownOpen(false); setSelectedOption("DEV TOOLS"); }}
                         >
                           {name}
                         </NavLink>
@@ -102,7 +119,7 @@ const TopBar = () => {
                             isActive ? "gradient-text" : ""
                           }
                           to={path}
-                          onClick={() => setIsOpenNavSidebar(true)}
+                          onClick={() => { setIsOpenNavSidebar(true); setIsDropdownOpen(false); setSelectedOption("Dev Tools"); }}
                         >
                           {name}
                         </NavLink>
@@ -110,47 +127,97 @@ const TopBar = () => {
                     )
                     }
                   </div>
+                  <div
+                    className="cursor-pointer relative"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  >
+                    {selectedOption || 'DEV TOOLS'}
+
+                    {isDropdownOpen && (<dialog open className="whitespace-nowrap mt-5 dark:bg-white bg-black text-white dark:text-black" onMouseLeave={() => setIsDropdownOpen(false)}>
+                      <div className="grid">
+                        {(session) ? (dev_tools.map(({ name, path }) => (
+                          <NavLink
+                            key={name}
+                            className="hover:gradient-text my-2"
+                            to={path}
+                            onClick={() => handleOptionClickLoggedIn}
+                          >
+                            {name}
+                          </NavLink>
+                        ))) :
+                          (dev_tools.map(({ name, path }) => (
+                            <NavLink
+                              key={name}
+                              to={path}
+                              onClick={() => setIsOpenNavSidebar(true)}
+                            >
+                              {name}
+                            </NavLink>
+                          )))}
+                      </div>
+                    </dialog>)}
+                  </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="max-w-[120px]">
-                    {session ? (
-                      <div
-                        onClick={() => setIsOpenNavSidebar(true)}
-                        className="gradient-text cursor-pointer"
-                      >{`${principal}...`}</div>
-                    ) : (
+                  <div className="max-w-[240px] rounded-primary dark:border-slate-700 border-2 border-slate-50">
+                    {(session == null) ? (
                       <Button
                         rightArrow
                         onClick={() => setIsOpenNavSidebar(true)}
                       >
                         {t("navigation.login")}
                       </Button>
-                    )}
+                    ) : isLoading ? (
+                      <Loader className="h-5 w-5"></Loader>
+                    ) : (
+                      <div
+                        onClick={() => setIsOpenNavSidebar(true)}
+                        className="cursor-pointer text-xs py-1 px-2"
+                      >
+                        <div className="flex">
+                          <img src={userProfile?.image} className="w-10 rounded-3xl" />
+                          <div className="pl-1 pt-1">
+                            <p className="gradient-text font-semibold">{userProfile?.username}</p>
+                            <div className="flex pt-1">
+                              <img src="/xpicon.png" className="w-4" />
+                              <p className="text-white">{userProfile?.xp}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                    }
                   </div>
                 </div>
 
                 <ThemeSwitcher className="text-black dark:text-white" />
 
                 <SideBar open={isOpenNavSidebar} setOpen={setIsOpenNavSidebar}>
-                  <div className="p-6">
+                  <div className="w-full p-6 text-center">
                     {session ? (
-                      <div className="space-y-4">
-                        <Button onClick={logout}>
-                          {t("navigation.logout")}
-                        </Button>
-                        <div className="space-y-1">
-                          <p className="font-semibold">Principal:</p>
-                          <div>{session.address}</div>
+                      <div>
+                        <p className="font-semibold">Principal:</p>
+                        <div>{session.address}</div>
+                        <div className="space-y-4 mt-24 ml-24">
+                          <Button size="big" onClick={() => { navigate((navPaths.profile)); setIsOpenNavSidebar(false); }}>
+                            {t("navigation.profile")}
+                          </Button>
+                          <Button size="big" onClick={() => { navigate((navPaths.wallet)); setIsOpenNavSidebar(false); }}>
+                            {t("navigation.wallet")}
+                          </Button>
+                          <Button size="big" onClick={() => { logout(); navigate((navPaths.home)); }}>
+                            {t("navigation.logout")}
+                          </Button>
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <Button onClick={login}>{t("navigation.login")}</Button>
+                        <Button onClick={login} className="ml-28 mt-56">{t("navigation.login")}</Button>
                         <div className="space-y-1">
-                          <p>Login to upload and manage games.</p>
+                          <p>Login to the Game Launcher to Curate, Play and Earn!</p>
                         </div>
                       </div>
                     )}

@@ -80,8 +80,12 @@ export const idlFactory = ({ IDL }) => {
     'timeConstraint' : IDL.Opt(
       IDL.Record({
         'actionExpirationTimestamp' : IDL.Opt(IDL.Nat),
-        'intervalDuration' : IDL.Nat,
-        'actionsPerInterval' : IDL.Nat,
+        'actionTimeInterval' : IDL.Opt(
+          IDL.Record({
+            'intervalDuration' : IDL.Nat,
+            'actionsPerInterval' : IDL.Nat,
+          })
+        ),
       })
     ),
   });
@@ -188,12 +192,6 @@ export const idlFactory = ({ IDL }) => {
     'uid' : IDL.Text,
   });
   const Result_2 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Null });
-  const userId = IDL.Text;
-  const StableEntity = IDL.Record({
-    'eid' : entityId,
-    'wid' : worldId,
-    'fields' : IDL.Vec(Field),
-  });
   const ActionState = IDL.Record({
     'actionCount' : IDL.Nat,
     'intervalStartTs' : IDL.Nat,
@@ -202,6 +200,11 @@ export const idlFactory = ({ IDL }) => {
   const Result_6 = IDL.Variant({
     'ok' : IDL.Vec(ActionState),
     'err' : IDL.Text,
+  });
+  const StableEntity = IDL.Record({
+    'eid' : entityId,
+    'wid' : worldId,
+    'fields' : IDL.Vec(Field),
   });
   const Result_5 = IDL.Variant({
     'ok' : IDL.Vec(StableEntity),
@@ -257,56 +260,6 @@ export const idlFactory = ({ IDL }) => {
     'ok' : Result__1,
     'err' : IDL.Variant({ 'Err' : IDL.Text, 'TxErr' : TransferError }),
   });
-  const ClientPrincipal = IDL.Principal;
-  const ClientKey = IDL.Record({
-    'client_principal' : ClientPrincipal,
-    'client_nonce' : IDL.Nat64,
-  });
-  const CanisterWsCloseArguments = IDL.Record({ 'client_key' : ClientKey });
-  const CanisterWsCloseResult = IDL.Variant({
-    'Ok' : IDL.Null,
-    'Err' : IDL.Text,
-  });
-  const CanisterWsGetMessagesArguments = IDL.Record({ 'nonce' : IDL.Nat64 });
-  const CanisterOutputMessage = IDL.Record({
-    'key' : IDL.Text,
-    'content' : IDL.Vec(IDL.Nat8),
-    'client_key' : ClientKey,
-  });
-  const CanisterOutputCertifiedMessages = IDL.Record({
-    'messages' : IDL.Vec(CanisterOutputMessage),
-    'cert' : IDL.Vec(IDL.Nat8),
-    'tree' : IDL.Vec(IDL.Nat8),
-  });
-  const CanisterWsGetMessagesResult = IDL.Variant({
-    'Ok' : CanisterOutputCertifiedMessages,
-    'Err' : IDL.Text,
-  });
-  const WebsocketMessage = IDL.Record({
-    'sequence_num' : IDL.Nat64,
-    'content' : IDL.Vec(IDL.Nat8),
-    'client_key' : ClientKey,
-    'timestamp' : IDL.Nat64,
-    'is_service_message' : IDL.Bool,
-  });
-  const CanisterWsMessageArguments = IDL.Record({ 'msg' : WebsocketMessage });
-  const WSSentArg = IDL.Variant({
-    'userIdsToFetchDataFrom' : IDL.Vec(IDL.Text),
-    'actionOutcomes' : ActionReturn,
-  });
-  const CanisterWsMessageResult = IDL.Variant({
-    'Ok' : IDL.Null,
-    'Err' : IDL.Text,
-  });
-  const GatewayPrincipal = IDL.Principal;
-  const CanisterWsOpenArguments = IDL.Record({
-    'gateway_principal' : GatewayPrincipal,
-    'client_nonce' : IDL.Nat64,
-  });
-  const CanisterWsOpenResult = IDL.Variant({
-    'Ok' : IDL.Null,
-    'Err' : IDL.Text,
-  });
   const WorldTemplate = IDL.Service({
     'addAdmin' : IDL.Func([IDL.Record({ 'principal' : IDL.Text })], [], []),
     'addTrustedOrigins' : IDL.Func(
@@ -346,7 +299,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'editEntity' : IDL.Func(
         [IDL.Record({ 'userId' : IDL.Text, 'entityId' : IDL.Text })],
-        [IDL.Record({ 'uid' : userId, 'entity' : StableEntity })],
+        [EntitySchema],
         [],
       ),
     'exportActions' : IDL.Func([], [IDL.Vec(Action)], []),
@@ -438,22 +391,6 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
-    'ws_close' : IDL.Func(
-        [CanisterWsCloseArguments],
-        [CanisterWsCloseResult],
-        [],
-      ),
-    'ws_get_messages' : IDL.Func(
-        [CanisterWsGetMessagesArguments],
-        [CanisterWsGetMessagesResult],
-        ['query'],
-      ),
-    'ws_message' : IDL.Func(
-        [CanisterWsMessageArguments, IDL.Opt(WSSentArg)],
-        [CanisterWsMessageResult],
-        [],
-      ),
-    'ws_open' : IDL.Func([CanisterWsOpenArguments], [CanisterWsOpenResult], []),
   });
   return WorldTemplate;
 };
