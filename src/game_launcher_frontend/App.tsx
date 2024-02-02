@@ -28,9 +28,10 @@ import VerifyOtpPage from "./pages/GamingGuilds/VerifyOtpPage";
 import VerifyEmailPage from "./pages/GamingGuilds/VerifyEmailPage";
 import VerifyPhoneOtpPage from "./pages/GamingGuilds/VerifyPhoneOtpPage";
 import VerifyPhonePage from "./pages/GamingGuilds/VerifyPhonePage";
-import Wallet from "./pages/Profile/Wallet";
+import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
-import Transfer from "./pages/Profile/WalletTransfer";
+import WalletTransfer from "./pages/Wallet/WalletTransfer";
+import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
 
 function App() {
   return (
@@ -115,7 +116,11 @@ function App() {
                 />
                 <Route
                   path={`${navPaths.transfer}/:canisterId`}
-                  element={<Transfer/>}
+                  element={<WalletTransfer/>}
+                />
+                <Route
+                  path={`${navPaths.nftTransfer}/:canisterId/:tokenid`}
+                  element={<NftWalletTransfer/>}
                 />
               </Route>
 

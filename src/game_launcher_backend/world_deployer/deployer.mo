@@ -77,7 +77,7 @@ actor Deployer {
 
   private func create_canister(_owner : Principal) : async (Text) {
     Cycles.add(1000000000000);
-    let canister = await World.WorldTemplate();
+    let canister = await World.WorldTemplate(_owner);
     let _ = await updateCanister(canister, _owner);
     let canister_id = Principal.fromActor(canister);
     return Principal.toText(canister_id);
@@ -97,10 +97,6 @@ actor Deployer {
         sender_canister_version = null;
       })
     );
-    let world = actor (Principal.toText(cid.canister_id)) : actor {
-      updateOwnership : shared (Principal) -> async ();
-    };
-    await world.updateOwnership(init_owner);
   };
 
   private func _isController(collection_canister_id : Text, p : Principal) : async (Bool) {
@@ -468,17 +464,14 @@ actor Deployer {
       let upgrade_bool = ?{
         skip_pre_upgrade = ?false;
       };
+      let _arg : Principal = Principal.fromText(ownerId);
       let res = await IC.install_code({
-        arg = Blob.fromArray([]);
+        arg = to_candid(_arg);
         wasm_module = world_wasm_module.wasm;
         mode = #upgrade upgrade_bool;
         canister_id = Principal.fromText(worldId);
         sender_canister_version = null;
       });
-      let world = actor (worldId) : actor {
-        updateOwnership : shared (Principal) -> async ();
-      };
-      await world.updateOwnership(Principal.fromText(ownerId));
     };
   };
 

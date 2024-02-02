@@ -62,7 +62,7 @@ import V1TGlobal "../migrations/v1.global.types";
 import V1TEntity "../migrations/v1.entity.types";
 import V1TAction "../migrations/v1.action.types";
 
-actor class WorldTemplate() = this {
+actor class WorldTemplate(owner : Principal) = this {
 
     //# FIELDS
     private func WorldId() : Principal = Principal.fromActor(this);
@@ -74,7 +74,6 @@ actor class WorldTemplate() = this {
     private stable var userPrincipalToUserNode : Trie.Trie<Text, Text> = Trie.empty();
 
     //stable memory
-    private stable var owner : Principal = Principal.fromText("2vxsx-fae");
     private stable var _owner : Text = Principal.toText(owner);
     private stable var _admins : [Text] = [Principal.toText(owner)];
 
@@ -118,29 +117,9 @@ actor class WorldTemplate() = this {
     };
 
     let worldHub : WorldHub = actor (ENV.WorldHubCanisterId);
-
-    type PaymentHub = actor {
-        verifyTxIcp : shared (Nat64, Text, Text, Nat64) -> async ({
-            #Success : Text;
-            #Err : Text;
-        });
-        verifyTxIcrc : shared (Nat, Text, Text, Nat, Text) -> async ({
-            #Success : Text;
-            #Err : Text;
-        });
-    };
-
-    let paymentHub : PaymentHub = actor (ENV.PaymentHubCanisterId);
-
-    type ICP = actor {
-        transfer : shared ICP.TransferArgs -> async ICP.Result_5;
-    };
+    let ICP_Ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);
     type NFT = actor {
         ext_mint : ([(EXT.AccountIdentifier, EXT.Metadata)]) -> async [EXT.TokenIndex];
-    };
-    type ICRC = actor {
-        icrc1_decimals : shared query () -> async Nat8;
-        icrc1_fee : shared query () -> async Nat;
     };
     type EXTInterface = actor {
         getTokenMetadata : (EXT.TokenIndex) -> async (?EXT.Metadata);
@@ -184,7 +163,7 @@ actor class WorldTemplate() = this {
                 return f;
             };
             case _ {
-                let token : ICRC = actor (tokenCanisterId);
+                let token : ICRC.Self = actor (tokenCanisterId);
                 let fee = await token.icrc1_fee();
                 tokensFees := Trie.put(tokensFees, Utils.keyT(tokenCanisterId), Text.equal, fee).0;
                 return fee;
@@ -198,7 +177,7 @@ actor class WorldTemplate() = this {
                 return d;
             };
             case _ {
-                let token : ICRC = actor (tokenCanisterId);
+                let token : ICRC.Self = actor (tokenCanisterId);
                 let decimals = await token.icrc1_decimals();
                 tokensDecimals := Trie.put(tokensDecimals, Utils.keyT(tokenCanisterId), Text.equal, decimals).0;
                 return decimals;
@@ -234,13 +213,6 @@ actor class WorldTemplate() = this {
         };
     };
 
-    public shared ({ caller }) func updateOwnership(arg : Principal) : async () {
-        assert (caller == Principal.fromText(ENV.WorldDeployerCanisterId));
-        owner := arg;
-        _admins := [Principal.toText(owner)];
-        _owner := Principal.toText(owner);
-    };
-
     public shared ({ caller }) func removeAllUserNodeRef() : async () {
         assert (isAdmin_(caller));
         userPrincipalToUserNode := Trie.empty();
@@ -273,7 +245,6 @@ actor class WorldTemplate() = this {
 
     public shared ({ caller }) func deleteCache() {
         assert (isAdmin_(caller));
-
         userPrincipalToUserNode := Trie.empty();
     };
 
@@ -530,13 +501,12 @@ actor class WorldTemplate() = this {
     };
 
     private func getEntity_(entities : [TEntity.StableEntity], wid : TGlobal.worldId, eid : TGlobal.entityId) : (?TEntity.StableEntity) {
-
         for (entity in entities.vals()) {
+
             if (entity.eid == eid) {
                 return ?entity;
             };
         };
-
         return null;
     };
 
@@ -558,7 +528,6 @@ actor class WorldTemplate() = this {
 
     public shared ({ caller }) func createEntity(entitySchema : TEntity.EntitySchema) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId());
-
         switch (await getUserNode_(entitySchema.uid)) {
             case (#ok(userNodeId)) {
                 let userNode : UserNode = actor (userNodeId);
@@ -666,7 +635,6 @@ actor class WorldTemplate() = this {
 
     private func transferTokens_(userPrincipalTxt : Text, transferData : TAction.TransferIcrc) : async () {
         let icrcLedger : ICRC.Self = actor (transferData.canister);
-
         let feeHandler = tokenFee_(transferData.canister);
         let decimalHandler = tokenDecimal_(transferData.canister);
 
@@ -1240,7 +1208,6 @@ actor class WorldTemplate() = this {
                         ?{
                             timeConstraint = _actionConstraint.timeConstraint;
                             entityConstraint = Buffer.toArray(editedConstraints);
-                            icpConstraint = _actionConstraint.icpConstraint;
                             icrcConstraint = _actionConstraint.icrcConstraint;
                             nftConstraint = _actionConstraint.nftConstraint;
                         }
@@ -1254,19 +1221,23 @@ actor class WorldTemplate() = this {
         return #ok(actionConstraint);
     };
 
-    private func validateICPTransfer_(fromAccountId : Text, toAccountId : Text, amt : ICP.Tokens, base_block : ICP.CandidBlock, block_index : Nat64) : Result.Result<Text, Text> {
+    private stable var _icp_blocks : Trie.Trie<Text, Text> = Trie.empty(); // Block_index -> ""
+    private stable var _icrc_blocks : Trie.Trie<Text, Trie.Trie<Text, Text>> = Trie.empty(); // token_canister_id -> [Block_index -> ""]
+    private stable var _nft_txs : Trie.Trie<Text, Trie.Trie<Text, EXT.TokenIndex>> = Trie.empty(); // nft_canister_id -> [TxId, TokenIndex]
+
+    private func validateICPTransfer_(fromAccountId : Text, toAccountId : Text, amt : ICP.Tokens, base_block : ICP.Block, block_index : ICP.BlockIndex) : Result.Result<Text, Text> {
         switch (Trie.find(_icp_blocks, Utils.keyT(Nat64.toText(block_index)), Text.equal)) {
             case (?_) {
                 return #err("block already verified before");
             };
             case _ {};
         };
-        var tx : ICP.CandidTransaction = base_block.transaction;
-        var op : ?ICP.CandidOperation = tx.operation;
+        var tx : ICP.Transaction = base_block.transaction;
+        var op : ?ICP.Operation = tx.operation;
         switch (op) {
             case (?op) {
                 switch (op) {
-                    case (#Transfer { to; fee; from; amount }) {
+                    case (#Transfer { to; fee; from; amount; spender; }) {
                         if (Hex.encode(Blob.toArray(to)) == toAccountId and Hex.encode(Blob.toArray(from)) == fromAccountId and amount == amt) {
                             _icp_blocks := Trie.put(_icp_blocks, Utils.keyT(Nat64.toText(block_index)), Text.equal, "").0;
                             return #ok("verified!");
@@ -1280,7 +1251,7 @@ actor class WorldTemplate() = this {
                     case (#Mint {}) {
                         return #err("mint tx!");
                     };
-                    case (#Approve _ ){
+                    case (#Approve _) {
                         return #err("Approve tx!");
                     };
                 };
@@ -1290,10 +1261,6 @@ actor class WorldTemplate() = this {
             };
         };
     };
-
-    private stable var _icp_blocks : Trie.Trie<Text, Text> = Trie.empty(); // Block_index -> ""
-    private stable var _icrc_blocks : Trie.Trie<Text, Trie.Trie<Text, Text>> = Trie.empty(); // token_canister_id -> [Block_index -> ""]
-    private stable var _nft_txs : Trie.Trie<Text, Trie.Trie<Text, EXT.TokenIndex>> = Trie.empty(); // nft_canister_id -> [TxId, TokenIndex]
 
     private func validateICRCTransfer_(token_canister_id : Text, fromAccount : ICRC.Account, toAccount : ICRC.Account, amt : Nat, tx : ICRC.Transaction, block_index : Nat) : Result.Result<Text, Text> {
         switch (Trie.find(_icrc_blocks, Utils.keyT(token_canister_id), Text.equal)) {
@@ -1435,7 +1402,7 @@ actor class WorldTemplate() = this {
         };
     };
 
-    private func validateEntityConstraints_(entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : (Result.Result<(), Text>) {
+    private func validateEntityConstraints_(callerPrincipalId : Text, entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : (Result.Result<(), Text>) {
 
         for (e in entityConstraints.vals()) {
 
@@ -1450,12 +1417,12 @@ actor class WorldTemplate() = this {
                             let current_val_in_float = Utils.textToFloat(currentVal);
 
                             if (current_val_in_float <= val.value) {
-                                return #err("entity field : " #val.fieldName # " is less than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
+                                return #err("Constraint error, type: greaterThanNumber. Entity field : \"" #val.fieldName # "\" is less than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
                             };
 
                         };
                         case _ {
-                            return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            return #err(("Constraint error, type: greaterThanNumber. You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1468,13 +1435,13 @@ actor class WorldTemplate() = this {
                             let current_val_in_float = Utils.textToFloat(currentVal);
 
                             if (current_val_in_float >= val.value) {
-                                return #err("entity field : " #val.fieldName # " is greater than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
+                                return #err("Constraint error, type: lessThanNumber. entity field : \"" #val.fieldName # "\"is greater than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
                             };
 
                         };
                         case _ {
                             //We are not longer returning false if entity or field doesnt exist
-                            //return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            //return #err(("You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1487,14 +1454,14 @@ actor class WorldTemplate() = this {
                             let current_val_in_float = Utils.textToFloat(currentVal);
 
                             if (val.equal) {
-                                if (current_val_in_float != val.value) return #err("entity field : " #val.fieldName # " is not equal to " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
+                                if (current_val_in_float != val.value) return #err("Constraint error, type: equalToNumber. Entity field : \"" #val.fieldName # "\" is not equal to " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
                             } else {
-                                if (current_val_in_float == val.value) return #err("entity field : " #val.fieldName # " is equal to " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
+                                if (current_val_in_float == val.value) return #err("Constraint error, type: equalToNumber. Entity field : \"" #val.fieldName # "\" is equal to " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
                             };
 
                         };
                         case _ {
-                            if (val.equal) return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            if (val.equal) return #err(("Constraint error, type: equalToNumber. You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1505,14 +1472,14 @@ actor class WorldTemplate() = this {
                         case (?currentVal) {
 
                             if (val.equal) {
-                                if (currentVal != val.value) return #err("entity field : " #val.fieldName # " is not equal to " #val.value # ", therefore, does not pass EntityConstraints");
+                                if (currentVal != val.value) return #err("Constraint error, type: equalToText. Entity field : \"" #val.fieldName # "\" is not equal to " #val.value # ", therefore, does not pass EntityConstraints");
                             } else {
-                                if (currentVal == val.value) return #err("entity field : " #val.fieldName # " is equal to " #val.value # ", therefore, does not pass EntityConstraints");
+                                if (currentVal == val.value) return #err("Constraint error, type: equalToText. Entity field : \"" #val.fieldName # "\" is equal to " #val.value # ", therefore, does not pass EntityConstraints");
                             };
 
                         };
                         case _ {
-                            if (val.equal) return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            if (val.equal) return #err(("Constraint error, type: EqualToText. You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1525,18 +1492,18 @@ actor class WorldTemplate() = this {
                             if (val.contains) {
 
                                 if (Text.contains(currentVal, #text(val.value)) == false) {
-                                    return #err("entity field : " #val.fieldName # " doesn't contain " # (val.value) # ", therefore, does not pass EntityConstraints. current value: " #currentVal);
+                                    return #err("Constraint error, type: containsText. Entity field : \"" #val.fieldName # "\" doesn't contain " # (val.value) # ", therefore, does not pass EntityConstraints. current value: " #currentVal);
                                 };
                             } else {
 
                                 if (Text.contains(currentVal, #text(val.value))) {
-                                    return #err("entity field : " #val.fieldName # " contains " # (val.value) # ", therefore, does not pass EntityConstraints. current value: " #currentVal);
+                                    return #err("Constraint error, type: containsText. Entity field : \"" #val.fieldName # "\" contains " # (val.value) # ", therefore, does not pass EntityConstraints. current value: " #currentVal);
                                 };
                             };
 
                         };
                         case _ {
-                            if (val.contains) return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            if (val.contains) return #err(("Constraint error, type: containsText. You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1548,12 +1515,12 @@ actor class WorldTemplate() = this {
 
                             let current_val_in_Nat = Utils.textToNat(currentVal);
                             if (current_val_in_Nat < Time.now()) {
-                                return #err("entity field : " #val.fieldName # " Time.Now is greater than current value, therefore, does not pass EntityConstraints, " #Nat.toText(current_val_in_Nat) # " < " #Int.toText(Time.now()));
+                                return #err("Constraint error, type: greaterThanNowTimestamp. Entity field : \"" #val.fieldName # "\" Time.Now is greater than current value, therefore, does not pass EntityConstraints, " #Nat.toText(current_val_in_Nat) # " < " #Int.toText(Time.now()));
                             };
 
                         };
                         case _ {
-                            return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            return #err(("Constraint error, type: greaterThanNowTimestamp. You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1565,13 +1532,13 @@ actor class WorldTemplate() = this {
 
                             let current_val_in_Nat = Utils.textToNat(currentVal);
                             if (current_val_in_Nat > Time.now()) {
-                                return #err("entity field : " #val.fieldName # " Time.Now is lesser than current value, therefore, does not pass EntityConstraints, " #Nat.toText(current_val_in_Nat) # " > " #Int.toText(Time.now()));
+                                return #err("Constraint error, type: lessThanNowTimestamp. Entity field : \"" #val.fieldName # "\" Time.Now is lesser than current value, therefore, does not pass EntityConstraints, " #Nat.toText(current_val_in_Nat) # " > " #Int.toText(Time.now()));
                             };
 
                         };
                         case _ {
                             //We are not longer returning false if entity or field doesnt exist
-                            //return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            //return #err(("You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1584,12 +1551,12 @@ actor class WorldTemplate() = this {
                             let current_val_in_float = Utils.textToFloat(currentVal);
 
                             if (current_val_in_float < val.value) {
-                                return #err("entity field : " #val.fieldName # " is less than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
+                                return #err("Constraint error, type: greaterThanEqualToNumber. Entity field : \"" #val.fieldName # "\" is less than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
                             };
 
                         };
                         case _ {
-                            return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            return #err(("Constraint error, type: greaterThanEqualToNumber. You don't have entity of id: \"" #e.eid # "\" or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1602,13 +1569,13 @@ actor class WorldTemplate() = this {
                             let current_val_in_float = Utils.textToFloat(currentVal);
 
                             if (current_val_in_float > val.value) {
-                                return #err("entity field : " #val.fieldName # " is greater than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
+                                return #err("Constraint error, type: lessThanEqualToNumber. Entity field : \"" #val.fieldName # "\" is greater than " #Float.toText(val.value) # ", therefore, does not pass EntityConstraints");
                             };
 
                         };
                         case _ {
                             //We are not longer returning false if entity or field doesnt exist
-                            // return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
+                            // return #err(("You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                         };
                     };
 
@@ -1620,26 +1587,30 @@ actor class WorldTemplate() = this {
 
                             switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
                                 case (?currentVal) {
-                                    if (val.value == false) return #err(("Field with fieldName : " #val.fieldName # " exist, therefore, doens't match entity constraints of \'exist field false\''."));
+                                    if (val.value == false) return #err(("Constraint error, type: existField. Field with fieldName : \"" #val.fieldName # "\" exist, therefore, doens't match entity constraints of \'exist field false\''."));
                                 };
                                 case _ {
-                                    if (val.value) return #err(("Field with fieldName : " #val.fieldName # " doesn't exist, therefore, doens't match entity constraints of \'exist field true\''."));
+                                    if (val.value) return #err(("Constraint error, type: existField. Field with fieldName : \"" #val.fieldName # "\" doesn't exist, therefore, doens't match entity constraints of \'exist field true\''."));
                                 };
                             };
 
                         };
                         case _ {
-                            if (val.value) return #err(("Entity of id : " #e.eid # " doesn't exist, therefore, it is required to be able to check if field of id: " #val.fieldName # " exists"));
+                            if (val.value) return #err(("Constraint error, type: existField. Entity of id : " #e.eid # " doesn't exist, therefore, it is required to be able to check if field of id: \"" #val.fieldName # "\" exists"));
                         };
                     };
                 };
                 case (#exist val) {
-                    switch (getEntity_(entities, wid, e.eid)) {
+                    var _eid = e.eid;
+                    if (_eid == "$caller") {
+                        _eid := callerPrincipalId;
+                    };
+                    switch (getEntity_(entities, wid, _eid)) {
                         case (?entity) {
-                            if (val.value == false) return #err(("Entity of id : " #e.eid # " exist, therefore, doens't match entity constraints of \'exist false\''."));
+                            if (val.value == false) return #err(("Constraint error, type: exist. Entity of id : " #_eid # " exist, therefore, doens't match entity constraints of \'exist false\''."));
                         };
                         case _ {
-                            if (val.value) return #err(("Entity of id : " #e.eid # " doesn't exist, therefore, doens't match entity constraints of \'exist true\''."));
+                            if (val.value) return #err(("Constraint error, type: exist. Entity of id : " #_eid # " doesn't exist, therefore, doens't match entity constraints of \'exist true\''."));
                         };
                     };
                 };
@@ -1703,51 +1674,8 @@ actor class WorldTemplate() = this {
                     case _ {};
                 };
                 //ENTITY CONSTRAINTS
-                switch (validateEntityConstraints_(entities, constraints.entityConstraint)) {
+                switch (validateEntityConstraints_(uid, entities, constraints.entityConstraint)) {
                     case (#err(errMsg)) return #err(errMsg);
-                    case _ {};
-                };
-
-                //Validating ICP txs
-                let icpTxOptional = constraints.icpConstraint;
-                switch icpTxOptional {
-                    case (?icpTx) {
-                        let ICP_Ledger : Ledger.ICP = actor (ENV.Ledger);
-                        var res_icp : ICP.QueryBlocksResponse = await ICP_Ledger.query_blocks({
-                            start = 1;
-                            length = 1;
-                        });
-                        let chain_length = res_icp.chain_length;
-                        let first_block_index = res_icp.first_block_index;
-                        res_icp := await ICP_Ledger.query_blocks({
-                            start = first_block_index;
-                            length = chain_length - first_block_index;
-                        });
-                        let blocks = res_icp.blocks;
-                        let total_blocks = blocks.size();
-
-                        var fromAccountId : AccountIdentifier.AccountIdentifier = AccountIdentifier.fromText(uid, null);
-                        var toAccountId : AccountIdentifier.AccountIdentifier = AccountIdentifier.fromText(icpTx.toPrincipal, null);
-                        var amt : Nat64 = Int64.toNat64(Float.toInt64(icpTx.amount * 100000000.0));
-                        var isValid : Bool = false;
-
-                        if (total_blocks > 0) {
-                            label check_icp_blocks for (i in Iter.range(0, total_blocks - 1)) {
-                                switch (validateICPTransfer_(fromAccountId, toAccountId, { e8s = amt }, blocks[i], (Nat64.fromNat(i) + first_block_index))) {
-                                    case (#ok _) {
-                                        isValid := true;
-                                        break check_icp_blocks;
-                                    };
-                                    case (#err e) {};
-                                };
-                            };
-                        };
-
-                        if (isValid == false) {
-                            return #err("ICP tx is not valid or too old");
-                        };
-
-                    };
                     case _ {};
                 };
 
@@ -1763,39 +1691,78 @@ actor class WorldTemplate() = this {
                             owner = Principal.fromText(tx.toPrincipal);
                             subaccount = null;
                         };
-                        let ICRC_Ledger : Ledger.ICRC1 = actor (tx.canister);
-                        var res_icrc : ICRC.GetTransactionsResponse = await ICRC_Ledger.get_transactions({
-                            start = 0;
-                            length = 2000;
-                        });
 
-                        res_icrc := await ICRC_Ledger.get_transactions({
-                            start = res_icrc.first_index;
-                            length = res_icrc.log_length - res_icrc.first_index;
-                        });
+                        // If Ledger is ICP
+                        if (tx.canister == ENV.IcpLedgerCanisterId) {
+                            var res_icp : ICP.QueryBlocksResponse = await ICP_Ledger.query_blocks({
+                                start = 1;
+                                length = 1;
+                            });
+                            let chain_length = res_icp.chain_length;
+                            let first_block_index = res_icp.first_block_index;
+                            res_icp := await ICP_Ledger.query_blocks({
+                                start = first_block_index;
+                                length = chain_length - first_block_index;
+                            });
+                            let blocks = res_icp.blocks;
+                            let total_blocks = blocks.size();
 
-                        let txs_icrc = res_icrc.transactions;
-                        let total_txs_icrc = txs_icrc.size();
+                            var fromAccountId : AccountIdentifier.AccountIdentifier = AccountIdentifier.fromText(uid, null);
+                            var toAccountId : AccountIdentifier.AccountIdentifier = AccountIdentifier.fromText(tx.toPrincipal, null);
+                            var amt : Nat64 = Int64.toNat64(Float.toInt64(tx.amount * 100000000.0));
+                            var isValid : Bool = false;
 
-                        var decimal = await tokenDecimal_(tx.canister);
-
-                        var amt : Nat64 = Int64.toNat64(Float.toInt64(tx.amount * (Float.pow(10.0, Utils.textToFloat(Nat8.toText(decimal))))));
-                        var isValid : Bool = false;
-
-                        if (total_txs_icrc > 0) {
-                            label check_icrc_txs for (i in Iter.range(0, total_txs_icrc - 1)) {
-                                switch (validateICRCTransfer_(tx.canister, from_, to_, Nat64.toNat(amt), txs_icrc[i], (i + res_icrc.first_index))) {
-                                    case (#ok _) {
-                                        isValid := true;
-                                        break check_icrc_txs;
+                            if (total_blocks > 0) {
+                                label check_icp_blocks for (i in Iter.range(0, total_blocks - 1)) {
+                                    switch (validateICPTransfer_(fromAccountId, toAccountId, { e8s = amt }, blocks[i], (Nat64.fromNat(i) + first_block_index))) {
+                                        case (#ok _) {
+                                            isValid := true;
+                                            break check_icp_blocks;
+                                        };
+                                        case (#err e) {};
                                     };
-                                    case (#err e) {};
                                 };
                             };
-                        };
 
-                        if (isValid == false) {
-                            return #err("some icrc txs are not valid or are too old");
+                            if (isValid == false) {
+                                return #err("ICP tx is not valid or too old");
+                            };
+                        } else {
+                            // Otherwise handle ICRC Ledger
+                            let ICRC_Ledger : ICRC.Self = actor (tx.canister);
+                            var res_icrc : ICRC.GetTransactionsResponse = await ICRC_Ledger.get_transactions({
+                                start = 0;
+                                length = 2000;
+                            });
+
+                            res_icrc := await ICRC_Ledger.get_transactions({
+                                start = res_icrc.first_index;
+                                length = res_icrc.log_length - res_icrc.first_index;
+                            });
+
+                            let txs_icrc = res_icrc.transactions;
+                            let total_txs_icrc = txs_icrc.size();
+
+                            var decimal = await tokenDecimal_(tx.canister);
+
+                            var amt : Nat64 = Int64.toNat64(Float.toInt64(tx.amount * (Float.pow(10.0, Utils.textToFloat(Nat8.toText(decimal))))));
+                            var isValid : Bool = false;
+
+                            if (total_txs_icrc > 0) {
+                                label check_icrc_txs for (i in Iter.range(0, total_txs_icrc - 1)) {
+                                    switch (validateICRCTransfer_(tx.canister, from_, to_, Nat64.toNat(amt), txs_icrc[i], (i + res_icrc.first_index))) {
+                                        case (#ok _) {
+                                            isValid := true;
+                                            break check_icrc_txs;
+                                        };
+                                        case (#err e) {};
+                                    };
+                                };
+                            };
+
+                            if (isValid == false) {
+                                return #err("some icrc txs are not valid or are too old");
+                            };
                         };
                     };
                 };
@@ -1922,15 +1889,18 @@ actor class WorldTemplate() = this {
     //# PROCESS ACTION
 
     private func getActionArgByFieldName_(fieldName : Text, args : [TGlobal.Field]) : (Result.Result<Text, Text>) {
-
         for (e in args.vals()) {
             if (e.fieldName == fieldName) return #ok(e.fieldValue);
         };
-
         return #err("Requires action argument of fieldName: \"" #fieldName # "\"");
     };
 
     //
+    private type SubAction = {
+        sourcePrincipalId : Text;
+        sourceActionConstraint : ?TAction.ActionConstraint;
+        sourceOutcomes : [TAction.ActionOutcomeOption];
+    };
 
     public shared ({ caller }) func processAction(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
 
@@ -1951,6 +1921,10 @@ actor class WorldTemplate() = this {
 
         processActionCount += 1;
 
+        var worldAction : TAction.SubAction = {
+            actionConstraint = null;
+            actionResult = { outcomes = [] };
+        };
         var callerAction : TAction.SubAction = {
             actionConstraint = null;
             actionResult = { outcomes = [] };
@@ -1959,18 +1933,16 @@ actor class WorldTemplate() = this {
             actionConstraint = null;
             actionResult = { outcomes = [] };
         };
-        var worldAction : TAction.SubAction = {
-            actionConstraint = null;
-            actionResult = { outcomes = [] };
-        };
 
+        //world
+        var hasSubActionWorld = false;
         //caller
         var hasSubActionCaller = false;
         //target
         var targetPrincipalId : Text = "";
         var hasSubActionTarget = false;
-        //world
-        var hasSubActionWorld = false;
+
+        var subActions = Buffer.Buffer<SubAction>(0);
 
         //CHECK IF ACTION EXIST TO TRY SETUP BOTH CALLER AND TARGET SUB ACTIONS
         switch (getSpecificAction_(actionId)) {
@@ -1996,8 +1968,8 @@ actor class WorldTemplate() = this {
 
                 //TRY SETUP TARGET ACTION
                 switch (_action.worldAction) {
-                    case (?_targetAction) {
-                        worldAction := _targetAction;
+                    case (?_worldAction) {
+                        worldAction := _worldAction;
                         hasSubActionWorld := true;
                     };
                     case (_) {};
@@ -2010,10 +1982,39 @@ actor class WorldTemplate() = this {
             };
         };
 
-        //TRY SETUP TARGET PRINCIPAL ID
-        if (hasSubActionTarget) {
+        //Generate Outcomes
+        var worldOutcomes : [TAction.ActionOutcomeOption] = [];
+        var callerOutcomes : [TAction.ActionOutcomeOption] = [];
+        var targetOutcomes : [TAction.ActionOutcomeOption] = [];
 
-            switch (getActionArgByFieldName_("targetPrincipalId", actionArg.fields)) {
+        let generateActionResultOutcomesWorldHandler = generateActionResultOutcomes_(worldAction.actionResult);
+        let generateActionResultOutcomesCallerandler = generateActionResultOutcomes_(callerAction.actionResult);
+        let generateActionResultOutcomesTargetHandler = generateActionResultOutcomes_(targetAction.actionResult);
+
+        worldOutcomes := await generateActionResultOutcomesWorldHandler;
+        callerOutcomes := await generateActionResultOutcomesCallerandler;
+        targetOutcomes := await generateActionResultOutcomesTargetHandler;
+
+        //
+        if (hasSubActionWorld) {
+            subActions.add({
+                sourcePrincipalId = worldPrincipalId();
+                sourceActionConstraint = worldAction.actionConstraint;
+                sourceOutcomes = worldOutcomes;
+            });
+
+        };
+        if (hasSubActionCaller) {
+            subActions.add({
+                sourcePrincipalId = callerPrincipalId;
+                sourceActionConstraint = callerAction.actionConstraint;
+                sourceOutcomes = callerOutcomes;
+            });
+        };
+        if (hasSubActionTarget) {
+            //TRY SETUP TARGET PRINCIPAL ID
+
+            switch (getActionArgByFieldName_("target_principal_id", actionArg.fields)) {
                 case (#ok(fieldValue)) {
                     targetPrincipalId := fieldValue;
                 };
@@ -2023,646 +2024,253 @@ actor class WorldTemplate() = this {
                     return #err("The '" #actionId # "' action failed to be executed, because this is a compound action, thus requires as ActionArg.field a fieldName of 'targetPrincipalId' whose value is the target principal ");
                 };
             };
+
+            targetOutcomes := await generateActionResultOutcomes_(targetAction.actionResult);
+
+            subActions.add({
+                sourcePrincipalId = targetPrincipalId;
+                sourceActionConstraint = targetAction.actionConstraint;
+                sourceOutcomes = targetOutcomes;
+            });
         };
 
-        //CHECK IF IT IS COMPOUND ACTION OR NORMAL ACTION
+        ignore processActionNew_(callerPrincipalId, targetPrincipalId, actionId, actionArg.fields, Buffer.toArray(subActions));
 
-        let isCompoundCall = hasSubActionTarget and hasSubActionCaller;
-
-        //
-
-        if (isCompoundCall) {
-
-            //GENERATE OUTCOMES
-            var callerGeneratedOutcomesHandler = generateActionResultOutcomes_(callerAction.actionResult);
-            var targetGeneratedOutcomesHandler = generateActionResultOutcomes_(targetAction.actionResult);
-
-            var callerOutcomes : [TAction.ActionOutcomeOption] = [];
-            var targetOutcomes : [TAction.ActionOutcomeOption] = [];
-
-            var worldOutcomes : ?[TAction.ActionOutcomeOption] = null;
-            if (hasSubActionWorld) {
-                worldOutcomes := ?(await generateActionResultOutcomes_(worldAction.actionResult));
-
-                callerOutcomes := await callerGeneratedOutcomesHandler;
-                targetOutcomes := await targetGeneratedOutcomesHandler;
-
-                ignore processCompoundAction_(actionId, actionArg.fields, callerPrincipalId, targetPrincipalId, callerAction.actionConstraint, targetAction.actionConstraint, worldAction.actionConstraint, callerOutcomes, targetOutcomes, worldOutcomes);
-            } else {
-
-                callerOutcomes := await callerGeneratedOutcomesHandler;
-                targetOutcomes := await targetGeneratedOutcomesHandler;
-
-                ignore processCompoundAction_(actionId, actionArg.fields, callerPrincipalId, targetPrincipalId, callerAction.actionConstraint, targetAction.actionConstraint, null, callerOutcomes, targetOutcomes, worldOutcomes);
-
-            };
-
-            let outcomes = {
-                callerPrincipalId = callerPrincipalId;
-                targetPrincipalId = ?targetPrincipalId;
-                worldPrincipalId = worldPrincipalId();
-                callerOutcomes = ?callerOutcomes;
-                targetOutcomes = ?targetOutcomes;
-                worldOutcomes = worldOutcomes;
-            };
-            ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
-            //RETURN CALLER OUTCOME
-            return #ok(outcomes);
-        } else if (hasSubActionTarget) {
-            //GENERATE OUTCOMES
-            var targetOutcomesHandler = generateActionResultOutcomes_(targetAction.actionResult);
-
-            var targetOutcomes : [TAction.ActionOutcomeOption] = [];
-
-            var worldOutcomes : ?[TAction.ActionOutcomeOption] = null;
-
-            if (hasSubActionWorld) {
-
-                worldOutcomes := ?(await generateActionResultOutcomes_(worldAction.actionResult));
-
-                targetOutcomes := await targetOutcomesHandler;
-
-                ignore processAction_(actionId, actionArg.fields, callerPrincipalId, targetPrincipalId, targetAction.actionConstraint, worldAction.actionConstraint, targetOutcomes, worldOutcomes);
-            } else {
-
-                targetOutcomes := await targetOutcomesHandler;
-
-                ignore processAction_(actionId, actionArg.fields, callerPrincipalId, targetPrincipalId, targetAction.actionConstraint, null, targetOutcomes, worldOutcomes);
-            };
-
-            let outcomes = {
-                callerPrincipalId = callerPrincipalId;
-                targetPrincipalId = ?targetPrincipalId;
-                worldPrincipalId = worldPrincipalId();
-                callerOutcomes = null;
-                targetOutcomes = ?targetOutcomes;
-                worldOutcomes = worldOutcomes;
-            };
-            ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
-            return #ok(outcomes);
-
-        } else if (hasSubActionCaller) {
-            //GENERATE OUTCOMES
-            var callerOutcomeHandler = generateActionResultOutcomes_(callerAction.actionResult);
-
-            var callerOutcomes : [TAction.ActionOutcomeOption] = [];
-
-            var worldOutcomes : ?[TAction.ActionOutcomeOption] = null;
-            if (hasSubActionWorld) {
-                worldOutcomes := ?(await generateActionResultOutcomes_(worldAction.actionResult));
-
-                callerOutcomes := await callerOutcomeHandler;
-
-                ignore processAction_(actionId, actionArg.fields, callerPrincipalId, callerPrincipalId, callerAction.actionConstraint, worldAction.actionConstraint, callerOutcomes, worldOutcomes);
-
-            } else {
-                callerOutcomes := await callerOutcomeHandler;
-
-                ignore processAction_(actionId, actionArg.fields, callerPrincipalId, callerPrincipalId, callerAction.actionConstraint, null, callerOutcomes, worldOutcomes);
-            };
-
-            let outcomes = {
-                callerPrincipalId = callerPrincipalId;
-                targetPrincipalId = null;
-                worldPrincipalId = worldPrincipalId();
-                callerOutcomes = ?callerOutcomes;
-                targetOutcomes = null;
-                worldOutcomes = worldOutcomes;
-            };
-
-            ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
-            return #ok(outcomes);
-
-        } else if (hasSubActionWorld) {
-            //GENERATE OUTCOMES
-            var worldOutcomes : [TAction.ActionOutcomeOption] = await generateActionResultOutcomes_(worldAction.actionResult);
-            ignore processAction_(actionId, actionArg.fields, callerPrincipalId, worldPrincipalId(), worldAction.actionConstraint, null, worldOutcomes, null);
-
-            let outcomes = {
-                callerPrincipalId = callerPrincipalId;
-                targetPrincipalId = null;
-                worldPrincipalId = worldPrincipalId();
-                callerOutcomes = null;
-                targetOutcomes = null;
-                worldOutcomes = ?worldOutcomes;
-            };
-
-            ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
-            return #ok(outcomes);
-
-        } else {
-            changeActionLockState_(callerPrincipalId, actionId, false);
-            return #err("The '" #actionId # "' action failed to be executed, because it requires at least a subaction declared");
+        let outcomes = {
+            callerPrincipalId = callerPrincipalId;
+            targetPrincipalId = targetPrincipalId;
+            worldPrincipalId = worldPrincipalId();
+            callerOutcomes = callerOutcomes;
+            targetOutcomes = targetOutcomes;
+            worldOutcomes = worldOutcomes;
         };
+
+        ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
+        return #ok(outcomes);
     };
 
-    private func processCompoundAction_(actionId : Text, actionFields : [TGlobal.Field], callerPrincipalId : Text, targetPrincipalId : Text, callerActionConstraint : ?TAction.ActionConstraint, targetActionConstraint : ?TAction.ActionConstraint, worldActionConstraint : ?TAction.ActionConstraint, callerOutcomes : [TAction.ActionOutcomeOption], targetOutcomes : [TAction.ActionOutcomeOption], worldOutcomes : ?[TAction.ActionOutcomeOption]) : async () {
+    //targetPrincipalId is optional, you can set it up as an empty string
+    private func processActionNew_(callerPrincipalId : Text, targetPrincipalId : Text, actionId : Text, actionFields : [TGlobal.Field], subActions : [SubAction]) : async () {
 
-        var worldHasOutcomes = worldOutcomes != null;
+        let worldPrincipalId_ = worldPrincipalId();
 
-        //FETCH NODES IDS
-        var worldNodeId : Text = "2vxsx-fae";
-        var callerNodeId : Text = "2vxsx-fae";
-        var targetNodeId : Text = "2vxsx-fae";
-
-        let getWorldNodeHandler = getUserNode_(worldNodeId);
-        let getCallerNodeHandler = getUserNode_(callerPrincipalId);
-        let getTargetNodeHandler = getUserNode_(targetPrincipalId);
-
-        switch (await getWorldNodeHandler) {
-            case (#ok(content)) { worldNodeId := content };
-            case (#err(errMsg)) {
-                debugLog("The '" #actionId # "' action failed because it could not get world node Id.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        switch (await getCallerNodeHandler) {
-            case (#ok(content)) { callerNodeId := content };
-            case (#err(errMsg)) {
-                debugLog("The '" #actionId # "' action failed because it could not get caller node Id.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        if (targetPrincipalId == worldPrincipalId()) {
-            targetNodeId := worldNodeId;
-        } else {
-            switch (await getTargetNodeHandler) {
-                case (#ok(content)) { targetNodeId := content };
-                case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not get target node Id.\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
-            };
-        };
-
-        //INTERFACES
-
-        let worldNode : UserNode = actor (worldNodeId);
-        let callerNode : UserNode = actor (callerNodeId);
-        let targetNode : UserNode = actor (targetNodeId);
-
-        //FETCH ACTIONS STATES SETUP
-        var newCallerActionState : TAction.ActionState = {
-            actionId = "";
-            intervalStartTs = 0;
-            actionCount = 0;
-        };
-        var newTargetActionState : TAction.ActionState = {
-            actionId = "";
-            intervalStartTs = 0;
-            actionCount = 0;
-        };
-        var newWorldActionState : TAction.ActionState = {
-            actionId = "";
-            intervalStartTs = 0;
-            actionCount = 0;
-        };
-
-        let oldCallerActionStateResultHandler = callerNode.getActionState(callerPrincipalId, worldPrincipalId(), actionId);
-        let oldTargetActionStateResultHandler = targetNode.getActionState(targetPrincipalId, worldPrincipalId(), actionId);
-        let oldWorldActionStateResultHandler = targetNode.getActionState(worldPrincipalId(), worldPrincipalId(), actionId);
-
-        //FETCH ENTITIES DATA SETUP
-        var worldData : [TEntity.StableEntity] = [];
         var callerData : [TEntity.StableEntity] = [];
+        var worldData : [TEntity.StableEntity] = [];
         var targetData : [TEntity.StableEntity] = [];
 
-        //GET WORLD IDS TO FETCH ENTITIES FROM
-        var worldEntityConstraintsWorldIds : [Text] = [];
+        var subActions_ : Trie.Trie<Text, { sourcePrincipalId : Text; sourceActionConstraint : ?TAction.ActionConstraint; sourceOutcomes : [TAction.ActionOutcomeOption]; worldsToFetchEntitiesFrom : [Text]; nodeId : Text; nodeIdTask : async Result.Result<Text, Text>; sourceNewActionState : TAction.ActionState; sourceData : [TEntity.StableEntity] }> = Trie.empty<Text, { sourcePrincipalId : Text; sourceActionConstraint : ?TAction.ActionConstraint; sourceOutcomes : [TAction.ActionOutcomeOption]; worldsToFetchEntitiesFrom : [Text]; nodeId : Text; nodeIdTask : async Result.Result<Text, Text>; sourceNewActionState : TAction.ActionState; sourceData : [TEntity.StableEntity] }>();
 
-        switch (worldActionConstraint) {
-            case (?constraints) {
+        var getActionStateTasks : Trie.Trie<Text, { actionStateTask : async ?TAction.ActionState; entitiesTask : async Result.Result<[TEntity.StableEntity], Text> }> = Trie.empty<Text, { actionStateTask : async ?TAction.ActionState; entitiesTask : async Result.Result<[TEntity.StableEntity], Text> }>();
 
-                var worldEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
+        //Get all the worlds' to fetch entities from and store them in "subActionsTrie".
+        //Fetch nodeId for each subaction's source.
+        //Store the task of fetching each nodeId in "subActionsTrie".
+        for (subAction in Iter.fromArray(subActions)) {
 
-                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
-                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
-                    if (Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false) worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid, worldPrincipalId()));
+            var worldsToFetchEntitiesFrom : [Text] = [];
+
+            //GET WORLD IDS TO FETCH ENTITIES FROM
+            switch (subAction.sourceActionConstraint) {
+                case (?constraints) {
+
+                    var worldsToFetchEntitiesFromBuffer = Buffer.Buffer<Text>(0);
+
+                    for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
+                        let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
+                        if (Buffer.contains(worldsToFetchEntitiesFromBuffer, _wid, Text.equal) == false) worldsToFetchEntitiesFromBuffer.add(_wid);
+                    };
+                    worldsToFetchEntitiesFrom := Buffer.toArray(worldsToFetchEntitiesFromBuffer);
                 };
-                worldEntityConstraintsWorldIds := Buffer.toArray(worldEntityConstraintsWorldIds_);
+                case _ {};
             };
-            case _ {};
-        };
 
-        var callerEntityConstraintsWorldIds : [Text] = [];
+            var task = getUserNode_(subAction.sourcePrincipalId);
 
-        switch (callerActionConstraint) {
-            case (?constraints) {
-
-                var callerEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
-
-                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
-                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
-                    if (Buffer.contains(callerEntityConstraintsWorldIds_, _wid, Text.equal) == false) callerEntityConstraintsWorldIds_.add(_wid);
+            var newTrie = {
+                sourcePrincipalId = subAction.sourcePrincipalId;
+                sourceActionConstraint = subAction.sourceActionConstraint;
+                sourceOutcomes = subAction.sourceOutcomes;
+                worldsToFetchEntitiesFrom = worldsToFetchEntitiesFrom;
+                nodeId = "";
+                nodeIdTask = task;
+                sourceNewActionState = {
+                    actionId = "";
+                    intervalStartTs = 0;
+                    actionCount = 0;
                 };
-                callerEntityConstraintsWorldIds := Buffer.toArray(callerEntityConstraintsWorldIds_);
+                sourceData = [];
             };
-            case _ {};
+
+            subActions_ := Trie.put(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal, newTrie).0;
         };
 
-        var targetEntityConstraintsWorldIds : [Text] = [];
+        //Await for nodeIds to be fetched.
+        //Store nodeIds in "subActions_".
+        //fetch action source's action state & entities,
+        //and keep track of the  action state & entities tasks in "getActionStateTasks".
+        for ((id, trie) in Trie.iter(subActions_)) {
+            let sourcePrincipalId = id;
 
-        switch (targetActionConstraint) {
-            case (?constraints) {
+            let nodeTaskResult = await trie.nodeIdTask;
 
-                var targetEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
+            var nodeId = "";
 
-                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
-                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
-                    if (Buffer.contains(targetEntityConstraintsWorldIds_, _wid, Text.equal) == false) targetEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid, worldPrincipalId()));
-                };
-                targetEntityConstraintsWorldIds := Buffer.toArray(targetEntityConstraintsWorldIds_);
-            };
-            case _ {};
-        };
-
-        //FETCH DATA
-
-        let worldEntityResultHandler = worldNode.getAllUserEntitiesOfSpecificWorlds(worldPrincipalId(), worldEntityConstraintsWorldIds, null);
-        let callerEntityResultHandler = callerNode.getAllUserEntitiesOfSpecificWorlds(callerPrincipalId, callerEntityConstraintsWorldIds, null);
-        let targetEntityResultHandler = targetNode.getAllUserEntitiesOfSpecificWorlds(targetPrincipalId, targetEntityConstraintsWorldIds, null);
-
-        //ACTIONS STATES
-
-        let oldCallerActionStateResult = await oldCallerActionStateResultHandler;
-        let oldTargetActionStateResult = await oldTargetActionStateResultHandler;
-        var oldWorldActionStateResult : ?TAction.ActionState = null;
-
-        if (worldHasOutcomes) {
-            oldWorldActionStateResult := await oldWorldActionStateResultHandler;
-        };
-
-        //ENTITIES
-        switch (await worldEntityResultHandler) {
-            case (#ok data) worldData := data;
-            case (#err errMsg) {
-
-                debugLog("The '" #actionId # "' action failed because it could not get entities from world.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        switch (await callerEntityResultHandler) {
-            case (#ok data) callerData := data;
-            case (#err errMsg) {
-
-                debugLog("The '" #actionId # "' action failed because it could not get entities from caller.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        if (targetPrincipalId == worldPrincipalId()) {
-            targetData := worldData;
-        } else {
-            switch (await targetEntityResultHandler) {
-                case (#ok data) targetData := data;
-                case (#err errMsg) {
-
-                    debugLog("The '" #actionId # "' action failed because it could not get entities from target.\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
-            };
-        };
-
-        //REFINE CONSTRAINTS
-        var callerRefinedConstraints : ?TAction.ActionConstraint = ?{
-            timeConstraint = null;
-            containEntity = [];
-            entityConstraint = [];
-            icpConstraint = null;
-            icrcConstraint = [];
-            nftConstraint = [];
-        };
-        var targetRefinedConstraints : ?TAction.ActionConstraint = ?{
-            timeConstraint = null;
-            containEntity = [];
-            entityConstraint = [];
-            icpConstraint = null;
-            icrcConstraint = [];
-            nftConstraint = [];
-        };
-        var worldRefinedConstraints : ?TAction.ActionConstraint = ?{
-            timeConstraint = null;
-            containEntity = [];
-            entityConstraint = [];
-            icpConstraint = null;
-            icrcConstraint = [];
-            nftConstraint = [];
-        };
-
-        let callerRefinedConstraintsResult = refineConstraints_(callerActionConstraint, callerPrincipalId, targetPrincipalId, actionFields);
-        let targetRefinedConstraintsResult = refineConstraints_(targetActionConstraint, callerPrincipalId, targetPrincipalId, actionFields);
-        let worldRefinedConstraintsResult = refineConstraints_(worldActionConstraint, callerPrincipalId, targetPrincipalId, actionFields);
-
-        switch callerRefinedConstraintsResult {
-            case (#ok(?refinedConstraint)) {
-                callerRefinedConstraints := ?refinedConstraint;
-            };
-            case (#ok(null)) {
-                callerRefinedConstraints := null;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because caller's constraint could not be refined.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        switch targetRefinedConstraintsResult {
-            case (#ok(?refinedConstraint)) {
-                targetRefinedConstraints := ?refinedConstraint;
-            };
-            case (#ok(null)) {
-                targetRefinedConstraints := null;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because target's constraint could not be refined.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        switch worldRefinedConstraintsResult {
-            case (#ok(?refinedConstraint)) {
-                worldRefinedConstraints := ?refinedConstraint;
-            };
-            case (#ok(null)) {
-                worldRefinedConstraints := null;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because world's constraint could not be refined.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        //VALIDATE OUTCOMES AND FETCH ACTION STATES
-
-        var callerActionStateResultHandler = validateConstraints_(callerData, callerPrincipalId, actionId, callerRefinedConstraints, oldCallerActionStateResult);
-        var targetActionStateResultHandler = validateConstraints_(targetData, targetPrincipalId, actionId, targetRefinedConstraints, oldTargetActionStateResult);
-
-        if (worldHasOutcomes) {
-            var worldActionStateResultHandler = validateConstraints_(worldData, worldPrincipalId(), actionId, worldRefinedConstraints, oldWorldActionStateResult);
-
-            switch (await worldActionStateResultHandler) {
-                case (#ok(result)) { newWorldActionState := result };
+            switch (nodeTaskResult) {
+                case (#ok(content)) { nodeId := content };
                 case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not validate world constraints.\nExtra insight: " #errMsg);
+                    debugLog("The '" #actionId # "' action failed because it could not get world node Id.\nExtra insight: " #errMsg);
                     //UNLOCK ACTION
                     changeActionLockState_(callerPrincipalId, actionId, false);
                     return;
                 };
             };
 
-            //
-
-            switch (await callerActionStateResultHandler) {
-                case (#ok(result)) { newCallerActionState := result };
-                case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not validate caller constraints.\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
+            var newTrie = {
+                sourcePrincipalId = trie.sourcePrincipalId;
+                sourceActionConstraint = trie.sourceActionConstraint;
+                sourceOutcomes = trie.sourceOutcomes;
+                worldsToFetchEntitiesFrom = trie.worldsToFetchEntitiesFrom;
+                //Store the NodeId
+                nodeId = nodeId;
+                nodeIdTask = trie.nodeIdTask;
+                sourceNewActionState = {
+                    actionId = "";
+                    intervalStartTs = 0;
+                    actionCount = 0;
                 };
+                sourceData = [];
             };
 
-            switch (await targetActionStateResultHandler) {
-                case (#ok(result)) { newTargetActionState := result };
-                case (#err(errMsg)) {
+            subActions_ := Trie.put(subActions_, Utils.keyT(sourcePrincipalId), Text.equal, newTrie).0;
 
-                    debugLog("The '" #actionId # "' action failed because it could not validate target constraints.\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
-            };
+            let sourceNode : UserNode = actor (nodeId);
 
-        } else {
+            //Fetch Source's Action State
+            let currentCallerActionStateResultHandler = sourceNode.getActionState(trie.sourcePrincipalId, worldPrincipalId(), actionId);
+            //Fetch Source's Entities
+            let sourceEntityResultHandler = sourceNode.getAllUserEntitiesOfSpecificWorlds(trie.sourcePrincipalId, trie.worldsToFetchEntitiesFrom, null);
 
-            switch (await callerActionStateResultHandler) {
-                case (#ok(result)) { newCallerActionState := result };
-                case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not validate caller constraints.\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
-            };
-
-            switch (await targetActionStateResultHandler) {
-                case (#ok(result)) { newTargetActionState := result };
-                case (#err(errMsg)) {
-
-                    debugLog("The '" #actionId # "' action failed because it could not validate target constraints.\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
-            };
-
+            getActionStateTasks := Trie.put(
+                getActionStateTasks,
+                Utils.keyT(trie.sourcePrincipalId),
+                Text.equal,
+                {
+                    actionStateTask = currentCallerActionStateResultHandler;
+                    entitiesTask = sourceEntityResultHandler;
+                },
+            ).0;
         };
 
-        //REFINE OUTCOMES
-        var callerRefinedOutcome : [TAction.ActionOutcomeOption] = [];
-        var targetRefinedOutcome : [TAction.ActionOutcomeOption] = [];
-        var worldRefinedOutcome : [TAction.ActionOutcomeOption] = [];
+        //Await for action state & entities tasks
+        //Refine & validate constraints
+        //Catch worldData, callerData, and optional targetData
+        //Store new source's action state and data in "subActions_".
+        for ((id, trie) in Trie.iter(getActionStateTasks)) {
+            let sourcePrincipalId = id;
 
-        let callerRefinedOutcomeResult = refineAllOutcomes_(callerOutcomes, callerPrincipalId, targetPrincipalId, actionFields, worldData, callerData, ?targetData);
-        let targetRefinedOutcomeResult = refineAllOutcomes_(targetOutcomes, callerPrincipalId, targetPrincipalId, actionFields, worldData, callerData, ?targetData);
+            let currentActionState = await trie.actionStateTask;
 
-        switch (callerRefinedOutcomeResult) {
-            case (#ok _callerRefinedOutcome) {
-                callerRefinedOutcome := _callerRefinedOutcome;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because it could not be executed.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
+            let entitiesTaskResult = await trie.entitiesTask;
 
-        switch (targetRefinedOutcomeResult) {
-            case (#ok _targetRefinedOutcome) {
-                targetRefinedOutcome := _targetRefinedOutcome;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because it could not refine outcome target.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
+            var sourceData : [TEntity.StableEntity] = [];
 
-        if (worldHasOutcomes) {
-
-            var worldRefinedOutcomeResult = refineAllOutcomes_(Option.get(worldOutcomes, []), callerPrincipalId, targetPrincipalId, actionFields, worldData, callerData, ?targetData);
-
-            switch worldRefinedOutcomeResult {
-                case (#ok(_worldRefinedOutcome)) worldRefinedOutcome := _worldRefinedOutcome;
-                case (#err(errMsg)) {
-                    debugLog("Refine World Outcome Error " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-
-                    return;
-                };
-            };
-        };
-
-        //APPLY OUTCOMES
-        let callerApplyOutcomesHandler = applyOutcomes_(callerPrincipalId, callerNode, newCallerActionState, callerRefinedOutcome);
-        let targetApplyOutcomesHandler = applyOutcomes_(targetPrincipalId, targetNode, newTargetActionState, targetRefinedOutcome);
-
-        let callerApplyOutcomes = await callerApplyOutcomesHandler;
-        let targetApplyOutcomes = await targetApplyOutcomesHandler;
-
-        if (worldHasOutcomes) let worldApplyOutcomes = applyOutcomes_(worldPrincipalId(), worldNode, newWorldActionState, worldRefinedOutcome);
-
-        //UNLOCK ACTION
-        changeActionLockState_(callerPrincipalId, actionId, false);
-
-        ignore tryBroadcastFetchUsersDataRequest_(callerPrincipalId);
-    };
-
-    private func processAction_(actionId : Text, actionFields : [TGlobal.Field], callerPrincipalId : Text, sourcePrincipalId : Text, sourceActionConstraint : ?TAction.ActionConstraint, worldActionConstraint : ?TAction.ActionConstraint, sourceOutcomes : [TAction.ActionOutcomeOption], worldOutcomes : ?[TAction.ActionOutcomeOption]) : async () {
-
-        var worldHasOutcomes = worldOutcomes != null;
-
-        //FETCH NODES IDS
-        var worldNodeId : Text = "2vxsx-fae";
-        var sourceNodeId : Text = "2vxsx-fae";
-
-        let getWorldNodeHandler = getUserNode_(worldNodeId);
-        let getSourceNodeHandler = getUserNode_(sourcePrincipalId);
-
-        switch (await getWorldNodeHandler) {
-            case (#ok(content)) { worldNodeId := content };
-            case (#err(errMsg)) {
-                debugLog("The '" #actionId # "' action failed because it could not get world node Id.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(sourcePrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        if (sourcePrincipalId == worldPrincipalId()) {
-            sourceNodeId := worldNodeId;
-        } else {
-            switch (await getSourceNodeHandler) {
-                case (#ok(content)) { sourceNodeId := content };
-                case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not get source node Id.\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(sourcePrincipalId, actionId, false);
-                    return;
-                };
-            };
-        };
-
-        //INTERFACES
-
-        let worldNode : UserNode = actor (worldNodeId);
-        let sourceNode : UserNode = actor (sourceNodeId);
-
-        //FETCH ACTIONS STATES SETUP
-        var newCallerActionState : TAction.ActionState = {
-            actionId = "";
-            intervalStartTs = 0;
-            actionCount = 0;
-        };
-        var newWorldActionState : TAction.ActionState = {
-            actionId = "";
-            intervalStartTs = 0;
-            actionCount = 0;
-        };
-
-        let oldCallerActionStateResultHandler = sourceNode.getActionState(sourcePrincipalId, worldPrincipalId(), actionId);
-        let oldWorldActionStateResultHandler = worldNode.getActionState(worldPrincipalId(), worldPrincipalId(), actionId);
-
-        //FETCH ENTITIES DATA SETUP
-        var worldData : [TEntity.StableEntity] = [];
-        var sourceData : [TEntity.StableEntity] = [];
-
-        //GET WORLD IDS TO FETCH ENTITIES FROM
-        var worldEntityConstraintsWorldIds : [Text] = [];
-
-        switch (worldActionConstraint) {
-            case (?constraints) {
-
-                var worldEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
-
-                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
-                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
-                    if (Buffer.contains(worldEntityConstraintsWorldIds_, _wid, Text.equal) == false) worldEntityConstraintsWorldIds_.add(Option.get(entityConstraint.wid, worldPrincipalId()));
-                };
-                worldEntityConstraintsWorldIds := Buffer.toArray(worldEntityConstraintsWorldIds_);
-            };
-            case _ {};
-        };
-
-        var sourceEntityConstraintsWorldIds : [Text] = [];
-
-        switch (sourceActionConstraint) {
-            case (?constraints) {
-
-                var sourceEntityConstraintsWorldIds_ = Buffer.Buffer<Text>(0);
-
-                for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
-                    let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
-                    if (Buffer.contains(sourceEntityConstraintsWorldIds_, _wid, Text.equal) == false) sourceEntityConstraintsWorldIds_.add(_wid);
-                };
-                sourceEntityConstraintsWorldIds := Buffer.toArray(sourceEntityConstraintsWorldIds_);
-            };
-            case _ {};
-        };
-
-        //FETCH DATA
-
-        let worldEntityResultHandler = worldNode.getAllUserEntitiesOfSpecificWorlds(worldPrincipalId(), worldEntityConstraintsWorldIds, null);
-        let sourceEntityResultHandler = sourceNode.getAllUserEntitiesOfSpecificWorlds(sourcePrincipalId, sourceEntityConstraintsWorldIds, null);
-
-        let oldCallerActionStateResult = await oldCallerActionStateResultHandler;
-        var oldWorldActionStateResult : ?TAction.ActionState = null;
-
-        if (worldHasOutcomes) {
-            oldWorldActionStateResult := await oldWorldActionStateResultHandler;
-        };
-
-        switch (await worldEntityResultHandler) {
-            case (#ok data) worldData := data;
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because it could not get world entities\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
-
-        if (sourcePrincipalId == worldPrincipalId()) {
-            sourceData := worldData;
-        } else {
-            switch (await sourceEntityResultHandler) {
+            switch (entitiesTaskResult) {
                 case (#ok data) sourceData := data;
                 case (#err errMsg) {
-                    debugLog("The '" #actionId # "' action failed because it could not get source entities\nExtra insight: " #errMsg);
+                    debugLog("The '" #actionId # "' action failed because it could not get source's entities\nSourceId: " #id # "\nExtra insight: " #errMsg);
+                    //UNLOCK ACTION
+                    changeActionLockState_(callerPrincipalId, actionId, false);
+                    return;
+                };
+            };
+
+            //Catch world's data
+            if (sourcePrincipalId == worldPrincipalId_) {
+                worldData := sourceData;
+            }
+            //Catch caller's data
+            else if (sourcePrincipalId == callerPrincipalId) {
+                callerData := sourceData;
+            }
+            //Catch target's data
+            else if (sourcePrincipalId == targetPrincipalId) {
+                targetData := sourceData;
+            };
+
+            switch (Trie.find(subActions_, Utils.keyT(id), Text.equal)) {
+                case (?subAction) {
+
+                    var sourceNewActionState : TAction.ActionState = {
+                        actionId = "";
+                        intervalStartTs = 0;
+                        actionCount = 0;
+                    };
+
+                    switch (subAction.sourceActionConstraint) {
+                        case (?sc) {
+                            var sourceRefinedConstraints : ?TAction.ActionConstraint = ?{
+                                timeConstraint = null;
+                                containEntity = [];
+                                entityConstraint = [];
+                                icrcConstraint = [];
+                                nftConstraint = [];
+                            };
+
+                            //Refine Constraints
+                            let sourceRefinedConstraintsResult = refineConstraints_(subAction.sourceActionConstraint, callerPrincipalId, targetPrincipalId, actionFields);
+
+                            switch sourceRefinedConstraintsResult {
+                                case (#ok(?refinedConstraint)) {
+                                    sourceRefinedConstraints := ?refinedConstraint;
+                                };
+                                case (#ok(null)) {
+                                    sourceRefinedConstraints := null;
+                                };
+                                case (#err errMsg) {
+                                    debugLog("The '" #actionId # "' action failed because source's constraint could not be refined.\nExtra insight: " #errMsg);
+                                    //UNLOCK ACTION
+                                    changeActionLockState_(callerPrincipalId, actionId, false);
+                                    return;
+                                };
+                            };
+
+                            //Validate Constraints
+                            var sourceValidationResult = validateConstraints_(sourceData, sourcePrincipalId, actionId, sourceRefinedConstraints, currentActionState);
+
+                            switch (await sourceValidationResult) {
+                                case (#ok(result)) {
+                                    sourceNewActionState := result;
+                                };
+                                case (#err(errMsg)) {
+                                    debugLog("The '" #actionId # "' action failed because it could not validate source action constraints\nExtra insight: " #errMsg);
+                                    //UNLOCK ACTION
+                                    changeActionLockState_(callerPrincipalId, actionId, false);
+                                    return;
+                                };
+                            };
+
+                        };
+                        case (_) {};
+                    };
+
+                    var newTrie = {
+                        sourcePrincipalId = subAction.sourcePrincipalId;
+                        sourceActionConstraint = subAction.sourceActionConstraint;
+                        sourceOutcomes = subAction.sourceOutcomes;
+                        worldsToFetchEntitiesFrom = subAction.worldsToFetchEntitiesFrom;
+                        nodeId = subAction.nodeId;
+                        nodeIdTask = subAction.nodeIdTask;
+                        //Store New Action State
+                        sourceNewActionState = sourceNewActionState;
+                        //Store Source's data
+                        sourceData = sourceData;
+                    };
+
+                    subActions_ := Trie.put(subActions_, Utils.keyT(sourcePrincipalId), Text.equal, newTrie).0;
+                };
+                case _ {
+
+                    debugLog("The '" #actionId # "' action failed because it could not find source id: " #id);
                     //UNLOCK ACTION
                     changeActionLockState_(callerPrincipalId, actionId, false);
                     return;
@@ -2670,144 +2278,57 @@ actor class WorldTemplate() = this {
             };
         };
 
-        //REFINE CONSTRAINTS
-        var sourceRefinedConstraints : ?TAction.ActionConstraint = ?{
-            timeConstraint = null;
-            containEntity = [];
-            entityConstraint = [];
-            icpConstraint = null;
-            icrcConstraint = [];
-            nftConstraint = [];
-        };
-        var worldRefinedConstraints : ?TAction.ActionConstraint = ?{
-            timeConstraint = null;
-            containEntity = [];
-            entityConstraint = [];
-            icpConstraint = null;
-            icrcConstraint = [];
-            nftConstraint = [];
-        };
+        //Refine outcomes
+        label loop4 for ((id, trie) in Trie.iter(subActions_)) {
 
-        let sourceRefinedConstraintsResult = refineConstraints_(sourceActionConstraint, callerPrincipalId, "", actionFields);
-        let worldRefinedConstraintsResult = refineConstraints_(worldActionConstraint, callerPrincipalId, "", actionFields);
+            if (trie.sourceOutcomes.size() == 0) continue loop4;
 
-        switch sourceRefinedConstraintsResult {
-            case (#ok(?refinedConstraint)) {
-                sourceRefinedConstraints := ?refinedConstraint;
-            };
-            case (#ok(null)) {
-                sourceRefinedConstraints := null;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because source's constraint could not be refined.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
+            let sourcePrincipalId = id;
 
-        switch worldRefinedConstraintsResult {
-            case (#ok(?refinedConstraint)) {
-                worldRefinedConstraints := ?refinedConstraint;
-            };
-            case (#ok(null)) {
-                worldRefinedConstraints := null;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because world's constraint could not be refined.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
-        };
+            var sourceRefinedOutcome : [TAction.ActionOutcomeOption] = [];
 
-        //VALIDATE OUTCOMES AND FETCH ACTION STATES
+            //TODO: declare the targetId that need to be passed
+            //TODO: declare the target's data
+            let sourceRefinedOutcomeResult = refineAllOutcomes_(trie.sourceOutcomes, callerPrincipalId, targetPrincipalId, actionFields, worldData, callerData, ?targetData);
 
-        var newCallerActionStateResultHandler = validateConstraints_(sourceData, sourcePrincipalId, actionId, sourceRefinedConstraints, oldCallerActionStateResult);
-
-        if (worldHasOutcomes) {
-            var worldActionStateResultHandler = validateConstraints_(worldData, worldPrincipalId(), actionId, worldRefinedConstraints, oldWorldActionStateResult);
-
-            switch (await worldActionStateResultHandler) {
-                case (#ok(result)) { newWorldActionState := result };
-                case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not validate world constraints\nExtra insight: " #errMsg);
+            switch (sourceRefinedOutcomeResult) {
+                case (#ok _sourceRefinedOutcome) {
+                    sourceRefinedOutcome := _sourceRefinedOutcome;
+                };
+                case (#err errMsg) {
+                    debugLog("The '" #actionId # "' action failed because it could not refine source outcomes.\nExtra insight: " #errMsg);
                     //UNLOCK ACTION
                     changeActionLockState_(callerPrincipalId, actionId, false);
                     return;
                 };
             };
 
-            //
-
-            switch (await newCallerActionStateResultHandler) {
-                case (#ok(result)) { newCallerActionState := result };
-                case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not validate source action constraints\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
+            var newTrie = {
+                sourcePrincipalId = trie.sourcePrincipalId;
+                sourceActionConstraint = trie.sourceActionConstraint;
+                //Overwrite sourceOutcome with refined sourceOutcome
+                sourceOutcomes = sourceRefinedOutcome;
+                worldsToFetchEntitiesFrom = trie.worldsToFetchEntitiesFrom;
+                nodeId = trie.nodeId;
+                nodeIdTask = trie.nodeIdTask;
+                sourceNewActionState = trie.sourceNewActionState;
+                sourceData = trie.sourceData;
             };
 
-        } else {
-
-            switch (await newCallerActionStateResultHandler) {
-                case (#ok(result)) { newCallerActionState := result };
-                case (#err(errMsg)) {
-                    debugLog("The '" #actionId # "' action failed because it could not validate source action constraints\nExtra insight: " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
-            };
-
+            subActions_ := Trie.put(subActions_, Utils.keyT(sourcePrincipalId), Text.equal, newTrie).0;
         };
 
-        //REFINE OUTCOMES
-        var sourceRefinedOutcome : [TAction.ActionOutcomeOption] = [];
-        var worldRefinedOutcome : [TAction.ActionOutcomeOption] = [];
+        //Apply outcomes
+        label loop5 for ((id, trie) in Trie.iter(subActions_)) {
 
-        var targetPrincipalId = "";
+            if (trie.sourceOutcomes.size() == 0) continue loop5;
 
-        if (callerPrincipalId != sourcePrincipalId) targetPrincipalId := sourcePrincipalId;
+            let sourcePrincipalId = id;
 
-        let sourceRefinedOutcomeResult = refineAllOutcomes_(sourceOutcomes, callerPrincipalId, targetPrincipalId, actionFields, worldData, sourceData, null);
+            let sourceNode : UserNode = actor (trie.nodeId);
 
-        switch (sourceRefinedOutcomeResult) {
-            case (#ok _sourceRefinedOutcome) {
-                sourceRefinedOutcome := _sourceRefinedOutcome;
-            };
-            case (#err errMsg) {
-                debugLog("The '" #actionId # "' action failed because it could not refine source outcomes.\nExtra insight: " #errMsg);
-                //UNLOCK ACTION
-                changeActionLockState_(callerPrincipalId, actionId, false);
-                return;
-            };
+            ignore applyOutcomes_(trie.sourcePrincipalId, sourceNode, trie.sourceNewActionState, trie.sourceOutcomes);
         };
-
-        if (worldHasOutcomes) {
-
-            var worldRefinedOutcomeResult = refineAllOutcomes_(Option.get(worldOutcomes, []), callerPrincipalId, targetPrincipalId, actionFields, worldData, sourceData, null);
-
-            switch worldRefinedOutcomeResult {
-                case (#ok(_worldRefinedOutcome)) worldRefinedOutcome := _worldRefinedOutcome;
-                case (#err(errMsg)) {
-                    debugLog("Refine World Outcome Error " #errMsg);
-                    //UNLOCK ACTION
-                    changeActionLockState_(callerPrincipalId, actionId, false);
-                    return;
-                };
-            };
-        };
-
-        //APPLY OUTCOMES
-
-        let sourceApplyOutcomesHandler = applyOutcomes_(sourcePrincipalId, sourceNode, newCallerActionState, sourceRefinedOutcome);
-
-        let sourceApplyOutcomes = await sourceApplyOutcomesHandler;
-
-        if (worldHasOutcomes) let worldApplyOutcomes = applyOutcomes_(worldPrincipalId(), worldNode, newWorldActionState, worldRefinedOutcome);
 
         //UNLOCK ACTION
         changeActionLockState_(callerPrincipalId, actionId, false);
@@ -3020,9 +2541,8 @@ actor class WorldTemplate() = this {
         return #ok("imported");
     };
 
-    public shared ({ caller }) func withdrawIcpFromWorld(args : { toPrincipal : Text }) : async (Result.Result<ICP.Result_5, { #TxErr : ICP.TransferError_1; #Err : Text }>) {
+    public shared ({ caller }) func withdrawIcpFromWorld(args : { toPrincipal : Text }) : async (Result.Result<ICP.TransferResult, { #TxErr : ICP.TransferError; #Err : Text }>) {
         assert (caller == owner);
-        let ICP_Ledger : Ledger.ICP = actor (ENV.Ledger);
         var _amt = await ICP_Ledger.account_balance({
             account = Blob.fromArray(Hex.decode(AccountIdentifier.fromText(Principal.toText(WorldId()), null)));
         });
@@ -3039,13 +2559,13 @@ actor class WorldTemplate() = this {
             created_at_time = null;
             amount = _amt;
         };
-        var res : ICP.Result_5 = await ICP_Ledger.transfer(_req);
+        var res : ICP.TransferResult = await ICP_Ledger.transfer(_req);
         switch (res) {
             case (#Ok blockIndex) {
                 return #ok(res);
             };
             case (#Err e) {
-                let err : { #TxErr : ICP.TransferError_1; #Err : Text } = #TxErr e;
+                let err : { #TxErr : ICP.TransferError; #Err : Text } = #TxErr e;
                 return #err(err);
             };
         };
@@ -3367,12 +2887,20 @@ actor class WorldTemplate() = this {
     // };
 
     // /// A custom function to send the message to the client
-    public query func validateEntityConstraints(entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Bool) {
-        switch (validateEntityConstraints_(entities, entityConstraints)) {
+    public query func validateEntityConstraints(uid : Text, entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Bool) {
+        switch (validateEntityConstraints_(uid, entities, entityConstraints)) {
             case (#err(errMsg)) return false;
             case _ return true;
         };
     };
+
+    public shared ({caller}) func validateConstraints(uid : Text, entities : [TEntity.StableEntity], aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint) : async ({aid : Text; status : Bool}) {
+        switch (await validateConstraints_(entities, uid, aid, actionConstraint, null)) {
+            case (#err(errMsg)) return {aid = aid; status = false;};
+            case _ return {aid = aid; status = true;};
+        };
+    };
+
     // func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {
     //     // here we call the ws_send from the CDK!!
     //     switch (await IcWebSocketCdk.send(ws_state, client_principal, to_candid (msg))) {
@@ -3515,7 +3043,7 @@ actor class WorldTemplate() = this {
 
     // method to validate Entities and EntityConstraints for User Quest Status
 
-    // public query func validateEntityConstraints(entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Result.Result<(), [TConstraints.EntityConstraint]>) {
+    // public query func validateEntityConstraints(callerPrincipalId : Text, entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Result.Result<(), [TConstraints.EntityConstraint]>) {
 
     //     var invalidConstraint = Buffer.Buffer<TConstraints.EntityConstraint>(0);
 
@@ -3757,7 +3285,11 @@ actor class WorldTemplate() = this {
     //                 };
     //             };
     //             case (#exist val) {
-    //                 switch (getEntity_(entities, wid, e.eid)) {
+    //                 var _eid = e.eid;
+    //                 if(_eid == "$caller") {
+    //                     _eid := callerPrincipalId;
+    //                 };
+    //                 switch (getEntity_(entities, wid, _eid)) {
     //                     case (?entity) {
     //                         if (val.value == false) {
     //                             invalidConstraint.add(e);

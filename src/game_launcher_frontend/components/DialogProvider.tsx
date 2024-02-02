@@ -104,7 +104,7 @@ const DialogProvider = (props: PropTypes) => {
                         </DialogContent>
                         <DialogActions>
                             <Button onClick={handleCloseClick} color="secondary">
-                                Cancel
+                                Close
                             </Button>
                         </DialogActions>
                     </div>

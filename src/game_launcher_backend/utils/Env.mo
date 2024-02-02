@@ -30,18 +30,21 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
-    public let Ledger = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
+    public let IcpLedgerCanisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
     public let IC_Management = "aaaaa-aa"; //IC Management canister_id
     public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai"; //ckBTC as ICRC-1 Token
 
     public let admins = []; //add admin principal for access control over DB
 
     //!avoid changing this!
-    public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
-    public let PaymentHubCanisterId = "5hr3g-hqaaa-aaaap-abbxa-cai";
-    public let StakingHubCanisterId = "jozll-yaaaa-aaaap-abf5q-cai"; 
     public let NftDeployerCanisterId = "j474s-uqaaa-aaaap-abf6q-cai";
+    public let ProxyCanisterId = "iustv-tiaaa-aaaao-a3aga-cai"; // for HTTP non-replicated outcalls
+
+    //Prod
+    public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
     public let WorldDeployerCanisterId = "js5r2-paaaa-aaaap-abf7q-cai";
 
-    public let ProxyCanisterId = "iustv-tiaaa-aaaao-a3aga-cai";
+    //Stag
+    // public let WorldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
+    // public let WorldDeployerCanisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
 };

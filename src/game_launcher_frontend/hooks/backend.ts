@@ -290,7 +290,9 @@ export const useExtClient = async (canister_id?: string) => {
       add_admin: "ext_addAdmin",
       remove_admin: "ext_removeAdmin",
       get_asset_ids: "get_all_assetHandles",
-      get_asset_encoding: "get_asset_encoding"
+      get_asset_encoding: "get_asset_encoding",
+      getRegistry: "getRegistry",
+      transfer: "transfer"
     },
   };
 };
@@ -351,7 +353,8 @@ export const useGamingGuildsClient = async () => {
       getAllActions: "getAllActions",
       getAllUserEntities: "getAllUserEntities",
       validateEntityConstraints: "validateEntityConstraints",
-      processAction: "processAction"
+      processAction: "processAction",
+      validateConstraints: "validateConstraints"
     },
   };
 };
@@ -404,7 +407,8 @@ export const useICRCLedgerClient = async (canister_id: string) => {
     }),
     methods: {
       icrc1_balance_of: "icrc1_balance_of",
-      icrc1_transfer: "icrc1_transfer"
+      icrc1_transfer: "icrc1_transfer",
+      icrc1_fee: "icrc1_fee"
     },
   };
 };

@@ -9,18 +9,23 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { gamingGuildsCanisterId, useBoomLedgerClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useICRCLedgerClient, useWorldHubClient } from "@/hooks";
+import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useICRCLedgerClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, Profile, UserTokenInfo, UserProfile } from "@/types";
+import { GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, Profile, UserTokenInfo, UserProfile, UserNftInfo } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import Tokens from "../locale/en/Tokens.json";
+import Nfts from "../locale/en/Nfts.json";
+import { string } from "zod";
+import { AccountIdentifier } from "@dfinity/ledger-icp";
+import { Account } from "@dfinity/nns-proto/dist/proto/ledger_pb";
 
 export const queryKeys = {
     profile: "profile",
-    wallet: "wallet"
-
+    wallet: "wallet",
+    transfer_amount: "transfer_amount",
+    user_nfts: "user_nfts"
 };
 
 export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
@@ -28,7 +33,7 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
     return useQuery({
         queryKey: [queryKeys.profile],
         queryFn: async () => {
-            let current_user_principal = ((session?.identity?.getPrincipal())?.toString() != undefined) ? (session?.identity?.getPrincipal())?.toString() : "" ;
+            let current_user_principal = ((session?.identity?.getPrincipal())?.toString() != undefined) ? (session?.identity?.getPrincipal())?.toString() : "";
             let response: UserProfile = {
                 uid: current_user_principal ? current_user_principal : "",
                 username: current_user_principal ? (current_user_principal).substring(0, 10) + "..." : "",
@@ -45,31 +50,29 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
                         response.xp = (((fields[i].fieldValue).split("."))[0]).toString();
                     }
                 };
-                let profile = await worldHub.actor[worldHub.methods.getUserProfile]({ uid: current_user_principal }) as { uid: string; username: string; image: string; };
-                response = {
-                    uid: profile.uid,
-                    username: (profile.username == profile.uid) ? (profile.uid).substring(0, 10) + "..." : (profile.username.length > 10) ? (profile.username).substring(0, 10) + "..." : profile.username,
-                    xp: response.xp,
-                    image: (profile.image != "") ? profile.image : "/usericon.jpeg"
-                };
             } else {
-                // TODO:
-                // let entities = await actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as { ok: [StableEntity] };
-                // let userIsMember = false;
-                // for (let i = 0; i < entities.ok.length; i += 1) {
-                //     if (entities.ok[i].eid == current_user_principal) {
-                //         userIsMember = true;
-                //     }
-                // };
-                // if (!userIsMember) {
-                //     let guildCanister = await useGamingGuildsClient();
-                //     let res = await guildCanister.actor[guildCanister.methods.processAction]({
-                //         fields: [],
-                //         actionId: "create_profile"
-                //     });
-                //     console.log(res);
-                // }
-            }
+                let entities = await actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as { ok: [StableEntity] };
+                let userIsMember = false;
+                for (let i = 0; i < entities.ok.length; i += 1) {
+                    if (entities.ok[i].eid == current_user_principal) {
+                        userIsMember = true;
+                    }
+                };
+                if (!userIsMember) {
+                    let guildCanister = await useGamingGuildsClient();
+                    let res = await guildCanister.actor[guildCanister.methods.processAction]({
+                        fields: [],
+                        actionId: "create_profile"
+                    });
+                }
+            };
+            let profile = await worldHub.actor[worldHub.methods.getUserProfile]({ uid: current_user_principal }) as { uid: string; username: string; image: string; };
+            response = {
+                uid: profile.uid,
+                username: (profile.username == profile.uid) ? (profile.uid).substring(0, 10) + "..." : (profile.username.length > 10) ? (profile.username).substring(0, 10) + "..." : profile.username,
+                xp: response.xp,
+                image: (profile.image != "") ? profile.image : "/usericon.jpeg"
+            };
             return response;
         },
     });
@@ -85,7 +88,7 @@ export const getTokenSymbol = (canisterId?: string) => {
 };
 
 
-export const useGetWalletInfo = (): UseQueryResult<Profile> => {
+export const useGetTokensInfo = (): UseQueryResult<Profile> => {
     const { session } = useAuthContext();
     return useQuery({
         queryKey: [queryKeys.wallet],
@@ -127,6 +130,125 @@ export const useGetWalletInfo = (): UseQueryResult<Profile> => {
                 }
             );
             return res;
+        },
+    });
+};
+
+const to32bits = (num: number) => {
+    const b = new ArrayBuffer(4);
+    new DataView(b).setUint32(0, num);
+    return Array.from(new Uint8Array(b));
+};
+
+const getTokenIdentifier = (canister: string, index: number) => {
+    const padding = Buffer.from('\x0Atid');
+    const array = new Uint8Array([
+        ...padding,
+        ...Principal.fromText(canister).toUint8Array(),
+        ...to32bits(index),
+    ]);
+    return Principal.fromUint8Array(array).toText();
+};
+
+export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.user_nfts],
+        queryFn: async () => {
+            let res: UserNftInfo[] = [];
+            let registries = [];
+            for (let i = 0; i < Nfts.nfts.length; i += 1) {
+                const nft_canister = await useExtClient(Nfts.nfts[i].canister);
+                registries.push(nft_canister.actor[nft_canister.methods.getRegistry]());
+            };
+            await Promise.all(registries).then(
+                (_registries: any) => {
+                    for (let k = 0; k < _registries.length; k++) {
+                        let entry: UserNftInfo = {
+                            principal: (session?.address) ? (session.address) : "",
+                            name: Nfts.nfts[k].name,
+                            canister: Nfts.nfts[k].canister,
+                            balance: "0",
+                            logo: Nfts.nfts[k].logo,
+                            url: Nfts.nfts[k].url,
+                            nfts: []
+                        };
+                        let _nfts = [];
+                        for (let j = 0; j < _registries[k].length; j++) {
+                            if (AccountIdentifier.fromPrincipal({
+                                principal: Principal.fromText((session?.address) ? (session.address) : ""),
+                                subAccount: undefined
+                            }).toHex() == _registries[k][j][1]) {
+                                _nfts.push(getTokenIdentifier(Nfts.nfts[k].canister, _registries[k][j][0]));
+                            };
+                        };
+                        if (_nfts.length > 0) {
+                            entry.balance = _nfts.length.toString();
+                            entry.nfts = _nfts;
+                            res.push(entry);
+                        };
+                    };
+                    return _registries;
+                }
+            ).then(
+                response => {
+                    registries = response;
+                }
+            );
+            return res;
+        },
+    });
+};
+
+export const useNftTransfer = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async ({
+            principal,
+            canisterId,
+            tokenid
+        }: {
+            principal: string;
+            canisterId?: string;
+            tokenid?: string;
+        }) => {
+            try {
+                console.log("iosdufkh");
+                const { actor, methods } = await useExtClient((canisterId != undefined) ? canisterId : "");
+                const current_user_principal = (session?.address) ? (session?.address) : "";
+                let req = {
+                    to: {
+                        principal: Principal.fromText(principal)
+                    },
+                    token: (tokenid)? tokenid : "",
+                    notify: false,
+                    from: {
+                        principal: Principal.fromText(current_user_principal),
+                    },
+                    memo: [],
+                    subaccount: [],
+                    amount: 1,
+                };
+                console.log(req);
+                let res = await actor[methods.transfer](req);
+                console.log(res);
+                return res;
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+            toast.error(t("wallet.tab_2.transfer_error"));
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+        },
+        onSuccess: () => {
+            toast.success(t("wallet.tab_2.transfer_success"));
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
         },
     });
 };
@@ -189,8 +311,9 @@ export const useIcrcTransfer = () => {
         onError: () => {
         },
         onSuccess: () => {
-            toast.success(t("wallet.transfer.success"));
+            toast.success(t("wallet.tab_1.transfer.success"));
             queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.transfer_amount] });
         },
     });
 };
@@ -222,18 +345,25 @@ export const useUpdateProfileImage = () => {
         onSuccess: () => {
             toast.success(t("profile.edit.tab_1.success"));
             window.setTimeout(() => {
-                console.log("jiweoikhfk");
                 queryClient.refetchQueries({ queryKey: [queryKeys.profile] });
             }, 5000);
         },
     });
 };
 
+const checkUsernameRegex = (arg: string) => {
+    for (let i = 0; i < arg.length; i++) {
+        if (arg[i] == " ") {
+            return false;
+        };
+    };
+    return (arg.length <= 15);
+};
+
 export const useUpdateProfileUsername = () => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const { session } = useAuthContext();
-    let isErrorServed = false;
     return useMutation({
         mutationFn: async ({
             username
@@ -243,11 +373,13 @@ export const useUpdateProfileUsername = () => {
             try {
                 const { actor, methods } = await useWorldHubClient();
                 let current_user_principal = session?.address;
+                if (checkUsernameRegex(username) == false) {
+                    toast.error("Username should be less than 15 characters and should not contain whiteSpaces. Try again!");
+                    throw ("");
+                };
                 let res = await actor[methods.setUsername](current_user_principal, username) as { ok: string | undefined, err: string | undefined };
-                console.log(res);
                 if (res.ok == undefined) {
                     toast.error("Username not available, try different username.");
-                    isErrorServed = true;
                     throw (res.err);
                 };
             } catch (error) {
@@ -258,14 +390,10 @@ export const useUpdateProfileUsername = () => {
             }
         },
         onError: () => {
-            if (!isErrorServed) {
-                toast.error(t("profile.edit.tab_2.error"));
-            }
         },
         onSuccess: () => {
             toast.success(t("profile.edit.tab_2.success"));
             window.setTimeout(() => {
-                console.log("jiweoikhfk");
                 queryClient.refetchQueries({ queryKey: [queryKeys.profile] });
             }, 5000);
         },

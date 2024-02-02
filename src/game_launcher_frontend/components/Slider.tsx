@@ -38,10 +38,10 @@ export default function Slider() {
                 </div>
                 {sliderImages.map((currentSlide, ind) => {
                     return (
-                        <div>
+                        <div key={ind}>
                             <div
                                 className={ind === activeImageNum ? "currentSlide active" : "currentSlide"}
-                                key={currentSlide.url}
+                                
                             >
                                 <a href={currentSlide.url} className="cursor: pointer" target="_blank">
                                     {ind === activeImageNum && <img src={currentSlide.image} className="h-72 w-full rounded-primary object-cover shadow md:h-96" />}

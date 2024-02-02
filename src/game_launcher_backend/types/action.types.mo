@@ -133,7 +133,6 @@ module {
             actionExpirationTimestamp : ?Nat;
         };
         entityConstraint : [TConstraints.EntityConstraint];
-        icpConstraint: ? TConstraints.IcpTx;
         icrcConstraint: [TConstraints.IcrcTx];
         nftConstraint: [TConstraints.NftTx];
     };
@@ -155,10 +154,10 @@ module {
     public type ActionReturn =
     {
         callerPrincipalId : Text;
-        targetPrincipalId : ? Text;
+        targetPrincipalId : Text;
         worldPrincipalId : Text;
-        callerOutcomes : ? [ActionOutcomeOption];
-        targetOutcomes : ? [ActionOutcomeOption];
-        worldOutcomes : ? [ActionOutcomeOption];
+        callerOutcomes : [ActionOutcomeOption];
+        targetOutcomes : [ActionOutcomeOption];
+        worldOutcomes : [ActionOutcomeOption];
     };
 };

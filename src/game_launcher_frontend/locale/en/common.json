@@ -514,15 +514,25 @@
     }
   },
   "wallet": {
-    "token_heading": "Your Currencies",
-    "tokens_loading": "Loading your Currencies...",
-    "token_transfer_button_placeholder": "Withdraw",
-    "token_receiver_button_placeholder": "Deposit",
-    "no_tokens": "No tokens listed in Game Launcher yet.",
-    "transfer": {
-      "heading": "Withdraw Token",
-      "success": "ICRC Withdrawal successfull.",
-      "error": "Some error occured. Contact dev team for support."
+    "tab_1": {
+      "title": "Tokens",
+      "token_heading": "Your Currencies",
+      "tokens_loading": "Loading your Currencies...",
+      "token_transfer_button_placeholder": "Withdraw",
+      "token_receiver_button_placeholder": "Deposit",
+      "no_tokens": "No tokens listed in Game Launcher yet.",
+      "transfer": {
+        "heading": "Withdraw Token",
+        "success": "ICRC Withdrawal successfull.",
+        "error": "Some error occured. Contact dev team for support."
+      }
+    },
+    "tab_2": {
+      "title": "NFTs",
+      "nfts_loading": "Loading Your NFTs",
+      "no_nfts": "you dont hold any NFTs from our listed NFT collections",
+      "transfer_success": "NFT transferred successfully.",
+      "transfer_error": "Some error occured. Contact dev team."
     }
   },
   "profile": {

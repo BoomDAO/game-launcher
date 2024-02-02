@@ -1,30 +1,36 @@
 module {
-  public type Account = { owner : Principal; subaccount : ?Blob };
-  public type AccountBalanceArgs = { account : Text };
-  public type Allowance = { allowance : Nat; expires_at : ?Nat64 };
+  public type Account = { owner : Principal; subaccount : ?SubAccount };
+  public type AccountBalanceArgs = { account : AccountIdentifier };
+  public type AccountBalanceArgsDfx = { account : TextAccountIdentifier };
+  public type AccountIdentifier = Blob;
+  public type Allowance = {
+    allowance : Icrc1Tokens;
+    expires_at : ?Icrc1Timestamp;
+  };
   public type AllowanceArgs = { account : Account; spender : Account };
   public type ApproveArgs = {
-    fee : ?Nat;
+    fee : ?Icrc1Tokens;
     memo : ?Blob;
-    from_subaccount : ?Blob;
-    created_at_time : ?Nat64;
-    amount : Nat;
-    expected_allowance : ?Nat;
-    expires_at : ?Nat64;
+    from_subaccount : ?SubAccount;
+    created_at_time : ?Icrc1Timestamp;
+    amount : Icrc1Tokens;
+    expected_allowance : ?Icrc1Tokens;
+    expires_at : ?Icrc1Timestamp;
     spender : Account;
   };
   public type ApproveError = {
     #GenericError : { message : Text; error_code : Nat };
     #TemporarilyUnavailable;
-    #Duplicate : { duplicate_of : Nat };
-    #BadFee : { expected_fee : Nat };
-    #AllowanceChanged : { current_allowance : Nat };
+    #Duplicate : { duplicate_of : Icrc1BlockIndex };
+    #BadFee : { expected_fee : Icrc1Tokens };
+    #AllowanceChanged : { current_allowance : Icrc1Tokens };
     #CreatedInFuture : { ledger_time : Nat64 };
     #TooOld;
     #Expired : { ledger_time : Nat64 };
-    #InsufficientFunds : { balance : Nat };
+    #InsufficientFunds : { balance : Icrc1Tokens };
   };
-  public type ArchiveInfo = { canister_id : Principal };
+  public type ApproveResult = { #Ok : Icrc1BlockIndex; #Err : ApproveError };
+  public type Archive = { canister_id : Principal };
   public type ArchiveOptions = {
     num_blocks_to_archive : Nat64;
     max_transactions_per_response : ?Nat64;
@@ -35,72 +41,58 @@ module {
     controller_id : Principal;
   };
   public type ArchivedBlocksRange = {
-    callback : shared query GetBlocksArgs -> async Result_3;
-    start : Nat64;
+    callback : QueryArchiveFn;
+    start : BlockIndex;
     length : Nat64;
   };
   public type ArchivedEncodedBlocksRange = {
-    callback : shared query GetBlocksArgs -> async Result_4;
+    callback : shared query GetBlocksArgs -> async {
+        #Ok : [Blob];
+        #Err : QueryArchiveError;
+      };
     start : Nat64;
     length : Nat64;
   };
-  public type Archives = { archives : [ArchiveInfo] };
-  public type BinaryAccountBalanceArgs = { account : Blob };
-  public type BlockRange = { blocks : [CandidBlock] };
-  public type CandidBlock = {
-    transaction : CandidTransaction;
+  public type Archives = { archives : [Archive] };
+  public type Block = {
+    transaction : Transaction;
     timestamp : TimeStamp;
     parent_hash : ?Blob;
   };
-  public type CandidOperation = {
-    #Approve : {
-      fee : Tokens;
-      from : Blob;
-      allowance_e8s : Int;
-      allowance : Tokens;
-      expected_allowance : ?Tokens;
-      expires_at : ?TimeStamp;
-      spender : Blob;
-    };
-    #Burn : { from : Blob; amount : Tokens; spender : ?Blob };
-    #Mint : { to : Blob; amount : Tokens };
-    #Transfer : {
-      to : Blob;
-      fee : Tokens;
-      from : Blob;
-      amount : Tokens;
-      spender : ?Blob;
-    };
-  };
-  public type CandidTransaction = {
-    memo : Nat64;
-    icrc1_memo : ?Blob;
-    operation : ?CandidOperation;
-    created_at_time : TimeStamp;
-  };
-  public type Decimals = { decimals : Nat32 };
+  public type BlockIndex = Nat64;
+  public type BlockRange = { blocks : [Block] };
   public type Duration = { secs : Nat64; nanos : Nat32 };
   public type FeatureFlags = { icrc2 : Bool };
-  public type GetBlocksArgs = { start : Nat64; length : Nat64 };
-  public type GetBlocksError = {
-    #BadFirstBlockIndex : {
-      requested_index : Nat64;
-      first_valid_index : Nat64;
-    };
-    #Other : { error_message : Text; error_code : Nat64 };
+  public type GetBlocksArgs = { start : BlockIndex; length : Nat64 };
+  public type Icrc1BlockIndex = Nat;
+  public type Icrc1Timestamp = Nat64;
+  public type Icrc1Tokens = Nat;
+  public type Icrc1TransferError = {
+    #GenericError : { message : Text; error_code : Nat };
+    #TemporarilyUnavailable;
+    #BadBurn : { min_burn_amount : Icrc1Tokens };
+    #Duplicate : { duplicate_of : Icrc1BlockIndex };
+    #BadFee : { expected_fee : Icrc1Tokens };
+    #CreatedInFuture : { ledger_time : Nat64 };
+    #TooOld;
+    #InsufficientFunds : { balance : Icrc1Tokens };
+  };
+  public type Icrc1TransferResult = {
+    #Ok : Icrc1BlockIndex;
+    #Err : Icrc1TransferError;
   };
   public type InitArgs = {
     send_whitelist : [Principal];
     token_symbol : ?Text;
     transfer_fee : ?Tokens;
-    minting_account : Text;
+    minting_account : TextAccountIdentifier;
     maximum_number_of_accounts : ?Nat64;
     accounts_overflow_trim_quantity : ?Nat64;
     transaction_window : ?Duration;
     max_message_size_bytes : ?Nat64;
     icrc1_minting_account : ?Account;
     archive_options : ?ArchiveOptions;
-    initial_values : [(Text, Tokens)];
+    initial_values : [(TextAccountIdentifier, Tokens)];
     token_name : ?Text;
     feature_flags : ?FeatureFlags;
   };
@@ -108,18 +100,48 @@ module {
     #Upgrade : ?UpgradeArgs;
     #Init : InitArgs;
   };
-  public type MetadataValue = {
-    #Int : Int;
-    #Nat : Nat;
-    #Blob : Blob;
-    #Text : Text;
+  public type Memo = Nat64;
+  public type Operation = {
+    #Approve : {
+      fee : Tokens;
+      from : AccountIdentifier;
+      allowance_e8s : Int;
+      allowance : Tokens;
+      expected_allowance : ?Tokens;
+      expires_at : ?TimeStamp;
+      spender : AccountIdentifier;
+    };
+    #Burn : {
+      from : AccountIdentifier;
+      amount : Tokens;
+      spender : ?AccountIdentifier;
+    };
+    #Mint : { to : AccountIdentifier; amount : Tokens };
+    #Transfer : {
+      to : AccountIdentifier;
+      fee : Tokens;
+      from : AccountIdentifier;
+      amount : Tokens;
+      spender : ?Blob;
+    };
   };
-  public type Name = { name : Text };
+  public type QueryArchiveError = {
+    #BadFirstBlockIndex : {
+      requested_index : BlockIndex;
+      first_valid_index : BlockIndex;
+    };
+    #Other : { error_message : Text; error_code : Nat64 };
+  };
+  public type QueryArchiveFn = shared query GetBlocksArgs -> async QueryArchiveResult;
+  public type QueryArchiveResult = {
+    #Ok : BlockRange;
+    #Err : QueryArchiveError;
+  };
   public type QueryBlocksResponse = {
     certificate : ?Blob;
-    blocks : [CandidBlock];
+    blocks : [Block];
     chain_length : Nat64;
-    first_block_index : Nat64;
+    first_block_index : BlockIndex;
     archived_blocks : [ArchivedBlocksRange];
   };
   public type QueryEncodedBlocksResponse = {
@@ -129,108 +151,107 @@ module {
     first_block_index : Nat64;
     archived_blocks : [ArchivedEncodedBlocksRange];
   };
-  public type Result = { #Ok : Nat; #Err : TransferError };
-  public type Result_1 = { #Ok : Nat; #Err : ApproveError };
-  public type Result_2 = { #Ok : Nat; #Err : TransferFromError };
-  public type Result_3 = { #Ok : BlockRange; #Err : GetBlocksError };
-  public type Result_4 = { #Ok : [Blob]; #Err : GetBlocksError };
-  public type Result_5 = { #Ok : Nat64; #Err : TransferError_1 };
   public type SendArgs = {
-    to : Text;
+    to : TextAccountIdentifier;
     fee : Tokens;
-    memo : Nat64;
-    from_subaccount : ?Blob;
+    memo : Memo;
+    from_subaccount : ?SubAccount;
     created_at_time : ?TimeStamp;
     amount : Tokens;
   };
-  public type StandardRecord = { url : Text; name : Text };
-  public type Symbol = { symbol : Text };
+  public type SubAccount = Blob;
+  public type TextAccountIdentifier = Text;
   public type TimeStamp = { timestamp_nanos : Nat64 };
   public type Tokens = { e8s : Nat64 };
+  public type Transaction = {
+    memo : Memo;
+    icrc1_memo : ?Blob;
+    operation : ?Operation;
+    created_at_time : TimeStamp;
+  };
   public type TransferArg = {
     to : Account;
-    fee : ?Nat;
+    fee : ?Icrc1Tokens;
     memo : ?Blob;
-    from_subaccount : ?Blob;
-    created_at_time : ?Nat64;
-    amount : Nat;
+    from_subaccount : ?SubAccount;
+    created_at_time : ?Icrc1Timestamp;
+    amount : Icrc1Tokens;
   };
   public type TransferArgs = {
-    to : Blob;
+    to : AccountIdentifier;
     fee : Tokens;
-    memo : Nat64;
-    from_subaccount : ?Blob;
+    memo : Memo;
+    from_subaccount : ?SubAccount;
     created_at_time : ?TimeStamp;
     amount : Tokens;
   };
   public type TransferError = {
-    #GenericError : { message : Text; error_code : Nat };
-    #TemporarilyUnavailable;
-    #BadBurn : { min_burn_amount : Nat };
-    #Duplicate : { duplicate_of : Nat };
-    #BadFee : { expected_fee : Nat };
-    #CreatedInFuture : { ledger_time : Nat64 };
-    #TooOld;
-    #InsufficientFunds : { balance : Nat };
-  };
-  public type TransferError_1 = {
     #TxTooOld : { allowed_window_nanos : Nat64 };
     #BadFee : { expected_fee : Tokens };
-    #TxDuplicate : { duplicate_of : Nat64 };
+    #TxDuplicate : { duplicate_of : BlockIndex };
     #TxCreatedInFuture;
     #InsufficientFunds : { balance : Tokens };
   };
   public type TransferFee = { transfer_fee : Tokens };
+  public type TransferFeeArg = {};
   public type TransferFromArgs = {
     to : Account;
-    fee : ?Nat;
-    spender_subaccount : ?Blob;
+    fee : ?Icrc1Tokens;
+    spender_subaccount : ?SubAccount;
     from : Account;
     memo : ?Blob;
-    created_at_time : ?Nat64;
-    amount : Nat;
+    created_at_time : ?Icrc1Timestamp;
+    amount : Icrc1Tokens;
   };
   public type TransferFromError = {
     #GenericError : { message : Text; error_code : Nat };
     #TemporarilyUnavailable;
-    #InsufficientAllowance : { allowance : Nat };
-    #BadBurn : { min_burn_amount : Nat };
-    #Duplicate : { duplicate_of : Nat };
-    #BadFee : { expected_fee : Nat };
-    #CreatedInFuture : { ledger_time : Nat64 };
+    #InsufficientAllowance : { allowance : Icrc1Tokens };
+    #BadBurn : { min_burn_amount : Icrc1Tokens };
+    #Duplicate : { duplicate_of : Icrc1BlockIndex };
+    #BadFee : { expected_fee : Icrc1Tokens };
+    #CreatedInFuture : { ledger_time : Icrc1Timestamp };
     #TooOld;
-    #InsufficientFunds : { balance : Nat };
+    #InsufficientFunds : { balance : Icrc1Tokens };
   };
+  public type TransferFromResult = {
+    #Ok : Icrc1BlockIndex;
+    #Err : TransferFromError;
+  };
+  public type TransferResult = { #Ok : BlockIndex; #Err : TransferError };
   public type UpgradeArgs = {
     maximum_number_of_accounts : ?Nat64;
     icrc1_minting_account : ?Account;
     feature_flags : ?FeatureFlags;
   };
+  public type Value = { #Int : Int; #Nat : Nat; #Blob : Blob; #Text : Text };
   public type Self = actor {
-    account_balance : shared query BinaryAccountBalanceArgs -> async Tokens;
-    account_balance_dfx : shared query AccountBalanceArgs -> async Tokens;
-    account_identifier : shared query Account -> async Blob;
+    account_balance : shared query AccountBalanceArgs -> async Tokens;
+    account_balance_dfx : shared query AccountBalanceArgsDfx -> async Tokens;
+    account_identifier : shared query Account -> async AccountIdentifier;
     archives : shared query () -> async Archives;
-    decimals : shared query () -> async Decimals;
-    icrc1_balance_of : shared query Account -> async Nat;
+    decimals : shared query () -> async { decimals : Nat32 };
+    icrc1_balance_of : shared query Account -> async Icrc1Tokens;
     icrc1_decimals : shared query () -> async Nat8;
-    icrc1_fee : shared query () -> async Nat;
-    icrc1_metadata : shared query () -> async [(Text, MetadataValue)];
+    icrc1_fee : shared query () -> async Icrc1Tokens;
+    icrc1_metadata : shared query () -> async [(Text, Value)];
     icrc1_minting_account : shared query () -> async ?Account;
     icrc1_name : shared query () -> async Text;
-    icrc1_supported_standards : shared query () -> async [StandardRecord];
+    icrc1_supported_standards : shared query () -> async [
+        { url : Text; name : Text }
+      ];
     icrc1_symbol : shared query () -> async Text;
-    icrc1_total_supply : shared query () -> async Nat;
-    icrc1_transfer : shared TransferArg -> async Result;
+    icrc1_total_supply : shared query () -> async Icrc1Tokens;
+    icrc1_transfer : shared TransferArg -> async Icrc1TransferResult;
     icrc2_allowance : shared query AllowanceArgs -> async Allowance;
-    icrc2_approve : shared ApproveArgs -> async Result_1;
-    icrc2_transfer_from : shared TransferFromArgs -> async Result_2;
-    name : shared query () -> async Name;
+    icrc2_approve : shared ApproveArgs -> async ApproveResult;
+    icrc2_transfer_from : shared TransferFromArgs -> async TransferFromResult;
+    name : shared query () -> async { name : Text };
     query_blocks : shared query GetBlocksArgs -> async QueryBlocksResponse;
     query_encoded_blocks : shared query GetBlocksArgs -> async QueryEncodedBlocksResponse;
-    send_dfx : shared SendArgs -> async Nat64;
-    symbol : shared query () -> async Symbol;
-    transfer : shared TransferArgs -> async Result_5;
-    transfer_fee : shared query {} -> async TransferFee;
+    send_dfx : shared SendArgs -> async BlockIndex;
+    symbol : shared query () -> async { symbol : Text };
+    transfer : shared TransferArgs -> async TransferResult;
+    transfer_fee : shared query TransferFeeArg -> async TransferFee;
   }
 }

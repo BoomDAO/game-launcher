@@ -17,7 +17,8 @@ import {
     StateTypes
 } from "../../types/dialogTypes";
 import TransferPage from "./TransferPage";
-import Wallet from "./Wallet";
+import Wallet from "./";
+import NftTransferPage from "./NftTransferPage";
 
 const WalletTransfer = () => {
     const { t } = useTranslation();
@@ -54,11 +55,11 @@ const WalletTransfer = () => {
       };
     
       const [state, setState] = React.useState<StateTypes>({
-        component: <TransferPage />,
+        component: <NftTransferPage />,
         isOpen: true,
         title: "",
         okText: "Ok",
-        cancelText: "Cancel",
+        cancelText: "Close",
         width: "md",
         okCallback: close,
         cancelCallback: close,

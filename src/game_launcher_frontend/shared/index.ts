@@ -23,7 +23,8 @@ export const navPaths = {
   gaming_guilds_phone_verification: "/gaming-guilds/verify-phone",
   profile: "/profile",
   wallet: "/wallet",
-  transfer: "/wallet/transfer"
+  transfer: "/wallet/transfer",
+  nftTransfer: "/wallet/transfer/nft"
 };
 
 export const platform_types: SelectOption[] = [

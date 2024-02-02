@@ -34,6 +34,11 @@ module {
     #InsufficientFunds : { balance : Nat };
   };
   public type ApproveResult = { #Ok : BlockIndex; #Err : ApproveError };
+  public type ArchiveInfo = {
+    block_range_end : BlockIndex;
+    canister_id : Principal;
+    block_range_start : BlockIndex;
+  };
   public type Block = Value;
   public type BlockIndex = Nat;
   public type BlockRange = { blocks : [Block] };
@@ -204,6 +209,7 @@ module {
     #Array : [Value];
   };
   public type Self = actor {
+    archives : shared query () -> async [ArchiveInfo];
     get_blocks : shared query GetBlocksArgs -> async GetBlocksResponse;
     get_data_certificate : shared query () -> async DataCertificate;
     get_transactions : shared query GetTransactionsRequest -> async GetTransactionsResponse;

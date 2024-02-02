@@ -133,7 +133,6 @@ module {
             actionExpirationTimestamp : ?Nat;
         };
         entityConstraint : [TConstraints.EntityConstraint];
-        icpConstraint: ? TConstraints.IcpTx;
         icrcConstraint: [TConstraints.IcrcTx];
         nftConstraint: [TConstraints.NftTx];
     };

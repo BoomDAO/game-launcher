@@ -12,11 +12,6 @@ module{
         metadata : ?Text;
     };
 
-    public type IcpTx = {
-        amount : Float;
-        toPrincipal : Text;
-    };
-
     public type IcrcTx = {
         amount : Float;
         toPrincipal : Text;
