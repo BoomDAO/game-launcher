@@ -354,7 +354,8 @@ export const useGamingGuildsClient = async () => {
       getAllUserEntities: "getAllUserEntities",
       validateEntityConstraints: "validateEntityConstraints",
       processAction: "processAction",
-      validateConstraints: "validateConstraints"
+      validateConstraints: "validateConstraints",
+      getAllUserActionStates: "getAllUserActionStates"
     },
   };
 };
@@ -373,7 +374,8 @@ export const useGamingGuildsWorldNodeClient = async () => {
     methods: {
       getAllUserEntities: "getAllUserEntities",
       getSpecificUserEntities: "getSpecificUserEntities",
-      getAllUserEntitiesOfSpecificWorlds: "getAllUserEntitiesOfSpecificWorlds"
+      getAllUserEntitiesOfSpecificWorlds: "getAllUserEntitiesOfSpecificWorlds",
+      getAllUserActionStates: "getAllUserActionStates"
     },
   };
 };

@@ -61,6 +61,8 @@ import TConstraints "../types/constraints.types";
 import V1TGlobal "../migrations/v1.global.types";
 import V1TEntity "../migrations/v1.entity.types";
 import V1TAction "../migrations/v1.action.types";
+import V2TEntity "../migrations/v2.entity.types";
+import V2TAction "../migrations/v2.action.types";
 
 actor class WorldTemplate(owner : Principal) = this {
 
@@ -78,9 +80,13 @@ actor class WorldTemplate(owner : Principal) = this {
     private stable var _admins : [Text] = [Principal.toText(owner)];
 
     //Configs
-    // empty stable memory used for migration
+    // empty stable memory used for migration - (used in preupgrade currently)
     private stable var v1configsStorage : Trie.Trie<Text, V1TEntity.Config> = Trie.empty();
     private stable var v1actionsStorage : Trie.Trie<Text, V1TAction.Action> = Trie.empty();
+
+    // empty stable memory used for migration - (for future migration)
+    private stable var v2configsStorage : Trie.Trie<Text, V2TEntity.Config> = Trie.empty();
+    private stable var v2actionsStorage : Trie.Trie<Text, V2TAction.Action> = Trie.empty();
 
     // active data of stable memory
     private stable var configsStorage : Trie.Trie<Text, TEntity.Config> = Trie.empty();
@@ -94,6 +100,9 @@ actor class WorldTemplate(owner : Principal) = this {
 
     let { ihash; nhash; thash; phash; calcHash } = Map;
 
+    let worldHub : WorldHub = actor (ENV.WorldHubCanisterId);
+    let ICP_Ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);
+
     //# INTERFACES
     type UserNode = actor {
         createEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId, fields : [TGlobal.Field]) -> async (Result.Result<Text, Text>);
@@ -101,23 +110,24 @@ actor class WorldTemplate(owner : Principal) = this {
         deleteEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId) -> async (Result.Result<Text, Text>);
         applyOutcomes : shared (uid : TGlobal.userId, actionState : TAction.ActionState, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<(), Text>);
         getAllUserEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
+        getAllUserEntitiesComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
         getAllUserActionStates : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.ActionState], Text>);
         getActionState : query (uid : TGlobal.userId, wid : TGlobal.worldId, aid : TGlobal.actionId) -> async (?TAction.ActionState);
         getEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId) -> async (TEntity.StableEntity);
         getAllUserEntitiesOfSpecificWorlds : shared (uid : TGlobal.userId, wids : [TGlobal.worldId], page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
+        getActionHistory : query (uid : TGlobal.userId) -> async ([TAction.ActionOutcomeHistory]);
+        getActionHistoryComposite : composite query (uid : TGlobal.userId) -> async ([TAction.ActionOutcomeHistory]);
     };
     type WorldHub = actor {
         createNewUser : shared (Principal) -> async (Result.Result<Text, Text>);
         getUserNodeCanisterId : shared (Text) -> async (Result.Result<Text, Text>);
+        getUserNodeCanisterIdComposite : composite query (Text) -> async (Result.Result<Text, Text>);
 
         grantEntityPermission : shared (TEntity.EntityPermission) -> async ();
         removeEntityPermission : shared (TEntity.EntityPermission) -> async ();
         grantGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
         removeGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
     };
-
-    let worldHub : WorldHub = actor (ENV.WorldHubCanisterId);
-    let ICP_Ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);
     type NFT = actor {
         ext_mint : ([(EXT.AccountIdentifier, EXT.Metadata)]) -> async [EXT.TokenIndex];
     };
@@ -135,11 +145,241 @@ actor class WorldTemplate(owner : Principal) = this {
     //# UPGRADE FUNCTIONS
 
     system func preupgrade() {
-        v1configsStorage := configsStorage;
-        v1actionsStorage := actionsStorage;
+        v2configsStorage := configsStorage;
+        v2actionsStorage := actionsStorage;
     };
     system func postupgrade() {
+        for ((id, action) in Trie.iter(v1actionsStorage)) {
+            var callerAction_outcomes = Buffer.Buffer<TAction.ActionOutcome>(0);
+            var targetAction_outcomes = Buffer.Buffer<TAction.ActionOutcome>(0);
+            var worldAction_outcomes = Buffer.Buffer<TAction.ActionOutcome>(0);
+            var caller_constraints : ?TAction.ActionConstraint = null;
+            var target_constraints : ?TAction.ActionConstraint = null;
+            var world_constraints : ?TAction.ActionConstraint = null;
+            switch (action.callerAction) {
+                case (?a) {
+                    for (i in a.actionResult.outcomes.vals()) {
+                        var new_outcome_options = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
+                        var new_outcome_option : TAction.ActionOutcomeOption = {
+                            weight = 0.0;
+                            option = #transferIcrc({
+                                quantity = 0.0;
+                                canister = "";
+                            });
+                        };
+                        for (j in i.possibleOutcomes.vals()) {
+                            new_outcome_option := {
+                                weight = j.weight;
+                                option = j.option;
+                            };
+                            new_outcome_options.add(new_outcome_option);
+                        };
 
+                        callerAction_outcomes.add({
+                            possibleOutcomes = Buffer.toArray(new_outcome_options);
+                        });
+                    };
+
+                    switch (a.actionConstraint) {
+                        case (?ac) {
+                            switch (ac.timeConstraint) {
+                                case (?tc) {
+                                    caller_constraints := ?{
+                                        timeConstraint = ?{
+                                            actionTimeInterval = tc.actionTimeInterval;
+                                            actionStartTimestamp = null;
+                                            actionExpirationTimestamp = tc.actionExpirationTimestamp;
+                                            actionHistory = [];
+                                        };
+                                        entityConstraint = ac.entityConstraint;
+                                        icrcConstraint = ac.icrcConstraint;
+                                        nftConstraint = ac.nftConstraint;
+                                    };
+                                };
+                                case _ {
+                                    caller_constraints := ?{
+                                        timeConstraint = null;
+                                        entityConstraint = ac.entityConstraint;
+                                        icrcConstraint = ac.icrcConstraint;
+                                        nftConstraint = ac.nftConstraint;
+                                    };
+                                };
+                            };
+                        };
+                        case _ {};
+                    };
+                };
+                case _ {};
+            };
+            switch (action.targetAction) {
+                case (?a) {
+                    for (i in a.actionResult.outcomes.vals()) {
+                        var new_outcome_options = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
+                        var new_outcome_option : TAction.ActionOutcomeOption = {
+                            weight = 0.0;
+                            option = #transferIcrc({
+                                quantity = 0.0;
+                                canister = "";
+                            });
+                        };
+                        for (j in i.possibleOutcomes.vals()) {
+                            new_outcome_option := {
+                                weight = j.weight;
+                                option = j.option;
+                            };
+                            new_outcome_options.add(new_outcome_option);
+                        };
+
+                        targetAction_outcomes.add({
+                            possibleOutcomes = Buffer.toArray(new_outcome_options);
+                        });
+                    };
+
+                    switch (a.actionConstraint) {
+                        case (?ac) {
+                            switch (ac.timeConstraint) {
+                                case (?tc) {
+                                    target_constraints := ?{
+                                        timeConstraint = ?{
+                                            actionTimeInterval = tc.actionTimeInterval;
+                                            actionStartTimestamp = null;
+                                            actionExpirationTimestamp = tc.actionExpirationTimestamp;
+                                            actionHistory = [];
+                                        };
+                                        entityConstraint = ac.entityConstraint;
+                                        icrcConstraint = ac.icrcConstraint;
+                                        nftConstraint = ac.nftConstraint;
+                                    };
+                                };
+                                case _ {
+                                    target_constraints := ?{
+                                        timeConstraint = null;
+                                        entityConstraint = ac.entityConstraint;
+                                        icrcConstraint = ac.icrcConstraint;
+                                        nftConstraint = ac.nftConstraint;
+                                    };
+                                };
+                            };
+                        };
+                        case _ {};
+                    };
+                };
+                case _ {};
+            };
+            switch (action.worldAction) {
+                case (?a) {
+                    for (i in a.actionResult.outcomes.vals()) {
+                        var new_outcome_options = Buffer.Buffer<TAction.ActionOutcomeOption>(0);
+                        var new_outcome_option : TAction.ActionOutcomeOption = {
+                            weight = 0.0;
+                            option = #transferIcrc({
+                                quantity = 0.0;
+                                canister = "";
+                            });
+                        };
+                        for (j in i.possibleOutcomes.vals()) {
+                            new_outcome_option := {
+                                weight = j.weight;
+                                option = j.option;
+                            };
+                            new_outcome_options.add(new_outcome_option);
+                        };
+
+                        worldAction_outcomes.add({
+                            possibleOutcomes = Buffer.toArray(new_outcome_options);
+                        });
+                    };
+
+                    switch (a.actionConstraint) {
+                        case (?ac) {
+                            switch (ac.timeConstraint) {
+                                case (?tc) {
+                                    world_constraints := ?{
+                                        timeConstraint = ?{
+                                            actionTimeInterval = tc.actionTimeInterval;
+                                            actionStartTimestamp = null;
+                                            actionExpirationTimestamp = tc.actionExpirationTimestamp;
+                                            actionHistory = [];
+                                        };
+                                        entityConstraint = ac.entityConstraint;
+                                        icrcConstraint = ac.icrcConstraint;
+                                        nftConstraint = ac.nftConstraint;
+                                    };
+                                };
+                                case _ {
+                                    world_constraints := ?{
+                                        timeConstraint = null;
+                                        entityConstraint = ac.entityConstraint;
+                                        icrcConstraint = ac.icrcConstraint;
+                                        nftConstraint = ac.nftConstraint;
+                                    };
+                                };
+                            };
+                        };
+                        case _ {};
+                    };
+                };
+                case _ {};
+            };
+
+            var new_action : TAction.Action = {
+                aid = id;
+                callerAction = null;
+                targetAction = null;
+                worldAction = null;
+            };
+            switch (action.callerAction) {
+                case (?val) {
+                    new_action := {
+                        aid = id;
+                        callerAction = ?{
+                            actionConstraint = caller_constraints;
+                            actionResult = {
+                                outcomes = Buffer.toArray(callerAction_outcomes);
+                            };
+                        };
+                        targetAction = null;
+                        worldAction = null;
+                    };
+                };
+                case _ {};
+            };
+            switch (action.targetAction) {
+                case (?val) {
+                    new_action := {
+                        aid = id;
+                        callerAction = new_action.callerAction;
+                        targetAction = ?{
+                            actionConstraint = target_constraints;
+                            actionResult = {
+                                outcomes = Buffer.toArray(targetAction_outcomes);
+                            };
+                        };
+                        worldAction = null;
+                    };
+                };
+                case _ {};
+            };
+            switch (action.worldAction) {
+                case (?val) {
+                    new_action := {
+                        aid = id;
+                        callerAction = new_action.callerAction;
+                        targetAction = new_action.targetAction;
+                        worldAction = ?{
+                            actionConstraint = world_constraints;
+                            actionResult = {
+                                outcomes = Buffer.toArray(worldAction_outcomes);
+                            };
+                        };
+                    };
+                };
+                case _ {};
+            };
+            actionsStorage := Trie.put(actionsStorage, Utils.keyT(id), Text.equal, new_action).0;
+        };
+        v1actionsStorage := Trie.empty();
+        v1configsStorage := Trie.empty();
     };
 
     private func worldPrincipalId() : Text {
@@ -500,6 +740,42 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
 
+    public composite query func getAllUserEntitiesComposite(args : { uid : Text; page : ?Nat }) : async (Result.Result<[TEntity.StableEntity], Text>) {
+        switch (await worldHub.getUserNodeCanisterIdComposite(args.uid)) {
+            case (#ok(userNodeId)) {
+                let userNode : UserNode = actor (userNodeId);
+                return await userNode.getAllUserEntitiesComposite(args.uid, worldPrincipalId(), args.page);
+            };
+            case (#err(errMsg)) {
+                return #err(errMsg);
+            };
+        };
+    };
+
+    public func getActionHistory(args : { uid : TGlobal.userId }) : async (Result.Result<[TAction.ActionOutcomeHistory], Text>) {
+        switch (await getUserNode_(args.uid)) {
+            case (#ok(userNodeId)) {
+                let userNode : UserNode = actor (userNodeId);
+                return #ok(await userNode.getActionHistory(args.uid));
+            };
+            case (#err(errMsg)) {
+                return #err(errMsg);
+            };
+        };
+    };
+
+    public composite query func getActionHistoryComposite(args : { uid : TGlobal.userId }) : async (Result.Result<[TAction.ActionOutcomeHistory], Text>) {
+        switch (await worldHub.getUserNodeCanisterIdComposite(args.uid)) {
+            case (#ok(userNodeId)) {
+                let userNode : UserNode = actor (userNodeId);
+                return #ok(await userNode.getActionHistoryComposite(args.uid));
+            };
+            case (#err(errMsg)) {
+                return #err(errMsg);
+            };
+        };
+    };
+
     private func getEntity_(entities : [TEntity.StableEntity], wid : TGlobal.worldId, eid : TGlobal.entityId) : (?TEntity.StableEntity) {
         for (entity in entities.vals()) {
 
@@ -800,7 +1076,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -819,7 +1095,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if (update.fieldName != _fieldName) {
+                                        refinedUpdateEntityTypes.add(
+                                            #setNumber {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
 
                         };
@@ -828,7 +1115,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -848,7 +1135,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if (update.fieldName != _fieldName) {
+                                        refinedUpdateEntityTypes.add(
+                                            #decrementNumber {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
 
                         };
@@ -857,7 +1155,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -877,7 +1175,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if (update.fieldName != _fieldName) {
+                                        refinedUpdateEntityTypes.add(
+                                            #incrementNumber {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
 
                         };
@@ -886,7 +1195,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             switch (update.fieldValue) {
                                 case (#formula formula) {
@@ -906,7 +1215,18 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     continue updateTypes;
                                 };
-                                case (_) {};
+                                case (_) {
+
+                                    if (update.fieldName != _fieldName) {
+                                        refinedUpdateEntityTypes.add(
+                                            #renewTimestamp {
+                                                fieldName = _fieldName;
+                                                fieldValue = update.fieldValue;
+                                            }
+                                        );
+                                        continue updateTypes;
+                                    };
+                                };
                             };
                         };
                         case (#setText update) {
@@ -914,7 +1234,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             if (Text.contains(update.fieldValue, #text "$caller")) {
 
@@ -959,6 +1279,17 @@ actor class WorldTemplate(owner : Principal) = this {
                                 } else {
                                     return #err("you need an action argument whose pattern must be #args.fieldName");
                                 };
+                            } else {
+
+                                if (update.fieldName != _fieldName) {
+                                    refinedUpdateEntityTypes.add(
+                                        #setText {
+                                            fieldName = _fieldName;
+                                            fieldValue = update.fieldValue;
+                                        }
+                                    );
+                                    continue updateTypes;
+                                };
                             };
                         };
                         case (#addToList update) {
@@ -966,7 +1297,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             if (Text.contains(update.value, #text "$caller")) {
 
@@ -1012,6 +1343,17 @@ actor class WorldTemplate(owner : Principal) = this {
                                 } else {
                                     return #err("you need an action argument whose pattern must be #args.fieldName");
                                 };
+                            } else {
+
+                                if (update.fieldName != _fieldName) {
+                                    refinedUpdateEntityTypes.add(
+                                        #addToList {
+                                            fieldName = _fieldName;
+                                            value = update.value;
+                                        }
+                                    );
+                                    continue updateTypes;
+                                };
                             };
                         };
                         case (#removeFromList update) {
@@ -1019,7 +1361,7 @@ actor class WorldTemplate(owner : Principal) = this {
                             var _fieldName = update.fieldName;
                             if (Text.contains(_fieldName, #text "$caller")) {
                                 _fieldName := caller;
-                            } else if (Text.contains(_fieldName, #text "$caller")) _fieldName := target;
+                            } else if (Text.contains(_fieldName, #text "$target")) _fieldName := target;
 
                             if (Text.contains(update.value, #text "$caller")) {
 
@@ -1063,6 +1405,17 @@ actor class WorldTemplate(owner : Principal) = this {
                                     };
                                 } else {
                                     return #err("you need an action argument whose pattern must be #args.fieldName");
+                                };
+                            } else {
+
+                                if (update.fieldName != _fieldName) {
+                                    refinedUpdateEntityTypes.add(
+                                        #removeFromList {
+                                            fieldName = _fieldName;
+                                            value = update.value;
+                                        }
+                                    );
+                                    continue updateTypes;
                                 };
                             };
                         };
@@ -1237,7 +1590,7 @@ actor class WorldTemplate(owner : Principal) = this {
         switch (op) {
             case (?op) {
                 switch (op) {
-                    case (#Transfer { to; fee; from; amount; spender; }) {
+                    case (#Transfer { to; fee; from; amount; spender }) {
                         if (Hex.encode(Blob.toArray(to)) == toAccountId and Hex.encode(Blob.toArray(from)) == fromAccountId and amount == amt) {
                             _icp_blocks := Trie.put(_icp_blocks, Utils.keyT(Nat64.toText(block_index)), Text.equal, "").0;
                             return #ok("verified!");
@@ -1620,6 +1973,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
         return #ok();
     };
+
     private func validateConstraints_(entities : [TEntity.StableEntity], uid : TGlobal.userId, aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint, currentUserActionState : ?TAction.ActionState) : async (Result.Result<TAction.ActionState, Text>) {
 
         var _intervalStartTs : Nat = 0;
@@ -1639,19 +1993,17 @@ actor class WorldTemplate(owner : Principal) = this {
             case (?constraints) {
 
                 //TIME CONSTRAINT
+                var last_action_time : Nat = _intervalStartTs; // For history outcome validation
                 switch (constraints.timeConstraint) {
                     case (?t) {
-
                         switch (t.actionExpirationTimestamp) {
                             case (?actionExpirationTimestamp) {
                                 if (actionExpirationTimestamp < Time.now()) return #err("action is expired!");
                             };
                             case _ {};
                         };
-
                         switch (t.actionTimeInterval) {
                             case (?actionTimeInterval) {
-
                                 //intervalDuration is expected example (24hrs in nanoseconds)
                                 if (actionTimeInterval.actionsPerInterval == 0) {
                                     return #err("actionsPerInterval limit is set to 0 so the action cannot be done");
@@ -1667,19 +2019,89 @@ actor class WorldTemplate(owner : Principal) = this {
                                     return #err("actionCount has already reached actionsPerInterval limit for this time interval");
                                 };
 
+                                if (last_action_time == 0) {
+                                    last_action_time := Int.abs(Time.now()) - actionTimeInterval.intervalDuration;
+                                };
                             };
                             case _ {};
+                        };
+
+                        // checking actions history for validation
+                        var old_outcomes : [TAction.ActionOutcomeHistory] = [];
+                        switch (await getUserNode_(uid)) {
+                            case (#ok(nodeId)) {
+                                let node : UserNode = actor (nodeId);
+                                old_outcomes := await node.getActionHistory(uid);
+                            };
+                            case (#err errMsg) {
+                                return return #err(errMsg);
+                            };
+                        };
+                        for (expected in t.actionHistory.vals()) {
+                            switch (expected) {
+                                case (#updateEntity outcome) {
+                                    let _entityId = outcome.eid;
+                                    var _fieldName = "";
+                                    for (update in outcome.updates.vals()) {
+                                        switch (update) {
+                                            case (#incrementNumber iv) {
+                                                _fieldName := iv.fieldName;
+                                                // Query history outcomes and validate
+                                                var updated_value : Float = 0.0;
+                                                for (i in old_outcomes.vals()) {
+                                                    if (i.appliedAt >= last_action_time) {
+                                                        switch (i.option) {
+                                                            case (#updateEntity old_outcome) {
+                                                                if (old_outcome.eid == _entityId) {
+                                                                    for (old_update in old_outcome.updates.vals()) {
+                                                                        switch (old_update) {
+                                                                            case (#incrementNumber val) {
+                                                                                if (val.fieldName == _fieldName) {
+                                                                                    switch (val.fieldValue) {
+                                                                                        case (#number n) {
+                                                                                            updated_value := updated_value + n;
+                                                                                        };
+                                                                                        case (#formula _) {};
+                                                                                    };
+                                                                                };
+                                                                            };
+                                                                            case _ {};
+                                                                        };
+                                                                    };
+                                                                };
+                                                            };
+                                                            case _ {};
+                                                        };
+                                                    };
+                                                };
+                                                // check
+                                                switch (iv.fieldValue) {
+                                                    case (#number n) {
+                                                        if (n < updated_value) {
+                                                            return #err("actionHistory constraints failed to get validated");
+                                                        };
+                                                    };
+                                                    case _ {};
+                                                };
+                                            };
+                                            case _ {};
+                                        };
+                                    };
+                                };
+                                case _ {}; // other action history will be handled later
+                            };
                         };
                     };
                     case _ {};
                 };
+
                 //ENTITY CONSTRAINTS
                 switch (validateEntityConstraints_(uid, entities, constraints.entityConstraint)) {
                     case (#err(errMsg)) return #err(errMsg);
                     case _ {};
                 };
 
-                //Validating ICRC token txs
+                //ICRC CONSTRAINTS
                 let icrcTxs = constraints.icrcConstraint;
                 if (icrcTxs.size() != 0) {
                     var from_ : ICRC.Account = {
@@ -1767,7 +2189,7 @@ actor class WorldTemplate(owner : Principal) = this {
                     };
                 };
 
-                //Validating NFT Tx
+                //NFT CONSTRAINTS
                 let nftTx = constraints.nftConstraint;
                 if (nftTx.size() != 0) {
                     for (tx in nftTx.vals()) {
@@ -2894,10 +3316,13 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
 
-    public shared ({caller}) func validateConstraints(uid : Text, entities : [TEntity.StableEntity], aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint) : async ({aid : Text; status : Bool}) {
+    public shared ({ caller }) func validateConstraints(uid : Text, entities : [TEntity.StableEntity], aid : TGlobal.actionId, actionConstraint : ?TAction.ActionConstraint) : async ({
+        aid : Text;
+        status : Bool;
+    }) {
         switch (await validateConstraints_(entities, uid, aid, actionConstraint, null)) {
-            case (#err(errMsg)) return {aid = aid; status = false;};
-            case _ return {aid = aid; status = true;};
+            case (#err(errMsg)) return { aid = aid; status = false };
+            case _ return { aid = aid; status = true };
         };
     };
 

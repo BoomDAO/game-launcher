@@ -16,9 +16,7 @@ const Token = () => {
   const { t } = useTranslation();
 
   const tabItems = [
-    { id: 1, name: t("token_deployer.token.tabs.item_1") },
-    { id: 2, name: t("token_deployer.token.tabs.item_2") },
-    { id: 3, name: t("world_deployer.manage_worlds.tabs.item_5.title") }
+    { id: 1, name: t("token_deployer.token.tabs.item_1") }
   ];
 
   return (
@@ -34,7 +32,7 @@ const Token = () => {
           <Transfer/>
         </div>
       )}
-      {activeTab === 2 && (
+      {/* {activeTab === 2 && (
         <div className="w-full space-y-12">
           < AllowTransfer />
           <Divider/>
@@ -47,7 +45,7 @@ const Token = () => {
           <Divider/>
           <TrustedOrigins/>
         </div>
-      )}
+      )} */}
     </>
   );
 };

@@ -50,7 +50,7 @@ const WalletTransfer = () => {
     
       const close = (): void => {
         setState({ isOpen: false });
-        navigate(navPaths.wallet);
+        navigate(navPaths.wallet_tokens);
       };
     
       const [state, setState] = React.useState<StateTypes>({
@@ -71,7 +71,7 @@ const WalletTransfer = () => {
     return (
         <>
             <DialogProvider state={state}>
-                <Wallet/>
+                <Wallet activeTab="Tokens"/>
             </DialogProvider>
         </>
     );

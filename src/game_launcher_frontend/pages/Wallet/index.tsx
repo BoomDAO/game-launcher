@@ -9,17 +9,18 @@ import SubHeading from "@/components/ui/SubHeading";
 import { useGetUserProfileDetail } from "@/api/profile";
 import Token from "./Token";
 import Nft from "./Nft";
+import { navPaths } from "@/shared";
 
-const Wallet = () => {
+const Wallet = (props: {activeTab : string}) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = React.useState(1);
+    const [activeTab, setActiveTab] = React.useState((props.activeTab == "Tokens")? 1 : 2);
 
     const { data: userProfile } = useGetUserProfileDetail();
 
     const tabItems = [
-        { id: 1, name: t("wallet.tab_1.title") },
-        { id: 2, name: t("wallet.tab_2.title") },
+        { id: 1, name: t("wallet.tab_1.title"), url: navPaths.wallet_tokens },
+        { id: 2, name: t("wallet.tab_2.title"), url: navPaths.wallet_nfts },
       ];
 
     return (

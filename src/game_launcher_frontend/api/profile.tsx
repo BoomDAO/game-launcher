@@ -42,11 +42,11 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
             };
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
             const worldHub = await useWorldHubClient();
-            let XPEntity = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["xp"]) as { ok: [StableEntity]; err: string | undefined; };
-            if (XPEntity.err == undefined) {
-                let fields = XPEntity.ok[0].fields;
+            let UserEntity = await actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, [current_user_principal]) as { ok: [StableEntity]; err: string | undefined; };
+            if (UserEntity.err == undefined) {
+                let fields = UserEntity.ok[0].fields;
                 for (let i = 0; i < fields.length; i += 1) {
-                    if (fields[i].fieldName == "quantity") {
+                    if (fields[i].fieldName == "xp_leaderboard") {
                         response.xp = (((fields[i].fieldValue).split("."))[0]).toString();
                     }
                 };
@@ -185,8 +185,8 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
                         if (_nfts.length > 0) {
                             entry.balance = _nfts.length.toString();
                             entry.nfts = _nfts;
-                            res.push(entry);
                         };
+                        res.push(entry);
                     };
                     return _registries;
                 }
@@ -215,7 +215,6 @@ export const useNftTransfer = () => {
             tokenid?: string;
         }) => {
             try {
-                console.log("iosdufkh");
                 const { actor, methods } = await useExtClient((canisterId != undefined) ? canisterId : "");
                 const current_user_principal = (session?.address) ? (session?.address) : "";
                 let req = {
@@ -231,9 +230,7 @@ export const useNftTransfer = () => {
                     subaccount: [],
                     amount: 1,
                 };
-                console.log(req);
                 let res = await actor[methods.transfer](req);
-                console.log(res);
                 return res;
             } catch (error) {
                 if (error instanceof Error) {

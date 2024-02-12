@@ -111,7 +111,7 @@ export const useCreateTokenData = () =>
         mutationFn: async (payload: CreateTokenData) => {
             try {
                 const { actor, methods } = await useTokenDeployerClient();
-                const _decimals = parseInt(payload.decimals);
+                const _decimals = 8;
                 const _amount = payload.amount
                     ? BigInt(parseInt(payload.amount) * Math.pow(10, _decimals))
                     : BigInt(0);
@@ -125,6 +125,7 @@ export const useCreateTokenData = () =>
                     _decimals,
                     _fee
                 )) as string;
+                console.log(canisterId);
                 return canisterId;
             } catch (error) {
                 if (error instanceof Error) {
@@ -143,13 +144,13 @@ export const useCreateTokenUpload = () => {
 
     return useMutation({
         mutationFn: async (payload: CreateTokenSubmit) => {
-            const { name, symbol, description, logo, decimals, fee, amount } = payload.values;
+            const { name, symbol, description, logo, fee, amount } = payload.values;
 
             let canister_id = payload.canisterId;
 
             if (!canister_id) {
                 canister_id = await payload.mutateData(
-                    { description, name, logo, symbol, fee, amount, decimals },
+                    { description, name, logo, symbol, fee, amount },
                     {
                         onError: (err) => {
                             console.log("err", err);
@@ -157,7 +158,7 @@ export const useCreateTokenUpload = () => {
                     },
                 );
             }
-
+            console.log(canister_id);
             return canister_id;
         },
         onSuccess: () => {

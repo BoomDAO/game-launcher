@@ -84,7 +84,9 @@ const VerifyOtpPage = () => {
                     navigate(navPaths.gaming_guilds);
                     location.reload();
                 },
-                onError: () => { }
+                onError: () => {
+                    document.getElementById("button").className = "gradient-bg gap-2 px-12 py-4 text-base md:text-lg flex w-fit items-center rounded-primary uppercase text-white";
+                }
             },
         );
     };
@@ -98,9 +100,14 @@ const VerifyOtpPage = () => {
                     name="otp"
                     placeholder={t("verification.otp_input",)}
                 />
-                <Button size="big" className="cursor-pointer" rightArrow isLoading={isLoadingVerifyEmail}>
-                    {t("verification.otp_button")}
-                </Button>
+                <button id="button"
+                    className="gradient-bg gap-2 px-12 py-4 text-base md:text-lg flex w-fit items-center rounded-primary uppercase text-white"
+                    onClick={
+                        () => {
+                            document.getElementById("button").className = "hidden"
+                        }
+                    }
+                >{t("verification.otp_button")}</button>
             </Form>
         </div>,
         isOpen: true,

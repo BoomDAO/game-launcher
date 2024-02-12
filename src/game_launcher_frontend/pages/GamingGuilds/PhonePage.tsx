@@ -57,7 +57,10 @@ const PhonePage = () => {
                     className="dark:border-gray-600"
                     control={submitPhoneControl}
                     name="phone"
-                    placeholder={t("verification.input_placeholder_phone",)}
+                    hint={{
+                        body: t("verification.input_phone_hint")
+                    }}
+                    placeholder={t("verification.input_placeholder_phone")}
                 />
 
                 <Button size="big" rightArrow isLoading={isLoadingSubmitPhone}>

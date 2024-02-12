@@ -22,7 +22,8 @@ export const navPaths = {
   gaming_guilds_email_verification: "/gaming-guilds/verify-email",
   gaming_guilds_phone_verification: "/gaming-guilds/verify-phone",
   profile: "/profile",
-  wallet: "/wallet",
+  wallet_tokens: "/wallet/tokens",
+  wallet_nfts: "/wallet/nfts",
   transfer: "/wallet/transfer",
   nftTransfer: "/wallet/transfer/nft"
 };
@@ -70,7 +71,6 @@ export const tokenDataScheme = {
   description: z.string().min(1, { message: "Description is required." }),
   amount: z.string().min(1, {message: "Amount is required."}),
   logo: z.string().min(1, {message: "Logo is required."}),
-  decimals: z.string().min(1, {message: "Token Decimals is required."}),
   fee: z.string().min(1, {message: "Tx Fee is required."}),
 };
 

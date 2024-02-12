@@ -12,7 +12,7 @@ import {
 import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer } from "@/types";
+import { GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import { AccountIdentifier } from "@dfinity/ledger-icp";
@@ -55,9 +55,10 @@ export const useSubmitEmail = () => {
                 const { actor, methods } = await useGuildsVerifierClient();
                 let result = await actor[methods.sendVerificationEmail](email) as {
                     ok: string | undefined;
-                    err: string | undefined;
+                    err: string;
                 };
                 if (result.ok == undefined) {
+                    toast.error(result.err);
                     throw (result.err);
                 }
             } catch (error) {
@@ -85,12 +86,19 @@ export const useSubmitPhone = () => {
             phone: string;
         }) => {
             try {
+                for(let i = 0; i< phone.length; i += 1) {
+                    if(phone[i] == ' ') {
+                        toast.error("Try again without spaces.");
+                        throw ("");
+                    }
+                };
                 const { actor, methods } = await useGuildsVerifierClient();
                 let result = await actor[methods.sendVerificationSMS](phone) as {
                     ok: string | undefined;
-                    err: string | undefined;
+                    err: string;
                 };
                 if (result.ok == undefined) {
+                    toast.error(result.err);
                     throw (result.err);
                 }
             } catch (error) {
@@ -166,7 +174,8 @@ export const useVerifyPhone = () => {
                     err: string | undefined;
                 };
                 if (result.ok == undefined) {
-                    throw (result.err);
+                    toast.error((result.err)? result.err : "");
+                    throw(result.err);
                 }
             } catch (error) {
                 if (error instanceof Error) {
@@ -179,7 +188,7 @@ export const useVerifyPhone = () => {
             toast.error(t("verification.otp_error"));
         },
         onSuccess: () => {
-            toast.success(t("verification.otp_success"));
+            toast.success(t("verification.otp_success_sms"));
             window.setTimeout(() => {
                 queryClient.refetchQueries({ queryKey: [queryKeys.verified_status] });
             }, 15000);
@@ -193,10 +202,10 @@ const getUserInfo = (fields: Field[]) => {
         joinDate: "",
     };
     for (let j = 0; j < fields.length; j += 1) {
-        if (fields[j].fieldName == "xp") {
+        if (fields[j].fieldName == "xp_leaderboard") {
             res.guilds = fields[j].fieldValue;
         };
-        if (fields[j].fieldName == "joinDate") {
+        if (fields[j].fieldName == "join_date_leaderboard") {
             res.joinDate = fields[j].fieldValue;
         };
     };
@@ -215,7 +224,7 @@ export const useGetAllMembersInfo = (): UseQueryResult<MembersInfo> => {
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
             const worldHub = await useWorldHubClient();
             // fetching totalMembers
-            let totalMembersEntity = await actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["totalMembers"]) as { ok: [StableEntity]; };
+            let totalMembersEntity = await actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_members"]) as { ok: [StableEntity]; };
             let entities = await actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as { ok: [StableEntity] };
 
             let fields = totalMembersEntity.ok[0].fields;
@@ -226,7 +235,7 @@ export const useGetAllMembersInfo = (): UseQueryResult<MembersInfo> => {
             };
             let members_info: Member[] = [];
             // processing members info
-            let current_user_principal = (session?.identity?.getPrincipal())?.toString();
+            let isAnonPresent = false;
             for (let i = 0; i < entities.ok.length; i += 1) {
                 fields = entities.ok[i].fields;
                 let memberInfo = getUserInfo(fields);
@@ -236,6 +245,9 @@ export const useGetAllMembersInfo = (): UseQueryResult<MembersInfo> => {
                     username: "",
                     guilds: "0",
                     joinDate: ""
+                };
+                if(entities.ok[i].eid == "2vxsx-fae") {
+                    isAnonPresent = true;
                 };
                 if (entities.ok[i].eid.length >= 63) {
                     current_member.username = (entities.ok[i].eid).substring(0, 20) + ".....";
@@ -273,6 +285,9 @@ export const useGetAllMembersInfo = (): UseQueryResult<MembersInfo> => {
                 }
             );
             response.members = members_info;
+            if(isAnonPresent){
+                response.totalMembers = (Number(response.totalMembers) - 1).toString();
+            }
             return response;
         },
     });
@@ -289,6 +304,15 @@ const msToTime = (ms: number) => {
     return days + "D " + hours + "H " + minutes + "M ";
 }
 
+const getFieldsOfEntity = (entities: [StableEntity], entityId: string) => {
+    for (let j = 0; j < entities.length; j += 1) {
+        if (entities[j].eid == entityId) {
+            return entities[j].fields;
+        };
+    };
+    return [];
+};
+
 const getFieldsOfConfig = (configs: GuildConfig[], config: string) => {
     let res = {
         name: "",
@@ -302,10 +326,10 @@ const getFieldsOfConfig = (configs: GuildConfig[], config: string) => {
                 if (configs[i].fields[j].fieldName == "name") {
                     res.name = (configs[i].fields[j].fieldValue).toUpperCase();
                 };
-                if (configs[i].fields[j].fieldName == "imageUrl") {
+                if (configs[i].fields[j].fieldName == "image_url") {
                     res.imageUrl = configs[i].fields[j].fieldValue;
                 };
-                if (configs[i].fields[j].fieldName == "gameUrl") {
+                if (configs[i].fields[j].fieldName == "game_url") {
                     res.gameUrl = configs[i].fields[j].fieldValue;
                 };
                 if (configs[i].fields[j].fieldName == "description") {
@@ -326,6 +350,19 @@ const getTotalCompletionOfQuest = (fields: Field[], quest: string) => {
     return "0";
 };
 
+const getActionState = (actionStates: [ActionState], actionId: string) => {
+    for(let i = 0; i < actionStates.length; i += 1) {
+        if(actionId == actionStates[i].actionId) {
+            return actionStates[i];
+        }
+    };
+    return {
+        actionCount: 0,
+        intervalStartTs: 0,
+        actionId: ""
+    };
+};
+
 export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
     const { session } = useAuthContext();
     return useQuery({
@@ -340,11 +377,11 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
             };
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
             const worldHub = await useWorldHubClient();
-            let XPEntity = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["xp"]) as { ok: [StableEntity]; err: string | undefined; };
-            if (XPEntity.err == undefined) {
-                let fields = XPEntity.ok[0].fields;
+            let UserEntity = await actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, [current_user_principal]) as { ok: [StableEntity]; err: string | undefined; };
+            if (UserEntity.err == undefined) {
+                let fields = UserEntity.ok[0].fields;
                 for (let i = 0; i < fields.length; i += 1) {
-                    if (fields[i].fieldName == "quantity") {
+                    if (fields[i].fieldName == "xp_leaderboard") {
                         response.xp = (((fields[i].fieldValue).split("."))[0]).toString();
                     }
                 };
@@ -397,37 +434,17 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
     return useQuery({
         queryKey: [queryKeys.all_quests_info],
         queryFn: async () => {
+            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
             const { actor, methods } = await useGamingGuildsClient();
             const worldNode = await useGamingGuildsWorldNodeClient();
             let configs = await actor[methods.getAllConfigs]() as GuildConfig[];
             let actions = await actor[methods.getAllActions]() as Action[];
+            let actionStates = await worldNode.actor[worldNode.methods.getAllUserActionStates](current_user_principal, gamingGuildsCanisterId) as { ok: [ActionState] };
             let entities = await worldNode.actor[worldNode.methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as { ok: [StableEntity] };
-            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
-            let current_user_entities = await worldNode.actor[worldNode.methods.getAllUserEntities](current_user_principal, gamingGuildsCanisterId, []) as { ok: [StableEntity] | undefined };
+            console.log(actions);
+
+            let total_completions_fields: Field[] = getFieldsOfEntity(entities.ok, "total_completions");
             let claimed_quests: string[] = [];
-
-            if (current_user_entities.ok != undefined) {
-                for (let i = 0; i < current_user_entities.ok.length; i += 1) {
-                    if (current_user_entities.ok[i].eid == "quests") {
-                        let fields = current_user_entities.ok[i].fields;
-                        for (let j = 0; j < fields.length; j += 1) {
-                            if (fields[j].fieldName == "claimedQuests") {
-                                claimed_quests = (fields[j].fieldValue).split(",");
-                            };
-                        };
-                    };
-                }
-            };
-
-            // processing total completions
-            let total_completions_fields: Field[] = [];
-            if (entities.ok != undefined) {
-                for (let j = 0; j < entities.ok.length; j += 1) {
-                    if (entities.ok[j].eid == "totalCompletions") {
-                        total_completions_fields = entities.ok[j].fields;
-                    };
-                };
-            };
             let response: GuildCard[] = [];
 
             for (let k = 0; k < actions.length; k += 1) {
@@ -455,10 +472,14 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         if (actions[k]['callerAction']) {
                             //process actionConstraints
                             if (actions[k]['callerAction'][0]?.['actionConstraint']) {
-                                // update time constraints if present
+
+
+
+                                // process timeConstraints
                                 if (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]) {
-                                    if (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionExpirationTimestamp'][0] != undefined) {
-                                        let current = BigInt(new Date().getTime());
+                                    // update action expiration
+                                    let current = BigInt(new Date().getTime());
+                                    if (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionExpirationTimestamp'][0]) {
                                         let expiration: undefined | bigint = (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionExpirationTimestamp'][0]);
                                         expiration = ((expiration != undefined) ? expiration : 0n) / BigInt(1000000);
                                         diff = expiration - current;
@@ -466,11 +487,25 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                             entry.expiration = msToTime(Number(diff));
                                         }
                                     }
+
+                                    // process action time intervals
+                                    if (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]) {
+                                        let duration = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]?.intervalDuration;
+                                        let actionsPerInterval = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]?.actionsPerInterval;
+                                        let { intervalStartTs, actionCount, actionId } = getActionState(actionStates.ok, actions[k].aid);
+                                        duration = ((duration != undefined)? duration : 0n) / BigInt(1000000);
+                                        intervalStartTs = ((intervalStartTs != undefined)? BigInt(intervalStartTs) : 0n) / BigInt(1000000);
+                                        actionsPerInterval = ((actionsPerInterval != undefined)? BigInt(actionsPerInterval) : 0n);
+                                        if(intervalStartTs > 0 && (intervalStartTs + duration) > current && actionCount >= actionsPerInterval){
+                                            claimed_quests.push(actionId);
+                                        };
+                                    }
                                 };
-                                // process entity constraints
+
+
+                                
+                                // process entityConstraints
                                 let entitiesCons = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['entityConstraint'];
-                                let nftCons = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['nftConstraint'];
-                                console.log(nftCons);
                                 let world_ids: Array<string | undefined> = [gamingGuildsCanisterId];
                                 if (entitiesCons) {
                                     for (let m = 0; m < entitiesCons.length; m += 1) {
@@ -480,22 +515,19 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                     };
                                 }
 
-                                let current_user_entities_of_specific_worlds = await worldNode.actor[worldNode.methods.getAllUserEntitiesOfSpecificWorlds](current_user_principal, world_ids, []) as { ok: [StableEntity] | undefined };
-
-                                // Edge case for entityConstraints
+                                let current_user_entities_of_specific_worlds = await worldNode.actor[worldNode.methods.getAllUserEntitiesOfSpecificWorlds](current_user_principal, world_ids, []) as { ok: StableEntity[] | undefined };
+                                if(current_user_entities_of_specific_worlds.ok == undefined){
+                                    current_user_entities_of_specific_worlds.ok = [];
+                                }
+                                
                                 var isConstraintsFulfilled = true;
-                                if (current_user_entities_of_specific_worlds.ok && entitiesCons) {
+                                if (entitiesCons) {
                                     let _status = await actor[methods.validateEntityConstraints](current_user_principal, current_user_entities_of_specific_worlds.ok, entitiesCons) as boolean;
                                     if(!_status){
                                         isConstraintsFulfilled = false;
                                     }
                                 };
-                                // if (isEntityConstraintsFulfilled) {
-                                //     entry.type = "Completed";
-                                // } else {
-                                //     entry.type = "Incomplete";
-                                // };
-                                if (entitiesCons) {
+                                if (entitiesCons?.length) {
                                     for (let f = 0; f < entitiesCons.length; f += 1) {
                                         config_fields = getFieldsOfConfig(configs, entitiesCons[f].eid);
                                         if (config_fields.name != "" && config_fields.imageUrl != "") {
@@ -513,13 +545,16 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         };
                                     };
                                 }
+
+                                // process nftConstraints
+                                let nftCons = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['nftConstraint'];
                                 let registries = [];
                                 let nftConstraintsStatus : boolean[] = [];
-                                if(nftCons) {
+                                if(nftCons?.length) {
                                     for (let f = 0; f < nftCons.length; f += 1) {
                                         if(isHoldNft(nftCons[f]['nftConstraintType'])){
                                             let nftActor = await useExtClient(nftCons[f].canister);
-                                            registries.push(nftActor.actor[nftActor.methods.getRegistry]);
+                                            registries.push(nftActor.actor[nftActor.methods.getRegistry]());
                                         }
                                         config_fields = getFieldsOfConfig(configs, nftCons[f].canister);
                                         if (config_fields.name != "" && config_fields.imageUrl != "") {
@@ -567,7 +602,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                     entry.type = "Incomplete"
                                 }
 
-                            } else {
+                            } else { // if actionConstraints not present
                                 entry.type = "Completed";
                             };
 
@@ -633,24 +668,25 @@ export const useGetUserVerifiedStatus = (): UseQueryResult<VerifiedStatus> => {
     return useQuery({
         queryKey: [queryKeys.verified_status],
         queryFn: async () => {
-            const { actor, methods } = await useGamingGuildsWorldNodeClient();
+            const { actor, methods } = await useGamingGuildsClient();
             let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
             var res: VerifiedStatus = {
                 emailVerified: false,
                 phoneVerified: false
             };
-            let res_email = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["ogBadge"]) as {
+            let entities = await actor[methods.getAllUserEntities]({ uid : current_user_principal, page: []}) as {
                 ok: [StableEntity] | undefined;
             };
-            let res_phone = await actor[methods.getSpecificUserEntities](current_user_principal, gamingGuildsCanisterId, ["phoneBadge"]) as {
-                ok: [StableEntity] | undefined;
-            };
-            if ((res_email.ok) ? (res_email.ok).length : 0 > 0) {
-                res.emailVerified = true;
-            };
-            if ((res_phone.ok) ? (res_phone.ok).length : 0 > 0) {
-                res.phoneVerified = true;
-            };
+            if(entities.ok?.length && entities.ok.length > 0) {
+                for(let i = 0; i < entities.ok.length; i += 1) {
+                    if(entities.ok[i].eid == "og_badge"){
+                        res.emailVerified = true;
+                    };
+                    if(entities.ok[i].eid == "phone_badge"){
+                        res.phoneVerified = true;
+                    };
+                }
+            }
             return res;
         },
     });
@@ -673,7 +709,6 @@ export const useClaimReward = () => {
                     ok: ActionReturn[];
                     err: string | undefined;
                 };
-                console.log(result);
                 if (result.ok == undefined) {
                     throw (result.err);
                 }
@@ -689,7 +724,8 @@ export const useClaimReward = () => {
         },
         onSuccess: (undefined, { aid: aid, rewards: rewards }) => {
             toast.custom((t) => (
-                <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-40 backdrop-blur-sm">
+                <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+                <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
                     <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
                         <p className="mt-2 font-semibold text-3xl">Congratulations! You received : </p>
                         <div className="flex justify-center">
@@ -709,12 +745,11 @@ export const useClaimReward = () => {
                                 </div> : <div></div>
                             }
                         </div>
-                        <Button onClick={() => toast.remove()} className="float-right mb-3">Close</Button>
+                        <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
                     </div>
                 </div>
-            ), {
-                position: 'top-center'
-            });
+                </div>
+            ));
             window.setTimeout(() => {
                 queryClient.refetchQueries({ queryKey: [queryKeys.boom_token_balance] });
                 queryClient.refetchQueries({ queryKey: [queryKeys.all_guild_members_info] });

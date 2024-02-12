@@ -1,7 +1,7 @@
 import Text "mo:base/Text";
 
 import Map "../utils/Map";
-import TGlobal "./v1.global.types";
+import TGlobal "./v2.global.types";
 
 module {
 

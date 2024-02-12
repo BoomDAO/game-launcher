@@ -53,8 +53,8 @@ const ManageWorlds = () => {
       )}
       {activeTab === 3 && (
         <div className="w-full space-y-12">
-          < ManageController />
-          <Divider/>
+          {/* < ManageController />
+          <Divider/> */}
           <ManageAdmin/>
         </div>
       )}

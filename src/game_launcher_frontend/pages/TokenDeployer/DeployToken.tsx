@@ -47,7 +47,6 @@ const DeployToken = () => {
       symbol: "",
       amount: "",
       logo: "",
-      decimals: "",
       fee: "",
     },
     resolver: zodResolver(scheme),
@@ -117,19 +116,12 @@ const DeployToken = () => {
             disabled={!!canisterId}
           />
         </div>
-        <div className="flex w-full flex-col gap-4 md:flex-row">
+        <div className="flex w-1/2 flex-col gap-4 md:flex-row">
           <FormNumberInput
             placeholder={t("token_deployer.input_amount")}
             control={control}
             name="amount"
             disabled={!!canisterId}
-          />
-          <FormNumberInput
-            placeholder={t("token_deployer.input_decimals")}
-            control={control}
-            name="decimals"
-            disabled={!!canisterId}
-            min={0}
           />
         </div>
         <FormTextArea

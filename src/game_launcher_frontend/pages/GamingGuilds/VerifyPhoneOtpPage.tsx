@@ -2,6 +2,7 @@ import React from "react";
 import Form from "@/components/form/Form";
 import FormTextInput from "@/components/form/FormTextInput";
 import Button from "@/components/ui/Button";
+import Loader from "@/components/ui/Loader";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { useNavigate, useParams } from "react-router-dom";
@@ -84,7 +85,9 @@ const VerifyPhoneOtpPage = () => {
                     navigate(navPaths.gaming_guilds);
                     location.reload();
                 },
-                onError: () => { }
+                onError: () => {
+                    document.getElementById("button").className = "gradient-bg gap-2 px-12 py-4 text-base md:text-lg flex w-fit items-center rounded-primary uppercase text-white";
+                }
             },
         );
     };
@@ -98,9 +101,14 @@ const VerifyPhoneOtpPage = () => {
                     name="otp"
                     placeholder={t("verification.otp_input_sms",)}
                 />
-                <Button size="big" className="cursor-pointer" rightArrow isLoading={isLoadingVerifyPhone}>
-                    {t("verification.otp_button")}
-                </Button>
+                <button id="button"
+                    className="gradient-bg gap-2 px-12 py-4 text-base md:text-lg flex w-fit items-center rounded-primary uppercase text-white"
+                    onClick={
+                        () => {
+                            document.getElementById("button").className = "hidden"
+                        }
+                    }
+                >{t("verification.otp_button")}</button>
             </Form>
         </div>,
         isOpen: true,

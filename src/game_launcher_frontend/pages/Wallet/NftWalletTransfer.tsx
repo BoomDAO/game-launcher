@@ -17,8 +17,9 @@ import {
     StateTypes
 } from "../../types/dialogTypes";
 import TransferPage from "./TransferPage";
-import Wallet from "./";
 import NftTransferPage from "./NftTransferPage";
+import Nft from "./Nft";
+import Wallet from ".";
 
 const WalletTransfer = () => {
     const { t } = useTranslation();
@@ -51,7 +52,7 @@ const WalletTransfer = () => {
     
       const close = (): void => {
         setState({ isOpen: false });
-        navigate(navPaths.wallet);
+        navigate(navPaths.wallet_nfts);
       };
     
       const [state, setState] = React.useState<StateTypes>({
@@ -72,7 +73,7 @@ const WalletTransfer = () => {
     return (
         <>
             <DialogProvider state={state}>
-                <Wallet/>
+                <Wallet activeTab="Nfts"/>
             </DialogProvider>
         </>
     );

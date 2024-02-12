@@ -62,7 +62,7 @@ export interface UpgradeWorldData
 
 
 export interface CreateTokenData
-  extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "decimals" | "fee" | "amount"> { }
+  extends Pick<TokenData, "name" | "symbol" | "description" | "logo" | "fee" | "amount"> { }
 
 export interface CreateTokenTransfer
   extends Pick<TokenTransferArgs, "principal" | "amount"> { }

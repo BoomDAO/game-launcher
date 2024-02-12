@@ -32,18 +32,18 @@ const Token = () => {
 
     const onDepositClick = (principal: string) => {
         toast.custom((t) => (
-            <div className="w-2/3 rounded-3xl mb-7 p-0.5 gradient-bg mt-40 backdrop-blur-xl">
-                <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+            <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+                <div className="w-2/3 rounded-3xl p-0.5 gradient-bg mt-48 inline-block">
+                <div className="h-full w-auto dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
                     <div className="mt-5 mb-5 text-lg px-10">
                         <b>To deposit tokens, please transfer them to the below Principal ID : </b>
                         <p className="">{principal}</p>
                     </div>
-                    <Button onClick={() => toast.remove()} className="float-right mb-3">Close</Button>
+                    <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
                 </div>
             </div>
-        ), {
-            position: 'top-center'
-        });
+            </div>
+        ));
     };
 
     return (

@@ -32,6 +32,7 @@ import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import WalletTransfer from "./pages/Wallet/WalletTransfer";
 import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
+import Nft from "./pages/Wallet/Nft";
 
 function App() {
   return (
@@ -111,8 +112,12 @@ function App() {
                   element={<Profile />}
                 />
                 <Route
-                  path={`${navPaths.wallet}`}
-                  element={<Wallet />}
+                  path={`${navPaths.wallet_tokens}`}
+                  element={<Wallet activeTab="Tokens"/>}
+                />
+                <Route
+                  path={`${navPaths.wallet_nfts}`}
+                  element={<Wallet activeTab="Nfts" />}
                 />
                 <Route
                   path={`${navPaths.transfer}/:canisterId`}

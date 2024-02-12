@@ -205,7 +205,7 @@ const TopBar = () => {
                           <Button size="big" onClick={() => { navigate((navPaths.profile)); setIsOpenNavSidebar(false); }}>
                             {t("navigation.profile")}
                           </Button>
-                          <Button size="big" onClick={() => { navigate((navPaths.wallet)); setIsOpenNavSidebar(false); }}>
+                          <Button size="big" onClick={() => { navigate((navPaths.wallet_tokens)); setIsOpenNavSidebar(false); window.location.reload(); }}>
                             {t("navigation.wallet")}
                           </Button>
                           <Button size="big" onClick={() => { logout(); navigate((navPaths.home)); }}>

@@ -43,8 +43,8 @@ actor Verifier {
     sid : Text = "";
     from : Text = "";
   };
-  private stable var _emails : Trie.Trie<Text, Text> = Trie.empty(); // email -> otp
-  private stable var _phones: Trie.Trie<Text, Text> = Trie.empty(); // phone -> otp
+  private stable var _emails : Trie.Trie<Text, (Text, Bool)> = Trie.empty(); // email -> (otp, status)
+  private stable var _phones: Trie.Trie<Text, (Text, Bool)> = Trie.empty(); // phone -> (otp, status)
 
   type TransformType = {
     #function : shared CanisterHttpResponsePayload -> async CanisterHttpResponsePayload;
@@ -122,7 +122,7 @@ actor Verifier {
   };
 
   public shared({caller}) func setTwilioProps(arg : { auth : Text; sid : Text; from : Text; }) : async () {
-    assert(caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+    assert(caller == Principal.fromText(Constants.devPrincipalId));
     twilioProps := arg;
     return ();
   };
@@ -160,7 +160,7 @@ actor Verifier {
       { name = "otp"; value = arg.otp },
     ];
 
-    var req_body = "To=" #arg.phone #"&From=" #twilioProps.from #"&Body=Hi BOOM DAO Gamer, Here is your OTP : " #arg.otp #". Do Not share this with anyone.";
+    var req_body = "To=" #arg.phone #"&From=" #twilioProps.from #"&Body=Your BOOM DAO verification code is " #arg.otp #". Do not share this with anyone.";
     var request_body : [Nat8] = Blob.toArray(Text.encodeUtf8(req_body));
     let response = await ProxyCanister.http_request({
       request = {
@@ -177,21 +177,32 @@ actor Verifier {
 
   public shared ({ caller }) func generateOTP(email : Text) : async Result.Result<Text, Text> {
     assert (caller == Principal.fromActor(Verifier));
-    let ?found = Trie.find(_emails, Utils.keyT(email), Text.equal) else return #err("email not valid");
+    let ?found = Trie.find(_emails, Utils.keyT(email), Text.equal) else return #err("Email not valid or not registered in OG members list.");
+    if(found.1) {
+      return #err("This email is already verified. Try different email.");
+    };
     var otp : Text = await generateOTP_();
-    _emails := Trie.put(_emails, Utils.keyT(email), Text.equal, otp).0;
+    _emails := Trie.put(_emails, Utils.keyT(email), Text.equal, (otp, false)).0;
     return #ok(otp);
   };
 
   public shared ({ caller }) func generateSmsOTP(phone : Text) : async Result.Result<Text, Text> {
     assert (caller == Principal.fromActor(Verifier));
+    switch (Trie.find(_phones, Utils.keyT(phone), Text.equal)) {
+      case (?found) {
+        if(found.1) {
+          return #err("This phone number is already verified. Try different phone number.");
+        }
+      };
+      case _{};
+    };
     var otp : Text = await generateOTP_();
-    _phones := Trie.put(_phones, Utils.keyT(phone), Text.equal, otp).0;
+    _phones := Trie.put(_phones, Utils.keyT(phone), Text.equal, (otp, false)).0;
     return #ok(otp);
   };
 
   public shared ({ caller }) func sendVerificationEmail(_email : Text) : async (Result.Result<Text, Text>) {
-    assert (caller != Principal.fromText("2vxsx-fae"));
+    assert (caller != Principal.fromText(Constants.anonPrincipalId));
     switch (await generateOTP(_email)) {
       case (#ok _otp) {
         let res = await ping_server_to_email({ email = _email; otp = _otp });
@@ -204,7 +215,7 @@ actor Verifier {
   };
 
   public shared ({ caller }) func sendVerificationSMS(_phone : Text) : async (Result.Result<Text, Text>) {
-    assert (caller != Principal.fromText("2vxsx-fae"));
+    assert (caller != Principal.fromText(Constants.anonPrincipalId));
     switch (await generateSmsOTP(_phone)) {
       case (#ok _otp) {
         let res = await ping_server_to_sms({ phone = _phone; otp = _otp });
@@ -218,52 +229,67 @@ actor Verifier {
 
   public shared ({ caller }) func verifyOTP(arg : { email : Text; otp : Text }) : async (Result.Result<Text, Text>) {
     switch (Trie.find(_emails, Utils.keyT(arg.email), Text.equal)) {
-      case (?otp) {
-        if (arg.otp == otp) {
-          _emails := Trie.remove(_emails, Utils.keyT(arg.email), Text.equal).0;
-          let gaming_guild_canister = actor ("6ehny-oaaaa-aaaal-qclyq-cai") : actor {
+      case (?(otp, status)) {
+        if (arg.otp == otp and status == false) {
+          let gaming_guild_canister = actor (Constants.GamingGuildsCanisterId) : actor {
             processAction : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
           };
           let res = await gaming_guild_canister.processAction({
             actionId = "grant_og_badge";
             fields = [{
-              fieldName = "targetPrincipalId";
+              fieldName = "target_principal_id";
               fieldValue = Principal.toText(caller);
             }];
           });
-          return #ok("");
+          switch (res){
+            case (#ok o) {
+              _emails := Trie.put(_emails, Utils.keyT(arg.email), Text.equal, (otp, true)).0;
+              return #ok("");
+            };
+            case (#err e) {
+              return #err(e);
+            };
+          };
         } else {
-          return #err("OTP not valid");
+          return #err("OTP not valid or email already verified.");
         };
       };
       case _ {
-        return #err("email not valid");
+        return #err("This email not valid, try different email.");
       };
     };
   };
 
   public shared ({ caller }) func verifySmsOTP(arg : { phone : Text; otp : Text }) : async (Result.Result<Text, Text>) {
     switch (Trie.find(_phones, Utils.keyT(arg.phone), Text.equal)) {
-      case (?otp) {
-        if (arg.otp == otp) {
-          _phones := Trie.remove(_phones, Utils.keyT(arg.phone), Text.equal).0;
-          let gaming_guild_canister = actor ("6ehny-oaaaa-aaaal-qclyq-cai") : actor {
+      case (?(otp, status)) {
+        if (arg.otp == otp and status == false) {
+          let gaming_guild_canister = actor (Constants.GamingGuildsCanisterId) : actor {
             processAction : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
           };
           let res = await gaming_guild_canister.processAction({
             actionId = "grant_phone_badge";
             fields = [{
-              fieldName = "targetPrincipalId";
+              fieldName = "target_principal_id";
               fieldValue = Principal.toText(caller);
             }];
           });
+          switch (res) {
+            case (#ok o) {
+              _phones := Trie.put(_phones, Utils.keyT(arg.phone), Text.equal, (otp, true)).0;
+              return #ok("");
+            };
+            case (#err e) {
+              return #err(e);
+            };
+          };
           return #ok("");
         } else {
-          return #err("OTP not valid");
+          return #err("OTP not valid or phone number already verified.");
         };
       };
       case _ {
-        return #err("Phone not valid");
+        return #err("Phone number not valid, try different phone number.");
       };
     };
   };
@@ -272,11 +298,15 @@ actor Verifier {
     return Trie.size(_emails);
   };
 
+  public query func getTotalPhones() : async Nat {
+    return Trie.size(_phones);
+  };
+
   public shared ({caller}) func uploadEmails(comma_separated_emails : Text) : async () {
-    assert(caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+    assert(caller == Principal.fromText(Constants.devPrincipalId));
     let emails = Iter.toArray(Text.tokens(comma_separated_emails, #text(",")));
     for(email in emails.vals()) {
-      _emails := Trie.put(_emails, Utils.keyT(email), Text.equal, "").0;
+      _emails := Trie.put(_emails, Utils.keyT(email), Text.equal, ("", false)).0;
     };
   };
 
@@ -289,7 +319,7 @@ actor Verifier {
   };
 
   public shared({caller}) func cleanUp() : async () {
-    assert(caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+    assert(caller == Principal.fromText(Constants.devPrincipalId));
     _emails := Trie.empty();
     _phones := Trie.empty();
   };

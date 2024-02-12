@@ -29,7 +29,7 @@ const UpdateCollection = () => {
     { id: 4, name: t("manage_nfts.update.tabs.item_4") },
     { id: 5, name: t("manage_nfts.update.tabs.item_5") },
     { id: 6, name: t("manage_nfts.update.tabs.item_6") },
-    { id: 7, name: t("world_deployer.manage_worlds.tabs.item_5.title") }
+    { id: 7, name: t("manage_nfts.update.tabs.item_7") }
   ];
 
   return (
@@ -51,8 +51,6 @@ const UpdateCollection = () => {
       {activeTab === 2 && (
         <div className="w-full space-y-12">
           <ManageAdmin />
-          <Divider />
-          <ManageController />
         </div>
       )}
 

@@ -43,21 +43,21 @@ const GuildCard = ({
 
   const { mutate, data, isLoading } = useClaimReward();
 
-  const handleItemsOnClick = (name : string, imageUrl : string, description : string) => {
+  const handleItemsOnClick = (name: string, imageUrl: string, description: string) => {
     toast.custom((t) => (
-      <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-40 backdrop-blur-sm">
-        <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
-          <div className="flex justify-center mt-5">
-            <img src={imageUrl} className="mx-2 h-12" />
-            <p className="pt-2 pl-3 text-xl">{name}</p>
+      <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+        <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
+          <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+            <div className="flex justify-center mt-5">
+              <img src={imageUrl} className="mx-2 h-12" />
+              <p className="pt-2 pl-3 text-xl">{name}</p>
+            </div>
+            <p className="text-base pt-3 pb-6">{description}</p>
+            <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
           </div>
-          <p className="text-base pt-3 pb-6">{description}</p>
-          <Button onClick={() => toast.remove()} className="float-right mb-3">Close</Button>
         </div>
       </div>
-    ), {
-      position: 'top-center'
-    });
+    ));
   };
 
   return (

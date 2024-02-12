@@ -23,7 +23,6 @@ import { useGetUserProfileDetail } from "@/api/profile";
 const Nft = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [display, setDisplay] = React.useState(false);
 
     const { data, isLoading, isError } = useGetUserNftsInfo();
 
@@ -33,18 +32,18 @@ const Nft = () => {
 
     const onDepositClick = (principal: string) => {
         toast.custom((t) => (
-            <div className="w-2/3 rounded-3xl mb-7 p-0.5 gradient-bg mt-40 backdrop-blur-xl">
-                <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
-                    <div className="mt-5 mb-5 text-lg px-10">
-                        <b>To deposit NFTs, please transfer them to the below Principal ID : </b>
-                        <p className="">{principal}</p>
+            <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+                <div className="w-2/3 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
+                    <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+                        <div className="mt-5 mb-5 text-lg px-10">
+                            <b>To deposit NFTs, please transfer them to the below Principal ID : </b>
+                            <p className="">{principal}</p>
+                        </div>
+                        <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
                     </div>
-                    <Button onClick={() => toast.remove()} className="float-right mb-3">Close</Button>
                 </div>
             </div>
-        ), {
-            position: 'top-center'
-        });
+        ));
     };
 
     return (
@@ -63,22 +62,22 @@ const Nft = () => {
                                         <div className="flex mb-4">
                                             <img src={logo} className="w-16 h-16 m-2" />
                                             <p className="text-3xl ml-2 mt-6 font-semibold">{name}</p>
-                                            <Button className="h-10 mt-6 ml-6" onClick={() => setDisplay(!display)}>VIEW</Button>
                                             <Button className="h-10 mt-6 ml-6" onClick={() => onDepositClick(principal)}>DEPOSIT</Button>
                                         </div>
                                         <div>
-                                            {display ? <div className="grid grid-cols-6 gap-0">
+                                            {nfts.length ? <div className="grid grid-cols-6 gap-0">
                                                 {nfts.map((id) => (
                                                     <img key={id} onClick={() => onTransferClick(canister, id)} className="w-40 h-40 object-cover mb-5 cursor-pointer" src={"https://" + canister + ".raw.icp0.io/?type=thumbnail&tokenid=" + id} />
                                                 ))}
-                                            </div> : <></>}
+                                            </div> : <NoDataResult>{t("wallet.tab_2.no_nfts")}</NoDataResult>
+                                            }
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </>
                     ) : (
-                        <NoDataResult>{t("wallet.tab_2.no_nfts")}</NoDataResult>
+                        <></>
                     )}
             </div>
         </>

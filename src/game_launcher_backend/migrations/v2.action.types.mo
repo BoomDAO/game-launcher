@@ -15,9 +15,9 @@ import Nat64 "mo:base/Nat64";
 import Debug "mo:base/Debug";
 import Principal "mo:base/Principal";
 
-import TEntity "./entity.types";
-import TGlobal "./global.types";
-import TConstraints "./constraints.types";
+import TEntity "./v2.entity.types";
+import TGlobal "./v2.global.types";
+import TConstraints "./v2.constraints.types";
 
 module {
 

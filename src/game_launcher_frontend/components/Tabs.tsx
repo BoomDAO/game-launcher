@@ -1,12 +1,14 @@
 import { cx } from "@/utils";
+import { useNavigate } from "react-router-dom";
 
 interface TabsProps {
-  tabs: { name: string; id: number }[];
+  tabs: { name: string; id: number; url?: string; }[];
   active: number;
   setActive: (val: number) => void;
 }
 
 const Tabs = ({ tabs, active, setActive }: TabsProps) => {
+  const navigate = useNavigate();
   const activeItem = tabs.find((tab) => tab.id === active);
 
   return (
@@ -19,7 +21,7 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
         <select
           id="tabs"
           name="tabs"
-          onChange={(e) => setActive(parseInt(e.target.value, 10))}
+          onChange={(e) => { setActive(parseInt(e.target.value, 10)) }}
           defaultValue={activeItem?.name}
         >
           {tabs.map((tab) => (
@@ -35,7 +37,11 @@ const Tabs = ({ tabs, active, setActive }: TabsProps) => {
           <nav className="-mb-px flex" aria-label="Tabs">
             {tabs.map((tab) => (
               <button
-                onClick={() => setActive(tab.id)}
+                onClick={() => {
+                  setActive(tab.id); if (tab.url) {
+                    navigate(tab.url);
+                  }
+                }}
                 key={tab.id}
                 className={cx(
                   activeItem === tab
