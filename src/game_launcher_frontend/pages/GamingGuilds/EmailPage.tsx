@@ -52,7 +52,7 @@ const EmailPage = () => {
     return (
         <div>
             <p className="mb-5">If you registered to be a DAO member on the BOOM DAO website before the SNS, you are eligible to
-                verify the same email that you used to sign up to receive the OG Badge in the BOOM Gaming Guild.
+                verify the same email that you used to sign up to receive the Airdrop Badge in the BOOM Gaming Guild.
                 <br></br>
                 <br></br>
                 This status makes you eligible to participate in airdrop-related quests to receive rewards.</p>

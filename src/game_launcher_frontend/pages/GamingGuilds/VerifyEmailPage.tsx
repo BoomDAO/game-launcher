@@ -63,7 +63,7 @@ const VerifyEmailPage = () => {
       const [state, setState] = React.useState<StateTypes>({
         component: <EmailPage />,
         isOpen: true,
-        title: "Verify Email to Receive OG Badge",
+        title: "Verify Email to Receive Airdrop Badge",
         okText: "Ok",
         cancelText: "Cancel",
         width: "md",

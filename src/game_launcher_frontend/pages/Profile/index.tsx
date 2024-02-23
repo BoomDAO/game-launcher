@@ -7,15 +7,16 @@ import H1 from "@/components/ui/H1";
 import Tabs from "@/components/Tabs";
 import EditImage from "./EditImage";
 import EditUsername from "./EditUsername";
+import { navPaths } from "@/shared";
 
-const Profile = () => {
+const Profile = (props: {activeTab : string}) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = React.useState(1);
+    const [activeTab, setActiveTab] = React.useState((props.activeTab == "Picture")? 1 : 2);
 
     const tabItems = [
-        { id: 1, name: t("profile.edit.tab_1.title") },
-        { id: 2, name: t("profile.edit.tab_2.title") },
+        { id: 1, name: t("profile.edit.tab_1.title"), url: navPaths.profile_picture },
+        { id: 2, name: t("profile.edit.tab_2.title"), url: navPaths.profile_username },
       ];
 
     return (

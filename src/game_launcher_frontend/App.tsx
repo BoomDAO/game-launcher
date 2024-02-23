@@ -108,8 +108,12 @@ function App() {
                   element={<VerifyPhonePage />}
                 />
                 <Route
-                  path={`${navPaths.profile}`}
-                  element={<Profile />}
+                  path={`${navPaths.profile_picture}`}
+                  element={<Profile activeTab="Picture"/>}
+                />
+                <Route
+                  path={`${navPaths.profile_username}`}
+                  element={<Profile activeTab="Username"/>}
                 />
                 <Route
                   path={`${navPaths.wallet_tokens}`}

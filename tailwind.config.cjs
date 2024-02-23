@@ -25,6 +25,9 @@ module.exports = {
       gridTemplateColumns: {
         card: "repeat(auto-fit,minmax(324px,1fr))",
       },
+      fontSize: {
+        xxs: ['0.6rem'],
+      }
     },
   },
   plugins: [

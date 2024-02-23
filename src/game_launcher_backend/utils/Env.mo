@@ -41,7 +41,6 @@ module {
 
     //!avoid changing this!
     public let NftDeployerCanisterId = "j474s-uqaaa-aaaap-abf6q-cai";
-    public let ProxyCanisterId = "iustv-tiaaa-aaaao-a3aga-cai"; // for HTTP non-replicated outcalls
 
     //Prod
     // public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
@@ -49,7 +48,7 @@ module {
     // public let GamingGuildsCanisterId = "";
 
     //Stag
-    public let WorldHubCanisterId = "fgpem-ziaaa-aaaag-abi2q-cai";
+    public let WorldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
     public let WorldDeployerCanisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
     public let GamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
 

@@ -66,6 +66,17 @@ export const idlFactory = ({ IDL }) => {
     'wid' : IDL.Opt(worldId),
     'updates' : IDL.Vec(UpdateEntityType),
   });
+  const actionId = IDL.Text;
+  const DecrementActionCount = IDL.Record({
+    'value' : IDL.Variant({ 'number' : IDL.Float64, 'formula' : IDL.Text }),
+  });
+  const UpdateActionType = IDL.Variant({
+    'decrementActionCount' : DecrementActionCount,
+  });
+  const UpdateAction = IDL.Record({
+    'aid' : actionId,
+    'updates' : IDL.Vec(UpdateActionType),
+  });
   const TransferIcrc = IDL.Record({
     'canister' : IDL.Text,
     'quantity' : IDL.Float64,
@@ -79,6 +90,7 @@ export const idlFactory = ({ IDL }) => {
     'weight' : IDL.Float64,
     'option' : IDL.Variant({
       'updateEntity' : UpdateEntity,
+      'updateAction' : UpdateAction,
       'transferIcrc' : TransferIcrc,
       'mintNft' : MintNft,
     }),
@@ -86,7 +98,16 @@ export const idlFactory = ({ IDL }) => {
   const Result_3 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   const Field = IDL.Record({ 'fieldName' : IDL.Text, 'fieldValue' : IDL.Text });
   const Result = IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text });
-  const actionId = IDL.Text;
+  const ActionOutcomeHistory = IDL.Record({
+    'wid' : worldId,
+    'appliedAt' : IDL.Nat,
+    'option' : IDL.Variant({
+      'updateEntity' : UpdateEntity,
+      'updateAction' : UpdateAction,
+      'transferIcrc' : TransferIcrc,
+      'mintNft' : MintNft,
+    }),
+  });
   const Result_2 = IDL.Variant({
     'ok' : IDL.Vec(ActionState),
     'err' : IDL.Text,
@@ -136,6 +157,7 @@ export const idlFactory = ({ IDL }) => {
         [Result_3],
         [],
       ),
+    'containsUserId' : IDL.Func([userId], [IDL.Bool], ['query']),
     'createEntity' : IDL.Func(
         [userId, worldId, entityId, IDL.Vec(Field)],
         [Result],
@@ -153,6 +175,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(ActionState)],
         ['query'],
       ),
+    'getAllUserActionHistoryOfSpecificWorlds' : IDL.Func(
+        [userId, IDL.Vec(worldId), IDL.Opt(IDL.Nat)],
+        [IDL.Vec(ActionOutcomeHistory)],
+        ['query'],
+      ),
+    'getAllUserActionHistoryOfSpecificWorldsComposite' : IDL.Func(
+        [userId, IDL.Vec(worldId), IDL.Opt(IDL.Nat)],
+        [IDL.Vec(ActionOutcomeHistory)],
+        ['composite_query'],
+      ),
     'getAllUserActionStates' : IDL.Func(
         [userId, worldId],
         [Result_2],
@@ -162,6 +194,11 @@ export const idlFactory = ({ IDL }) => {
         [userId, worldId, IDL.Opt(IDL.Nat)],
         [Result_1],
         ['query'],
+      ),
+    'getAllUserEntitiesComposite' : IDL.Func(
+        [userId, worldId, IDL.Opt(IDL.Nat)],
+        [Result_1],
+        ['composite_query'],
       ),
     'getAllUserEntitiesOfAllWorlds' : IDL.Func(
         [userId, IDL.Opt(IDL.Nat)],
@@ -173,6 +210,11 @@ export const idlFactory = ({ IDL }) => {
         [Result_1],
         ['query'],
       ),
+    'getAllUserEntitiesOfSpecificWorldsComposite' : IDL.Func(
+        [userId, IDL.Vec(worldId), IDL.Opt(IDL.Nat)],
+        [Result_1],
+        ['composite_query'],
+      ),
     'getAllUserIds' : IDL.Func([], [IDL.Vec(userId)], ['query']),
     'getAllWorldUserIds' : IDL.Func([worldId], [IDL.Vec(userId)], ['query']),
     'getEntity' : IDL.Func([userId, worldId, entityId], [StableEntity], []),
@@ -180,6 +222,16 @@ export const idlFactory = ({ IDL }) => {
         [userId, worldId, IDL.Vec(entityId)],
         [Result_1],
         ['query'],
+      ),
+    'getUserActionHistory' : IDL.Func(
+        [userId, worldId],
+        [IDL.Vec(ActionOutcomeHistory)],
+        ['query'],
+      ),
+    'getUserActionHistoryComposite' : IDL.Func(
+        [userId, worldId],
+        [IDL.Vec(ActionOutcomeHistory)],
+        ['composite_query'],
       ),
     'grantEntityPermission' : IDL.Func([IDL.Text, EntityPermission], [], []),
     'grantGlobalPermission' : IDL.Func([IDL.Text, GlobalPermission], [], []),

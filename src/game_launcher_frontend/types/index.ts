@@ -228,6 +228,7 @@ export interface GuildConfig {
 export interface GuildCard {
   aid: string;
   title: string;
+  description: string;
   image: string;
   rewards: { name: string; imageUrl: string; value: string; description: string; }[];
   countCompleted: string;
@@ -235,6 +236,8 @@ export interface GuildCard {
   mustHave: { name: string; imageUrl: string; quantity: string; description: string; }[];
   expiration: string;
   type: "Completed" | "Incomplete" | "Claimed";
+  gamersImages: string[];
+  isDailyQuest: boolean;
 }
 
 export interface Member {
@@ -283,193 +286,253 @@ export interface Profile {
   tokens: UserTokenInfo[];
 };
 
+export interface QuestGamersInfo {
+  aid: string;
+  total: string;
+  images: string[];
+};
+
 export type actionId = string;
 export type configId = string;
 export type entityId = string;
 export type worldId = string;
 export interface Action {
-  'aid': string,
-  'callerAction': [] | [SubAction],
-  'targetAction': [] | [SubAction],
-  'worldAction': [] | [SubAction],
+  'aid' : string,
+  'callerAction' : [] | [SubAction],
+  'targetAction' : [] | [SubAction],
+  'worldAction' : [] | [SubAction],
 }
-export interface ActionArg { 'fields': Array<Field>, 'actionId': string }
+export interface ActionArg { 'fields' : Array<Field>, 'actionId' : string }
 export interface ActionConstraint {
-  'icrcConstraint': Array<IcrcTx>,
-  'entityConstraint': Array<EntityConstraint>,
-  'nftConstraint': Array<NftTx>,
-  'timeConstraint': [] | [
+  'icrcConstraint' : Array<IcrcTx>,
+  'entityConstraint' : Array<EntityConstraint>,
+  'nftConstraint' : Array<NftTx>,
+  'timeConstraint' : [] | [
     {
-      'actionExpirationTimestamp': [] | [bigint],
-      'actionTimeInterval': [] | [
-        { 'intervalDuration': bigint, 'actionsPerInterval': bigint }
+      'actionExpirationTimestamp' : [] | [bigint],
+      'actionHistory' : Array<
+        { 'updateEntity' : UpdateEntity } |
+          { 'updateAction' : UpdateAction } |
+          { 'transferIcrc' : TransferIcrc } |
+          { 'mintNft' : MintNft }
+      >,
+      'actionStartTimestamp' : [] | [bigint],
+      'actionTimeInterval' : [] | [
+        { 'intervalDuration' : bigint, 'actionsPerInterval' : bigint }
       ],
     }
   ],
 }
-export interface ActionLockStateArgs { 'aid': string, 'uid': string }
+export interface ActionLockStateArgs { 'aid' : string, 'uid' : string }
 export interface ActionOutcome {
-  'possibleOutcomes': Array<ActionOutcomeOption>,
+  'possibleOutcomes' : Array<ActionOutcomeOption>,
+}
+export interface ActionOutcomeHistory {
+  'wid' : worldId,
+  'appliedAt' : bigint,
+  'option' : { 'updateEntity' : UpdateEntity } |
+    { 'updateAction' : UpdateAction } |
+    { 'transferIcrc' : TransferIcrc } |
+    { 'mintNft' : MintNft },
 }
 export interface ActionOutcomeOption {
-  'weight': number,
-  'option': { 'updateEntity': UpdateEntity } |
-  { 'transferIcrc': TransferIcrc } |
-  { 'mintNft': MintNft },
+  'weight' : number,
+  'option' : { 'updateEntity' : UpdateEntity } |
+    { 'updateAction' : UpdateAction } |
+    { 'transferIcrc' : TransferIcrc } |
+    { 'mintNft' : MintNft },
 }
-export interface ActionResult { 'outcomes': Array<ActionOutcome> }
+export interface ActionResult { 'outcomes' : Array<ActionOutcome> }
 export interface ActionReturn {
-  'worldOutcomes': Array<ActionOutcomeOption>,
-  'targetOutcomes': Array<ActionOutcomeOption>,
-  'targetPrincipalId': string,
-  'callerPrincipalId': string,
-  'worldPrincipalId': string,
-  'callerOutcomes': Array<ActionOutcomeOption>,
+  'worldOutcomes' : Array<ActionOutcomeOption>,
+  'targetOutcomes' : Array<ActionOutcomeOption>,
+  'targetPrincipalId' : string,
+  'callerPrincipalId' : string,
+  'worldPrincipalId' : string,
+  'callerOutcomes' : Array<ActionOutcomeOption>,
 }
 export interface ActionState {
-  'actionCount': bigint,
-  'intervalStartTs': bigint,
-  'actionId': string,
+  'actionCount' : bigint,
+  'intervalStartTs' : bigint,
+  'actionId' : string,
 }
-export interface AddToList { 'value': string, 'fieldName': string }
+export interface ActionStatusReturn {
+  'entitiesStatus' : Array<ConstraintStatus>,
+  'timeStatus' : {
+    'nextAvailableTimestamp' : [] | [bigint],
+    'actionsLeft' : [] | [bigint],
+  },
+  'actionHistoryStatus' : Array<ConstraintStatus>,
+  'isValid' : boolean,
+}
+export interface AddToList { 'value' : string, 'fieldName' : string }
 export type BlockIndex = bigint;
 export type BlockIndex__1 = bigint;
+export interface ConstraintStatus {
+  'eid' : string,
+  'expectedValue' : string,
+  'currentValue' : string,
+  'fieldName' : string,
+}
 export interface ContainsText {
-  'contains': boolean,
-  'value': string,
-  'fieldName': string,
+  'contains' : boolean,
+  'value' : string,
+  'fieldName' : string,
+}
+export interface DecrementActionCount {
+  'value' : { 'number' : number } |
+    { 'formula' : string },
 }
 export interface DecrementNumber {
-  'fieldName': string,
-  'fieldValue': { 'number': number } |
-  { 'formula': string },
+  'fieldName' : string,
+  'fieldValue' : { 'number' : number } |
+    { 'formula' : string },
 }
 export type DeleteEntity = {};
-export interface DeleteField { 'fieldName': string }
+export interface DeleteField { 'fieldName' : string }
 export interface EntityConstraint {
-  'eid': entityId,
-  'wid': [] | [worldId],
-  'entityConstraintType': EntityConstraintType,
+  'eid' : entityId,
+  'wid' : [] | [worldId],
+  'entityConstraintType' : EntityConstraintType,
 }
-export type EntityConstraintType = { 'greaterThanEqualToNumber': GreaterThanOrEqualToNumber };
-export interface EntityPermission { 'eid': entityId, 'wid': worldId }
+export type EntityConstraintType = { 'greaterThanEqualToNumber' : GreaterThanOrEqualToNumber };
+export interface EntityPermission { 'eid' : entityId, 'wid' : worldId }
 export interface EntitySchema {
-  'eid': string,
-  'uid': string,
-  'fields': Array<Field>,
+  'eid' : string,
+  'uid' : string,
+  'fields' : Array<Field>,
 }
 export interface EqualToNumber {
-  'value': number,
-  'equal': boolean,
-  'fieldName': string,
+  'value' : number,
+  'equal' : boolean,
+  'fieldName' : string,
 }
 export interface EqualToText {
-  'value': string,
-  'equal': boolean,
-  'fieldName': string,
+  'value' : string,
+  'equal' : boolean,
+  'fieldName' : string,
 }
-export interface Exist { 'value': boolean }
-export interface ExistField { 'value': boolean, 'fieldName': string }
-export interface Field { 'fieldName': string, 'fieldValue': string }
-export interface GlobalPermission { 'wid': worldId }
-export interface GreaterThanNowTimestamp { 'fieldName': string }
-export interface GreaterThanNumber { 'value': number, 'fieldName': string }
+export interface Exist { 'value' : boolean }
+export interface ExistField { 'value' : boolean, 'fieldName' : string }
+export interface Field { 'fieldName' : string, 'fieldValue' : string }
+export interface GlobalPermission { 'wid' : worldId }
+export interface GreaterThanNowTimestamp { 'fieldName' : string }
+export interface GreaterThanNumber { 'value' : number, 'fieldName' : string }
 export interface GreaterThanOrEqualToNumber {
-  'value': number,
-  'fieldName': string,
+  'value' : number,
+  'fieldName' : string,
 }
 export interface IcrcTx {
-  'toPrincipal': string,
-  'canister': string,
-  'amount': number,
+  'toPrincipal' : string,
+  'canister' : string,
+  'amount' : number,
 }
 export interface IncrementNumber {
-  'fieldName': string,
-  'fieldValue': { 'number': number },
+  'fieldName' : string,
+  'fieldValue' : { 'number' : number } 
 }
-export interface LessThanNowTimestamp { 'fieldName': string }
-export interface LessThanNumber { 'value': number, 'fieldName': string }
+export interface LessThanNowTimestamp { 'fieldName' : string }
+export interface LessThanNumber { 'value' : number, 'fieldName' : string }
 export interface LowerThanOrEqualToNumber {
-  'value': number,
-  'fieldName': string,
+  'value' : number,
+  'fieldName' : string,
 }
 export interface MintNft {
-  'assetId': string,
-  'metadata': string,
-  'canister': string,
+  'assetId' : string,
+  'metadata' : string,
+  'canister' : string,
 }
-export interface NftTransfer { 'toPrincipal': string }
+export interface NftTransfer { 'toPrincipal' : string }
 export interface NftTx {
-  'metadata': [] | [string],
-  'nftConstraintType': { 'hold': { 'originalEXT': null } | { 'boomEXT': null } } | { 'transfer': NftTransfer },
-  'canister': string,
+  'metadata' : [] | [string],
+  'nftConstraintType' : {
+      'hold' : { 'originalEXT' : null } |
+        { 'boomEXT' : null }
+    } |
+    { 'transfer' : NftTransfer },
+  'canister' : string,
 }
-export interface RemoveFromList { 'value': string, 'fieldName': string }
+export interface RemoveFromList { 'value' : string, 'fieldName' : string }
 export interface RenewTimestamp {
-  'fieldName': string,
-  'fieldValue': { 'number': number } |
-  { 'formula': string },
+  'fieldName' : string,
+  'fieldValue' : { 'number' : number } |
+    { 'formula' : string },
 }
-export type Result = { 'ok': TransferResult } |
-{ 'err': { 'Err': string } | { 'TxErr': TransferError } };
-export type Result_1 = { 'ok': TransferResult__1 } |
-{ 'err': { 'Err': string } | { 'TxErr': TransferError__1 } };
-export type Result_2 = { 'ok': null } |
-{ 'err': null };
-export type Result_3 = { 'ok': ActionReturn } |
-{ 'err': string };
-export type Result_4 = { 'ok': string } |
-{ 'err': string };
-export type Result_5 = { 'ok': Array<StableEntity> } |
-{ 'err': string };
-export type Result_6 = { 'ok': Array<ActionState> } |
-{ 'err': string };
+export type Result = { 'ok' : TransferResult } |
+  { 'err' : { 'Err' : string } | { 'TxErr' : TransferError } };
+export type Result_1 = { 'ok' : TransferResult__1 } |
+  { 'err' : { 'Err' : string } | { 'TxErr' : TransferError__1 } };
+export type Result_2 = { 'ok' : null } |
+  { 'err' : null };
+export type Result_3 = { 'ok' : ActionReturn } |
+  { 'err' : string };
+export type Result_4 = { 'ok' : string } |
+  { 'err' : string };
+export type Result_5 = { 'ok' : Array<StableEntity> } |
+  { 'err' : string };
+export type Result_6 = { 'ok' : Array<ActionState> } | { 'err' : string };
+export type Result_7 = { 'ok' : ActionStatusReturn } |
+  { 'err' : string };
+export type Result_8 = { 'ok' : Array<ActionOutcomeHistory> } |
+  { 'err' : string };
 export interface SetNumber {
-  'fieldName': string,
-  'fieldValue': { 'number': number } |
-  { 'formula': string },
+  'fieldName' : string,
+  'fieldValue' : { 'number' : number } |
+    { 'formula' : string },
 }
-export interface SetText { 'fieldName': string, 'fieldValue': string }
-export interface StableConfig { 'cid': configId, 'fields': Array<Field> }
+export interface SetText { 'fieldName' : string, 'fieldValue' : string }
+export interface StableConfig { 'cid' : configId, 'fields' : Array<Field> }
+export interface ConfigData {
+  'cid': configId,
+  'imageUrl': string, 
+  'description': string, 
+  'name': string,
+  'gameUrl': string
+};
 export interface StableEntity {
-  'eid': entityId,
-  'wid': worldId,
-  'fields': Array<Field>,
+  'eid' : entityId,
+  'wid' : worldId,
+  'fields' : Array<Field>,
 }
 export interface SubAction {
-  'actionConstraint': [] | [ActionConstraint],
-  'actionResult': ActionResult,
+  'actionConstraint' : [] | [ActionConstraint],
+  'actionResult' : ActionResult,
 }
 export type Timestamp = bigint;
 export type Tokens = bigint;
-export interface Tokens__1 { 'e8s': bigint }
+export interface Tokens__1 { 'e8s' : bigint }
 export type TransferError = {
-  'GenericError': { 'message': string, 'error_code': bigint }
-} |
-{ 'TemporarilyUnavailable': null } |
-{ 'BadBurn': { 'min_burn_amount': Tokens } } |
-{ 'Duplicate': { 'duplicate_of': BlockIndex } } |
-{ 'BadFee': { 'expected_fee': Tokens } } |
-{ 'CreatedInFuture': { 'ledger_time': Timestamp } } |
-{ 'TooOld': null } |
-{ 'InsufficientFunds': { 'balance': Tokens } };
+    'GenericError' : { 'message' : string, 'error_code' : bigint }
+  } |
+  { 'TemporarilyUnavailable' : null } |
+  { 'BadBurn' : { 'min_burn_amount' : Tokens } } |
+  { 'Duplicate' : { 'duplicate_of' : BlockIndex } } |
+  { 'BadFee' : { 'expected_fee' : Tokens } } |
+  { 'CreatedInFuture' : { 'ledger_time' : Timestamp } } |
+  { 'TooOld' : null } |
+  { 'InsufficientFunds' : { 'balance' : Tokens } };
 export type TransferError__1 = {
-  'TxTooOld': { 'allowed_window_nanos': bigint }
-} |
-{ 'BadFee': { 'expected_fee': Tokens__1 } } |
-{ 'TxDuplicate': { 'duplicate_of': BlockIndex__1 } } |
-{ 'TxCreatedInFuture': null } |
-{ 'InsufficientFunds': { 'balance': Tokens__1 } };
-export interface TransferIcrc { 'canister': string, 'quantity': number }
-export type TransferResult = { 'Ok': BlockIndex } |
-{ 'Err': TransferError };
-export type TransferResult__1 = { 'Ok': BlockIndex__1 } |
-{ 'Err': TransferError__1 };
-export interface UpdateEntity {
-  'eid': entityId,
-  'wid': [] | [worldId],
-  'updates': Array<UpdateEntityType>,
+    'TxTooOld' : { 'allowed_window_nanos' : bigint }
+  } |
+  { 'BadFee' : { 'expected_fee' : Tokens__1 } } |
+  { 'TxDuplicate' : { 'duplicate_of' : BlockIndex__1 } } |
+  { 'TxCreatedInFuture' : null } |
+  { 'InsufficientFunds' : { 'balance' : Tokens__1 } };
+export interface TransferIcrc { 'canister' : string, 'quantity' : number }
+export type TransferResult = { 'Ok' : BlockIndex } |
+  { 'Err' : TransferError };
+export type TransferResult__1 = { 'Ok' : BlockIndex__1 } |
+  { 'Err' : TransferError__1 };
+export interface UpdateAction {
+  'aid' : actionId,
+  'updates' : Array<UpdateActionType>,
 }
-export type UpdateEntityType = { 'setNumber': SetNumber } |
-{ 'incrementNumber': IncrementNumber } |
-{ 'decrementNumber': DecrementNumber };
+export type UpdateActionType = {
+    'decrementActionCount' : DecrementActionCount
+  };
+export interface UpdateEntity {
+  'eid' : entityId,
+  'wid' : [] | [worldId],
+  'updates' : Array<UpdateEntityType>,
+}
+export type UpdateEntityType = { 'setNumber': SetNumber } | { 'incrementNumber': IncrementNumber } | { 'decrementNumber': DecrementNumber };

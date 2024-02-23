@@ -162,7 +162,7 @@ const TopBar = () => {
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="max-w-[240px] rounded-primary dark:border-slate-700 border-2 border-slate-50">
+                  <div className="max-w-[240px] rounded-primary dark:border-gray-700 border-2 border-gray-300">
                     {(session == null) ? (
                       <Button
                         rightArrow
@@ -183,7 +183,7 @@ const TopBar = () => {
                             <p className="gradient-text font-semibold">{userProfile?.username}</p>
                             <div className="flex pt-1">
                               <img src="/xpicon.png" className="w-4" />
-                              <p className="text-white">{userProfile?.xp}</p>
+                              <p className="text-black dark:text-white">{userProfile?.xp}</p>
                             </div>
                           </div>
                         </div>
@@ -202,7 +202,7 @@ const TopBar = () => {
                         <p className="font-semibold">Principal:</p>
                         <div>{session.address}</div>
                         <div className="space-y-4 mt-24 ml-24">
-                          <Button size="big" onClick={() => { navigate((navPaths.profile)); setIsOpenNavSidebar(false); }}>
+                          <Button size="big" onClick={() => { navigate((navPaths.profile_picture)); setIsOpenNavSidebar(false); }}>
                             {t("navigation.profile")}
                           </Button>
                           <Button size="big" onClick={() => { navigate((navPaths.wallet_tokens)); setIsOpenNavSidebar(false); window.location.reload(); }}>

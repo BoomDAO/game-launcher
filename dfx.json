@@ -26,7 +26,7 @@
             "type": "motoko"
         },
         "gaming_guilds": {
-            "main": "src/game_launcher_backend/gaming_guilds/guilds.mo",
+            "main": "src/game_launcher_backend/world_deployer/world.mo",
             "type": "motoko"
         },
         "guilds_verifier": {
@@ -63,6 +63,12 @@
     },
     "networks": {
         "stag": {
+            "providers": [
+                "https://icp0.io"
+            ],
+            "type": "persistent"
+        },
+        "test": {
             "providers": [
                 "https://icp0.io"
             ],

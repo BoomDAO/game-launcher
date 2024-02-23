@@ -43,7 +43,7 @@
     @apply bg-gradient-to-r from-green-400 to-green-800
   }
   .gradient-bg-grey {
-    @apply bg-gradient-to-r from-stone-400 to-stone-400
+    @apply bg-gradient-to-r from-gray-400 to-gray-400
   }
 
   .form-error {

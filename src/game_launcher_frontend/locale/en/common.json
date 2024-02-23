@@ -10,7 +10,8 @@
   },
   "footer": {
     "follow": "Follow us",
-    "copyright": ""
+    "copyright": "",
+    "tos": "Terms Of Services"
   },
   "navigation": {
     "login": "Login",
@@ -22,7 +23,7 @@
     "manage_NFTs": "DEPLOY NFTS",
     "token_deployer": "DEPLOY TOKENS",
     "world_deployer": "DEPLOY WORLDS",
-    "gaming_guilds": "GAMING GUILDS"
+    "gaming_guilds": "GAMING GUILD"
   },
   "verification": {
     "button": "Send Verification Email",
@@ -508,10 +509,10 @@
       }
     },
     "Quests": {
-      "loading": "Loading All Quests ...",
-      "complete_button": "CLAIM REWARDS",
-      "incomplete_button": "GO TO GAME",
-      "claimed_button": "CLAIMED",
+      "loading": "HODL On, We are loading Quests for you ...",
+      "complete_button": "CLAIM",
+      "incomplete_button": "GO",
+      "claimed_button": "DONE",
       "claim_reward_error": "Error in claiming reward, contact dev team in discord"
     }
   },
@@ -547,7 +548,9 @@
         "select_button": "Choose IMG",
         "upload_button": "Upload",
         "error": "Some error occured. Contact dev team",
-        "success": "Profile picture updated successfully."
+        "upload_error": "Upload failed. Retry with image of size < 2MB.",
+        "success": "Profile picture updated successfully.",
+        "hint": "Size of profile picture should be less than 2MB."
       },
       "tab_2": {
         "title": "Username",

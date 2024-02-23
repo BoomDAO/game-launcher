@@ -59,10 +59,6 @@ export const idlFactory = ({ IDL }) => {
     'wid' : IDL.Opt(worldId),
     'entityConstraintType' : EntityConstraintType,
   });
-  const IcpTx = IDL.Record({
-    'toPrincipal' : IDL.Text,
-    'amount' : IDL.Float64,
-  });
   const NftTransfer = IDL.Record({ 'toPrincipal' : IDL.Text });
   const NftTx = IDL.Record({
     'metadata' : IDL.Opt(IDL.Text),
@@ -71,23 +67,6 @@ export const idlFactory = ({ IDL }) => {
       'transfer' : NftTransfer,
     }),
     'canister' : IDL.Text,
-  });
-  const ActionConstraint = IDL.Record({
-    'icrcConstraint' : IDL.Vec(IcrcTx),
-    'entityConstraint' : IDL.Vec(EntityConstraint),
-    'icpConstraint' : IDL.Opt(IcpTx),
-    'nftConstraint' : IDL.Vec(NftTx),
-    'timeConstraint' : IDL.Opt(
-      IDL.Record({
-        'actionExpirationTimestamp' : IDL.Opt(IDL.Nat),
-        'actionTimeInterval' : IDL.Opt(
-          IDL.Record({
-            'intervalDuration' : IDL.Nat,
-            'actionsPerInterval' : IDL.Nat,
-          })
-        ),
-      })
-    ),
   });
   const SetNumber = IDL.Record({
     'fieldName' : IDL.Text,
@@ -144,6 +123,17 @@ export const idlFactory = ({ IDL }) => {
     'wid' : IDL.Opt(worldId),
     'updates' : IDL.Vec(UpdateEntityType),
   });
+  const actionId = IDL.Text;
+  const DecrementActionCount = IDL.Record({
+    'value' : IDL.Variant({ 'number' : IDL.Float64, 'formula' : IDL.Text }),
+  });
+  const UpdateActionType = IDL.Variant({
+    'decrementActionCount' : DecrementActionCount,
+  });
+  const UpdateAction = IDL.Record({
+    'aid' : actionId,
+    'updates' : IDL.Vec(UpdateActionType),
+  });
   const TransferIcrc = IDL.Record({
     'canister' : IDL.Text,
     'quantity' : IDL.Float64,
@@ -153,10 +143,36 @@ export const idlFactory = ({ IDL }) => {
     'metadata' : IDL.Text,
     'canister' : IDL.Text,
   });
+  const ActionConstraint = IDL.Record({
+    'icrcConstraint' : IDL.Vec(IcrcTx),
+    'entityConstraint' : IDL.Vec(EntityConstraint),
+    'nftConstraint' : IDL.Vec(NftTx),
+    'timeConstraint' : IDL.Opt(
+      IDL.Record({
+        'actionExpirationTimestamp' : IDL.Opt(IDL.Nat),
+        'actionHistory' : IDL.Vec(
+          IDL.Variant({
+            'updateEntity' : UpdateEntity,
+            'updateAction' : UpdateAction,
+            'transferIcrc' : TransferIcrc,
+            'mintNft' : MintNft,
+          })
+        ),
+        'actionStartTimestamp' : IDL.Opt(IDL.Nat),
+        'actionTimeInterval' : IDL.Opt(
+          IDL.Record({
+            'intervalDuration' : IDL.Nat,
+            'actionsPerInterval' : IDL.Nat,
+          })
+        ),
+      })
+    ),
+  });
   const ActionOutcomeOption = IDL.Record({
     'weight' : IDL.Float64,
     'option' : IDL.Variant({
       'updateEntity' : UpdateEntity,
+      'updateAction' : UpdateAction,
       'transferIcrc' : TransferIcrc,
       'mintNft' : MintNft,
     }),
@@ -187,11 +203,43 @@ export const idlFactory = ({ IDL }) => {
     'uid' : IDL.Text,
     'fields' : IDL.Vec(Field),
   });
+  const userId = IDL.Text;
   const ActionLockStateArgs = IDL.Record({
     'aid' : IDL.Text,
     'uid' : IDL.Text,
   });
   const Result_2 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Null });
+  const Result_9 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+  const ActionOutcomeHistory = IDL.Record({
+    'wid' : worldId,
+    'appliedAt' : IDL.Nat,
+    'option' : IDL.Variant({
+      'updateEntity' : UpdateEntity,
+      'updateAction' : UpdateAction,
+      'transferIcrc' : TransferIcrc,
+      'mintNft' : MintNft,
+    }),
+  });
+  const Result_8 = IDL.Variant({
+    'ok' : IDL.Vec(ActionOutcomeHistory),
+    'err' : IDL.Text,
+  });
+  const ConstraintStatus = IDL.Record({
+    'eid' : IDL.Text,
+    'expectedValue' : IDL.Text,
+    'currentValue' : IDL.Text,
+    'fieldName' : IDL.Text,
+  });
+  const ActionStatusReturn = IDL.Record({
+    'entitiesStatus' : IDL.Vec(ConstraintStatus),
+    'timeStatus' : IDL.Record({
+      'nextAvailableTimestamp' : IDL.Opt(IDL.Nat),
+      'actionsLeft' : IDL.Opt(IDL.Nat),
+    }),
+    'actionHistoryStatus' : IDL.Vec(ConstraintStatus),
+    'isValid' : IDL.Bool,
+  });
+  const Result_7 = IDL.Variant({ 'ok' : ActionStatusReturn, 'err' : IDL.Text });
   const ActionState = IDL.Record({
     'actionCount' : IDL.Nat,
     'intervalStartTs' : IDL.Nat,
@@ -217,47 +265,53 @@ export const idlFactory = ({ IDL }) => {
     'actionId' : IDL.Text,
   });
   const ActionReturn = IDL.Record({
-    'worldOutcomes' : IDL.Opt(IDL.Vec(ActionOutcomeOption)),
-    'targetOutcomes' : IDL.Opt(IDL.Vec(ActionOutcomeOption)),
-    'targetPrincipalId' : IDL.Opt(IDL.Text),
+    'worldOutcomes' : IDL.Vec(ActionOutcomeOption),
+    'targetOutcomes' : IDL.Vec(ActionOutcomeOption),
+    'targetPrincipalId' : IDL.Text,
     'callerPrincipalId' : IDL.Text,
     'worldPrincipalId' : IDL.Text,
-    'callerOutcomes' : IDL.Opt(IDL.Vec(ActionOutcomeOption)),
+    'callerOutcomes' : IDL.Vec(ActionOutcomeOption),
   });
   const Result_3 = IDL.Variant({ 'ok' : ActionReturn, 'err' : IDL.Text });
-  const BlockIndex = IDL.Nat64;
-  const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
+  const BlockIndex__1 = IDL.Nat64;
+  const Tokens__1 = IDL.Record({ 'e8s' : IDL.Nat64 });
   const TransferError__1 = IDL.Variant({
     'TxTooOld' : IDL.Record({ 'allowed_window_nanos' : IDL.Nat64 }),
-    'BadFee' : IDL.Record({ 'expected_fee' : Tokens }),
-    'TxDuplicate' : IDL.Record({ 'duplicate_of' : BlockIndex }),
+    'BadFee' : IDL.Record({ 'expected_fee' : Tokens__1 }),
+    'TxDuplicate' : IDL.Record({ 'duplicate_of' : BlockIndex__1 }),
     'TxCreatedInFuture' : IDL.Null,
-    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens }),
+    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens__1 }),
   });
-  const TransferResult = IDL.Variant({
-    'Ok' : BlockIndex,
+  const TransferResult__1 = IDL.Variant({
+    'Ok' : BlockIndex__1,
     'Err' : TransferError__1,
   });
   const Result_1 = IDL.Variant({
-    'ok' : TransferResult,
+    'ok' : TransferResult__1,
     'err' : IDL.Variant({ 'Err' : IDL.Text, 'TxErr' : TransferError__1 }),
   });
+  const BlockIndex = IDL.Nat;
+  const Tokens = IDL.Nat;
+  const Timestamp = IDL.Nat64;
   const TransferError = IDL.Variant({
     'GenericError' : IDL.Record({
       'message' : IDL.Text,
       'error_code' : IDL.Nat,
     }),
     'TemporarilyUnavailable' : IDL.Null,
-    'BadBurn' : IDL.Record({ 'min_burn_amount' : IDL.Nat }),
-    'Duplicate' : IDL.Record({ 'duplicate_of' : IDL.Nat }),
-    'BadFee' : IDL.Record({ 'expected_fee' : IDL.Nat }),
-    'CreatedInFuture' : IDL.Record({ 'ledger_time' : IDL.Nat64 }),
+    'BadBurn' : IDL.Record({ 'min_burn_amount' : Tokens }),
+    'Duplicate' : IDL.Record({ 'duplicate_of' : BlockIndex }),
+    'BadFee' : IDL.Record({ 'expected_fee' : Tokens }),
+    'CreatedInFuture' : IDL.Record({ 'ledger_time' : Timestamp }),
     'TooOld' : IDL.Null,
-    'InsufficientFunds' : IDL.Record({ 'balance' : IDL.Nat }),
+    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens }),
   });
-  const Result__1 = IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : TransferError });
+  const TransferResult = IDL.Variant({
+    'Ok' : BlockIndex,
+    'Err' : TransferError,
+  });
   const Result = IDL.Variant({
-    'ok' : Result__1,
+    'ok' : TransferResult,
     'err' : IDL.Variant({ 'Err' : IDL.Text, 'TxErr' : TransferError }),
   });
   const WorldTemplate = IDL.Service({
@@ -276,7 +330,22 @@ export const idlFactory = ({ IDL }) => {
         [Result_4],
         [],
       ),
+    'deleteActionHistoryForUser' : IDL.Func(
+        [IDL.Record({ 'uid' : userId })],
+        [],
+        [],
+      ),
     'deleteActionLockState' : IDL.Func([ActionLockStateArgs], [], []),
+    'deleteActionStateForAllUsers' : IDL.Func(
+        [IDL.Record({ 'aid' : IDL.Text })],
+        [Result_2],
+        [],
+      ),
+    'deleteActionStateForUser' : IDL.Func(
+        [IDL.Record({ 'aid' : IDL.Text, 'uid' : IDL.Text })],
+        [Result_9],
+        [],
+      ),
     'deleteAllActionLockStates' : IDL.Func([], [], []),
     'deleteAllActions' : IDL.Func([], [Result_2], []),
     'deleteAllConfigs' : IDL.Func([], [Result_2], []),
@@ -304,10 +373,25 @@ export const idlFactory = ({ IDL }) => {
       ),
     'exportActions' : IDL.Func([], [IDL.Vec(Action)], []),
     'exportConfigs' : IDL.Func([], [IDL.Vec(StableConfig)], []),
+    'getActionHistory' : IDL.Func(
+        [IDL.Record({ 'uid' : userId })],
+        [Result_8],
+        [],
+      ),
+    'getActionHistoryComposite' : IDL.Func(
+        [IDL.Record({ 'uid' : userId })],
+        [Result_8],
+        ['composite_query'],
+      ),
     'getActionLockState' : IDL.Func(
         [ActionLockStateArgs],
         [IDL.Bool],
         ['query'],
+      ),
+    'getActionStatusComposite' : IDL.Func(
+        [IDL.Record({ 'aid' : actionId, 'uid' : IDL.Text })],
+        [Result_7],
+        ['composite_query'],
       ),
     'getAllActions' : IDL.Func([], [IDL.Vec(Action)], ['query']),
     'getAllConfigs' : IDL.Func([], [IDL.Vec(StableConfig)], ['query']),
@@ -316,10 +400,20 @@ export const idlFactory = ({ IDL }) => {
         [Result_6],
         [],
       ),
+    'getAllUserActionStatesComposite' : IDL.Func(
+        [IDL.Record({ 'uid' : IDL.Text })],
+        [Result_6],
+        ['composite_query'],
+      ),
     'getAllUserEntities' : IDL.Func(
         [IDL.Record({ 'uid' : IDL.Text, 'page' : IDL.Opt(IDL.Nat) })],
         [Result_5],
         [],
+      ),
+    'getAllUserEntitiesComposite' : IDL.Func(
+        [IDL.Record({ 'uid' : IDL.Text, 'page' : IDL.Opt(IDL.Nat) })],
+        [Result_5],
+        ['composite_query'],
       ),
     'getEntityPermissionsOfWorld' : IDL.Func(
         [],
@@ -370,9 +464,13 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'resetActionsAndConfigsToHardcodedTemplate' : IDL.Func([], [Result_2], []),
-    'updateOwnership' : IDL.Func([IDL.Principal], [], []),
+    'validateConstraints' : IDL.Func(
+        [IDL.Text, actionId, IDL.Opt(ActionConstraint)],
+        [IDL.Record({ 'aid' : IDL.Text, 'status' : IDL.Bool })],
+        [],
+      ),
     'validateEntityConstraints' : IDL.Func(
-        [IDL.Vec(StableEntity), IDL.Vec(EntityConstraint)],
+        [IDL.Text, IDL.Vec(StableEntity), IDL.Vec(EntityConstraint)],
         [IDL.Bool],
         ['query'],
       ),
@@ -394,4 +492,4 @@ export const idlFactory = ({ IDL }) => {
   });
   return WorldTemplate;
 };
-export const init = ({ IDL }) => { return []; };
+export const init = ({ IDL }) => { return [IDL.Principal]; };

@@ -10,10 +10,12 @@ import { useAuthContext } from "@/context/authContext";
 import { useGlobalContext } from "@/context/globalContext";
 import { useClaimReward } from "@/api/guilds";
 import toast from "react-hot-toast";
+import { cx } from "@/utils";
 
 interface CardProps {
   aid: string;
   title: string;
+  description: string;
   image: string;
   rewards: { name: string; imageUrl: string; value: string; description: string; }[];
   countCompleted: string;
@@ -22,11 +24,14 @@ interface CardProps {
   expiration: string;
   onClick?: () => void;
   type: "Completed" | "Incomplete" | "Claimed";
+  gamersImages: string[];
+  isDailyQuest: boolean;
 }
 
 const GuildCard = ({
   aid,
   title,
+  description,
   image,
   rewards,
   countCompleted,
@@ -35,13 +40,14 @@ const GuildCard = ({
   expiration,
   onClick,
   type,
+  gamersImages,
+  isDailyQuest
 }: CardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const session = useAuthContext();
   const { setIsOpenNavSidebar } = useGlobalContext();
-
-  const { mutate, data, isLoading } = useClaimReward();
+  const { mutate, data, isLoading, isSuccess } = useClaimReward();
 
   const handleItemsOnClick = (name: string, imageUrl: string, description: string) => {
     toast.custom((t) => (
@@ -64,152 +70,217 @@ const GuildCard = ({
     <Center>
       {
         (type === "Completed") ?
-          <div className="w-full rounded-3xl mb-7 p-0.5 gradient-bg-green">
-            <div className="flex h-full w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
+          <div className={cx(
+            "w-full rounded-3xl mb-3 p-0.5",
+            !isSuccess ? "gradient-bg-green" : "gradient-bg-grey"
+          )}>
+            <div className="flex h-64 w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
               <div className="w-4/12">
-                <img className="w-full h-60 object-cover rounded-3xl" src={image} />
+                <img className="w-full h-56  object-cover rounded-3xl" src={image} />
               </div>
-              <div className="w-8/12 ml-20">
-                <div className="text-lg">{title}</div>
+              <div className="w-8/12 ml-4">
+                <div className="w-full flex">
+                  <div className="text-xl font-semibold mt-1">{title}</div>
+                  <Button className="order-2 ml-auto gradient-bg-green h-8" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); mutate({ aid, rewards }); }} isLoading={isLoading} isClaimSuccess={isSuccess}>{t("gaming_guilds.Quests.complete_button")}</Button>
+                </div>
+                <div className="text-sm font-light mt-2">{description}</div>
                 {mustHave.length ?
-                  <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Must Have : </div>
+                  <div className="flex mt-8">
+                    <div className="text-sm font-semibold">You Have: </div>
                     <div className="flex">
                       {
                         mustHave.map(({ name, imageUrl, quantity, description }) => (
-                          <div className="flex pl-2 cursor-pointer" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                            <img src={imageUrl} className="mx-2 h-8" />
-                            {(quantity != "") ? <div className="mt-1 mr-1">{quantity}</div> : <></>}
+                          <div className="flex cursor-pointer text-xs" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                            <img src={imageUrl} className="ml-1 h-6" />
+                            {(quantity != "") ? <div className="mt-1 mr-1 text-xs ml-0.5">{quantity}</div> : <></>}
                             <div className="mt-1">{name}</div>
                           </div>
                         ))
                       }
                     </div>
                   </div> :
-                  <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Must Have : </div>
+                  <div className="flex mt-8">
+                    <div className="text-sm font-semibold">You Have: </div>
                   </div>}
                 {rewards.length ?
-                  <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Rewards : </div>
+                  <div className="flex mt-0.5">
+                    <div className="text-sm font-semibold">Rewards : </div>
                     <div className="flex">
                       {
                         rewards.map(({ name, imageUrl, value, description }) => (
-                          <div className="flex pl-2 cursor-pointer" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                            <img src={imageUrl} className="mx-2 h-8" />
-                            {(value != "") ? <div className="mt-1 mr-1">{value}</div> : <></>}
-                            <div className="mt-1">{name}</div>
+                          <div className="flex cursor-pointer text-xs" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                            <img src={imageUrl} className="ml-1 h-6" />
+                            {(value != "") ? <div className="mt-1 mr-1 text-xs ml-0.5">{value}</div> : <></>}
+                            <div className="mt-1 text-xs">{name}</div>
                           </div>
                         ))
                       }
                     </div>
-                  </div> : <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Must Have : </div>
+                  </div> : <div className="flex mt-0.5">
+                    <div className="text-sm font-semibold">Rewards : </div>
                   </div>}
-                <div className="mt-10 text-lg font-extralight">Gamers who have completed this quest : <p className="gradient-text text-2xl font-normal">{countCompleted}</p></div>
-                <div className="text-lg font-extralight">Quest Expiration : <p className="gradient-text text-2xl font-normal">{expiration}</p></div>
-                <div className="w-full flex mt-1">
-                  <div className="text-lg">Your quest status : <p className="gradient-text text-xl font-normal">{type}</p></div>
-                  <Button className="h-fit order-2 ml-auto gradient-bg-green" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); mutate({ aid, rewards }); }} isLoading={isLoading}>{t("gaming_guilds.Quests.complete_button")}</Button>
+                <div className="mt-10">
+                  {(isDailyQuest) ? <p className="font-semibold text-xs">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}
+                  <div className="w-full flex justify-between pr-5">
+                    {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
+                    {(expiration[0] != "+") ?
+                      <div className="flex">
+                        {
+                          gamersImages.length ?
+                            <div className="flex">
+                              <div className="flex">
+                                {
+                                  gamersImages.map((image, index) => (<img key={index} src={image} className="w-6 h-6 rounded-2xl bg-white" />))
+                                }
+                              </div>
+                              <p className="ml-0.5">+{(countCompleted == "0") ? 1 : countCompleted}</p>
+                            </div> : <></>
+                        }
+                      </div> : <></>}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
           : (type === "Incomplete") ?
-            <div className="w-full flex dark:text-white border-stone-400 text-black border-2 rounded-3xl mb-7 p-4">
-              <div className="w-4/12">
-                <img className="w-full h-60 rounded-3xl object-cover" src={image} />
-              </div>
-              <div className="w-8/12 ml-20">
-                <div className="text-lg">{title}</div>
-                {mustHave.length ?
-                  <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Must Have : </div>
-                    <div className="flex">
-                      {
-                        mustHave.map(({ name, imageUrl, quantity, description }) => (
-                          <div className="flex pl-2 cursor-pointer" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                            <img src={imageUrl} className="mx-2 h-8" />
-                            {(quantity != "") ? <div className="mt-1 mr-1">{quantity}</div> : <></>}
-                            <div className="mt-1">{name}</div>
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div> : <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Must Have : </div>
-                  </div>}
-                {rewards.length ?
-                  <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Rewards : </div>
-                    <div className="flex">
-                      {
-                        rewards.map(({ name, imageUrl, value, description }) => (
-                          <div className="flex pl-2 cursor-pointer" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                            <img src={imageUrl} className="mx-2 h-8" />
-                            {(value != "") ? <div className="mt-1 mr-1">{value}</div> : <></>}
-                            <div className="mt-1">{name}</div>
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div> : <div className="flex mt-1">
-                    <div className="font-semibold mt-1">Must Have : </div>
-                  </div>}
-                <div className="mt-10 text-lg font-extralight">Gamers who have completed this quest : <p className="gradient-text text-2xl font-normal">{countCompleted}</p></div>
-                <div className="text-lg font-extralight">Quest Expiration : <p className="gradient-text text-2xl font-normal">{expiration}</p></div>
-                <div className="w-full flex mt-1">
-                  <div className="text-lg">Your quest status : <p className="gradient-text text-xl font-normal">{type}</p></div>
-                  <Button className="h-fit order-2 ml-auto" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); (window.open(gameUrl, "_blank")); }}>{t("gaming_guilds.Quests.incomplete_button")}</Button>
-                </div>
-              </div>
-            </div> :
-            <div className="w-full rounded-3xl mb-7 p-0.5 gradient-bg-grey">
-              <div className="flex h-full w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
+            <div className="w-full rounded-3xl mb-3 p-0.5 gradient-bg">
+              <div className="flex h-64 w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
                 <div className="w-4/12">
-                  <img className="w-full h-60 rounded-3xl object-cover" src={image} />
+                  <img className="w-full h-56  object-cover rounded-3xl" src={image} />
                 </div>
-                <div className="w-8/12 ml-20">
-                  <div className="text-lg">{title}</div>
+                <div className="w-8/12 ml-4">
+                  <div className="w-full flex">
+                    <div className="text-xl font-semibold mt-1">{title}</div>
+                    {
+                      (expiration[0] == "+") ?
+                        <Button className="h-8 order-2 ml-auto cursor-default gradient-bg-grey" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); }}>{t("gaming_guilds.Quests.incomplete_button")}</Button> :
+                        <Button className="h-8 order-2 ml-auto" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); (window.open(gameUrl, "_blank")); }}>{t("gaming_guilds.Quests.incomplete_button")}</Button>
+                    }
+                  </div>
+                  <div className="text-sm font-light mt-2">{description}</div>
                   {mustHave.length ?
-                    <div className="flex mt-1">
-                      <div className="font-semibold mt-1">Must Have : </div>
+                    <div className="flex mt-8">
+                      <div className="text-sm font-semibold">You Have: </div>
                       <div className="flex">
                         {
                           mustHave.map(({ name, imageUrl, quantity, description }) => (
-                            <div className="flex pl-2 cursor-pointer" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                              <img src={imageUrl} className="mx-2 h-8" />
-                              {(quantity != "") ? <div className="mt-1 mr-1">{quantity}</div> : <></>}
+                            <div className="flex cursor-pointer text-xs" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                              <img src={imageUrl} className="ml-1 h-6" />
+                              {(quantity != "") ? <div className="mt-1 mr-1 text-xs ml-0.5">{quantity}</div> : <></>}
                               <div className="mt-1">{name}</div>
                             </div>
                           ))
                         }
                       </div>
-                    </div> : <div className="flex mt-1">
-                      <div className="font-semibold mt-1">Must Have : </div>
+                    </div> :
+                    <div className="flex mt-8">
+                      <div className="text-sm font-semibold">You Have: </div>
                     </div>}
                   {rewards.length ?
-                    <div className="flex mt-1">
-                      <div className="font-semibold mt-1">Rewards : </div>
+                    <div className="flex mt-0.5">
+                      <div className="text-sm font-semibold">Rewards : </div>
                       <div className="flex">
                         {
                           rewards.map(({ name, imageUrl, value, description }) => (
-                            <div className="flex pl-2 cursor-pointer" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                              <img src={imageUrl} className="mx-2 h-8" />
-                              {(value != "") ? <div className="mt-1 mr-1">{value}</div> : <></>}
+                            <div className="flex cursor-pointer text-xs" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                              <img src={imageUrl} className="ml-1 h-6" />
+                              {(value != "") ? <div className="mt-1 mr-1 text-xs ml-0.5">{value}</div> : <></>}
+                              <div className="mt-1 text-xs">{name}</div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div> : <div className="flex mt-0.5">
+                      <div className="text-sm font-semibold">Rewards : </div>
+                    </div>}
+                  <div className="mt-10">
+                    {(isDailyQuest) ? <p className="font-semibold text-xs">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}
+                    <div className="w-full flex justify-between pr-5">
+                      {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
+
+                      {(expiration[0] != "+") ? <div className="flex">
+                        {
+                          gamersImages.length ?
+                            <div className="flex">
+                              <div className="flex">
+                                {
+                                  gamersImages.map((image, index) => (<img key={index} src={image} className="w-6 h-6 rounded-2xl bg-white" />))
+                                }
+                              </div>
+                              <p className="ml-0.5">+{(countCompleted == "0") ? 1 : countCompleted}</p>
+                            </div> : <></>
+                        }
+                      </div> : <></>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> :
+            <div className="mb-3 p-0.5 gradient-bg-grey w-full rounded-3xl">
+              <div className="flex h-64 w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
+                <div className="w-4/12">
+                  <img className="w-full h-56  object-cover rounded-3xl" src={image} />
+                </div>
+                <div className="w-8/12 ml-4">
+                  <div className="w-full flex">
+                    <div className="text-xl font-semibold mt-1">{title}</div>
+                    <Button className="order-2 ml-auto gradient-bg-grey h-8 cursor-default" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); }}>{t("gaming_guilds.Quests.claimed_button")}</Button>
+                  </div>
+                  <div className="text-sm font-light mt-2">{description}</div>
+                  {mustHave.length ?
+                    <div className="flex mt-8">
+                      <div className="text-sm font-semibold">You Have: </div>
+                      <div className="flex">
+                        {
+                          mustHave.map(({ name, imageUrl, quantity, description }) => (
+                            <div className="flex cursor-pointer text-xs" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                              <img src={imageUrl} className="ml-1 h-6" />
+                              {(quantity != "") ? <div className="mt-1 mr-1 text-xs ml-0.5">{quantity}</div> : <></>}
                               <div className="mt-1">{name}</div>
                             </div>
                           ))
                         }
                       </div>
-                    </div> : <div className="flex mt-1">
-                      <div className="font-semibold mt-1">Must Have : </div>
+                    </div> :
+                    <div className="flex mt-8">
+                      <div className="text-sm font-semibold">You Have: </div>
                     </div>}
-                  <div className="mt-10 text-lg font-extralight">Gamers who have completed this quest : <p className="gradient-text text-2xl font-normal">{countCompleted}</p></div>
-                  <div className="text-lg font-extralight">Quest Expiration : <p className="gradient-text text-2xl font-normal">{expiration}</p></div>
-                  <div className="w-full flex mt-1">
-                    <div className="text-lg">Your quest status : <p className="gradient-text text-xl font-normal">{type}</p></div>
-                    <Button className="h-fit order-2 ml-auto gradient-bg-grey" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); }}>{t("gaming_guilds.Quests.claimed_button")}</Button>
+                  {rewards.length ?
+                    <div className="flex mt-0.5">
+                      <div className="text-sm font-semibold">Rewards : </div>
+                      <div className="flex">
+                        {
+                          rewards.map(({ name, imageUrl, value, description }) => (
+                            <div className="flex cursor-pointer text-xs" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                              <img src={imageUrl} className="ml-1 h-6" />
+                              {(value != "") ? <div className="mt-1 mr-1 text-xs ml-0.5">{value}</div> : <></>}
+                              <div className="mt-1 text-xs">{name}</div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div> : <div className="flex mt-0.5">
+                      <div className="text-sm font-semibold">Rewards : </div>
+                    </div>}
+                  <div className="mt-10">
+                    {(isDailyQuest) ? <p className="font-semibold text-xs">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}
+                    <div className="w-full flex justify-between pr-5">
+                      {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
+                      {(expiration[0] != "+") ?
+                        <div className="flex">
+                          {
+                            gamersImages.length ?
+                              <div className="flex">
+                                <div className="flex">
+                                  {
+                                    gamersImages.map((image, index) => (<img key={index} src={image} className="w-6 h-6 rounded-2xl bg-white" />))
+                                  }
+                                </div>
+                                <p className="ml-0.5">+{(countCompleted == "0") ? 1 : countCompleted}</p>
+                              </div> : <></>
+                          }
+                        </div> : <></>}
+                    </div>
                   </div>
                 </div>
               </div>

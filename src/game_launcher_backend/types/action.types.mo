@@ -121,6 +121,7 @@ module {
 
     //OUTCOMES
     public type ActionOutcomeHistory = {
+        wid : TGlobal.worldId;
         option : {
             #transferIcrc : TransferIcrc;
             #mintNft : MintNft;
@@ -185,5 +186,21 @@ module {
         callerOutcomes : [ActionOutcomeOption];
         targetOutcomes : [ActionOutcomeOption];
         worldOutcomes : [ActionOutcomeOption];
+    };
+
+    public type ConstraintStatus = {
+        eid : Text;
+        fieldName: Text;
+        currentValue: Text;
+        expectedValue: Text;
+    };
+    public type ActionStatusReturn = {
+        isValid: Bool;
+        timeStatus : {
+            nextAvailableTimestamp : ?Nat;
+            actionsLeft : ?Nat;
+        };
+        actionHistoryStatus : [ConstraintStatus];
+        entitiesStatus : [ConstraintStatus];
     };
 };
