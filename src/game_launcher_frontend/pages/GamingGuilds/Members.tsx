@@ -15,28 +15,28 @@ import { MembersInfo } from "@/types";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Space from "@/components/ui/Space";
 import Pagination from "@/components/Pagination";
+import { getPaginationPages } from "@/utils";
 
 const Members = () => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     const [pageNumber, setPageNumber] = React.useState(1);
-    const { data : totalMembersInfo = { totalMembers : "", members : [] }, isLoading, isError } = useGetAllMembersInfo();
+    let { data: totalMembersInfo = { totalMembers: "", members: [] }, isLoading, isError } = useGetAllMembersInfo(pageNumber);
 
     return (
         <>
             <div className="flex">
                 <div className="flex">
                     <p className="text-3xl">Total Guild Members : </p>
-                    <div className="text-4xl gradient-text ml-2">{ isLoading? <LoadingResult></LoadingResult> : totalMembersInfo.totalMembers}</div>
+                    <div className="text-4xl gradient-text ml-2">{isLoading ? <LoadingResult></LoadingResult> : totalMembersInfo.totalMembers}</div>
                 </div>
                 <div>
                 </div>
             </div>
             <div className="w-full flex justify-around">
-                <p className="w-1/4 text-xl">Profile Image</p>
-                <p className="w-1/4 text-xl">Username</p>
-                <p className="w-1/4 text-xl">Guild XP</p>
-                <p className="w-1/4 text-xl">Join Date</p>
+                <p className="w-20 text-xl">Rank</p>
+                <p className="w-72 text-xl">User</p>
+                <p className="w-40 text-xl">Guild XP</p>
+                <p className="w-40 text-xl">Join Date</p>
             </div>
             {/* <Space/> */}
             <div className="">
@@ -48,24 +48,27 @@ const Members = () => {
                     totalMembersInfo.members.length ? (
                         <>
                             <div className="w-full">
-                                {totalMembersInfo.members.map(({ username, joinDate, image, guilds }) => (
+                                {totalMembersInfo.members.map(({ username, joinDate, image, guilds, rank }) => (
                                     <div key={username}>
                                         <div className="flex justify-around my-2.5">
-                                            <div className="w-1/4 pl-10"><img src={image} className="h-10 w-10 rounded-3xl" /></div>
-                                            <p className="w-1/4 font-light pl-1 pt-2">{username}</p>
-                                            <p className="w-1/4 font-light pl-1 pt-2">{guilds}</p>
-                                            <p className="w-1/4 font-light pl-1 pt-2">{joinDate}</p>
+                                            <p className="w-20 pl-1 pt-2 float-start">{rank}</p>
+                                            <div className="w-72 flex">
+                                                <img src={image} className="h-10 w-10 object-cover rounded-3xl overflow-hidden" />
+                                                <p className="font-light pl-2 pt-2">{username}</p>
+                                            </div>
+                                            <p className="w-40 font-light pl-1 pt-2">{guilds}</p>
+                                            <p className="w-40 font-light pl-1 pt-2">{joinDate}</p>
                                         </div>
                                         <div className="w-full h-px gradient-bg opacity-25"></div>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* <Pagination
+                            <Pagination
                                 pageNumber={pageNumber}
                                 setPageNumber={setPageNumber}
-                                totalNumbers={getPaginationPages(totalMembersInfo.members.length, 9)}
-                            /> */}
+                                totalNumbers={getPaginationPages(Number(totalMembersInfo.totalMembers), 40)}
+                            />
                         </>
                     ) : (
                         <NoDataResult>{t("gaming_guilds.items.item_2.no_members")}</NoDataResult>

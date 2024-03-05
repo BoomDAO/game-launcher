@@ -15,12 +15,6 @@ import { useAuthContext } from "@/context/authContext";
 import { useGlobalContext } from "@/context/globalContext";
 import { navPaths } from "@/shared";
 import { getPaginationPages } from "@/utils";
-import DialogProvider from "@/components/DialogProvider";
-import {
-  OpenDialogType,
-  StateTypes
-} from "../types/dialogTypes";
-import EmailPage from "./GamingGuilds/EmailPage";
 import toast from "react-hot-toast";
 
 const Home = () => {
@@ -35,50 +29,6 @@ const Home = () => {
 
   const { data: games = [], isError, isLoading } = useGetGames(pageNumber, sorting);
   const { data: totalGames } = useGetTotalGames();
-
-  // const open: OpenDialogType = ({
-  //   component,
-  //   title,
-  //   okCallback,
-  //   cancelCallback,
-  //   width,
-  //   okText,
-  //   cancelText
-  // }) => {
-  //   setState({
-  //     component,
-  //     title,
-  //     okCallback,
-  //     cancelCallback,
-  //     width,
-  //     okText,
-  //     cancelText,
-  //     isOpen: true,
-  //     value: {
-  //       openDialog: open,
-  //       closeDialog: close
-  //     }
-  //   });
-  // };
-
-  // const close = (): void => {
-  //   setState({ isOpen: false });
-  // };
-
-  // const [state, setState] = React.useState<StateTypes>({
-  //   component: <EmailPage />,
-  //   isOpen: true,
-  //   title: "Verify Email to Receive OG Badge",
-  //   okText: "Ok",
-  //   cancelText: "Cancel",
-  //   width: "md",
-  //   okCallback: close,
-  //   cancelCallback: close,
-  //   value: {
-  //     openDialog: open,
-  //     closeDialog: close
-  //   }
-  // });
 
   const onUploadButtonClick = () => {
     if (!session) {

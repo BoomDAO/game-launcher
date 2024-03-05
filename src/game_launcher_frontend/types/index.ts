@@ -242,6 +242,7 @@ export interface GuildCard {
 
 export interface Member {
   uid: string;
+  rank: string;
   image: string;
   username: string;
   guilds: string;
@@ -468,11 +469,9 @@ export type Result_3 = { 'ok' : ActionReturn } |
   { 'err' : string };
 export type Result_4 = { 'ok' : string } |
   { 'err' : string };
-export type Result_5 = { 'ok' : Array<StableEntity> } |
-  { 'err' : string };
+export type Result_5 = { 'ok' : Array<StableEntity> } | { 'err' : string };
 export type Result_6 = { 'ok' : Array<ActionState> } | { 'err' : string };
-export type Result_7 = { 'ok' : ActionStatusReturn } |
-  { 'err' : string };
+export type Result_7 = { 'ok' : ActionStatusReturn } | { 'err' : string };
 export type Result_8 = { 'ok' : Array<ActionOutcomeHistory> } |
   { 'err' : string };
 export interface SetNumber {

@@ -56,7 +56,6 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     try {
       const nfid = await getNfid();
       const isAuthenticated = nfid.isAuthenticated;
-      console.log(nfid.getIdentity().getPrincipal().toString());
       if(!isAuthenticated) return;
       assignSession(nfid);
     } catch (error) {

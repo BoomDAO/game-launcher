@@ -124,6 +124,9 @@ actor class WorldTemplate(owner : Principal) = this {
         getAllUserActionHistoryOfSpecificWorlds : query (uid : TGlobal.userId, wids : [TGlobal.worldId], page : ?Nat) -> async ([TAction.ActionOutcomeHistory]);
         getAllUserActionHistoryOfSpecificWorldsComposite : composite query (uid : TGlobal.userId, wids : [TGlobal.worldId], page : ?Nat) -> async ([TAction.ActionOutcomeHistory]);
         deleteActionHistoryForUser : shared ({ uid : TGlobal.userId }) -> async ();
+        deleteUserEntityFromWorldNode : shared ({ uid : TGlobal.userId }) -> async ();
+        deleteUser : shared ({ uid : TGlobal.userId }) -> async ();
+        getUserEntitiesFromWorldNodeComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
     };
     type WorldHub = actor {
         createNewUser : shared ({ user : Principal; requireEntireNode : Bool; }) -> async (Result.Result<Text, Text>);
@@ -525,14 +528,35 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok();
     };
 
+    public shared ({caller}) func deleteUser(args : { uid : TGlobal.userId }) : async () {
+        assert (isAdmin_(caller));
+        switch((Trie.find(userPrincipalToUserNode, Utils.keyT(args.uid), Text.equal))){
+            case(?nodeId){
+                let userNode : UserNode = actor (nodeId);
+                await userNode.deleteUser(args);
+            };
+            case _ {}
+        };
+        switch (await getUserNode_(worldPrincipalId())) {
+            case (#ok(worldNodeId)) {
+                let worldNode : UserNode = actor (worldNodeId);
+                await worldNode.deleteUserEntityFromWorldNode(args);
+            };
+            case (#err(errMsg)) {};
+        };
+        ignore await processActionAwait({
+            actionId = "delete_profile";
+            fields = [];
+        });
+        return ();
+    };
+
     //# USER DATA
     //Get Actions
     public composite query func getAllUserActionStatesComposite(args : { uid : Text }) : async (Result.Result<[TAction.ActionState], Text>) {
         switch (await worldHub.getUserNodeCanisterIdComposite(args.uid)) {
             case (#ok(userNodeId)) {
-
                 let userNode : UserNode = actor (userNodeId);
-
                 return await userNode.getAllUserActionStatesComposite(args.uid, worldPrincipalId());
             };
             case (#err(errMsg)) {
@@ -573,6 +597,18 @@ actor class WorldTemplate(owner : Principal) = this {
             case (#ok(userNodeId)) {
                 let userNode : UserNode = actor (userNodeId);
                 return await userNode.getAllUserEntitiesComposite(args.uid, worldPrincipalId(), args.page);
+            };
+            case (#err(errMsg)) {
+                return #err(errMsg);
+            };
+        };
+    };
+
+    public composite query func getUserEntitiesFromWorldNodeComposite(args : { uid : Text; page : ?Nat }) : async (Result.Result<[TEntity.StableEntity], Text>) {
+        switch (await worldHub.getUserNodeCanisterIdComposite(args.uid)) {
+            case (#ok(userNodeId)) {
+                let userNode : UserNode = actor (userNodeId);
+                return await userNode.getUserEntitiesFromWorldNodeComposite(args.uid, worldPrincipalId(), args.page);
             };
             case (#err(errMsg)) {
                 return #err(errMsg);
@@ -1824,12 +1860,21 @@ actor class WorldTemplate(owner : Principal) = this {
                 var last_action_time : Nat = _intervalStartTs; // For history outcome validation
                 switch (constraints.timeConstraint) {
                     case (?t) {
+                        //Start Time
+                        switch (t.actionStartTimestamp) {
+                            case (?actionStartTimestamp) {
+                                if (actionStartTimestamp > Time.now()) return #err("action is not yet enabled!");
+                            };
+                            case _ {};
+                        };
+                        //Expiration
                         switch (t.actionExpirationTimestamp) {
                             case (?actionExpirationTimestamp) {
                                 if (actionExpirationTimestamp < Time.now()) return #err("action is expired!");
                             };
                             case _ {};
                         };
+                        //Time Interval
                         switch (t.actionTimeInterval) {
                             case (?actionTimeInterval) {
                                 //intervalDuration is expected example (24hrs in nanoseconds)
@@ -2145,6 +2190,153 @@ actor class WorldTemplate(owner : Principal) = this {
         sourcePrincipalId : Text;
         sourceActionConstraint : ?TAction.ActionConstraint;
         sourceOutcomes : [TAction.ActionOutcomeOption];
+    };
+
+    public shared ({ caller }) func processActionAwait(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
+
+        let actionId = actionArg.actionId;
+        let callerPrincipalId = Principal.toText(caller);
+
+        let isActionStateLocked = getActionLockState_({
+            uid = callerPrincipalId;
+            aid = actionId;
+        });
+
+        if (isActionStateLocked) {
+            debugLog("The '" #actionId # "' action failed because it is locked. Please wait for action to fully process before calling it again. This may take a few seconds.");
+
+            return #err("The '" #actionId # "' action failed because it is locked. Please wait for action to fully process before calling it again. This may take a few seconds.");
+        };
+        changeActionLockState_(callerPrincipalId, actionId, true);
+
+        processActionCount += 1;
+
+        var worldAction : TAction.SubAction = {
+            actionConstraint = null;
+            actionResult = { outcomes = [] };
+        };
+        var callerAction : TAction.SubAction = {
+            actionConstraint = null;
+            actionResult = { outcomes = [] };
+        };
+        var targetAction : TAction.SubAction = {
+            actionConstraint = null;
+            actionResult = { outcomes = [] };
+        };
+
+        //world
+        var hasSubActionWorld = false;
+        //caller
+        var hasSubActionCaller = false;
+        //target
+        var targetPrincipalId : Text = "";
+        var hasSubActionTarget = false;
+
+        var subActions = Buffer.Buffer<SubAction>(0);
+
+        //CHECK IF ACTION EXIST TO TRY SETUP BOTH CALLER AND TARGET SUB ACTIONS
+        switch (getSpecificAction_(actionId)) {
+            case (?_action) {
+
+                //SETUP CALLER ACTION
+                switch (_action.callerAction) {
+                    case (?_callerAction) {
+                        callerAction := _callerAction;
+                        hasSubActionCaller := true;
+                    };
+                    case (_) {};
+                };
+
+                //TRY SETUP TARGET ACTION
+                switch (_action.targetAction) {
+                    case (?_targetAction) {
+                        targetAction := _targetAction;
+                        hasSubActionTarget := true;
+                    };
+                    case (_) {};
+                };
+
+                //TRY SETUP TARGET ACTION
+                switch (_action.worldAction) {
+                    case (?_worldAction) {
+                        worldAction := _worldAction;
+                        hasSubActionWorld := true;
+                    };
+                    case (_) {};
+                };
+            };
+            case (_) {
+                changeActionLockState_(callerPrincipalId, actionId, false);
+                debugLog("The '" #actionId # "' action failed to be executed, because it doesn't exist.");
+                return #err("The '" #actionId # "' action failed to be executed, because it doesn't exist");
+            };
+        };
+
+        //Generate Outcomes
+        var worldOutcomes : [TAction.ActionOutcomeOption] = [];
+        var callerOutcomes : [TAction.ActionOutcomeOption] = [];
+        var targetOutcomes : [TAction.ActionOutcomeOption] = [];
+
+        let generateActionResultOutcomesWorldHandler = generateActionResultOutcomes_(worldAction.actionResult);
+        let generateActionResultOutcomesCallerandler = generateActionResultOutcomes_(callerAction.actionResult);
+        let generateActionResultOutcomesTargetHandler = generateActionResultOutcomes_(targetAction.actionResult);
+
+        worldOutcomes := await generateActionResultOutcomesWorldHandler;
+        callerOutcomes := await generateActionResultOutcomesCallerandler;
+        targetOutcomes := await generateActionResultOutcomesTargetHandler;
+
+        //
+        if (hasSubActionWorld) {
+            subActions.add({
+                sourcePrincipalId = worldPrincipalId();
+                sourceActionConstraint = worldAction.actionConstraint;
+                sourceOutcomes = worldOutcomes;
+            });
+
+        };
+        if (hasSubActionCaller) {
+            subActions.add({
+                sourcePrincipalId = callerPrincipalId;
+                sourceActionConstraint = callerAction.actionConstraint;
+                sourceOutcomes = callerOutcomes;
+            });
+        };
+        if (hasSubActionTarget) {
+            //TRY SETUP TARGET PRINCIPAL ID
+
+            switch (getActionArgByFieldName_("target_principal_id", actionArg.fields)) {
+                case (#ok(fieldValue)) {
+                    targetPrincipalId := fieldValue;
+                };
+                case (#err(errMsg)) {
+                    changeActionLockState_(callerPrincipalId, actionId, false);
+                    debugLog("The '" #actionId # "' action failed to be executed, because this is a compound action, thus requires as ActionArg.field a fieldName of 'target_principal_id' whose value is the target principal");
+                    return #err("The '" #actionId # "' action failed to be executed, because this is a compound action, thus requires as ActionArg.field a fieldName of 'target_principal_id' whose value is the target principal ");
+                };
+            };
+
+            targetOutcomes := await generateActionResultOutcomes_(targetAction.actionResult);
+
+            subActions.add({
+                sourcePrincipalId = targetPrincipalId;
+                sourceActionConstraint = targetAction.actionConstraint;
+                sourceOutcomes = targetOutcomes;
+            });
+        };
+
+        await processActionNewAwait_(callerPrincipalId, targetPrincipalId, actionId, actionArg.fields, Buffer.toArray(subActions));
+
+        let outcomes = {
+            callerPrincipalId = callerPrincipalId;
+            targetPrincipalId = targetPrincipalId;
+            worldPrincipalId = worldPrincipalId();
+            callerOutcomes = callerOutcomes;
+            targetOutcomes = targetOutcomes;
+            worldOutcomes = worldOutcomes;
+        };
+
+        ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
+        return #ok(outcomes);
     };
 
     public shared ({ caller }) func processAction(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
@@ -2658,6 +2850,377 @@ actor class WorldTemplate(owner : Principal) = this {
             let sourceNode : UserNode = actor (trie.nodeId);
 
             ignore applyOutcomes_(trie.sourcePrincipalId, sourceNode, trie.sourceNewActionState, trie.sourceOutcomes);
+        };
+
+        //UNLOCK ACTION
+        changeActionLockState_(callerPrincipalId, actionId, false);
+
+        ignore tryBroadcastFetchUsersDataRequest_(callerPrincipalId);
+    };
+
+    private func processActionNewAwait_(callerPrincipalId : Text, targetPrincipalId : Text, actionId : Text, actionFields : [TGlobal.Field], subActions : [SubAction]) : async () {
+
+        let worldPrincipalId_ = worldPrincipalId();
+
+        var callerData : [TEntity.StableEntity] = [];
+        var worldData : [TEntity.StableEntity] = [];
+        var targetData : [TEntity.StableEntity] = [];
+
+        var subActions_ : Trie.Trie<Text, { sourcePrincipalId : Text; sourceActionConstraint : ?TAction.ActionConstraint; sourceOutcomes : [TAction.ActionOutcomeOption]; worldsToFetchEntitiesFrom : [Text]; worldsToFetchActionHistoryFrom : [Text]; nodeId : Text; nodeIdTask : async Result.Result<Text, Text>; sourceNewActionState : TAction.ActionState; sourceData : [TEntity.StableEntity] }> = Trie.empty<Text, { sourcePrincipalId : Text; sourceActionConstraint : ?TAction.ActionConstraint; sourceOutcomes : [TAction.ActionOutcomeOption]; worldsToFetchEntitiesFrom : [Text]; worldsToFetchActionHistoryFrom : [Text]; nodeId : Text; nodeIdTask : async Result.Result<Text, Text>; sourceNewActionState : TAction.ActionState; sourceData : [TEntity.StableEntity] }>();
+
+        var getActionStateTasks : Trie.Trie<Text, { actionStateTask : async ?TAction.ActionState; entitiesTask : async Result.Result<[TEntity.StableEntity], Text>; actionHistoryTask : async [TAction.ActionOutcomeHistory] }> = Trie.empty<Text, { actionStateTask : async ?TAction.ActionState; entitiesTask : async Result.Result<[TEntity.StableEntity], Text>; actionHistoryTask : async [TAction.ActionOutcomeHistory] }>();
+
+        //Get all the worlds' to fetch entities from and store them in "subActionsTrie".
+        //Fetch nodeId for each subaction's source.
+        //Store the task of fetching each nodeId in "subActionsTrie".
+        for (subAction in Iter.fromArray(subActions)) {
+
+            var worldsToFetchEntitiesFrom : [Text] = [];
+            var worldsToFetchActionHistoryFrom : [Text] = [];
+            //GET WORLD IDS TO FETCH ENTITIE AND ACTION HISTORY FROM
+            switch (subAction.sourceActionConstraint) {
+                case (?constraints) {
+
+                    //Entity Action History World Ids
+                    var worldsToFetchActionHistoryFromBuffer = Buffer.Buffer<Text>(0);
+                    switch (constraints.timeConstraint) {
+                        case (?timeConstraint) {
+
+                            for (actionHistory in Iter.fromArray(timeConstraint.actionHistory)) {
+
+                                switch (actionHistory) {
+                                    case (#updateEntity entityActionHistory) {
+
+                                        let _wid = Option.get(entityActionHistory.wid, worldPrincipalId());
+                                        if (Buffer.contains(worldsToFetchActionHistoryFromBuffer, _wid, Text.equal) == false) worldsToFetchActionHistoryFromBuffer.add(_wid);
+
+                                    };
+                                    case _ {};
+                                };
+
+                            };
+
+                        };
+                        case _ {};
+                    };
+
+                    //Entity World Ids
+                    var worldsToFetchEntitiesFromBuffer = Buffer.Buffer<Text>(0);
+
+                    for (entityConstraint in Iter.fromArray(constraints.entityConstraint)) {
+                        let _wid = Option.get(entityConstraint.wid, worldPrincipalId());
+                        if (Buffer.contains(worldsToFetchEntitiesFromBuffer, _wid, Text.equal) == false) worldsToFetchEntitiesFromBuffer.add(_wid);
+                    };
+                    worldsToFetchActionHistoryFrom := Buffer.toArray(worldsToFetchActionHistoryFromBuffer);
+                    worldsToFetchEntitiesFrom := Buffer.toArray(worldsToFetchEntitiesFromBuffer);
+                };
+                case _ {};
+            };
+
+            var task = getUserNode_(subAction.sourcePrincipalId);
+
+            var newTrie = {
+                sourcePrincipalId = subAction.sourcePrincipalId;
+                sourceActionConstraint = subAction.sourceActionConstraint;
+                sourceOutcomes = subAction.sourceOutcomes;
+                worldsToFetchEntitiesFrom = worldsToFetchEntitiesFrom;
+                worldsToFetchActionHistoryFrom = worldsToFetchActionHistoryFrom;
+                nodeId = "";
+                nodeIdTask = task;
+                sourceNewActionState = {
+                    actionId = "";
+                    intervalStartTs = 0;
+                    actionCount = 0;
+                };
+                sourceData : [TEntity.StableEntity] = [];
+            };
+
+            switch(Trie.find(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal)){
+                case(? tempStoredSubAction){
+
+                    switch(tempStoredSubAction.sourceActionConstraint){
+                        case(? storedConstraint){
+
+                            switch(newTrie.sourceActionConstraint){
+                                case(? constraint){
+
+                                    newTrie := {
+                                        sourcePrincipalId = tempStoredSubAction.sourcePrincipalId;
+                                        sourceActionConstraint = ?
+                                            {
+                                                timeConstraint = storedConstraint.timeConstraint; 
+                                                entityConstraint = Array.append(storedConstraint.entityConstraint, constraint.entityConstraint);
+                                                icrcConstraint = Array.append(storedConstraint.icrcConstraint, constraint.icrcConstraint);
+                                                nftConstraint = Array.append(storedConstraint.nftConstraint, constraint.nftConstraint);
+                                            };
+                                        sourceOutcomes = Array.append(tempStoredSubAction.sourceOutcomes, newTrie.sourceOutcomes);
+                                        worldsToFetchEntitiesFrom = Array.append(tempStoredSubAction.worldsToFetchEntitiesFrom, newTrie.worldsToFetchEntitiesFrom);
+                                        worldsToFetchActionHistoryFrom = Array.append(tempStoredSubAction.worldsToFetchActionHistoryFrom, newTrie.worldsToFetchActionHistoryFrom);
+                                        nodeId = tempStoredSubAction.nodeId;
+                                        nodeIdTask = tempStoredSubAction.nodeIdTask;
+                                        sourceNewActionState = tempStoredSubAction.sourceNewActionState;
+                                        sourceData = tempStoredSubAction.sourceData;
+                                    };
+                                };
+                                case _ {
+
+                                    newTrie := {
+                                        sourcePrincipalId = tempStoredSubAction.sourcePrincipalId;
+                                        sourceActionConstraint = ? storedConstraint;
+                                        sourceOutcomes = Array.append(tempStoredSubAction.sourceOutcomes, newTrie.sourceOutcomes);
+                                        worldsToFetchEntitiesFrom = Array.append(tempStoredSubAction.worldsToFetchEntitiesFrom, newTrie.worldsToFetchEntitiesFrom);
+                                        worldsToFetchActionHistoryFrom = Array.append(tempStoredSubAction.worldsToFetchActionHistoryFrom, newTrie.worldsToFetchActionHistoryFrom);
+                                        nodeId = tempStoredSubAction.nodeId;
+                                        nodeIdTask = tempStoredSubAction.nodeIdTask;
+                                        sourceNewActionState = tempStoredSubAction.sourceNewActionState;
+                                        sourceData = tempStoredSubAction.sourceData;
+                                    };
+                                };
+                            };
+                        };
+                        case _ {
+
+                        };
+                    };
+                };
+                case _ { };
+            };
+
+            subActions_ := Trie.put(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal, newTrie).0;
+        };
+
+        //Await for nodeIds to be fetched.
+        //Store nodeIds in "subActions_".
+        //fetch action source's action state & entities,
+        //and keep track of the  action state & entities tasks in "getActionStateTasks".
+        for ((id, trie) in Trie.iter(subActions_)) {
+            let sourcePrincipalId = id;
+
+            let nodeTaskResult = await trie.nodeIdTask;
+
+            var nodeId = "";
+
+            switch (nodeTaskResult) {
+                case (#ok(content)) { nodeId := content };
+                case (#err(errMsg)) {
+                    debugLog("The '" #actionId # "' action failed because it could not get world node Id.\nExtra insight: " #errMsg);
+                    //UNLOCK ACTION
+                    changeActionLockState_(callerPrincipalId, actionId, false);
+                    return;
+                };
+            };
+
+            var newTrie = {
+                sourcePrincipalId = trie.sourcePrincipalId;
+                sourceActionConstraint = trie.sourceActionConstraint;
+                sourceOutcomes = trie.sourceOutcomes;
+                worldsToFetchEntitiesFrom = trie.worldsToFetchEntitiesFrom;
+                worldsToFetchActionHistoryFrom = trie.worldsToFetchActionHistoryFrom;
+                //Store the NodeId
+                nodeId = nodeId;
+                nodeIdTask = trie.nodeIdTask;
+                sourceNewActionState = {
+                    actionId = "";
+                    intervalStartTs = 0;
+                    actionCount = 0;
+                };
+                sourceData = [];
+            };
+
+            subActions_ := Trie.put(subActions_, Utils.keyT(sourcePrincipalId), Text.equal, newTrie).0;
+
+            let sourceNode : UserNode = actor (nodeId);
+
+            //Fetch Source's Action State
+            let currentCallerActionStateResultHandler = sourceNode.getActionState(trie.sourcePrincipalId, worldPrincipalId(), actionId);
+            //Fetch Source's Entities
+            let sourceEntityResultHandler = sourceNode.getAllUserEntitiesOfSpecificWorlds(trie.sourcePrincipalId, trie.worldsToFetchEntitiesFrom, null);
+
+            let sourceActionHistoryResultHandler = sourceNode.getAllUserActionHistoryOfSpecificWorlds(trie.sourcePrincipalId, trie.worldsToFetchActionHistoryFrom, null);
+
+            getActionStateTasks := Trie.put(
+                getActionStateTasks,
+                Utils.keyT(trie.sourcePrincipalId),
+                Text.equal,
+                {
+                    actionStateTask = currentCallerActionStateResultHandler;
+                    entitiesTask = sourceEntityResultHandler;
+                    actionHistoryTask = sourceActionHistoryResultHandler;
+                },
+            ).0;
+        };
+
+        //Await for action state & entities tasks
+        //Refine & validate constraints
+        //Catch worldData, callerData, and optional targetData
+        //Store new source's action state and data in "subActions_".
+        for ((id, trie) in Trie.iter(getActionStateTasks)) {
+            let sourcePrincipalId = id;
+
+            let currentActionState = await trie.actionStateTask;
+
+            let entitiesTaskResult = await trie.entitiesTask;
+
+            let actionHistoryTaskResult = await trie.actionHistoryTask;
+
+            var sourceData : [TEntity.StableEntity] = [];
+            var sourceActionHistoryData : [TAction.ActionOutcomeHistory] = actionHistoryTaskResult;
+
+            switch (entitiesTaskResult) {
+                case (#ok data) sourceData := data;
+                case (#err errMsg) {
+                    debugLog("The '" #actionId # "' action failed because it could not get source's entities\nSourceId: " #id # "\nExtra insight: " #errMsg);
+                    //UNLOCK ACTION
+                    changeActionLockState_(callerPrincipalId, actionId, false);
+                    return;
+                };
+            };
+
+            //Catch world's data
+            if (sourcePrincipalId == worldPrincipalId_) {
+                worldData := sourceData;
+            };
+            //Catch caller's data
+            if (sourcePrincipalId == callerPrincipalId) {
+                callerData := sourceData;
+            };
+            //Catch target's data
+            if (sourcePrincipalId == targetPrincipalId) {
+                targetData := sourceData;
+            };
+
+            switch (Trie.find(subActions_, Utils.keyT(id), Text.equal)) {
+                case (?subAction) {
+
+                    var sourceNewActionState : TAction.ActionState = {
+                        actionId = "";
+                        intervalStartTs = 0;
+                        actionCount = 0;
+                    };
+
+                    switch (subAction.sourceActionConstraint) {
+                        case (?sc) {
+
+                            var sourceRefinedConstraints : ?TAction.ActionConstraint = ?{
+                                timeConstraint = null;
+                                containEntity = [];
+                                entityConstraint = [];
+                                icrcConstraint = [];
+                                nftConstraint = [];
+                            };
+
+                            //Refine Constraints
+                            let sourceRefinedConstraintsResult = refineConstraints_(subAction.sourceActionConstraint, callerPrincipalId, targetPrincipalId, actionFields);
+
+                            switch sourceRefinedConstraintsResult {
+                                case (#ok(?refinedConstraint)) {
+                                    sourceRefinedConstraints := ?refinedConstraint;
+                                };
+                                case (#ok(null)) {
+                                    sourceRefinedConstraints := null;
+                                };
+                                case (#err errMsg) {
+                                    debugLog("The '" #actionId # "' action failed because source's constraint could not be refined.\nExtra insight: " #errMsg);
+                                    //UNLOCK ACTION
+                                    changeActionLockState_(callerPrincipalId, actionId, false);
+                                    return;
+                                };
+                            };
+                            
+                            //Validate Constraints
+                            var sourceValidationResult = validateConstraints_(sourceData, sourceActionHistoryData, sourcePrincipalId, actionId, sourceRefinedConstraints, currentActionState);
+
+                            switch (await sourceValidationResult) {
+                                case (#ok(result)) {
+                                    sourceNewActionState := result;
+                                };
+                                case (#err(errMsg)) {
+                                    debugLog("The '" #actionId # "' action failed because it could not validate source action constraints\nExtra insight: " #errMsg);
+                                    //UNLOCK ACTION
+                                    changeActionLockState_(callerPrincipalId, actionId, false);
+                                    return;
+                                };
+                            };
+
+                        };
+                        case (_) {};
+                    };
+
+                    var newTrie = {
+                        sourcePrincipalId = subAction.sourcePrincipalId;
+                        sourceActionConstraint = subAction.sourceActionConstraint;
+                        sourceOutcomes = subAction.sourceOutcomes;
+                        worldsToFetchEntitiesFrom = subAction.worldsToFetchEntitiesFrom;
+                        worldsToFetchActionHistoryFrom = subAction.worldsToFetchActionHistoryFrom;
+                        nodeId = subAction.nodeId;
+                        nodeIdTask = subAction.nodeIdTask;
+                        //Store New Action State
+                        sourceNewActionState = sourceNewActionState;
+                        //Store Source's data
+                        sourceData = sourceData;
+                    };
+
+                    subActions_ := Trie.put(subActions_, Utils.keyT(sourcePrincipalId), Text.equal, newTrie).0;
+                };
+                case _ {
+
+                    debugLog("The '" #actionId # "' action failed because it could not find source id: " #id);
+                    //UNLOCK ACTION
+                    changeActionLockState_(callerPrincipalId, actionId, false);
+                    return;
+                };
+            };
+        };
+
+        //Refine outcomes
+        label loop4 for ((id, trie) in Trie.iter(subActions_)) {
+
+            if (trie.sourceOutcomes.size() == 0) continue loop4;
+
+            let sourcePrincipalId = id;
+
+            var sourceRefinedOutcome : [TAction.ActionOutcomeOption] = [];
+
+            let sourceRefinedOutcomeResult = refineAllOutcomes_(trie.sourceOutcomes, callerPrincipalId, targetPrincipalId, actionFields, worldData, callerData, ?targetData);
+
+            switch (sourceRefinedOutcomeResult) {
+                case (#ok _sourceRefinedOutcome) {
+                    sourceRefinedOutcome := _sourceRefinedOutcome;
+                };
+                case (#err errMsg) {
+                    debugLog("The '" #actionId # "' action failed because it could not refine source outcomes.\nExtra insight: " #errMsg);
+                    //UNLOCK ACTION
+                    changeActionLockState_(callerPrincipalId, actionId, false);
+                    return;
+                };
+            };
+
+            var newTrie = {
+                sourcePrincipalId = trie.sourcePrincipalId;
+                sourceActionConstraint = trie.sourceActionConstraint;
+                //Overwrite sourceOutcome with refined sourceOutcome
+                sourceOutcomes = sourceRefinedOutcome;
+                worldsToFetchEntitiesFrom = trie.worldsToFetchEntitiesFrom;
+                worldsToFetchActionHistoryFrom = trie.worldsToFetchActionHistoryFrom;
+                nodeId = trie.nodeId;
+                nodeIdTask = trie.nodeIdTask;
+                sourceNewActionState = trie.sourceNewActionState;
+                sourceData = trie.sourceData;
+            };
+
+            subActions_ := Trie.put(subActions_, Utils.keyT(sourcePrincipalId), Text.equal, newTrie).0;
+        };
+
+        //Apply outcomes
+        label loop5 for ((id, trie) in Trie.iter(subActions_)) {
+
+            if (trie.sourceOutcomes.size() == 0) continue loop5;
+
+            let sourcePrincipalId = id;
+
+            let sourceNode : UserNode = actor (trie.nodeId);
+
+            await applyOutcomes_(trie.sourcePrincipalId, sourceNode, trie.sourceNewActionState, trie.sourceOutcomes);
         };
 
         //UNLOCK ACTION
@@ -3440,6 +4003,21 @@ actor class WorldTemplate(owner : Principal) = this {
                 var last_action_time : Nat = _intervalStartTs; // Used for history outcome validation
                 switch (constraints.timeConstraint) {
                     case (?t) {
+                        //Start Time
+                        switch (t.actionStartTimestamp) {
+                            case (?actionStartTimestamp) {
+                                if (actionStartTimestamp > Time.now()) {};
+                            };
+                            case _ {};
+                        };
+                        //Expiration
+                        switch (t.actionExpirationTimestamp) {
+                            case (?actionExpirationTimestamp) {
+                                if (actionExpirationTimestamp < Time.now()) return #err("action is expired!");
+                            };
+                            case _ {};
+                        };
+                        //Time Interval
                         switch (t.actionTimeInterval) {
                             case (?actionTimeInterval) {
 

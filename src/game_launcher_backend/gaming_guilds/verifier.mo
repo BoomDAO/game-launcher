@@ -34,7 +34,6 @@ import Constants "../utils/Env";
 import TGlobal "../types/global.types";
 import TEntity "../types/entity.types";
 import TAction "../types/action.types";
-import Proxy "proxyCanister";
 
 actor Verifier {
 
@@ -263,8 +262,9 @@ actor Verifier {
         if (arg.otp == otp and status == false) {
           let gaming_guild_canister = actor (Constants.GamingGuildsCanisterId) : actor {
             processAction : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
+            processActionAwait : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
           };
-          let res = await gaming_guild_canister.processAction({
+          let res = await gaming_guild_canister.processActionAwait({
             actionId = "grant_airdrop_badge";
             fields = [{
               fieldName = "target_principal_id";
@@ -296,8 +296,9 @@ actor Verifier {
         if (arg.otp == otp and status == false) {
           let gaming_guild_canister = actor (Constants.GamingGuildsCanisterId) : actor {
             processAction : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
+            processActionAwait : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
           };
-          let res = await gaming_guild_canister.processAction({
+          let res = await gaming_guild_canister.processActionAwait({
             actionId = "grant_phone_badge";
             fields = [{
               fieldName = "target_principal_id";
@@ -348,13 +349,13 @@ actor Verifier {
     };
   };
 
-  public query func getAllEmails() : async ([Text]) {
-    var b = Buffer.Buffer<Text>(0);
-    for ((i, v) in Trie.iter(_emails)) {
-      b.add(i);
-    };
-    return Buffer.toArray(b);
-  };
+  // public query func getAllEmails() : async ([Text]) {
+  //   var b = Buffer.Buffer<Text>(0);
+  //   for ((i, v) in Trie.iter(_emails)) {
+  //     b.add(i);
+  //   };
+  //   return Buffer.toArray(b);
+  // };
 
   public shared ({ caller }) func cleanUp() : async () {
     assert (caller == Principal.fromText(Constants.devPrincipalId));
@@ -362,12 +363,12 @@ actor Verifier {
     _phones := Trie.empty();
   };
 
-  public query func getEmailsStatus() : async ([(Text, (Text, Bool))]) {
-    var b = Buffer.Buffer<(Text, (Text, Bool))>(0);
-    for ((i, v) in Trie.iter(_emails)) {
-      b.add((i, v));
-    };
-    return Buffer.toArray(b);
-  };
+  // public query func getEmailsStatus() : async ([(Text, (Text, Bool))]) {
+  //   var b = Buffer.Buffer<(Text, (Text, Bool))>(0);
+  //   for ((i, v) in Trie.iter(_emails)) {
+  //     b.add((i, v));
+  //   };
+  //   return Buffer.toArray(b);
+  // };
 
 };

@@ -11,7 +11,8 @@
   "footer": {
     "follow": "Follow us",
     "copyright": "",
-    "tos": "Terms Of Services"
+    "tos": "Terms Of Service",
+    "privacy-policy": "Privacy Policy"
   },
   "navigation": {
     "login": "Login",

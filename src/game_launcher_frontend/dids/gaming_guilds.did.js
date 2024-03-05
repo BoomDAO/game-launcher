@@ -360,6 +360,7 @@ export const idlFactory = ({ IDL }) => {
         [Result_4],
         [],
       ),
+    'deleteUser' : IDL.Func([IDL.Record({ 'uid' : userId })], [], []),
     'editAction' : IDL.Func([IDL.Record({ 'aid' : IDL.Text })], [Action], []),
     'editConfig' : IDL.Func(
         [IDL.Record({ 'cid' : IDL.Text })],
@@ -427,6 +428,11 @@ export const idlFactory = ({ IDL }) => {
     'getGlobalPermissionsOfWorld' : IDL.Func([], [IDL.Vec(worldId)], []),
     'getOwner' : IDL.Func([], [IDL.Text], ['query']),
     'getProcessActionCount' : IDL.Func([], [IDL.Nat], ['query']),
+    'getUserEntitiesFromWorldNodeComposite' : IDL.Func(
+        [IDL.Record({ 'uid' : IDL.Text, 'page' : IDL.Opt(IDL.Nat) })],
+        [Result_5],
+        ['composite_query'],
+      ),
     'get_trusted_origins' : IDL.Func([], [IDL.Vec(IDL.Text)], []),
     'grantEntityPermission' : IDL.Func([EntityPermission], [], []),
     'grantGlobalPermission' : IDL.Func([GlobalPermission], [], []),
@@ -454,6 +460,7 @@ export const idlFactory = ({ IDL }) => {
     'logsGet' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'logsGetCount' : IDL.Func([], [IDL.Nat], ['query']),
     'processAction' : IDL.Func([ActionArg], [Result_3], []),
+    'processActionAwait' : IDL.Func([ActionArg], [Result_3], []),
     'removeAdmin' : IDL.Func([IDL.Record({ 'principal' : IDL.Text })], [], []),
     'removeAllUserNodeRef' : IDL.Func([], [], []),
     'removeEntityPermission' : IDL.Func([EntityPermission], [], []),

@@ -51,7 +51,8 @@ const PhonePage = () => {
     
     return (
         <div>
-            <p className="mb-5">This status makes you eligible to participate in Gaming Guilds quests which requires Phone Badge.</p>
+            <p className="">This status makes you eligible to participate in Gaming Guilds quests which requires Phone Badge.</p>
+            <p className="mb-4"><b>DISCLAIMER</b> : USA phone numbers cannot verify currently due to strict regulations regarding SMS messaging. We are hoping to support the USA in the future.</p>
             <Form className="w-6/12 m-auto items-center" onSubmit={handleSubmitPhone(onSubmitPhone)}>
                 <FormTextInput
                     className="dark:border-gray-600"

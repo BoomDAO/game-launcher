@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { navPaths } from "@/shared";
 import H1 from "@/components/ui/H1";
-import { useGetAllQuestsInfo, useGetUserVerifiedStatus, useGetTotalQuests, getConfigsData } from "@/api/guilds";
+import { useGetAllQuestsInfo, useGetUserVerifiedStatus, getConfigsData } from "@/api/guilds";
 import { useAuthContext } from "@/context/authContext";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import EmptyGameCard from "@/components/EmptyGameCard";
@@ -28,7 +28,6 @@ const Quests = () => {
     const { setIsOpenNavSidebar } = useGlobalContext();
 
     const { session } = useAuthContext();
-    const { data: totalQuests } = useGetTotalQuests();
     const { data: configs = [], isError, isLoading } = useGetAllQuestsInfo();
     const { data: status = { emailVerified: false, phoneVerified: false } } = useGetUserVerifiedStatus();
     let req = [];

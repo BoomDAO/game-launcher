@@ -146,15 +146,26 @@ const GuildCard = ({
             <div className="w-full rounded-3xl mb-3 p-0.5 gradient-bg">
               <div className="flex h-64 w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
                 <div className="w-4/12">
-                  <img className="w-full h-56  object-cover rounded-3xl" src={image} />
+                  <img className="w-full h-56 object-cover rounded-3xl" src={image} />
                 </div>
                 <div className="w-8/12 ml-4">
                   <div className="w-full flex">
                     <div className="text-xl font-semibold mt-1">{title}</div>
                     {
                       (expiration[0] == "+") ?
-                        <Button className="h-8 order-2 ml-auto cursor-default gradient-bg-grey" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); }}>{t("gaming_guilds.Quests.incomplete_button")}</Button> :
-                        <Button className="h-8 order-2 ml-auto" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); (window.open(gameUrl, "_blank")); }}>{t("gaming_guilds.Quests.incomplete_button")}</Button>
+                        <></> :
+                        <Button className="h-8 order-2 ml-auto" onClick={() => { 
+                          if (session.session == null) {
+                            return setIsOpenNavSidebar(true);
+                          };
+                          let new_url = new URL(gameUrl);
+                          let current_url = new URL(window.location.href);
+                          if(new_url.origin == current_url.origin) {
+                            navigate(new_url.pathname);
+                          } else {
+                            window.open(gameUrl, "_blank");
+                          };
+                         }}>{t("gaming_guilds.Quests.incomplete_button")}</Button>
                     }
                   </div>
                   <div className="text-sm font-light mt-2">{description}</div>

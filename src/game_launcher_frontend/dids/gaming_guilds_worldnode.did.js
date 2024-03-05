@@ -164,7 +164,19 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'cycleBalance' : IDL.Func([], [IDL.Nat], ['query']),
+    'deleteActionHistoryForUser' : IDL.Func(
+        [IDL.Record({ 'uid' : userId })],
+        [],
+        [],
+      ),
+    'deleteActionState' : IDL.Func([userId, worldId, actionId], [Result], []),
     'deleteEntity' : IDL.Func([userId, worldId, entityId], [Result], []),
+    'deleteUser' : IDL.Func([IDL.Record({ 'uid' : userId })], [], []),
+    'deleteUserEntityFromWorldNode' : IDL.Func(
+        [IDL.Record({ 'uid' : IDL.Text })],
+        [],
+        [],
+      ),
     'editEntity' : IDL.Func(
         [userId, worldId, entityId, IDL.Vec(Field)],
         [Result],
@@ -189,6 +201,11 @@ export const idlFactory = ({ IDL }) => {
         [userId, worldId],
         [Result_2],
         ['query'],
+      ),
+    'getAllUserActionStatesComposite' : IDL.Func(
+        [userId, worldId],
+        [Result_2],
+        ['composite_query'],
       ),
     'getAllUserEntities' : IDL.Func(
         [userId, worldId, IDL.Opt(IDL.Nat)],
@@ -231,6 +248,16 @@ export const idlFactory = ({ IDL }) => {
     'getUserActionHistoryComposite' : IDL.Func(
         [userId, worldId],
         [IDL.Vec(ActionOutcomeHistory)],
+        ['composite_query'],
+      ),
+    'getUserEntitiesFromWorldNode' : IDL.Func(
+        [userId, worldId, IDL.Opt(IDL.Nat)],
+        [Result_1],
+        ['query'],
+      ),
+    'getUserEntitiesFromWorldNodeComposite' : IDL.Func(
+        [userId, worldId, IDL.Opt(IDL.Nat)],
+        [Result_1],
         ['composite_query'],
       ),
     'grantEntityPermission' : IDL.Func([IDL.Text, EntityPermission], [], []),

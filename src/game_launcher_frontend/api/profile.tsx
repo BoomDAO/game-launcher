@@ -12,7 +12,7 @@ import {
 import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useICRCLedgerClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { Profile, UserNftInfo, GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState, UpdateAction, ActionOutcomeHistory, ActionStatusReturn, configId, StableConfig, ConfigData, QuestGamersInfo, Result_6 } from "@/types";
+import { Profile, UserNftInfo, GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState, UpdateAction, ActionOutcomeHistory, ActionStatusReturn, configId, StableConfig, ConfigData, QuestGamersInfo, Result_6, Result_7, Result_5 } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import Tokens from "../locale/en/Tokens.json";
@@ -20,14 +20,22 @@ import Nfts from "../locale/en/Nfts.json";
 import { string } from "zod";
 import { AccountIdentifier } from "@dfinity/ledger-icp";
 
+const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 export const queryKeys = {
     profile: "profile",
     wallet: "wallet",
     transfer_amount: "transfer_amount",
     user_nfts: "user_nfts",
-    all_quests_info: "all_quests_info"
+    all_quests_info: "all_quests_info",
+    all_guild_members_info: "all_guild_members_info",
+    page: "page"
 };
 
+function closeToast() {
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+};
 const getTotalCompletionOfQuest = (fields: Field[], quest: string) => {
     for (let i = 0; i < fields.length; i += 1) {
         if (fields[i].fieldName == quest) {
@@ -65,14 +73,20 @@ function isIncreamentNumber(data: { 'setNumber': SetNumber } | { 'incrementNumbe
 function isHoldNft(data: { 'hold': { 'originalEXT': null } | { 'boomEXT': null } } | { 'transfer': NftTransfer }): data is { 'hold': { 'originalEXT': null } | { 'boomEXT': null } } {
     return (data as { 'hold': { 'originalEXT': null } | { 'boomEXT': null } }).hold !== undefined;
 }
-function isActionStatesUserNotFoundErr(data: { 'ok' : Array<ActionState> } | { 'err' : string }): data is { 'err' : string } {
-    return ((data as { 'err' : string }).err !== undefined) && ((data as { 'err' : string }).err == "user not found!");
+function isActionStatesUserNotFoundErr(data: { 'ok': Array<ActionState> } | { 'err': string }): data is { 'err': string } {
+    return ((data as { 'err': string }).err !== undefined) && ((data as { 'err': string }).err == "user not found!");
 }
-function isActionStatesUserOk(data: { 'ok' : Array<ActionState> } | { 'err' : string }): data is { 'ok' : Array<ActionState> } {
-    return ((data as { 'ok' : Array<ActionState> }).ok !== undefined);
+function isActionStatesUserOk(data: { 'ok': Array<ActionState> } | { 'err': string }): data is { 'ok': Array<ActionState> } {
+    return ((data as { 'ok': Array<ActionState> }).ok !== undefined);
+}
+function isActionStatusOk(data: { 'ok': ActionStatusReturn } | { 'err': string }): data is { 'ok': ActionStatusReturn } {
+    return ((data as { 'ok': ActionStatusReturn }).ok !== undefined);
+}
+function isResult_5Ok(data: { 'ok': Array<StableEntity> } | { 'err': string }): data is { 'ok': Array<StableEntity> } {
+    return ((data as { 'ok': Array<StableEntity> }).ok !== undefined);
 }
 
-const getFieldsOfEntity = (entities: [StableEntity], entityId: string) => {
+const getFieldsOfEntity = (entities: StableEntity[], entityId: string) => {
     for (let j = 0; j < entities.length; j += 1) {
         if (entities[j].eid == entityId) {
             return entities[j].fields;
@@ -154,6 +168,98 @@ const msToTime = (ms: number) => {
     return days + "D " + hours + "H " + minutes + "M ";
 }
 
+export const useGetAllMembersInfo = (page: number = 1): UseQueryResult<MembersInfo> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.all_guild_members_info, page],
+        queryFn: async () => {
+            let response: MembersInfo = {
+                totalMembers: "",
+                members: [],
+            };
+            const { actor, methods } = await useGamingGuildsWorldNodeClient();
+            const worldHub = await useWorldHubClient();
+            // fetching totalMembers
+            let totalMembersEntity: { ok: StableEntity[] } = { ok: [] };
+            let entities: { ok: StableEntity[] } = { ok: [] };
+            await Promise.all(
+                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_members"]) as Promise<{ ok: StableEntity[]; }>, actor[methods.getUserEntitiesFromWorldNodeComposite](gamingGuildsCanisterId, gamingGuildsCanisterId, [BigInt(page - 1)]) as Promise<{ ok: StableEntity[] }>]
+            ).then((results => {
+                totalMembersEntity = results[0];
+                entities = results[1];
+            }));
+
+            let fields = totalMembersEntity.ok[0].fields;
+            for (let i = 0; i < fields.length; i += 1) {
+                if (fields[i].fieldName == "quantity") {
+                    response.totalMembers = (((fields[i].fieldValue).split("."))[0]).toString();
+                }
+            };
+            let members_info: Member[] = [];
+            // processing members info
+            let isAnonPresent = false;
+            for (let i = 0; i < entities.ok.length; i += 1) {
+                fields = entities.ok[i].fields;
+                let memberInfo = getUserInfo(fields);
+                let current_member: Member = {
+                    uid: "",
+                    rank: "",
+                    image: "/usericon.png",
+                    username: "",
+                    guilds: "0",
+                    joinDate: ""
+                };
+                if (entities.ok[i].eid == Principal.anonymous().toString()) {
+                    isAnonPresent = true;
+                };
+                try {
+                    let p = Principal.fromText(entities.ok[i].eid);
+                    if (p._isPrincipal && !isAnonPresent) {
+                        current_member.username = (entities.ok[i].eid).substring(0, 20) + ".....";
+                        current_member.uid = entities.ok[i].eid;
+                        let reg_time: number = Number(memberInfo.joinDate) / (1000000);
+                        let date = new Date(reg_time);
+                        current_member.joinDate = months[(date.getMonth())] + ' ' + date.getFullYear();
+                        current_member.guilds = (memberInfo.guilds).split(".")[0];
+                        members_info.push(current_member);
+                    };
+                } catch (e) { };
+                current_member.rank = String(((page - 1) * 40) + i + 1);
+            };
+
+            let users_profile = [];
+            for (let i = 0; i < members_info.length; i += 1) {
+                users_profile.push(worldHub.actor[worldHub.methods.getUserProfile]({ uid: members_info[i].uid }));
+            };
+            await Promise.all(users_profile).then(
+                (res2: any) => {
+                    for (let k = 0; k < res2.length; k++) {
+                        if (res2[k].image != "") {
+                            members_info[k].image = res2[k].image;
+                        };
+                        if (res2[k].username != members_info[k].uid) {
+                            members_info[k].username = res2[k].username;
+                            if (members_info[k].username.length > 20) {
+                                members_info[k].username = members_info[k].username.substring(0, 20) + "...";
+                            }
+                        };
+                    };
+                    return res2;
+                }
+            ).then(
+                response => {
+                    users_profile = response;
+                }
+            );
+            response.members = members_info;
+            if (isAnonPresent) {
+                response.totalMembers = (Number(response.totalMembers) - 1).toString();
+            }
+            return response;
+        },
+    });
+};
+
 export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
     const { session } = useAuthContext();
     return useQuery({
@@ -162,15 +268,26 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
             let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
             const { actor, methods } = await useGamingGuildsClient();
             const worldNode = await useGamingGuildsWorldNodeClient();
-            let configs = await actor[methods.getAllConfigs]() as GuildConfig[];
-            let actions = await actor[methods.getAllActions]() as Action[];
-            let actionStates = await actor[methods.getAllUserActionStatesComposite]({ uid : current_user_principal }) as Result_6;
-            
+
+            let configs: GuildConfig[] = [];
+            let actions: Action[] = [];
+            let actionStates: Result_6 = { ok: [] };
+            let entities: { ok: StableEntity[] } = { ok: [] };
+            let actionStatusResponseOfUser: Result_7[] = [];
+            await Promise.all(
+                [actor[methods.getAllActions]() as Promise<Action[]>, actor[methods.getAllConfigs]() as Promise<GuildConfig[]>, actor[methods.getAllUserActionStatesComposite]({ uid: current_user_principal }) as Promise<Result_6>, worldNode.actor[worldNode.methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as Promise<{ ok: StableEntity[] }>]
+            ).then((results) => {
+                actions = results[0];
+                configs = results[1];
+                actionStates = results[2];
+                entities = results[3];
+            });
+
             // Check for new user
-            if(isActionStatesUserNotFoundErr(actionStates)){
+            if (isActionStatesUserNotFoundErr(actionStates)) {
                 console.log("new user found!");
                 const worldHub = await useWorldHubClient();
-                if(session?.identity){
+                if (session?.identity) {
                     let principal = Principal.fromText(current_user_principal);
                     console.log("new user principal : " + current_user_principal);
                     let new_user = await worldHub.actor[worldHub.methods.createNewUser]({
@@ -178,13 +295,27 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         requireEntireNode: false
                     });
                     console.log("createNewUser response : " + new_user);
+                    actionStates = await actor[methods.getAllUserActionStatesComposite]({ uid: current_user_principal }) as Result_6;
                 }
             };
-            let entities = await worldNode.actor[worldNode.methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as { ok: [StableEntity] };
             let total_completions_fields: Field[] = getFieldsOfEntity(entities.ok, "total_completions");
             let claimed_quests: string[] = [];
             let response: GuildCard[] = [];
 
+            let actionStatusResponse_promises = [];
+            for (let k = 0; k < actions.length; k += 1) {
+                for (let i = 0; i < configs.length; i += 1) {
+                    if (configs[i].cid == actions[k].aid) {
+                        actionStatusResponse_promises.push(actor[methods.getActionStatusComposite]({ uid: current_user_principal, aid: actions[k].aid }) as Promise<Result_7>);
+                    };
+                }
+            };
+
+            await Promise.all(actionStatusResponse_promises).then((result) => {
+                actionStatusResponseOfUser = result;
+            });
+
+            let actionStatusResponseOfUserIndex = 0;
             for (let k = 0; k < actions.length; k += 1) {
                 for (let i = 0; i < configs.length; i += 1) {
                     let entry: GuildCard = {
@@ -230,20 +361,18 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                     if (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionStartTimestamp'][0]) {
                                         let start: undefined | bigint = (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionStartTimestamp'][0]);
                                         start = ((start != undefined) ? start : 0n) / BigInt(1000000);
-                                    
                                         entry.expiration = "+" + msToTime(Number(start - current));
-                                        
                                     }
 
                                     // process action time intervals
                                     if (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]) {
                                         let duration = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]?.intervalDuration;
-                                     
-                                        if(duration == 86400000000000n) {
+
+                                        if (duration == 86400000000000n) {
                                             entry.isDailyQuest = true;
                                         };
                                         let actionsPerInterval = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]?.actionsPerInterval;
-                                        let { intervalStartTs, actionCount, actionId } = getActionState(isActionStatesUserOk(actionStates)? actionStates.ok : [], actions[k].aid);
+                                        let { intervalStartTs, actionCount, actionId } = getActionState(isActionStatesUserOk(actionStates) ? actionStates.ok : [], actions[k].aid);
                                         duration = ((duration != undefined) ? duration : 0n) / BigInt(1000000);
                                         intervalStartTs = ((intervalStartTs != undefined) ? BigInt(intervalStartTs) : 0n) / BigInt(1000000);
                                         actionsPerInterval = ((actionsPerInterval != undefined) ? BigInt(actionsPerInterval) : 0n);
@@ -254,8 +383,9 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                 };
 
                                 // process ActionStatusResponse
-                                let actionStatusResponse = await actor[methods.getActionStatusComposite]({ uid: current_user_principal, aid: actions[k].aid }) as { ok: ActionStatusReturn };
-                                if (actionStatusResponse.ok) {
+                                let actionStatusResponse = actionStatusResponseOfUser[actionStatusResponseOfUserIndex];
+                                actionStatusResponseOfUserIndex = actionStatusResponseOfUserIndex + 1;
+                                if (isActionStatusOk(actionStatusResponse)) {
                                     let status = actionStatusResponse.ok;
                                     if (!status.isValid) {
                                         isConstraintsFulfilled = false;
@@ -301,6 +431,8 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                             entry.mustHave.push(mustHaveEntry);
                                         };
                                     };
+                                } else if (isActionStatesUserNotFoundErr(actionStatusResponse)) {
+                                    isConstraintsFulfilled = false;
                                 };
 
                                 // process nftConstraints
@@ -402,8 +534,8 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         };
                         let user_principals: string[] = [];
                         let quest_fields: Field[] = getFieldsOfEntity(entities.ok, "quest_participants");
-                        for(let field = 0; field < quest_fields.length; field += 1) {
-                            if(quest_fields[field].fieldName == actions[k].aid) {
+                        for (let field = 0; field < quest_fields.length; field += 1) {
+                            if (quest_fields[field].fieldName == actions[k].aid) {
                                 user_principals = (quest_fields[field].fieldValue).split(",");
                             };
                         };
@@ -411,9 +543,24 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                             user_principals.push("lgjp4-nfvab-rl4wt-77he2-3hnxe-24pvi-7rykv-6yyr4-sqwdd-4j2fz-fae");
                         };
                         const worldHub = await useWorldHubClient();
-                        for (let id = 0; id < Math.min(user_principals.length, 3); id += 1) {
-                            let profile = await worldHub.actor[worldHub.methods.getUserProfile]({ uid: user_principals[id] }) as { uid: string; username: string; image: string; };
-                            entry.gamersImages.push((profile.image != "") ? profile.image : "/usericon.jpeg");
+                        let profiles_promises = [];
+                        let user_profiles: { uid: string; username: string; image: string; }[] = [];
+                        for (let id = 0; id < user_principals.length; id += 1) {
+                            profiles_promises.push(worldHub.actor[worldHub.methods.getUserProfile]({ uid: user_principals[id] }) as Promise<{ uid: string; username: string; image: string; }>);
+                        };
+                        await Promise.all(profiles_promises).then((res) => { user_profiles = res; });
+                        for (let id = 0; id < user_profiles.length; id += 1) {
+                            if (user_profiles[id].image != "") {
+                                entry.gamersImages.push(user_profiles[id].image);
+                            };
+                            if (entry.gamersImages.length == 3) {
+                                break;
+                            };
+                        };
+                        if (entry.gamersImages.length < 3) {
+                            for (let id = 0; id <= Math.min(3, (3 - entry.gamersImages.length)); id += 1) {
+                                entry.gamersImages.push("/usericon.png");
+                            };
                         };
                         if (diff >= 0n) {
                             response.push(entry);
@@ -442,7 +589,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                     final_response.push(response[x]);
                 }
             };
-          
+
             return final_response;
         },
     });
@@ -458,12 +605,21 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
                 uid: current_user_principal ? current_user_principal : "",
                 username: current_user_principal ? (current_user_principal).substring(0, 10) + "..." : "",
                 xp: "0",
-                image: "/usericon.jpeg"
+                image: "/usericon.png"
             };
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
             const worldHub = await useWorldHubClient();
-            let UserEntity = await actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, [current_user_principal]) as { ok: [StableEntity]; err: string | undefined; };
-            if (UserEntity.err == undefined) {
+            let UserEntity: Result_5 = { ok: [] };
+            let entities: Result_5 = { ok: [] };
+            let profile: { uid: string; username: string; image: string; } = { uid: "", username: "", image: "" };
+            await Promise.all(
+                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, [current_user_principal]) as Promise<Result_5>, worldHub.actor[worldHub.methods.getUserProfile]({ uid: current_user_principal }) as Promise<{ uid: string; username: string; image: string; }>, actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as Promise<Result_5>]
+            ).then((results) => {
+                UserEntity = results[0];
+                profile = results[1];
+                entities = results[2];
+            });
+            if (isResult_5Ok(UserEntity)) {
                 let fields = UserEntity.ok[0].fields;
                 for (let i = 0; i < fields.length; i += 1) {
                     if (fields[i].fieldName == "xp_leaderboard") {
@@ -471,7 +627,6 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
                     }
                 };
             } else {
-                let entities = await actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as { ok: [StableEntity] };
                 let userIsMember = false;
                 for (let i = 0; i < entities.ok.length; i += 1) {
                     if (entities.ok[i].eid == current_user_principal) {
@@ -486,12 +641,11 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
                     });
                 }
             };
-            let profile = await worldHub.actor[worldHub.methods.getUserProfile]({ uid: current_user_principal }) as { uid: string; username: string; image: string; };
             response = {
                 uid: profile.uid,
                 username: (profile.username == profile.uid) ? (profile.uid).substring(0, 10) + "..." : (profile.username.length > 10) ? (profile.username).substring(0, 10) + "..." : profile.username,
                 xp: response.xp,
-                image: (profile.image != "") ? profile.image : "/usericon.jpeg"
+                image: (profile.image != "") ? profile.image : "/usericon.png"
             };
             return response;
         },
@@ -641,7 +795,7 @@ export const useNftTransfer = () => {
                     to: {
                         principal: Principal.fromText(principal)
                     },
-                    token: (tokenid)? tokenid : "",
+                    token: (tokenid) ? tokenid : "",
                     notify: false,
                     from: {
                         principal: Principal.fromText(current_user_principal),
@@ -662,10 +816,12 @@ export const useNftTransfer = () => {
         onError: () => {
             toast.error(t("wallet.tab_2.transfer_error"));
             queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
         },
         onSuccess: () => {
             toast.success(t("wallet.tab_2.transfer_success"));
             queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
         },
     });
 };
@@ -712,8 +868,10 @@ export const useIcrcTransfer = () => {
                 if (res.Ok == undefined) {
                     if (res.Err?.InsufficientFunds == undefined) {
                         toast.error("ICRC1 Transfer error. Contact dev team in discord.");
+                        closeToast();
                     } else {
                         toast.error("Insufficient funds. Use amount available to withdraw.");
+                        closeToast();
                     }
                     throw (res.Err);
                 };
@@ -731,6 +889,7 @@ export const useIcrcTransfer = () => {
             toast.success(t("wallet.tab_1.transfer.success"));
             queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
             queryClient.refetchQueries({ queryKey: [queryKeys.transfer_amount] });
+            closeToast();
         },
     });
 };
@@ -750,28 +909,31 @@ export const useUpdateProfileImage = () => {
                 const guildCanister = await useGamingGuildsClient();
                 let current_user_principal = session?.address;
                 let res = await actor[methods.uploadProfilePicture]({ uid: current_user_principal, image: image });
-                let processActionResponse = await guildCanister.actor[guildCanister.methods.processAction]({
+                let processActionResponse = await guildCanister.actor[guildCanister.methods.processActionAwait]({
                     fields: [],
                     actionId: "changed_profile_pic"
-                }) as { err : string; };
-                if(processActionResponse.err != undefined) {
+                }) as { err: string; };
+                if (processActionResponse.err != undefined) {
                     toast.error("Profile Picture uploaded but " + processActionResponse.err);
+                    closeToast();
                     throw processActionResponse.err;
                 };
             } catch (error) {
                 toast.error(t("profile.edit.tab_1.upload_error"));
+                closeToast();
                 throw error;
             }
         },
         onError: () => {
             toast.error(t("profile.edit.tab_1.error"));
+            closeToast();
         },
         onSuccess: () => {
             toast.success(t("profile.edit.tab_1.success"));
-            window.setTimeout(() => {
-                queryClient.refetchQueries({ queryKey: [queryKeys.profile] });
-                queryClient.refetchQueries({ queryKey: [queryKeys.all_quests_info] });
-            }, 5000);
+            queryClient.refetchQueries({ queryKey: [queryKeys.profile] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.all_quests_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.all_guild_members_info] });
+            closeToast();
         },
     });
 };
@@ -800,20 +962,23 @@ export const useUpdateProfileUsername = () => {
                 let current_user_principal = session?.address;
                 if (checkUsernameRegex(username) == false) {
                     toast.error("Username should be less than 15 characters and should not contain whiteSpaces. Try again!");
+                    closeToast();
                     throw ("");
                 };
                 const guildCanister = await useGamingGuildsClient();
                 let res = await actor[methods.setUsername](current_user_principal, username) as { ok: string | undefined, err: string | undefined };
                 if (res.ok == undefined) {
                     toast.error("Username not available, try different username.");
+                    closeToast();
                     throw (res.err);
                 };
-                let processActionResponse = await guildCanister.actor[guildCanister.methods.processAction]({
+                let processActionResponse = await guildCanister.actor[guildCanister.methods.processActionAwait]({
                     fields: [],
                     actionId: "changed_username"
-                }) as { err : string; };
-                if(processActionResponse.err != undefined) {
+                }) as { err: string; };
+                if (processActionResponse.err != undefined) {
                     toast.error("Username changed but " + processActionResponse.err);
+                    closeToast();
                     throw processActionResponse.err;
                 };
             } catch (error) {
@@ -827,10 +992,10 @@ export const useUpdateProfileUsername = () => {
         },
         onSuccess: () => {
             toast.success(t("profile.edit.tab_2.success"));
-            window.setTimeout(() => {
-                queryClient.refetchQueries({ queryKey: [queryKeys.profile] });
-                queryClient.refetchQueries({ queryKey: [queryKeys.all_quests_info] });
-            }, 5000);
+            queryClient.refetchQueries({ queryKey: [queryKeys.profile] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.all_quests_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.all_guild_members_info] });
+            closeToast();
         },
     });
 };
