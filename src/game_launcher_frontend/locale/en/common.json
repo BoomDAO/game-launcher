@@ -10,16 +10,38 @@
   },
   "footer": {
     "follow": "Follow us",
-    "copyright": ""
+    "copyright": "",
+    "tos": "Terms Of Service",
+    "privacy-policy": "Privacy Policy"
   },
   "navigation": {
     "login": "Login",
+    "profile": "Profile",
+    "wallet": "Wallet",
     "logout": "Logout",
     "browse_games": "Browse games",
-    "upload_games": "Upload games",
+    "upload_games": "UPLOAD GAMES",
     "manage_NFTs": "DEPLOY NFTS",
     "token_deployer": "DEPLOY TOKENS",
-    "world_deployer": "DEPLOY WORLDS"
+    "world_deployer": "DEPLOY WORLDS",
+    "gaming_guilds": "GAMING GUILD"
+  },
+  "verification": {
+    "button": "Send Verification Email",
+    "button_phone": "Send Verification SMS",
+    "input_placeholder": "Email used for website registration",
+    "input_placeholder_phone": "Your Phone number",
+    "input_phone_hint": "Phone number should include the country code. (eg: +913423563278)",
+    "verification_error": "Some error occured. Contact dev team.",
+    "verification_success": "OTP sent to your registered email. Kindly proceed to verify.",
+    "verification_error_phone": "Some error occured. Contact dev team.",
+    "verification_success_phone": "OTP sent to entered phone number via SMS. Kindly proceed to verify.",
+    "otp_error": "Some error occured. Contact dev team.",
+    "otp_success": "Congratulations! You've received an OG DAO member badge.",
+    "otp_success_sms": "Congratulations! You've received a Phone badge.",
+    "otp_input_sms": "Enter 6-digit OTP received in your sms",
+    "otp_input": "Enter 6-digit OTP received in your email",
+    "otp_button": "Verify OTP"
   },
   "card": {
     "platform": "Platform",
@@ -146,11 +168,12 @@
       "title": "Manage collection",
       "tabs": {
         "item_1": "View",
-        "item_2": "Admin / Controller",
+        "item_2": "Admin",
         "item_3": "Configure Images",
         "item_4": "Mint",
         "item_5": "Airdrop",
-        "item_6": "Burn"
+        "item_6": "Burn",
+        "item_7": "Trusted Origins"
       },
       "assets": {
         "upload": {
@@ -273,7 +296,7 @@
     "input_symbol": "Token Symbol",
     "input_amount": "Total Supply",
     "input_decimals": "Token Decimal Places",
-    "input_fee": "Token Transaction Fee (Use Precision Value)",
+    "input_fee": "Transaction Fee in e8s (eg. 100000 = 0.001)",
     "input_description": "Token Description",
     "deploy_token": {
       "title": "Deploy New Token",
@@ -361,7 +384,8 @@
             "error": "Import failed, Try again!",
             "success": "Imported",
             "button_text": "Import Configs"
-          },"import_action": {
+          },
+          "import_action": {
             "title": "Import World's Actions Data",
             "input_placeholder": "Canister Id",
             "input_hint": "To import all World actions data",
@@ -379,19 +403,34 @@
           }
         },
         "item_3": {
-          "title": "Admin / Controller"
+          "title": "Admin"
         },
         "item_4": {
-          "title": "Upgrade World",
-          "upgrade_world": {
-            "title": "Upgrade World",
-            "wasm_file_placeholder": "World wasm file",
-            "wasm_file_button": "Select Wasm Module",
-            "upgrade_world_button": "Upgrade World",
-            "upgrade_world_hint": "Select wasm file you want to upgrade your World canister to."
+          "title": "Trusted Origins",
+          "view": {
+            "title": "View all trusted origins",
+            "button": "Get All Trusted Origins",
+            "error": "No trusted origins found",
+            "not_found": "Upgrade your canister to support ICRC-28 trusted origins. Contact developer team via discord"
           },
-          "upgrade_error": "World Upgrade failed, check if you are already on latest version or contact dev team.",
-          "upgrade_success": "World Upgrade successful."
+          "manage": {
+            "title": "Add / Remove Trusted Origins",
+            "add_placeholder": "Url to add as trusted origin",
+            "add_button": "Add Url",
+            "remove_placeholder": "Url to remove from trusted origins",
+            "remove_button": "Remove Url",
+            "add_error": "Adding trusted origin failed. Contact developer team via discord",
+            "add_success": "Url added as trusted origin successfully",
+            "remove_error": "Removing Url from trusted origins failed. Contact developer team via discord",
+            "remove_success": "Removed url from trusted origins successfully"
+          }
+        },
+        "item_5": {
+          "title": "Update World Details",
+          "subtitle": "Update World's Name/Cover",
+          "button_placeholder": "Update World",
+          "success_msg": "Update World details successfully",
+          "error_msg": "Some error occured, Contact developer team via discord"
         }
       }
     },
@@ -452,5 +491,76 @@
       "url": "https://gi72u-lqaaa-aaaal-ac3ga-cai.raw.icp0.io/",
       "name": "ToyoWorld"
     }
-  ]
+  ],
+  "gaming_guilds": {
+    "banner_image": "/guilds-banner.png",
+    "items": {
+      "item_1": {
+        "title": "QUESTS",
+        "no_quest": "No Quests added yet ..."
+      },
+      "item_2": {
+        "title": "MEMBERS",
+        "loading": "Loading All Guild Members ...",
+        "no_members": "you can be the first to join Gaming Guilds ..."
+      },
+      "item_3": {
+        "verify_email_button": "VERIFY EMAIL",
+        "verify_phone_button": "VERIFY PHONE"
+      }
+    },
+    "Quests": {
+      "loading": "HODL On, We are loading Quests for you ...",
+      "complete_button": "CLAIM",
+      "incomplete_button": "GO",
+      "claimed_button": "DONE",
+      "claim_reward_error": "Error in claiming reward, contact dev team in discord"
+    }
+  },
+  "wallet": {
+    "tab_1": {
+      "title": "Tokens",
+      "token_heading": "Your Currencies",
+      "tokens_loading": "Loading your Currencies...",
+      "token_transfer_button_placeholder": "Withdraw",
+      "token_receiver_button_placeholder": "Deposit",
+      "no_tokens": "No tokens listed in Game Launcher yet.",
+      "transfer": {
+        "heading": "Withdraw Token",
+        "success": "ICRC Withdrawal successfull.",
+        "error": "Some error occured. Contact dev team for support."
+      }
+    },
+    "tab_2": {
+      "title": "NFTs",
+      "nfts_loading": "Loading Your NFTs",
+      "no_nfts": "You dont hold any NFTs from our supported NFT collections.",
+      "transfer_success": "NFT transferred successfully.",
+      "transfer_error": "Some error occured. Contact dev team."
+    }
+  },
+  "profile": {
+    "edit": {
+      "title": "Edit Profile Details",
+      "tab_1": {
+        "title": "Profile Picture",
+        "subtitle": "Update Your Profile Picture",
+        "input_placeholder": "Select Image",
+        "select_button": "Choose IMG",
+        "upload_button": "Upload",
+        "error": "Some error occured. Contact dev team",
+        "upload_error": "Upload failed. Retry with image of size < 2MB.",
+        "success": "Profile picture updated successfully.",
+        "hint": "Size of profile picture should be less than 2MB."
+      },
+      "tab_2": {
+        "title": "Username",
+        "subtitle": "Update Username",
+        "input_placeholder": "Enter your new username",
+        "update_button": "Update",
+        "error": "Some error occured. Contact dev team for support.",
+        "success": "Username updated successfully"
+      }
+    }
+  }
 }

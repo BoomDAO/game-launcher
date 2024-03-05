@@ -21,6 +21,18 @@ import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
 import Game from "./pages/UploadGames/Games/Game";
 import ManageWorlds from "./pages/WorldDeployer/ManageWorlds";
+import Guilds from "./pages/GamingGuilds";
+import VerifyPage from "./pages/GamingGuilds/VerifyOtpPage";
+import EmailPage from "./pages/GamingGuilds/EmailPage";
+import VerifyOtpPage from "./pages/GamingGuilds/VerifyOtpPage";
+import VerifyEmailPage from "./pages/GamingGuilds/VerifyEmailPage";
+import VerifyPhoneOtpPage from "./pages/GamingGuilds/VerifyPhoneOtpPage";
+import VerifyPhonePage from "./pages/GamingGuilds/VerifyPhonePage";
+import Wallet from "./pages/Wallet";
+import Profile from "./pages/Profile";
+import WalletTransfer from "./pages/Wallet/WalletTransfer";
+import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
+import Nft from "./pages/Wallet/Nft";
 
 function App() {
   return (
@@ -31,6 +43,10 @@ function App() {
             <Toast />
             <Routes>
               <Route path={navPaths.home} element={<Home />} />
+              <Route
+                path={`${navPaths.gaming_guilds}`}
+                element={<Guilds />}
+              />
 
               <Route element={<ProtectedRoute />}>
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
@@ -74,6 +90,46 @@ function App() {
                 <Route
                   path={`${navPaths.manage_worlds}/:canisterId`}
                   element={<ManageWorlds />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_email_verification}/:email`}
+                  element={<VerifyOtpPage />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_email_verification}`}
+                  element={<VerifyEmailPage />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_phone_verification}/:phone`}
+                  element={<VerifyPhoneOtpPage />}
+                />
+                <Route
+                  path={`${navPaths.gaming_guilds_phone_verification}`}
+                  element={<VerifyPhonePage />}
+                />
+                <Route
+                  path={`${navPaths.profile_picture}`}
+                  element={<Profile activeTab="Picture"/>}
+                />
+                <Route
+                  path={`${navPaths.profile_username}`}
+                  element={<Profile activeTab="Username"/>}
+                />
+                <Route
+                  path={`${navPaths.wallet_tokens}`}
+                  element={<Wallet activeTab="Tokens"/>}
+                />
+                <Route
+                  path={`${navPaths.wallet_nfts}`}
+                  element={<Wallet activeTab="Nfts" />}
+                />
+                <Route
+                  path={`${navPaths.transfer}/:canisterId`}
+                  element={<WalletTransfer/>}
+                />
+                <Route
+                  path={`${navPaths.nftTransfer}/:canisterId/:tokenid`}
+                  element={<NftWalletTransfer/>}
                 />
               </Route>
 

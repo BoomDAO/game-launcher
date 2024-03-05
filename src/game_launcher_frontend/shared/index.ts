@@ -17,7 +17,16 @@ export const navPaths = {
   world_deployer: "/world-deployer",
   create_new_world: "/world-deployer/create-world",
   boomdao_candid_url: "https://5pati-hyaaa-aaaal-qb3yq-cai.raw.icp0.io/",
-  manage_worlds: "/world-deployer/manage-worlds"
+  manage_worlds: "/world-deployer/manage-worlds",
+  gaming_guilds: "/gaming-guilds",
+  gaming_guilds_email_verification: "/gaming-guilds/verify-email",
+  gaming_guilds_phone_verification: "/gaming-guilds/verify-phone",
+  profile_picture: "/profile/picture",
+  profile_username: "/profile/username",
+  wallet_tokens: "/wallet/tokens",
+  wallet_nfts: "/wallet/nfts",
+  transfer: "/wallet/transfer",
+  nftTransfer: "/wallet/transfer/nft"
 };
 
 export const platform_types: SelectOption[] = [
@@ -63,7 +72,6 @@ export const tokenDataScheme = {
   description: z.string().min(1, { message: "Description is required." }),
   amount: z.string().min(1, {message: "Amount is required."}),
   logo: z.string().min(1, {message: "Logo is required."}),
-  decimals: z.string().min(1, {message: "Token Decimals is required."}),
   fee: z.string().min(1, {message: "Tx Fee is required."}),
 };
 

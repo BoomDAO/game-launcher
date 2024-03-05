@@ -1,0 +1,13 @@
+[package]
+name = "sha2"
+version = "0.0.3"
+description = "Optimized implementation of all SHA2 functions"
+repository = "https://github.com/research-ag/sha2"
+keywords = [ "hash", "sha256", "sha512", "sha224", "sha384" ]
+license = "Apache-2.0"
+
+[dependencies]
+base = "0.9.8"
+
+[dev-dependencies]
+test = "1.0.1"

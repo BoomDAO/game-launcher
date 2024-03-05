@@ -29,6 +29,7 @@ import Trie2D "mo:base/Trie";
 import World "world";
 import Helper "../utils/Helpers";
 import Management "../types/management.types";
+import ENV "../utils/Env";
 
 actor Deployer {
 
@@ -40,7 +41,7 @@ actor Deployer {
   private stable var _versions : Trie.Trie<Text, Text> = Trie.empty(); // mapping of world_canister_id -> world_wasm_version
   private stable var _admins : [Text] = [];
 
-  let IC : Management.Management = actor ("aaaaa-aa"); //IC Management Canister
+  let IC : Management.Self = actor ("aaaaa-aa"); //IC Management Canister
 
   //Types
   public type World = {
@@ -88,32 +89,14 @@ actor Deployer {
       IC.update_settings({
         canister_id = cid.canister_id;
         settings = {
-          controllers = ?[init_owner, deployer()];
+          controllers = ?[deployer()];
           compute_allocation = null;
           memory_allocation = null;
           freezing_threshold = ?31_540_000;
         };
+        sender_canister_version = null;
       })
     );
-  };
-
-  private func _isController(collection_canister_id : Text, p : Principal) : async (Bool) {
-    var status : {
-      status : { #stopped; #stopping; #running };
-      memory_size : Nat;
-      cycles : Nat;
-      settings : Management.definite_canister_settings;
-      module_hash : ?[Nat8];
-    } = await IC.canister_status({
-      canister_id = Principal.fromText(collection_canister_id);
-    });
-    var controllers : [Principal] = status.settings.controllers;
-    for (i in controllers.vals()) {
-      if (i == p) {
-        return true;
-      };
-    };
-    return false;
   };
 
   //Queries
@@ -252,71 +235,6 @@ actor Deployer {
     _admins := Buffer.toArray(b);
   };
 
-  public shared ({ caller }) func addController(collection_canister_id : Text, p : Text) : async () {
-    var check : Bool = await _isController(collection_canister_id, caller);
-    if (check == false) {
-      return ();
-    };
-    var status : {
-      status : { #stopped; #stopping; #running };
-      memory_size : Nat;
-      cycles : Nat;
-      settings : Management.definite_canister_settings;
-      module_hash : ?[Nat8];
-    } = await IC.canister_status({
-      canister_id = Principal.fromText(collection_canister_id);
-    });
-    var controllers : [Principal] = status.settings.controllers;
-    var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
-    for (i in controllers.vals()) {
-      if (i != Principal.fromText(p)) b.add(i);
-    };
-    b.add(Principal.fromText(p));
-    await (
-      IC.update_settings({
-        canister_id = Principal.fromText(collection_canister_id);
-        settings = {
-          controllers = ?Buffer.toArray(b);
-          compute_allocation = null;
-          memory_allocation = null;
-          freezing_threshold = ?31_540_000;
-        };
-      })
-    );
-  };
-
-  public shared ({ caller }) func removeController(collection_canister_id : Text, p : Text) : async () {
-    var check : Bool = await _isController(collection_canister_id, caller);
-    if (check == false) {
-      return ();
-    };
-    var status : {
-      status : { #stopped; #stopping; #running };
-      memory_size : Nat;
-      cycles : Nat;
-      settings : Management.definite_canister_settings;
-      module_hash : ?[Nat8];
-    } = await IC.canister_status({
-      canister_id = Principal.fromText(collection_canister_id);
-    });
-    var controllers : [Principal] = status.settings.controllers;
-    var b : Buffer.Buffer<Principal> = Buffer.Buffer<Principal>(0);
-    for (i in controllers.vals()) {
-      if (i != Principal.fromText(p)) b.add(i);
-    };
-    await (
-      IC.update_settings({
-        canister_id = Principal.fromText(collection_canister_id);
-        settings = {
-          controllers = ?Buffer.toArray(b);
-          compute_allocation = null;
-          memory_allocation = null;
-          freezing_threshold = ?31_540_000;
-        };
-      })
-    );
-  };
-
   public shared (msg) func createWorldCanister(_name : Text, cover_encoding : Text) : async (Text) {
     var canister_id : Text = await create_canister(msg.caller);
     _worlds := Trie.put(
@@ -340,6 +258,28 @@ actor Deployer {
       case (?o) {
         assert (Principal.fromText(o) == msg.caller);
         _covers := Trie.put(_covers, Helper.keyT(canister_id), Text.equal, base64).0;
+        return #ok();
+      };
+      case null {
+        return #err("canister owner not found");
+      };
+    };
+  };
+
+  public shared (msg) func updateWorldName(canister_id : Text, _name : Text) : async (Result.Result<(), Text>) {
+    assert ((await _isOwner(msg.caller, canister_id)) == true);
+    switch (Trie.find(_worlds, Helper.keyT(canister_id), Text.equal)) {
+      case (?world) {
+        _worlds := Trie.put(
+          _worlds,
+          Helper.keyT(canister_id),
+          Text.equal,
+          {
+            name = _name;
+            canister = canister_id;
+            cover = "https://" #Principal.toText(deployer()) # ".raw.icp0.io/cover/" #canister_id;
+          },
+        ).0;
         return #ok();
       };
       case null {
@@ -382,113 +322,67 @@ actor Deployer {
     };
   };
 
-  // state-management and wasm-management
-  private stable var _latestVersion : Text = "";
-  private stable var _wasms : Trie.Trie<Text, Wasm> = Trie.empty();
+  // custom SNS functions for upgrading World nodes which are under control of World Deployer Canister
+  private stable var world_wasm_module = {
+    version : Text = "";
+    wasm : Blob = Blob.fromArray([]);
+    last_updated : Int = 0;
+  };
 
-  public shared ({ caller }) func uploadNewWasmModule(req : { wasmModule : [Nat8] }) : async (Result.Result<(), Text>) {
+  public query func getWorldWasmVersion() : async (Text) {
+    return world_wasm_module.version;
+  };
+
+  public shared ({ caller }) func updateWorldWasmModule(
+    arg : {
+      version : Text;
+      wasm : Blob;
+    }
+  ) : async (Int) {
     assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
-    switch (Trie.find(_wasms, Helper.keyT(_latestVersion), Text.equal)) {
-      case (?w) {
-        let current_version : Nat = Helper.textToNat(_latestVersion);
-        _latestVersion := Nat.toText(current_version + 1);
-        _wasms := Trie.put(
-          _wasms,
-          Helper.keyT(_latestVersion),
-          Text.equal,
-          {
-            version = _latestVersion;
-            wasmModule = req.wasmModule;
-            createdAt = Time.now();
-          },
-        ).0;
-        return #ok();
-      };
-      case _ {
-        if (_latestVersion == "") {
-          _latestVersion := "1";
-          _wasms := Trie.put(
-            _wasms,
-            Helper.keyT(_latestVersion),
-            Text.equal,
-            {
-              version = _latestVersion;
-              wasmModule = req.wasmModule;
-              createdAt = Time.now();
-            },
-          ).0;
-          return #ok();
-        };
-        return #err("latest wasm version not found");
-      };
+    world_wasm_module := {
+      version = arg.version;
+      wasm = arg.wasm;
+      last_updated = Time.now();
+    };
+    return world_wasm_module.last_updated;
+  };
+
+  public shared ({ caller }) func validate_upgrade_worlds(last_verified_update : Int) : async ({
+    #Ok : Text;
+    #Err : Text;
+  }) {
+    if (world_wasm_module.last_updated == last_verified_update) {
+      return #Ok("last_verified_update passed");
+    } else {
+      return #Err("last_verified_update failed");
     };
   };
 
-  public shared ({ caller }) func upgradeWorldToNewWasm(canister_id : Text, owner : Blob) : async (Result.Result<(), Text>) {
-    // assert ((await _isOwner(caller, canister_id)) == true);
-    let previous_version = Option.get(Trie.find(_versions, Helper.keyT(canister_id), Text.equal), "");
-    var next_version = "";
-    if (previous_version == "") {
-      next_version := _latestVersion;
-      let _wasm_module : [Nat8] = switch (Trie.find(_wasms, Helper.keyT(_latestVersion), Text.equal)) {
-        case (?w) {
-          w.wasmModule;
+  public shared ({ caller }) func upgrade_worlds(last_verified_update : Int) : async () {
+    assert (caller == Principal.fromText("xomae-vyaaa-aaaaq-aabhq-cai")); //Only SNS governance canister can call generic methods via proposal
+    var worlds_and_owners = Buffer.Buffer<(Text, Text)>(0);
+    for ((i, v) in Trie.iter(_worlds)) {
+      switch (Trie.find(_owners, Helper.keyT(i), Text.equal)) {
+        case (?owner) {
+          worlds_and_owners.add((i, owner));
         };
-        case _ {
-          return #err("latest version wasm module not available");
-        };
+        case _ {};
       };
-      _versions := Trie.put(_versions, Helper.keyT(canister_id), Text.equal, next_version).0;
+    };
+    for ((worldId, ownerId) in worlds_and_owners.vals()) {
+      let IC : Management.Self = actor (ENV.IC_Management);
       let upgrade_bool = ?{
         skip_pre_upgrade = ?false;
       };
-      await IC.install_code({
-        arg = owner;
-        wasm_module = Blob.fromArray(_wasm_module);
+      let _arg : Principal = Principal.fromText(ownerId);
+      let res = await IC.install_code({
+        arg = to_candid (_arg);
+        wasm_module = world_wasm_module.wasm;
         mode = #upgrade upgrade_bool;
-        canister_id = Principal.fromText(canister_id);
+        canister_id = Principal.fromText(worldId);
+        sender_canister_version = null;
       });
-      return #ok();
-    } else {
-      next_version := Nat.toText(Helper.textToNat(previous_version) + 1);
-      if (Helper.textToNat(next_version) > Helper.textToNat(_latestVersion)) {
-        return #err("no new version of world wasm available");
-      } else {
-        let _wasm_module : [Nat8] = switch (Trie.find(_wasms, Helper.keyT(next_version), Text.equal)) {
-          case (?w) {
-            w.wasmModule;
-          };
-          case _ {
-            return #err("next version wasm module not available");
-          };
-        };
-        _versions := Trie.put(_versions, Helper.keyT(canister_id), Text.equal, next_version).0;
-        let upgrade_bool = ?{
-          skip_pre_upgrade = ?false;
-        };
-        await IC.install_code({
-          arg = owner;
-          wasm_module = Blob.fromArray(_wasm_module);
-          mode = #upgrade upgrade_bool;
-          canister_id = Principal.fromText(canister_id);
-        });
-        return #ok();
-      };
-    };
-  };
-
-  public query func getLatestWorldWasmVersion() : async (Text) {
-    return _latestVersion;
-  };
-
-  public query func getWorldVersion(world_canister_id : Text) : async (Text) {
-    switch (Trie.find(_versions, Helper.keyT(world_canister_id), Text.equal)) {
-      case (?version) {
-        return version;
-      };
-      case _ {
-        return "";
-      };
     };
   };
 

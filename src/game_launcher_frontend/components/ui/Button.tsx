@@ -7,6 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "normal" | "big";
   rightArrow?: boolean;
   isLoading?: boolean;
+  isClaimSuccess?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -17,6 +18,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       className,
       isLoading,
+      isClaimSuccess,
       disabled,
       ...rest
     },
@@ -33,11 +35,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             ? "cursor-default bg-gray-600 text-gray-500"
             : "gradient-bg",
           className,
+          isClaimSuccess || disabled
+          ? "cursor-default gradient-bg-grey"
+          : ""
         )}
-        disabled={disabled || isLoading}
+        disabled={disabled || isLoading || isClaimSuccess}
         {...rest}
       >
-        {children}
+        {
+          (isClaimSuccess) ? <>DONE</> : <>{children}</>
+        }
         {isLoading && (
           <Loader
             className={cx(size === "normal" ? "h-4 w-4" : "ml-2 h-6 w-6")}

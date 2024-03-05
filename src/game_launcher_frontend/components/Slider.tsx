@@ -38,14 +38,13 @@ export default function Slider() {
                 </div>
                 {sliderImages.map((currentSlide, ind) => {
                     return (
-                        <div>
+                        <div key={ind}>
                             <div
                                 className={ind === activeImageNum ? "currentSlide active" : "currentSlide"}
-                                key={ind}
+                                
                             >
                                 <a href={currentSlide.url} className="cursor: pointer" target="_blank">
                                     {ind === activeImageNum && <img src={currentSlide.image} className="h-72 w-full rounded-primary object-cover shadow md:h-96" />}
-                                    {/* {ind === activeImageNum && <p className="absolute text-yellow-400 z-10 cursor-pointer text-6xl font-bold" style={{ top: "75%", right: "4rem", fontFamily:'Poppins'}}>{currentSlide.name}</p>} */}
                                 </a>
                             </div>
                         </div>

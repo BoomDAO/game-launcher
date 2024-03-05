@@ -13,6 +13,10 @@ dist-ssr
 *.local
 .dfx
 secrets
+.mops
+.vessel
+vessel.dhall
+package-set.dhall
 
 # Editor directories and files
 .vscode/*
@@ -25,3 +29,4 @@ secrets
 *.sln
 *.sw?
 *.tsbuildinfo
+sendgrid.env

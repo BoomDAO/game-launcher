@@ -1,0 +1,16 @@
+# Various IDEs and Editors
+.vscode/
+.idea/
+**/*~
+
+# dfx temporary files
+.dfx/
+
+# generated files
+src/declarations/
+
+# Vessel package manager
+.vessel
+
+build/
+.mops/

@@ -28,7 +28,7 @@ const SideBar = ({
 
         <div className="fixed inset-0 overflow-hidden">
           <div className="absolute inset-0 overflow-hidden">
-            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+            <div className="pointer-events-none fixed inset-y-0 right-0 flex pl-10">
               <Transition.Child
                 as={React.Fragment}
                 enter="transform transition ease-in-out duration-500 sm:duration-700"
@@ -38,7 +38,7 @@ const SideBar = ({
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="pointer-events-auto relative w-screen max-w-lg">
+                <Dialog.Panel className="pointer-events-auto relative w-screen max-w-sm">
                   <Transition.Child
                     as={React.Fragment}
                     enter="ease-in-out duration-500"

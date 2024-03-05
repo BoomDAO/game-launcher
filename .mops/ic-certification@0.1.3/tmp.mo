@@ -1,0 +1,16 @@
+import Debug "mo:base/Debug";
+import MerkleTree "src/MerkleTree";
+var t = MerkleTree.empty();
+t := MerkleTree.put(t, ([""] : [Blob]), "\61");
+t := MerkleTree.put(t, (["\61", "\63"] : [Blob]), "");
+t := MerkleTree.put(t, (["\63", "\61"] : [Blob]), "\62");
+t := MerkleTree.put(t, (["", "\61"] : [Blob]), "\61");
+t := MerkleTree.put(t, ([] : [Blob]), "\63");
+t := MerkleTree.put(t, (["\63", "\61"] : [Blob]), "\62");
+t := MerkleTree.put(t, (["", "\61"] : [Blob]), "\61");
+t := MerkleTree.put(t, (["", "\61"] : [Blob]), "\61");
+let w = MerkleTree.reveals(t, [(["\61", "\63"] : [Blob]), (["\63", "\61"] : [Blob]), (["", "\61"] : [Blob]), (["", "\61"] : [Blob])].vals());
+Debug.print(debug_show t);
+Debug.print(debug_show w);
+assert (w == #fork(#labeled("",#labeled("\61",#leaf("\61"))),#labeled("\63",#labeled("\61",#leaf("\62")))));
+assert (MerkleTree.reconstruct w == MerkleTree.treeHash t);

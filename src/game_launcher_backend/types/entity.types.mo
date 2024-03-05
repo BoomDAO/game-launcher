@@ -35,16 +35,20 @@ module {
 
     public type Entity = {
         wid : TGlobal.worldId;
-        gid : TGlobal.groupId;
         eid : TGlobal.entityId;
         fields : Map.Map<Text, Text>;
     };
 
     public type StableEntity = {
         wid : TGlobal.worldId;
-        gid : TGlobal.groupId;
         eid : TGlobal.entityId;
-        fields : [(Text, Text)];
+        fields : [TGlobal.Field];
+    };
+
+    public type EntitySchema = {
+        uid : Text;
+        eid : Text;
+        fields : [TGlobal.Field];
     };
 
     public type Config = {
@@ -54,12 +58,11 @@ module {
 
     public type StableConfig = {
         cid : TGlobal.configId;
-        fields : [(Text, Text)];
+        fields : [TGlobal.Field];
     };
 
     public type EntityPermission = {
         wid : TGlobal.worldId;
-        gid : TGlobal.groupId;
         eid : TGlobal.entityId;
     };
 

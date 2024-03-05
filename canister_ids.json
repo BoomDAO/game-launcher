@@ -1,7 +1,8 @@
 {
   "game-launcher": {
     "ic": "awcae-maaaa-aaaam-abmyq-cai",
-    "stag": "n7z64-2yaaa-aaaam-abnsa-cai"
+    "stag": "n7z64-2yaaa-aaaam-abnsa-cai",
+    "test": "t2qzd-6qaaa-aaaak-qdbdq-cai"
   },
   "game_deployer": {
     "ic": "6rvbl-uqaaa-aaaal-ab24a-cai",
@@ -18,5 +19,13 @@
   "world_deployer": {
     "ic": "js5r2-paaaa-aaaap-abf7q-cai",
     "stag": "na2jz-uqaaa-aaaal-qbtfq-cai"
+  },
+  "guilds_verifier": {
+    "stag": "yv22q-myaaa-aaaal-adeuq-cai",
+    "ic": "jvcsg-6aaaa-aaaan-qeqvq-cai"
+  },
+  "gaming_guilds": {
+    "stag": "6ehny-oaaaa-aaaal-qclyq-cai",
+    "ic": "erej6-riaaa-aaaap-ab4ma-cai"
   }
 }

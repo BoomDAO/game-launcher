@@ -221,47 +221,47 @@ export const useCreateWorldUpload = () => {
   });
 };
 
-export const useUpgradeWorld = () => {
-  const { t } = useTranslation();
+// export const useUpgradeWorld = () => {
+//   const { t } = useTranslation();
 
-  return useMutation({
-    mutationFn: async ({
-      canisterId
-    }: {
-      canisterId?: string;  
-    }) => {
-      try {
-        const { actor, methods } = await useWorldDeployerClient();
-        const authClient = await getAuthClient();
-        const identity = authClient?.getIdentity();
-        const owner_principal = Principal.fromText(identity.getPrincipal().toString());
-        const owner = IDL.encode([IDL.Principal], [owner_principal]);
-        let res = (await actor[methods.upgrade_world](
-          canisterId,
-          owner
-        )) as {
-          ok : void; 
-          err : string;
-        };
+//   return useMutation({
+//     mutationFn: async ({
+//       canisterId
+//     }: {
+//       canisterId?: string;
+//     }) => {
+//       try {
+//         const { actor, methods } = await useWorldDeployerClient();
+//         const authClient = await getAuthClient();
+//         const identity = authClient?.getIdentity();
+//         const owner_principal = Principal.fromText(identity.getPrincipal().toString());
+//         const owner = IDL.encode([IDL.Principal], [owner_principal]);
+//         let res = (await actor[methods.upgrade_world](
+//           canisterId,
+//           owner
+//         )) as {
+//           ok: void;
+//           err: string;
+//         };
 
-        if(res.err != undefined) {
-          throw (res.err)
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          throw error.message;
-        }
-        throw serverErrorMsg;
-      }
-    },
-    onError: () => {
-      toast.error(t("world_deployer.manage_worlds.tabs.item_4.upgrade_error"));
-    },
-    onSuccess: () => {
-      toast.success(t("world_deployer.manage_worlds.tabs.item_4.upgrade_success"));
-    },
-  });
-};
+//         if (res.err != undefined) {
+//           throw (res.err)
+//         }
+//       } catch (error) {
+//         if (error instanceof Error) {
+//           throw error.message;
+//         }
+//         throw serverErrorMsg;
+//       }
+//     },
+//     onError: () => {
+//       toast.error(t("world_deployer.manage_worlds.tabs.item_4.upgrade_error"));
+//     },
+//     onSuccess: () => {
+//       toast.success(t("world_deployer.manage_worlds.tabs.item_4.upgrade_success"));
+//     },
+//   });
+// };
 
 export const useImportUsersData = () => {
   const { t } = useTranslation();
@@ -459,8 +459,8 @@ export const useAddAdmin = () => {
     }) => {
       try {
         const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
-
-        return await actor[methods.add_admin](principal);
+        console.log(principal + " " + canisterId);
+        return await actor[methods.add_admin]({principal : principal});
       } catch (error) {
         if (error instanceof Error) {
           throw error.message;
@@ -491,7 +491,7 @@ export const useRemoveAdmin = () => {
       try {
         const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
 
-        return await actor[methods.remove_admin](principal);
+        return await actor[methods.remove_admin]({principal : principal});
       } catch (error) {
         if (error instanceof Error) {
           throw error.message;
@@ -507,3 +507,128 @@ export const useRemoveAdmin = () => {
     },
   });
 };
+
+export const useAddTrustedOrigin = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      url,
+      canisterId,
+    }: {
+      url: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
+
+        return await actor[methods.addTrustedOrigin](url);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("world_deployer.manage_worlds.tabs.item_4.manage.add_error"));
+    },
+    onSuccess: () => {
+      toast.success(t("world_deployer.manage_worlds.tabs.item_4.manage.add_success"));
+    },
+  });
+};
+
+export const useRemoveTrustedOrigin = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      url,
+      canisterId,
+    }: {
+      url: string;
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
+
+        return await actor[methods.removeTrustedOrigin](url);
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("world_deployer.manage_worlds.tabs.item_4.manage.remove_error"));
+    },
+    onSuccess: () => {
+      toast.success(t("world_deployer.manage_worlds.tabs.item_4.manage.remove_success"));
+    },
+  });
+};
+
+export const useGetTrustedOrigins = () => {
+  const { t } = useTranslation();
+
+  return useMutation({
+    mutationFn: async ({
+      canisterId,
+    }: {
+      canisterId?: string;
+    }) => {
+      try {
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
+        const data = (await actor[methods.getTrustedOrigins]()) as string[];
+        console.log(data);
+        return data;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onError: () => {
+      toast.error(t("world_deployer.manage_worlds.tabs.item_4.view.not_found"));
+    }
+  });
+};
+
+export const useUpdateWorldDetails = () => {
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: async ({
+      canisterId,
+      name,
+      cover
+    } : {
+      canisterId?: string,
+      name: string,
+      cover: string
+    }) => {
+      try {
+        const { actor, methods } = await useWorldDeployerClient();
+        console.log(canisterId);
+        if(name != "") {
+          (await actor[methods.update_name](canisterId? canisterId : "", name));
+        }
+        if(cover != "") {
+          (await actor[methods.update_cover](canisterId, cover));
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error.message;
+        }
+        throw serverErrorMsg;
+      }
+    },
+    onSuccess: () => {
+      toast.success(t("world_deployer.manage_worlds.tabs.item_5.success_msg"));
+    },
+    onError: () => {
+      toast.error(t("world_deployer.manage_worlds.tabs.item_5.error_msg"));
+    }
+  })};

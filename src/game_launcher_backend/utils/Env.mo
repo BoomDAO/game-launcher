@@ -30,15 +30,26 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
-    public let Ledger = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
+    public let IcpLedgerCanisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
     public let IC_Management = "aaaaa-aa"; //IC Management canister_id
     public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai"; //ckBTC as ICRC-1 Token
+
+    public let devPrincipalId = "2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe";
+    public let anonPrincipalId = "2vxsx-fae";
 
     public let admins = []; //add admin principal for access control over DB
 
     //!avoid changing this!
-    public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
-    public let PaymentHubCanisterId = "5hr3g-hqaaa-aaaap-abbxa-cai";
-    public let StakingHubCanisterId = "jozll-yaaaa-aaaap-abf5q-cai"; 
     public let NftDeployerCanisterId = "j474s-uqaaa-aaaap-abf6q-cai";
+
+    //Prod
+    public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
+    public let WorldDeployerCanisterId = "js5r2-paaaa-aaaap-abf7q-cai";
+    public let GamingGuildsCanisterId = "erej6-riaaa-aaaap-ab4ma-cai";
+
+    //Stag
+    // public let WorldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
+    // public let WorldDeployerCanisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
+    // public let GamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
+
 };

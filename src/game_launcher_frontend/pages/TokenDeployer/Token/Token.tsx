@@ -7,6 +7,8 @@ import Space from "@/components/ui/Space";
 import AllowTransfer from "./AllowTransfer";
 import Transfer from "./Transfer";
 import TransferFrom from "./TransferFrom";
+import ViewTrustedOrigins from "../../WorldDeployer/ManageWorlds/ViewTrustedOrigins";
+import TrustedOrigins from "../../WorldDeployer/ManageWorlds/TrustedOrigins";
 
 const Token = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -14,8 +16,7 @@ const Token = () => {
   const { t } = useTranslation();
 
   const tabItems = [
-    { id: 1, name: t("token_deployer.token.tabs.item_1") },
-    { id: 2, name: t("token_deployer.token.tabs.item_2") }
+    { id: 1, name: t("token_deployer.token.tabs.item_1") }
   ];
 
   return (
@@ -31,13 +32,20 @@ const Token = () => {
           <Transfer/>
         </div>
       )}
-      {activeTab === 2 && (
+      {/* {activeTab === 2 && (
         <div className="w-full space-y-12">
           < AllowTransfer />
           <Divider/>
           <TransferFrom/>
         </div>
       )}
+      {activeTab === 3 && (
+        <div className="w-full space-y-12">
+          < ViewTrustedOrigins/>
+          <Divider/>
+          <TrustedOrigins/>
+        </div>
+      )} */}
     </>
   );
 };

@@ -2463,4 +2463,29 @@ shared ({ caller = _deployer }) actor class EXTNFT(init_owner : Principal, name 
     return Buffer.toArray(txs);
   };
 
+  // NFID <-> ICRC-28 implementation for trusted origins
+  private stable var trusted_origins : [Text] = [];
+
+  public shared ({ caller }) func get_trusted_origins() : async ([Text]) {
+    return trusted_origins;
+  };
+
+  public shared ({ caller }) func addTrustedOrigins(v : Text) : async () {
+    assert (_isOwner(caller));
+    var b : Buffer.Buffer<Text> = Buffer.fromArray(trusted_origins);
+    b.add(v);
+    trusted_origins := Buffer.toArray(b);
+  };
+
+  public shared ({ caller }) func removeTrustedOrigins(v : Text) : async () {
+    assert (_isOwner(caller));
+    var b : Buffer.Buffer<Text> = Buffer.Buffer<Text>(0);
+    for (i in trusted_origins.vals()) {
+      if (v != i) {
+        b.add(i);
+      };
+    };
+    trusted_origins := Buffer.toArray(b);
+  };
+
 };

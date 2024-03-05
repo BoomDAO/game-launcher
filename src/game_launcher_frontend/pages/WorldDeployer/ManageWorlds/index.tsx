@@ -10,8 +10,10 @@ import ImportConfig from "./ImportConfig";
 import ImportPermissions from "./ImportPermissions";
 import ManageController from "./ManageController";
 import ManageAdmin from "./ManageAdmin";
-import UpgradeWorld from "./UpgradeWorld";
+import UpdateWorld from "./UpdateWorld";
 import ImportActions from "./ImportActions";
+import TrustedOrigins from "./TrustedOrigins";
+import ViewTrustedOrigins from "./ViewTrustedOrigins";
 
 const ManageWorlds = () => {
   const [activeTab, setActiveTab] = React.useState(1);
@@ -22,7 +24,8 @@ const ManageWorlds = () => {
     { id: 1, name: t("world_deployer.manage_worlds.tabs.item_1.title") },
     { id: 2, name: t("world_deployer.manage_worlds.tabs.item_2.title") },
     { id: 3, name: t("world_deployer.manage_worlds.tabs.item_3.title") },
-    { id: 4, name: t("world_deployer.manage_worlds.tabs.item_4.title") }
+    { id: 4, name: t("world_deployer.manage_worlds.tabs.item_4.title") },
+    { id: 5, name: t("world_deployer.manage_worlds.tabs.item_5.title") }
   ];
 
   return (
@@ -50,14 +53,21 @@ const ManageWorlds = () => {
       )}
       {activeTab === 3 && (
         <div className="w-full space-y-12">
-          < ManageController />
-          <Divider/>
+          {/* < ManageController />
+          <Divider/> */}
           <ManageAdmin/>
         </div>
       )}
       {activeTab === 4 && (
         <div className="w-full space-y-12">
-          < UpgradeWorld />
+          <ViewTrustedOrigins/>
+          <Divider/>
+          <TrustedOrigins/>
+        </div>
+      )}
+      {activeTab === 5 && (
+        <div className="w-full space-y-12">
+          <UpdateWorld/>
         </div>
       )}
     </>
