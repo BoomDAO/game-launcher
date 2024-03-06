@@ -31,9 +31,9 @@ const months = ["January", "February", "March", "April", "May", "June", "July", 
 
 
 function closeToast() {
-    setTimeout(() => {
+    clearTimeout(setTimeout(() => {
         toast.remove();
-    }, 3000);
+    }, 3000));
 };
 function isTransferIcrc(data: { 'updateEntity': UpdateEntity } | { 'updateAction': UpdateAction } | { 'transferIcrc': TransferIcrc } | { 'mintNft': MintNft }): data is { transferIcrc: TransferIcrc; } {
     return (data as { transferIcrc: TransferIcrc; }).transferIcrc !== undefined;

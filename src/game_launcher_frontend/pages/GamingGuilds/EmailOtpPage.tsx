@@ -42,7 +42,6 @@ const EmailOtpPage = () => {
             {
                 onSuccess: () => {
                     resetAdd();
-                    close();
                     navigate(navPaths.gaming_guilds);
                 },
                 onError: () => {

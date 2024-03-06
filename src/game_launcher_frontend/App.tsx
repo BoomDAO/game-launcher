@@ -21,7 +21,7 @@ import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
 import Game from "./pages/UploadGames/Games/Game";
 import ManageWorlds from "./pages/WorldDeployer/ManageWorlds";
-import Guilds from "./pages/GamingGuilds";
+import GamingGuilds from "./pages/GamingGuilds";
 import VerifyPage from "./pages/GamingGuilds/VerifyOtpPage";
 import EmailPage from "./pages/GamingGuilds/EmailPage";
 import VerifyOtpPage from "./pages/GamingGuilds/VerifyOtpPage";
@@ -32,7 +32,6 @@ import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import WalletTransfer from "./pages/Wallet/WalletTransfer";
 import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
-import Nft from "./pages/Wallet/Nft";
 
 function App() {
   return (
@@ -45,7 +44,7 @@ function App() {
               <Route path={navPaths.home} element={<Home />} />
               <Route
                 path={`${navPaths.gaming_guilds}`}
-                element={<Guilds />}
+                element={<GamingGuilds />}
               />
 
               <Route element={<ProtectedRoute />}>
