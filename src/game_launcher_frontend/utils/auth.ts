@@ -18,7 +18,7 @@ type NFIDConfig = {
   idleOptions?: IdleOptions;
 };
 
-var nfid : NFID | null = null;
+// var nfid : NFID | null = null;
 const APPLICATION_NAME = "BOOM DAO";
 const APPLICATION_LOGO_URL = "https://i.postimg.cc/L4f471FF/logo.png";
 const AUTH_PATH =
@@ -47,36 +47,36 @@ export const nfidLogin = async (authClient: AuthClient) => {
   return authClient.getIdentity();
 };
 
-export const nfidEmbedLogin = async (nfid : NFID) => {
-  if(nfid.isAuthenticated) {
-    return nfid.getIdentity();
-  };
-  const delegationIdentity: Identity = await nfid.getDelegation({
-    targets: [],
-    derivationOrigin: "https://7p3gx-jaaaa-aaaal-acbda-cai.ic0.app",
-    maxTimeToLive: BigInt(24) * BigInt(3_600_000_000_000) // 24 hrs
-  });
-  return delegationIdentity;
-};
+// export const nfidEmbedLogin = async (nfid : NFID) => {
+//   if(nfid.isAuthenticated) {
+//     return nfid.getIdentity();
+//   };
+//   const delegationIdentity: Identity = await nfid.getDelegation({
+//     targets: [],
+//     derivationOrigin: "https://7p3gx-jaaaa-aaaal-acbda-cai.ic0.app",
+//     maxTimeToLive: BigInt(24) * BigInt(3_600_000_000_000) // 24 hrs
+//   });
+//   return delegationIdentity;
+// };
 
 export const getAuthClient = async () =>
   await AuthClient.create({
     idleOptions: { idleTimeout: 1000 * 60 * 60 * 24 },
   });
 
-export const getNfid = async () => {
-  if(nfid) {
-    return nfid;
-  };
-  const new_nfid = await NFID.init({
-    application: {
-      name: APPLICATION_NAME,
-      logo: APPLICATION_LOGO_URL
-    },
-  });
-  nfid = new_nfid;
-  return new_nfid;
-};
+// export const getNfid = async () => {
+//   if(nfid) {
+//     return nfid;
+//   };
+//   const new_nfid = await NFID.init({
+//     application: {
+//       name: APPLICATION_NAME,
+//       logo: APPLICATION_LOGO_URL
+//     },
+//   });
+//   nfid = new_nfid;
+//   return new_nfid;
+// };
 
 export const getAgent = async (identity?: Identity) =>
   new HttpAgent({

@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 const Home = () => {
   const [sorting, setSorting] = React.useState("featured");
   const [pageNumber, setPageNumber] = React.useState(1);
- 
+
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -37,14 +37,19 @@ const Home = () => {
     return navigate(navPaths.upload_games);
   };
 
-  const detectDevide = () => {
+  const detectDevice = () => {
     let details = navigator.userAgent;
     let regexp = /android|iphone|kindle|ipad/i;
     let isMobileDevice = regexp.test(details);
     if (isMobileDevice) {
       toast.custom((t) => (
-        <div className="w-full h-screen dark-text-black text-white text-center mt-60 m-0 font-semibold">
-          <p className="bg-black py-10 px-2 rounded-3xl">This website is not optimized for mobile and should only be accessed on desktop.</p>
+        <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+          <div className="w-full rounded-3xl mb-7 p-1 gradient-bg mt-60 inline-block">
+            <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center ">
+              <p className="mb-4 font-semibold">This website is not optimized for mobile and should only be accessed on desktop.</p>
+              <Button size="normal" onClick={() => toast.remove()} className="m-0 inline-block">Close</Button>
+            </div>
+          </div>
         </div>
       ));
     };
@@ -63,7 +68,7 @@ const Home = () => {
   return (
     <>
       {
-        (detectDevide()) ?
+        (detectDevice()) ?
           <>{(session) ? <div>
             <Slider />
             <Space />

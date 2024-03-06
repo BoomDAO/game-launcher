@@ -32,9 +32,9 @@ export const queryKeys = {
 };
 
 function closeToast() {
-    setTimeout(() => {
+    clearTimeout(setTimeout(() => {
         toast.remove();
-    }, 3000);
+    }, 3000));
 };
 const getTotalCompletionOfQuest = (fields: Field[], quest: string) => {
     for (let i = 0; i < fields.length; i += 1) {
