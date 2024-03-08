@@ -26,7 +26,8 @@ export const navPaths = {
   wallet_tokens: "/wallet/tokens",
   wallet_nfts: "/wallet/nfts",
   transfer: "/wallet/transfer",
-  nftTransfer: "/wallet/transfer/nft"
+  nftTransfer: "/wallet/transfer/nft",
+  twitterPost: "gaming-guilds/onboarding-quests/twitter-post"
 };
 
 export const platform_types: SelectOption[] = [
