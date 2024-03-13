@@ -32,6 +32,7 @@ import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import WalletTransfer from "./pages/Wallet/WalletTransfer";
 import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
+import QuestTwitterPost from "./pages/GamingGuilds/QuestTwitterPost";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
               />
 
               <Route element={<ProtectedRoute />}>
+              <Route path={navPaths.twitterPost} element={<QuestTwitterPost/>} />
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
                 <Route
                   path={`${navPaths.upload_games_new}`}

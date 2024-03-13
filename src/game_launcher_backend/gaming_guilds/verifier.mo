@@ -119,6 +119,12 @@ actor Verifier {
     return number;
   };
 
+  public shared({caller}) func getPhoneStatus(p : Text) : async ((Text, Bool)) {
+    assert (caller == Principal.fromText(Constants.devPrincipalId));
+    let ?number = Trie.find(_phones, Utils.keyT(p), Text.equal) else return (("", false));
+    return number;
+  };
+
   public shared ({ caller }) func setTwilioProps(arg : { auth : Text; sid : Text; from : Text }) : async () {
     assert (caller == Principal.fromText(Constants.devPrincipalId));
     twilioProps := arg;
