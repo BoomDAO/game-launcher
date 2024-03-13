@@ -237,7 +237,10 @@ export interface GuildCard {
   expiration: string;
   type: "Completed" | "Incomplete" | "Claimed";
   gamersImages: string[];
-  isDailyQuest: boolean;
+  dailyQuest: {
+    isDailyQuest : boolean;
+    resetsIn : string;
+  };
 }
 
 export interface Member {

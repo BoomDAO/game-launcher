@@ -25,7 +25,10 @@ interface CardProps {
   onClick?: () => void;
   type: "Completed" | "Incomplete" | "Claimed";
   gamersImages: string[];
-  isDailyQuest: boolean;
+  dailyQuest: {
+    isDailyQuest: boolean;
+    resetsIn: string;
+  };
 }
 
 const GuildCard = ({
@@ -41,7 +44,7 @@ const GuildCard = ({
   onClick,
   type,
   gamersImages,
-  isDailyQuest
+  dailyQuest
 }: CardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -75,8 +78,9 @@ const GuildCard = ({
             !isSuccess ? "gradient-bg-green" : "gradient-bg-grey"
           )}>
             <div className="flex h-64 w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
-              <div className="w-4/12">
+              <div className="w-4/12 relative">
                 <img className="w-full h-56  object-cover rounded-3xl" src={image} />
+                <div className="absolute bottom-3 text-center w-full">{(dailyQuest.isDailyQuest) ? <p className="font-semibold text-base text-white bg-orange-400 mx-3 rounded-3xl">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}</div>
               </div>
               <div className="w-8/12 ml-4">
                 <div className="w-full flex">
@@ -119,8 +123,7 @@ const GuildCard = ({
                   </div> : <div className="flex mt-0.5">
                     <div className="text-sm font-semibold">Rewards : </div>
                   </div>}
-                <div className="mt-10">
-                  {(isDailyQuest) ? <p className="font-semibold text-xs">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}
+                <div className="mt-14">
                   <div className="w-full flex justify-between pr-5">
                     {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
                     {(expiration[0] != "+") ?
@@ -145,8 +148,9 @@ const GuildCard = ({
           : (type === "Incomplete") ?
             <div className="w-full rounded-3xl mb-3 p-0.5 gradient-bg">
               <div className="flex h-64 w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
-                <div className="w-4/12">
+                <div className="w-4/12 relative">
                   <img className="w-full h-56 object-cover rounded-3xl" src={image} />
+                  <div className="absolute bottom-3 text-center w-full">{(dailyQuest.isDailyQuest) ? <p className="font-semibold text-base text-white bg-orange-400 mx-3 rounded-3xl">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}</div>
                 </div>
                 <div className="w-8/12 ml-4">
                   <div className="w-full flex">
@@ -154,18 +158,18 @@ const GuildCard = ({
                     {
                       (expiration[0] == "+") ?
                         <></> :
-                        <Button className="h-8 order-2 ml-auto" onClick={() => { 
+                        <Button className="h-8 order-2 ml-auto" onClick={() => {
                           if (session.session == null) {
                             return setIsOpenNavSidebar(true);
                           };
                           let new_url = new URL(gameUrl);
                           let current_url = new URL(window.location.href);
-                          if(new_url.origin == current_url.origin) {
+                          if (new_url.origin == current_url.origin) {
                             navigate(new_url.pathname);
                           } else {
                             window.open(gameUrl, "_blank");
                           };
-                         }}>{t("gaming_guilds.Quests.incomplete_button")}</Button>
+                        }}>{t("gaming_guilds.Quests.incomplete_button")}</Button>
                     }
                   </div>
                   <div className="text-sm font-light mt-2">{description}</div>
@@ -204,8 +208,7 @@ const GuildCard = ({
                     </div> : <div className="flex mt-0.5">
                       <div className="text-sm font-semibold">Rewards : </div>
                     </div>}
-                  <div className="mt-10">
-                    {(isDailyQuest) ? <p className="font-semibold text-xs">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}
+                  <div className="mt-14">
                     <div className="w-full flex justify-between pr-5">
                       {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
 
@@ -229,8 +232,9 @@ const GuildCard = ({
             </div> :
             <div className="mb-3 p-0.5 gradient-bg-grey w-full rounded-3xl">
               <div className="flex h-64 w-full dark:bg-dark bg-white rounded-3xl p-4 dark:text-white text-black">
-                <div className="w-4/12">
+                <div className="w-4/12 relative">
                   <img className="w-full h-56  object-cover rounded-3xl" src={image} />
+                  <div className="absolute bottom-3 text-center w-full">{(dailyQuest.isDailyQuest) ? <p className="font-semibold text-base text-white bg-orange-400 mx-3 rounded-3xl">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}</div>
                 </div>
                 <div className="w-8/12 ml-4">
                   <div className="w-full flex">
@@ -273,10 +277,9 @@ const GuildCard = ({
                     </div> : <div className="flex mt-0.5">
                       <div className="text-sm font-semibold">Rewards : </div>
                     </div>}
-                  <div className="mt-10">
-                    {(isDailyQuest) ? <p className="font-semibold text-xs">Daily Quest</p> : <p className="font-semibold text-xs invisible">Daily Quest</p>}
+                  <div className="mt-14">
                     <div className="w-full flex justify-between pr-5">
-                      {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
+                      {(expiration == "0") ? <div className="w-1/2">{(dailyQuest.isDailyQuest) ? <p className="gradient-text text-sm font-semibold">Resets in {dailyQuest.resetsIn}</p> : <></>}</div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
                       {(expiration[0] != "+") ?
                         <div className="flex">
                           {

@@ -434,6 +434,38 @@ actor class WorldTemplate(owner : Principal) = this {
         if (configExist) return #ok("you have overwriten the action");
         return #ok("you have created a new action");
     };
+
+    public shared ({ caller }) func createMinigameWinAction(gameName : Text, xpAmount : Float) : async (Result.Result<Text, Text>)  {
+        assert (isAdmin_(caller) or caller == WorldId());
+
+        return await createAction({ 
+            aid = "minigame_win";
+            callerAction = ? {
+                actionConstraint = null;
+                actionResult = {
+                    outcomes = [
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = gameName#"_minigame_count"; updates = [
+                                    #incrementNumber { fieldName = "amount"; fieldValue =  #number 1; },
+                                ]; };  weight = 100;},
+                            ]
+                        },
+                        {
+                            possibleOutcomes = [
+                                { option = #updateEntity { wid = null; eid = gameName#"_xp"; updates = [
+                                    #incrementNumber { fieldName = "amount"; fieldValue =  #number xpAmount; },
+                                ]; };  weight = 100;},
+                            ]
+                        }
+                    ]
+                };
+            };
+            targetAction = null;
+            worldAction = null;
+        })
+    };
+
     //DELETE CONFIG
     public shared ({ caller }) func deleteConfig(args : { cid : Text }) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));

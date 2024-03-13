@@ -108,7 +108,7 @@ const Quests = () => {
                     configs.length ? (
                         <>
                             <div className="grid grid-cols-2 gap-4">
-                                {configs.map(({ title, image, rewards, countCompleted, gameUrl, mustHave, expiration, type, aid, description, gamersImages, isDailyQuest }) => (
+                                {configs.map(({ title, image, rewards, countCompleted, gameUrl, mustHave, expiration, type, aid, description, gamersImages, dailyQuest }) => (
                                     <div key={aid}>
                                         <GuildCard
                                             aid={aid}
@@ -122,7 +122,7 @@ const Quests = () => {
                                             expiration={expiration}
                                             type={type}
                                             gamersImages={gamersImages}
-                                            isDailyQuest={isDailyQuest}
+                                            dailyQuest={dailyQuest}
                                         />
                                     </div>
                                 ))}

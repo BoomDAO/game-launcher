@@ -53,17 +53,17 @@ function isHoldNft(data: { 'hold': { 'originalEXT': null } | { 'boomEXT': null }
 function isActionStatesUserNotFoundErr(data: { 'ok': Array<ActionState> } | { 'err': string }): data is { 'err': string } {
     return ((data as { 'err': string }).err !== undefined);
 }
-function isActionStatusNotEnabledErr(data: { 'ok' : ActionStatusReturn } | { 'err' : string }): data is { 'err': string } {
+function isActionStatusNotEnabledErr(data: { 'ok': ActionStatusReturn } | { 'err': string }): data is { 'err': string } {
     return ((data as { 'err': string }).err !== undefined);
 }
-function isActionStatusOk(data: { 'ok' : ActionStatusReturn } | { 'err' : string }): data is { 'ok' : ActionStatusReturn } {
-    return ((data as { 'ok' : ActionStatusReturn }).ok !== undefined);
+function isActionStatusOk(data: { 'ok': ActionStatusReturn } | { 'err': string }): data is { 'ok': ActionStatusReturn } {
+    return ((data as { 'ok': ActionStatusReturn }).ok !== undefined);
 }
 function isActionStatesUserOk(data: { 'ok': Array<ActionState> } | { 'err': string }): data is { 'ok': Array<ActionState> } {
     return ((data as { 'ok': Array<ActionState> }).ok !== undefined);
 }
-function isResult_5Ok(data: { 'ok' : Array<StableEntity> } | { 'err' : string }): data is { 'ok' : Array<StableEntity> } {
-    return ((data as { 'ok' : Array<StableEntity> }).ok !== undefined);
+function isResult_5Ok(data: { 'ok': Array<StableEntity> } | { 'err': string }): data is { 'ok': Array<StableEntity> } {
+    return ((data as { 'ok': Array<StableEntity> }).ok !== undefined);
 }
 
 export const useGetBoomBalance = (): UseQueryResult<string> => {
@@ -364,8 +364,8 @@ export const useGetAllMembersInfo = (page: number = 1): UseQueryResult<MembersIn
                         current_member.guilds = (memberInfo.guilds).split(".")[0];
                         members_info.push(current_member);
                     };
-                } catch (e) {};
-                current_member.rank = String(((page - 1)  * 40) + i + 1);
+                } catch (e) { };
+                current_member.rank = String(((page - 1) * 40) + i + 1);
             };
 
             let users_profile = [];
@@ -409,7 +409,11 @@ const msToTime = (ms: number) => {
     minutes = minutes % 60;
     let days = (hours / 24).toString().split(".")[0];
     hours = hours % 24;
-    return days + "D " + hours + "H " + minutes + "M ";
+    let res = "";
+    if (days != "0") res = res + days + "D ";
+    if (hours != 0) res = res + hours + "H ";
+    if (minutes != 0) res = res + minutes + "M ";
+    return res;
 }
 
 const getFieldsOfEntity = (entities: StableEntity[], entityId: string) => {
@@ -457,9 +461,9 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
             };
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
             const worldHub = await useWorldHubClient();
-            let UserEntity : Result_5 = { ok : [] };
-            let entities : Result_5 = { ok : [] };
-            let profile : { uid: string; username: string; image: string; } = { uid : "", username : "", image : ""};
+            let UserEntity: Result_5 = { ok: [] };
+            let entities: Result_5 = { ok: [] };
+            let profile: { uid: string; username: string; image: string; } = { uid: "", username: "", image: "" };
             await Promise.all(
                 [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, [current_user_principal]) as Promise<Result_5>, worldHub.actor[worldHub.methods.getUserProfile]({ uid: current_user_principal }) as Promise<{ uid: string; username: string; image: string; }>, actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as Promise<Result_5>]
             ).then((results) => {
@@ -516,7 +520,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
             let entities: { ok: StableEntity[] } = { ok: [] };
             let actionStatusResponseOfUser: Result_7[] = [];
             await Promise.all(
-                [actor[methods.getAllActions]() as Promise<Action[]>, actor[methods.getAllConfigs]() as Promise<GuildConfig[]>, actor[methods.getAllUserActionStatesComposite]({ uid: current_user_principal }) as Promise<Result_6>, worldNode.actor[worldNode.methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as Promise<{ ok: StableEntity[] }>]
+                [actor[methods.getAllActions]() as Promise<Action[]>, actor[methods.getAllConfigs]() as Promise<GuildConfig[]>, actor[methods.getAllUserActionStatesComposite]({ uid: current_user_principal }) as Promise<Result_6>, worldNode.actor[worldNode.methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_completions", "quest_participants"]) as Promise<{ ok: StableEntity[] }>]
             ).then((results) => {
                 actions = results[0];
                 configs = results[1];
@@ -570,7 +574,10 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         expiration: "0",
                         type: "Incomplete",
                         gamersImages: [],
-                        isDailyQuest: false
+                        dailyQuest: {
+                            isDailyQuest: false,
+                            resetsIn: ""
+                        }
                     };
                     if (configs[i].cid == actions[k].aid) {
                         let diff: bigint = 0n;
@@ -607,17 +614,17 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                     // process action time intervals
                                     if (actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]) {
                                         let duration = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]?.intervalDuration;
-
+                                        let { intervalStartTs, actionCount, actionId } = getActionState(isActionStatesUserOk(actionStates) ? actionStates.ok : [], actions[k].aid);
                                         if (duration == 86400000000000n) {
-                                            entry.isDailyQuest = true;
+                                            entry.dailyQuest.isDailyQuest = true;
                                         };
                                         let actionsPerInterval = actions[k]['callerAction'][0]?.['actionConstraint'][0]?.['timeConstraint'][0]?.['actionTimeInterval'][0]?.actionsPerInterval;
-                                        let { intervalStartTs, actionCount, actionId } = getActionState(isActionStatesUserOk(actionStates) ? actionStates.ok : [], actions[k].aid);
                                         duration = ((duration != undefined) ? duration : 0n) / BigInt(1000000);
                                         intervalStartTs = ((intervalStartTs != undefined) ? BigInt(intervalStartTs) : 0n) / BigInt(1000000);
                                         actionsPerInterval = ((actionsPerInterval != undefined) ? BigInt(actionsPerInterval) : 0n);
                                         if ((intervalStartTs + duration) > current && actionCount >= actionsPerInterval && actionsPerInterval > 0) {
                                             claimed_quests.push(actionId);
+                                            entry.dailyQuest.resetsIn = msToTime(Number((intervalStartTs + duration) - current));
                                         };
                                     };
                                 };
@@ -671,7 +678,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                             entry.mustHave.push(mustHaveEntry);
                                         };
                                     };
-                                } else if(isActionStatesUserNotFoundErr(actionStatusResponse)) {
+                                } else if (isActionStatesUserNotFoundErr(actionStatusResponse)) {
                                     isConstraintsFulfilled = false;
                                 };
 
@@ -776,7 +783,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         let quest_fields: Field[] = getFieldsOfEntity(entities.ok, "quest_participants");
                         for (let field = 0; field < quest_fields.length; field += 1) {
                             if (quest_fields[field].fieldName == actions[k].aid) {
-                                user_principals = (quest_fields[field].fieldValue).split(",");
+                                user_principals = (quest_fields[field].fieldValue).split(",", 5);
                             };
                         };
                         if (user_principals.length == 0) {
@@ -789,15 +796,15 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         };
                         await Promise.all(profiles_promises).then((res) => { user_profiles = res; });
                         for (let id = 0; id < user_profiles.length; id += 1) {
-                            if(user_profiles[id].image != "") {
+                            if (user_profiles[id].image != "") {
                                 entry.gamersImages.push(user_profiles[id].image);
                             };
-                            if(entry.gamersImages.length == 3) {
+                            if (entry.gamersImages.length == 3) {
                                 break;
                             };
                         };
-                        if(entry.gamersImages.length < 3) {
-                            for(let id = 0; id <= Math.min(3, (3 - entry.gamersImages.length)); id += 1) {
+                        if (entry.gamersImages.length < 3) {
+                            for (let id = 0; id <= Math.min(3, (3 - entry.gamersImages.length)); id += 1) {
                                 entry.gamersImages.push("/usericon.png");
                             };
                         };
@@ -828,7 +835,6 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                     final_response.push(response[x]);
                 }
             };
-
             return final_response;
         },
     });
@@ -841,8 +847,8 @@ export const useGetTotalQuests = (): UseQueryResult<number> => {
         queryFn: async () => {
             const { actor, methods } = await useGamingGuildsClient();
             const worldNode = await useGamingGuildsWorldNodeClient();
-            let configs : GuildConfig[] = [];
-            let actions : Action[] = [];
+            let configs: GuildConfig[] = [];
+            let actions: Action[] = [];
             await Promise.all(
                 [actor[methods.getAllConfigs]() as Promise<GuildConfig[]>, actor[methods.getAllActions]() as Promise<Action[]>]
             ).then((results) => {
