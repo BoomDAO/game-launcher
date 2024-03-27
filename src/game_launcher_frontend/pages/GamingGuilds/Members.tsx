@@ -14,7 +14,7 @@ import { useGetAllMembersInfo } from "@/api/guilds";
 import { MembersInfo } from "@/types";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
 import Space from "@/components/ui/Space";
-import Pagination from "@/components/Pagination";
+import MembersPagination from "@/components/MembersPagination";
 import { getPaginationPages } from "@/utils";
 
 const Members = () => {
@@ -64,7 +64,7 @@ const Members = () => {
                                 ))}
                             </div>
 
-                            <Pagination
+                            <MembersPagination
                                 pageNumber={pageNumber}
                                 setPageNumber={setPageNumber}
                                 totalNumbers={getPaginationPages(Number(totalMembersInfo.totalMembers), 40)}

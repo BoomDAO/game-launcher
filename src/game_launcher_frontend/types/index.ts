@@ -314,12 +314,7 @@ export interface ActionConstraint {
   'timeConstraint' : [] | [
     {
       'actionExpirationTimestamp' : [] | [bigint],
-      'actionHistory' : Array<
-        { 'updateEntity' : UpdateEntity } |
-          { 'updateAction' : UpdateAction } |
-          { 'transferIcrc' : TransferIcrc } |
-          { 'mintNft' : MintNft }
-      >,
+      'actionHistory' : Array<{ 'updateEntity' : UpdateEntity }>,
       'actionStartTimestamp' : [] | [bigint],
       'actionTimeInterval' : [] | [
         { 'intervalDuration' : bigint, 'actionsPerInterval' : bigint }

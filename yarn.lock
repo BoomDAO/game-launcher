@@ -1486,10 +1486,10 @@
     "@tufjs/canonical-json" "2.0.0"
     minimatch "^9.0.3"
 
-"@types/node@^18.15.11", "@types/node@>= 14", "@types/node@>=12.12.47", "@types/node@>=13.7.0":
-  version "18.19.10"
-  resolved "https://registry.npmjs.org/@types/node/-/node-18.19.10.tgz"
-  integrity sha512-IZD8kAM02AW1HRDTPOlz3npFava678pr8Ie9Vp8uRhBROXAv8MXT2pCnGZZAKYdromsNQLHQcfWQ6EOatVLtqA==
+"@types/node@^18.19.24", "@types/node@>= 14", "@types/node@>=12.12.47", "@types/node@>=13.7.0":
+  version "18.19.24"
+  resolved "https://registry.npmjs.org/@types/node/-/node-18.19.24.tgz"
+  integrity sha512-eghAz3gnbQbvnHqB+mgB2ZR3aH6RhdEmHGS48BnV75KceQPHqabkxKI0BbUSsqhqy2Ddhc2xD/VAR9ySZd57Lw==
   dependencies:
     undici-types "~5.26.4"
 
