@@ -19,23 +19,35 @@ import { getPaginationPages } from "@/utils";
 
 const Members = () => {
     const { t } = useTranslation();
+    const [leaderboard, setLeaderboard] = React.useState("Boom");
     const [pageNumber, setPageNumber] = React.useState(1);
-    let { data: totalMembersInfo = { totalMembers: "", members: [] }, isLoading, isError } = useGetAllMembersInfo(pageNumber);
+    let { data: totalMembersInfo = { totalMembers: "", members: [] }, isLoading, isError } = useGetAllMembersInfo(pageNumber, leaderboard);
 
     return (
         <>
-            <div className="flex">
-                <div className="flex">
+            <div className="flex justify-start">
+                <div className="flex items-center pb-5 justify-end text-center">
+                    <div><label className="pr-3">Choose Leaderboard : </label></div>
+                    <div><select
+                        onChange={(event) => { setLeaderboard(event.target.value); console.log(leaderboard); }}
+                        className="w-60 p-2 cursor-pointer" name="leaderboard" id="leaderboard">
+                        <option value="Boom">BOOM DAO</option>
+                        {/* <option value="Paws">PAWS ARENA</option>
+                        <option value="Elementum">ELEMENTUM</option>
+                        <option value="Plethora">PLETHORA</option> */}
+                    </select>
+                    </div>
+                </div>
+                <div className="flex ml-20">
                     <p className="text-3xl">Total Guild Members : </p>
                     <div className="text-4xl gradient-text ml-2">{isLoading ? <LoadingResult></LoadingResult> : totalMembersInfo.totalMembers}</div>
-                </div>
-                <div>
                 </div>
             </div>
             <div className="w-full flex justify-around">
                 <p className="w-20 text-xl">Rank</p>
                 <p className="w-72 text-xl">User</p>
                 <p className="w-40 text-xl">Guild XP</p>
+                <p className="w-40 text-xl">Rewards</p>
                 <p className="w-40 text-xl">Join Date</p>
             </div>
             {/* <Space/> */}
@@ -48,7 +60,7 @@ const Members = () => {
                     totalMembersInfo.members.length ? (
                         <>
                             <div className="w-full">
-                                {totalMembersInfo.members.map(({ username, joinDate, image, guilds, rank }) => (
+                                {totalMembersInfo.members.map(({ username, joinDate, image, guilds, rank, reward }) => (
                                     <div key={username}>
                                         <div className="flex justify-around my-2.5">
                                             <p className="w-20 pl-1 pt-2 float-start">{rank}</p>
@@ -57,6 +69,9 @@ const Members = () => {
                                                 <p className="font-light pl-2 pt-2">{username}</p>
                                             </div>
                                             <p className="w-40 font-light pl-1 pt-2">{guilds}</p>
+                                            {
+                                                (leaderboard == "Boom") ? <p className="w-40 font-light pl-1 pt-2">{reward} BOOM</p> : <></>
+                                            }
                                             <p className="w-40 font-light pl-1 pt-2">{joinDate}</p>
                                         </div>
                                         <div className="w-full h-px gradient-bg opacity-25"></div>

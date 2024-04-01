@@ -33,6 +33,7 @@ import Profile from "./pages/Profile";
 import WalletTransfer from "./pages/Wallet/WalletTransfer";
 import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
 import QuestTwitterPost from "./pages/GamingGuilds/QuestTwitterPost";
+import BrowseGames from "./pages/BrowseGames";
 
 function App() {
   return (
@@ -44,8 +45,8 @@ function App() {
             <Routes>
               <Route path={navPaths.home} element={<Home />} />
               <Route
-                path={`${navPaths.gaming_guilds}`}
-                element={<GamingGuilds />}
+                path={`${navPaths.browse_games}`}
+                element={<BrowseGames />}
               />
 
               <Route element={<ProtectedRoute />}>

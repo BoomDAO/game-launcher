@@ -34,16 +34,16 @@ const TopBar = () => {
 
   const paths = [
     {
-      name: t("navigation.browse_games"),
-      path: navPaths.home,
-    },
-    {
       name: t("navigation.gaming_guilds"),
-      path: navPaths.gaming_guilds
+      path: navPaths.home
     }
   ];
 
   const dev_tools = [
+    {
+      name: t("navigation.browse_games"),
+      path: navPaths.browse_games,
+    },
     {
       name: t("navigation.upload_games"),
       path: navPaths.upload_games,

@@ -19,7 +19,7 @@
     "profile": "Profile",
     "wallet": "Wallet",
     "logout": "Logout",
-    "browse_games": "Browse games",
+    "browse_games": "ALL GAMES",
     "upload_games": "UPLOAD GAMES",
     "manage_NFTs": "DEPLOY NFTS",
     "token_deployer": "DEPLOY TOKENS",
@@ -500,8 +500,8 @@
         "no_quest": "No Quests added yet ..."
       },
       "item_2": {
-        "title": "MEMBERS",
-        "loading": "Loading All Guild Members ...",
+        "title": "AIRDROP LEADERBOARDS",
+        "loading": "Loading All Leaderboards ...",
         "no_members": "you can be the first to join Gaming Guilds ..."
       },
       "item_3": {
