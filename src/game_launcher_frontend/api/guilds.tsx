@@ -306,6 +306,7 @@ const getUserInfo = (fields: Field[]) => {
     let res = {
         guilds: "",
         joinDate: "",
+        reward: "0",
     };
     for (let j = 0; j < fields.length; j += 1) {
         if (fields[j].fieldName == "xp_leaderboard") {
@@ -314,11 +315,14 @@ const getUserInfo = (fields: Field[]) => {
         if (fields[j].fieldName == "join_date_leaderboard") {
             res.joinDate = fields[j].fieldValue;
         };
+        if (fields[j].fieldName == "boom_leaderboard") {
+            res.reward = fields[j].fieldValue;
+        };
     };
     return res;
 };
 
-export const useGetAllMembersInfo = (page: number = 1): UseQueryResult<MembersInfo> => {
+export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string = "Boom"): UseQueryResult<MembersInfo> => {
     const { session } = useAuthContext();
     return useQuery({
         queryKey: [queryKeys.all_guild_members_info, page],
@@ -332,6 +336,7 @@ export const useGetAllMembersInfo = (page: number = 1): UseQueryResult<MembersIn
             // fetching totalMembers
             let totalMembersEntity: { ok: StableEntity[] } = { ok: [] };
             let entities: { ok: StableEntity[] } = { ok: [] };
+            // Here 1 call will get added for Cases when leaderboards of different worlds will be fetched as well, currently we have only BOOM leaderboard
             await Promise.all(
                 [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_members"]) as Promise<{ ok: StableEntity[]; }>, actor[methods.getUserEntitiesFromWorldNodeComposite](gamingGuildsCanisterId, gamingGuildsCanisterId, [BigInt(page - 1)]) as Promise<{ ok: StableEntity[] }>]
             ).then((results => {
@@ -357,7 +362,8 @@ export const useGetAllMembersInfo = (page: number = 1): UseQueryResult<MembersIn
                     image: "/usericon.png",
                     username: "",
                     guilds: "0",
-                    joinDate: ""
+                    joinDate: "",
+                    reward: "0"
                 };
                 if (entities.ok[i].eid == Principal.anonymous().toString()) {
                     isAnonPresent = true;
@@ -371,6 +377,7 @@ export const useGetAllMembersInfo = (page: number = 1): UseQueryResult<MembersIn
                         let date = new Date(reg_time);
                         current_member.joinDate = months[(date.getMonth())] + ' ' + date.getFullYear();
                         current_member.guilds = (memberInfo.guilds).split(".")[0];
+                        current_member.reward = (memberInfo.reward).split(".")[0];
                         members_info.push(current_member);
                     };
                 } catch (e) { };
@@ -405,6 +412,7 @@ export const useGetAllMembersInfo = (page: number = 1): UseQueryResult<MembersIn
             if (isAnonPresent) {
                 response.totalMembers = (Number(response.totalMembers) - 1).toString();
             }
+            console.log(response);
             return response;
         },
     });
@@ -622,6 +630,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         countCompleted: "0",
                         gameUrl: "",
                         mustHave: [],
+                        progress: [],
                         expiration: "0",
                         type: "Incomplete",
                         gamersImages: [],
@@ -707,26 +716,48 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                             let world_configs = other_worlds_configs.get(world_id);
                                             let fields = getFieldsOfConfig(world_configs, actionHistoryConstraints.updateEntity.eid);
                                             if (fields.name != "" && fields.imageUrl != "") {
-                                                let mustHaveEntry = {
-                                                    name: fields.name,
-                                                    imageUrl: fields.imageUrl,
-                                                    quantity: currentValue + "/" + expected,
-                                                    description: ""
-                                                };
-                                                mustHaveEntry.description = fields.description;
-                                                entry.mustHave.push(mustHaveEntry);
+                                                if(actionHistoryConstraints.updateEntity.eid.includes("badge") || actionHistoryConstraints.updateEntity.eid.includes("Badge")) {
+                                                    let mustHaveEntry = {
+                                                        name: fields.name,
+                                                        imageUrl: fields.imageUrl,
+                                                        quantity: currentValue + "/" + expected,
+                                                        description: ""
+                                                    };
+                                                    mustHaveEntry.description = fields.description;
+                                                    entry.mustHave.push(mustHaveEntry);
+                                                } else {
+                                                    let progressEntry = {
+                                                        name: fields.name,
+                                                        imageUrl: fields.imageUrl,
+                                                        quantity: currentValue + "/" + expected,
+                                                        description: ""
+                                                    };
+                                                    progressEntry.description = fields.description;
+                                                    entry.progress.push(progressEntry);
+                                                }
                                             };
                                         } else {
                                             let fields = getFieldsOfConfig(configs, status.actionHistoryStatus[x].eid);
                                             if (fields.name != "" && fields.imageUrl != "") {
-                                                let mustHaveEntry = {
-                                                    name: fields.name,
-                                                    imageUrl: fields.imageUrl,
-                                                    quantity: currentValue + "/" + expected,
-                                                    description: ""
-                                                };
-                                                mustHaveEntry.description = fields.description;
-                                                entry.mustHave.push(mustHaveEntry);
+                                                if(status.actionHistoryStatus[x].eid.includes("badge") || status.actionHistoryStatus[x].eid.includes("Badge")) {
+                                                    let mustHaveEntry = {
+                                                        name: fields.name,
+                                                        imageUrl: fields.imageUrl,
+                                                        quantity: currentValue + "/" + expected,
+                                                        description: ""
+                                                    };
+                                                    mustHaveEntry.description = fields.description;
+                                                    entry.mustHave.push(mustHaveEntry);
+                                                } else {
+                                                    let progressEntry = {
+                                                        name: fields.name,
+                                                        imageUrl: fields.imageUrl,
+                                                        quantity: currentValue + "/" + expected,
+                                                        description: ""
+                                                    };
+                                                    progressEntry.description = fields.description;
+                                                    entry.progress.push(progressEntry);
+                                                }
                                             };
                                         };
                                     };
@@ -735,25 +766,47 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         let expected = (status.entitiesStatus[x].expectedValue).split(".")[0].toString();
                                         let fields = getFieldsOfConfig(configs, status.entitiesStatus[x].eid);
                                         if (fields.name != "" && fields.imageUrl != "") {
-                                            let mustHaveEntry = {
-                                                name: fields.name,
-                                                imageUrl: fields.imageUrl,
-                                                quantity: currentValue + "/" + expected,
-                                                description: ""
-                                            };
-                                            mustHaveEntry.description = fields.description;
-                                            entry.mustHave.push(mustHaveEntry);
+                                            if(status.entitiesStatus[x].eid.includes("badge") || status.entitiesStatus[x].eid.includes("Badge")) {
+                                                let mustHaveEntry = {
+                                                    name: fields.name,
+                                                    imageUrl: fields.imageUrl,
+                                                    quantity: currentValue + "/" + expected,
+                                                    description: ""
+                                                };
+                                                mustHaveEntry.description = fields.description;
+                                                entry.mustHave.push(mustHaveEntry);
+                                            } else {
+                                                let progressEntry = {
+                                                    name: fields.name,
+                                                    imageUrl: fields.imageUrl,
+                                                    quantity: currentValue + "/" + expected,
+                                                    description: ""
+                                                };
+                                                progressEntry.description = fields.description;
+                                                entry.progress.push(progressEntry);
+                                            }
                                         };
                                         fields = getFieldsOfConfig(configs, status.entitiesStatus[x].fieldName);
                                         if (fields.name != "" && fields.imageUrl != "") {
-                                            let mustHaveEntry = {
-                                                name: fields.name,
-                                                imageUrl: fields.imageUrl,
-                                                quantity: currentValue + "/" + expected,
-                                                description: ""
-                                            };
-                                            mustHaveEntry.description = fields.description;
-                                            entry.mustHave.push(mustHaveEntry);
+                                            if(status.entitiesStatus[x].fieldName.includes("badge") || status.entitiesStatus[x].fieldName.includes("Badge")) {
+                                                let mustHaveEntry = {
+                                                    name: fields.name,
+                                                    imageUrl: fields.imageUrl,
+                                                    quantity: currentValue + "/" + expected,
+                                                    description: ""
+                                                };
+                                                mustHaveEntry.description = fields.description;
+                                                entry.mustHave.push(mustHaveEntry);
+                                            } else {
+                                                let progressEntry = {
+                                                    name: fields.name,
+                                                    imageUrl: fields.imageUrl,
+                                                    quantity: currentValue + "/" + expected,
+                                                    description: ""
+                                                };
+                                                progressEntry.description = fields.description;
+                                                entry.progress.push(progressEntry);
+                                            }
                                         };
                                     };
                                 } else if (isActionStatesUserNotFoundErr(actionStatusResponse)) {
@@ -914,6 +967,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                     final_response.push(response[x]);
                 }
             };
+            console.log(final_response);
             return final_response;
         },
     });

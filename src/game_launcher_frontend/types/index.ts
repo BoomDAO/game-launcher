@@ -234,6 +234,7 @@ export interface GuildCard {
   countCompleted: string;
   gameUrl: string;
   mustHave: { name: string; imageUrl: string; quantity: string; description: string; }[];
+  progress: { name: string; imageUrl: string; quantity: string; description: string; }[];
   expiration: string;
   type: "Completed" | "Incomplete" | "Claimed";
   gamersImages: string[];
@@ -250,6 +251,7 @@ export interface Member {
   username: string;
   guilds: string;
   joinDate: string;
+  reward: string;
 }
 
 export interface MembersInfo {

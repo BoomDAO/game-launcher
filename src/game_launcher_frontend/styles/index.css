@@ -36,6 +36,9 @@
   .gradient-bg {
     @apply bg-gradient-to-r from-darkPrimary to-lightPrimary;
   }
+  .yellow-gradient-bg {
+    @apply bg-gradient-to-r from-amber-300 to-amber-400;
+  }
   .gradient-text {
     @apply inline-block bg-gradient-to-r from-darkPrimary to-lightPrimary bg-clip-text text-transparent;
   }

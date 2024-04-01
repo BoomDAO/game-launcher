@@ -49,7 +49,7 @@ const VerifyPhoneOtpPage = () => {
 
     const close = (): void => {
         setState({ isOpen: false });
-        navigate(navPaths.gaming_guilds);
+        navigate(navPaths.home);
     };
 
     
