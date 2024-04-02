@@ -62,7 +62,7 @@ module {
             account: Account;
             icp: Nat64;
             icrc: Nat;
-            icp_result: ?ICP.Result;
+            icp_result: ?ICP.Icrc1TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
         participants: {
@@ -72,7 +72,7 @@ module {
             account: Account;
             icp: Nat64;
             icrc: Nat;
-            icp_result: ?ICP.Result;
+            icp_result: ?ICP.Icrc1TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
         boom_dao: {
@@ -80,14 +80,14 @@ module {
             icrc_account: Account;
             icp: Nat64;
             icrc: Nat;
-            icp_result: ?ICP.Result_5;
+            icp_result: ?ICP.TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
         liquidity_pool: {
             account: Account;
             icp: Nat64;
             icrc: Nat;
-            icp_result: ?ICP.Result;
+            icp_result: ?ICP.Icrc1TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
     };
@@ -111,7 +111,7 @@ module {
         account: Account;
         icp_e8s: Nat64;
         token_e8s: ?Nat;           
-        refund_result: ?ICP.Result;
+        refund_result: ?ICP.Icrc1TransferResult;
         mint_result: ?ICRC.TransferResult;
     };
 }

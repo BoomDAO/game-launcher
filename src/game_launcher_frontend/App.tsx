@@ -34,6 +34,7 @@ import WalletTransfer from "./pages/Wallet/WalletTransfer";
 import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
 import QuestTwitterPost from "./pages/GamingGuilds/QuestTwitterPost";
 import BrowseGames from "./pages/BrowseGames";
+import Launchpad from "./pages/Launchpad";
 
 function App() {
   return (
@@ -44,13 +45,15 @@ function App() {
             <Toast />
             <Routes>
               <Route path={navPaths.home} element={<Home />} />
+              <Route path={navPaths.gaming_guilds} element={<Home />} />
               <Route
                 path={`${navPaths.browse_games}`}
                 element={<BrowseGames />}
               />
 
               <Route element={<ProtectedRoute />}>
-              <Route path={navPaths.twitterPost} element={<QuestTwitterPost/>} />
+                <Route path={navPaths.launchpad} element={<Launchpad/>}/>
+              {/* <Route path={navPaths.twitterPost} element={<QuestTwitterPost/>} /> */}
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
                 <Route
                   path={`${navPaths.upload_games_new}`}

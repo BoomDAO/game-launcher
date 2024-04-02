@@ -36,6 +36,10 @@ const TopBar = () => {
     {
       name: t("navigation.gaming_guilds"),
       path: navPaths.home
+    },
+    {
+      name: t("navigation.launchpad"),
+      path: navPaths.launchpad
     }
   ];
 
@@ -765,7 +769,7 @@ const TopBar = () => {
                             isActive ? "gradient-text" : ""
                           }
                           to={path}
-                          onClick={() => { setIsDropdownOpen(false); setSelectedOption("Dev Tools"); }}
+                          onClick={() => { setIsDropdownOpen(false); setSelectedOption("DEV TOOLS"); setIsOpenNavSidebar(true); }}
                         >
                           {name}
                         </NavLink>

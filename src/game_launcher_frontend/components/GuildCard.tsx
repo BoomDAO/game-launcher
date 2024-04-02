@@ -90,6 +90,33 @@ const GuildCard = ({
                   <Button className="order-2 ml-auto gradient-bg-green h-8" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); mutate({ aid, rewards }); }} isLoading={isLoading} isClaimSuccess={isSuccess}>{t("gaming_guilds.Quests.complete_button")}</Button>
                 </div>
                 <div className="text-sm font-light mt-2">{description}</div>
+                {
+                  (progress.length) ?
+                    <>
+                      {
+                        progress.map(({ name, imageUrl, quantity, description }) => (
+                          <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
+                            <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                              {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
+                              <div className="mt-0.5 ml-1">{name}</div>
+                            </div>
+                            <div className="yellow-gradient-bg h-6 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1])) >= 100) ? 100 : (100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1]))}%` }}></div>
+                          </div>
+                        ))
+                      }
+                    </>
+                    : <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative invisible">
+                      {
+                        progress.map(({ name, imageUrl, quantity, description }) => (
+                          <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                            {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
+                            <div className="mt-0.5 ml-1">{name}</div>
+                          </div>
+                        ))
+                      }
+                      <div className="w-2/3 yellow-gradient-bg h-6 rounded-3xl absolute z-5"></div>
+                    </div>
+                }
                 {mustHave.length ?
                   <div className="flex mt-8">
                     <div className="text-sm font-semibold">Eligibility: </div>
@@ -125,33 +152,6 @@ const GuildCard = ({
                   </div> : <div className="flex mt-0.5">
                     <div className="text-sm font-semibold">Rewards : </div>
                   </div>}
-                {
-                  (progress.length) ?
-                    <>
-                      {
-                        progress.map(({ name, imageUrl, quantity, description }) => (
-                          <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
-                            <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                              {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
-                              <div className="mt-0.5 ml-1">{name}</div>
-                            </div>
-                            <div className="yellow-gradient-bg h-6 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1])) >= 100) ? 100 : (100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1]))}%` }}></div>
-                          </div>
-                        ))
-                      }
-                    </>
-                    : <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative invisible">
-                      {
-                        progress.map(({ name, imageUrl, quantity, description }) => (
-                          <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                            {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
-                            <div className="mt-0.5 ml-1">{name}</div>
-                          </div>
-                        ))
-                      }
-                      <div className="w-2/3 yellow-gradient-bg h-6 rounded-3xl absolute z-5"></div>
-                    </div>
-                }
                 <div className="mt-5">
                   <div className="w-full flex justify-between pr-5">
                     {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
@@ -202,6 +202,33 @@ const GuildCard = ({
                     }
                   </div>
                   <div className="text-sm font-light mt-2">{description}</div>
+                  {
+                    (progress.length) ?
+                      <>
+                        {
+                          progress.map(({ name, imageUrl, quantity, description }) => (
+                            <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
+                              <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                                {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
+                                <div className="mt-0.5 ml-1">{name}</div>
+                              </div>
+                              <div className="yellow-gradient-bg h-6 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1])) >= 100) ? 100 : (100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1]))}%` }}></div>
+                            </div>
+                          ))
+                        }
+                      </>
+                      : <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative invisible">
+                        {
+                          progress.map(({ name, imageUrl, quantity, description }) => (
+                            <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                              {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
+                              <div className="mt-0.5 ml-1">{name}</div>
+                            </div>
+                          ))
+                        }
+                        <div className="w-2/3 yellow-gradient-bg h-6 rounded-3xl absolute z-5"></div>
+                      </div>
+                  }
                   {mustHave.length ?
                     <div className="flex mt-8">
                       <div className="text-sm font-semibold">Eligibility: </div>
@@ -237,33 +264,7 @@ const GuildCard = ({
                     </div> : <div className="flex mt-0.5">
                       <div className="text-sm font-semibold">Rewards : </div>
                     </div>}
-                  {
-                    (progress.length) ?
-                      <>
-                        {
-                          progress.map(({ name, imageUrl, quantity, description }) => (
-                            <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
-                              <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                                {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
-                                <div className="mt-0.5 ml-1">{name}</div>
-                              </div>
-                              <div className="yellow-gradient-bg h-6 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1])) >= 100) ? 100 : (100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1]))}%` }}></div>
-                            </div>
-                          ))
-                        }
-                      </>
-                      : <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative invisible">
-                        {
-                          progress.map(({ name, imageUrl, quantity, description }) => (
-                            <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                              {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
-                              <div className="mt-0.5 ml-1">{name}</div>
-                            </div>
-                          ))
-                        }
-                        <div className="w-2/3 yellow-gradient-bg h-6 rounded-3xl absolute z-5"></div>
-                      </div>
-                  }
+
                   <div className="mt-5">
                     <div className="w-full flex justify-between pr-5">
                       {(expiration == "0") ? <div className="w-1/2"></div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}
@@ -298,6 +299,33 @@ const GuildCard = ({
                     <Button className="order-2 ml-auto gradient-bg-grey h-8 cursor-default" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); }}>{t("gaming_guilds.Quests.claimed_button")}</Button>
                   </div>
                   <div className="text-sm font-light mt-2">{description}</div>
+                  {
+                    (progress.length) ?
+                      <>
+                        {
+                          progress.map(({ name, imageUrl, quantity, description }) => (
+                            <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
+                              <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                                {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
+                                <div className="mt-0.5 ml-1">{name}</div>
+                              </div>
+                              <div className="yellow-gradient-bg h-6 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1])) >= 100) ? 100 : (100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1]))}%` }}></div>
+                            </div>
+                          ))
+                        }
+                      </>
+                      : <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative invisible">
+                        {
+                          progress.map(({ name, imageUrl, quantity, description }) => (
+                            <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
+                              {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
+                              <div className="mt-0.5 ml-1">{name}</div>
+                            </div>
+                          ))
+                        }
+                        <div className="w-2/3 yellow-gradient-bg h-6 rounded-3xl absolute z-5"></div>
+                      </div>
+                  }
                   {mustHave.length ?
                     <div className="flex mt-8">
                       <div className="text-sm font-semibold">Eligibility: </div>
@@ -333,33 +361,7 @@ const GuildCard = ({
                     </div> : <div className="flex mt-0.5">
                       <div className="text-sm font-semibold">Rewards : </div>
                     </div>}
-                  {
-                    (progress.length) ?
-                      <>
-                        {
-                          progress.map(({ name, imageUrl, quantity, description }) => (
-                            <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
-                              <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                                {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
-                                <div className="mt-0.5 ml-1">{name}</div>
-                              </div>
-                              <div className="yellow-gradient-bg h-6 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1])) >= 100) ? 100 : (100 * Number(quantity.split("/")[0]) / Number(quantity.split("/")[1]))}%` }}></div>
-                            </div>
-                          ))
-                        }
-                      </>
-                      : <div className="flex w-1/2 h-6 bg-gray-300/50 rounded-3xl mt-4 relative invisible">
-                        {
-                          progress.map(({ name, imageUrl, quantity, description }) => (
-                            <div className="flex cursor-pointer text-sm z-10 absolute pl-5" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
-                              {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
-                              <div className="mt-0.5 ml-1">{name}</div>
-                            </div>
-                          ))
-                        }
-                        <div className="w-2/3 yellow-gradient-bg h-6 rounded-3xl absolute z-5"></div>
-                      </div>
-                  }
+
                   <div className="mt-5">
                     <div className="w-full flex justify-between pr-5">
                       {(expiration == "0") ? <div className="w-1/2">{(dailyQuest.isDailyQuest) ? <p className="gradient-text text-sm font-semibold">Resets in {dailyQuest.resetsIn}</p> : <></>}</div> : (expiration[0] == "-") ? <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text">Ends in {expiration.split("-")[1]}</p></div> : <div className="text-sm font-semibold rounded-2xl"><p className="gradient-text pt-0.5">Starts in {(expiration).split("+")[1]}</p></div>}

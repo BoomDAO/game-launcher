@@ -24,7 +24,8 @@
     "manage_NFTs": "DEPLOY NFTS",
     "token_deployer": "DEPLOY TOKENS",
     "world_deployer": "DEPLOY WORLDS",
-    "gaming_guilds": "GAMING GUILD"
+    "gaming_guilds": "GAMING GUILD",
+    "launchpad": "LAUNCHPAD"
   },
   "verification": {
     "button": "Send Verification Email",

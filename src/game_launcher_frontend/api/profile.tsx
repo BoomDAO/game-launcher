@@ -369,7 +369,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                 for (let i = 0; i < world_ids.length; i += 1) {
                     other_worlds_configs.set(world_ids[i], results[i]);
                 };
-                for(let x = total_world_configs; x < total_world_configs + total_actionStatus; x += 1) {
+                for (let x = total_world_configs; x < total_world_configs + total_actionStatus; x += 1) {
                     actionStatusResponseOfUser.push(results[x]);
                 };
                 for (let x = total_actionStatus + total_world_configs; x < results.length; x += 1) {
@@ -475,7 +475,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                             let world_configs = other_worlds_configs.get(world_id);
                                             let fields = getFieldsOfConfig(world_configs, actionHistoryConstraints.updateEntity.eid);
                                             if (fields.name != "" && fields.imageUrl != "") {
-                                                if(actionHistoryConstraints.updateEntity.eid.includes("badge") || actionHistoryConstraints.updateEntity.eid.includes("Badge")) {
+                                                if (actionHistoryConstraints.updateEntity.eid.includes("badge") || actionHistoryConstraints.updateEntity.eid.includes("Badge")) {
                                                     let mustHaveEntry = {
                                                         name: fields.name,
                                                         imageUrl: fields.imageUrl,
@@ -498,7 +498,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         } else {
                                             let fields = getFieldsOfConfig(configs, status.actionHistoryStatus[x].eid);
                                             if (fields.name != "" && fields.imageUrl != "") {
-                                                if(status.actionHistoryStatus[x].eid.includes("badge") || status.actionHistoryStatus[x].eid.includes("Badge")) {
+                                                if (status.actionHistoryStatus[x].eid.includes("badge") || status.actionHistoryStatus[x].eid.includes("Badge")) {
                                                     let mustHaveEntry = {
                                                         name: fields.name,
                                                         imageUrl: fields.imageUrl,
@@ -525,7 +525,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         let expected = (status.entitiesStatus[x].expectedValue).split(".")[0].toString();
                                         let fields = getFieldsOfConfig(configs, status.entitiesStatus[x].eid);
                                         if (fields.name != "" && fields.imageUrl != "") {
-                                            if(status.entitiesStatus[x].eid.includes("badge") || status.entitiesStatus[x].eid.includes("Badge")) {
+                                            if (status.entitiesStatus[x].eid.includes("badge") || status.entitiesStatus[x].eid.includes("Badge")) {
                                                 let mustHaveEntry = {
                                                     name: fields.name,
                                                     imageUrl: fields.imageUrl,
@@ -547,7 +547,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         };
                                         fields = getFieldsOfConfig(configs, status.entitiesStatus[x].fieldName);
                                         if (fields.name != "" && fields.imageUrl != "") {
-                                            if(status.entitiesStatus[x].fieldName.includes("badge") || status.entitiesStatus[x].fieldName.includes("Badge")) {
+                                            if (status.entitiesStatus[x].fieldName.includes("badge") || status.entitiesStatus[x].fieldName.includes("Badge")) {
                                                 let mustHaveEntry = {
                                                     name: fields.name,
                                                     imageUrl: fields.imageUrl,
@@ -630,7 +630,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                     entry.type = "Incomplete"
                                 }
 
-                            } 
+                            }
                             else { // if actionConstraints not present
                                 entry.type = "Completed";
                             };
@@ -641,12 +641,16 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                 for (let f = 0; f < outcomes.length; f += 1) {
                                     let possible_outcome_type = outcomes[f]['possibleOutcomes'][0]['option'];
                                     if (isTransferIcrc(possible_outcome_type)) {
-                                        entry.rewards.push({
-                                            name: "BOOM",
-                                            imageUrl: "/boom-logo.png",
-                                            value: (possible_outcome_type.transferIcrc.quantity).toString(),
-                                            description: "The BOOM token that powers the BOOM gaming ecosystem and can be traded on ICP DEXs."
-                                        });
+                                        let fields = getFieldsOfConfig(configs, possible_outcome_type.transferIcrc.canister);
+                                        console.log(possible_outcome_type.transferIcrc.canister);
+                                        if (fields.name != "" && fields.imageUrl != "") {
+                                            entry.rewards.push({
+                                                name: fields.name,
+                                                imageUrl: fields.imageUrl,
+                                                value: (possible_outcome_type.transferIcrc.quantity).toString(),
+                                                description: fields.description
+                                            });
+                                        }
                                     };
                                     if (isUpdateEntity(possible_outcome_type)) {
                                         config_fields = getFieldsOfConfig(configs, possible_outcome_type.updateEntity.eid);
@@ -797,7 +801,6 @@ export const getTokenSymbol = (canisterId?: string) => {
     };
     return "";
 };
-
 
 export const useGetTokensInfo = (): UseQueryResult<Profile> => {
     const { session } = useAuthContext();
