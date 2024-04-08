@@ -27,7 +27,7 @@ export const navPaths = {
   transfer: "/wallet/transfer",
   nftTransfer: "/wallet/transfer/nft",
   twitterPost: "gaming-guilds/onboarding-quests/twitter-post",
-  browse_games: "/all-games"
+  browse_games: "/browse-games"
 };
 
 export const platform_types: SelectOption[] = [

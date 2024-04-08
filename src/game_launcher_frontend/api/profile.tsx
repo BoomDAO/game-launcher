@@ -150,11 +150,11 @@ export const getConfigsData = (configIds: configId[]): UseQueryResult<ConfigData
     });
 };
 
-const getUserInfo = (fields: Field[]) => {
+const getUserInfo = (fields: Field[], rewardType: string) => {
     let res = {
         guilds: "",
         joinDate: "",
-        reward: "",
+        reward: "0",
     };
     for (let j = 0; j < fields.length; j += 1) {
         if (fields[j].fieldName == "xp_leaderboard") {
@@ -163,7 +163,7 @@ const getUserInfo = (fields: Field[]) => {
         if (fields[j].fieldName == "join_date_leaderboard") {
             res.joinDate = fields[j].fieldValue;
         };
-        if (fields[j].fieldName == "boom_leaderboard") {
+        if (fields[j].fieldName == rewardType) {
             res.reward = fields[j].fieldValue;
         };
     };
@@ -185,11 +185,12 @@ const msToTime = (ms: number) => {
     return res;
 }
 
-export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string = "Boom"): UseQueryResult<MembersInfo> => {
+export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string): UseQueryResult<MembersInfo> => {
     const { session } = useAuthContext();
     return useQuery({
-        queryKey: [queryKeys.all_guild_members_info, page],
+        queryKey: [queryKeys.all_guild_members_info, page, leaderboardOf],
         queryFn: async () => {
+            console.log(leaderboardOf);
             let response: MembersInfo = {
                 totalMembers: "",
                 members: [],
@@ -218,7 +219,7 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string = "
             let isAnonPresent = false;
             for (let i = 0; i < entities.ok.length; i += 1) {
                 fields = entities.ok[i].fields;
-                let memberInfo = getUserInfo(fields);
+                let memberInfo = getUserInfo(fields, leaderboardOf);
                 let current_member: Member = {
                     uid: "",
                     rank: "",
@@ -275,6 +276,7 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string = "
             if (isAnonPresent) {
                 response.totalMembers = (Number(response.totalMembers) - 1).toString();
             }
+            console.log(response);
             return response;
         },
     });

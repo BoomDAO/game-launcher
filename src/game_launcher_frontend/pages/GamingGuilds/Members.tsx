@@ -19,7 +19,7 @@ import { getPaginationPages } from "@/utils";
 
 const Members = () => {
     const { t } = useTranslation();
-    const [leaderboard, setLeaderboard] = React.useState("Boom");
+    const [leaderboard, setLeaderboard] = React.useState("boom_leaderboard");
     const [pageNumber, setPageNumber] = React.useState(1);
     let { data: totalMembersInfo = { totalMembers: "", members: [] }, isLoading, isError } = useGetAllMembersInfo(pageNumber, leaderboard);
 
@@ -29,12 +29,12 @@ const Members = () => {
                 <div className="flex items-center pb-5 justify-end text-center">
                     <div><label className="pr-3">Choose Leaderboard : </label></div>
                     <div><select
-                        onChange={(event) => { setLeaderboard(event.target.value); console.log(leaderboard); }}
+                        onChange={(event) => { setLeaderboard(event.target.value); }}
                         className="w-60 p-2 cursor-pointer" name="leaderboard" id="leaderboard">
-                        <option value="Boom">BOOM DAO</option>
-                        {/* <option value="Paws">PAWS ARENA</option>
-                        <option value="Elementum">ELEMENTUM</option>
-                        <option value="Plethora">PLETHORA</option> */}
+                        <option value="boom_leaderboard">BOOM DAO</option>
+                        <option value="paws_points_leaderboard">PAWS ARENA</option>
+                        <option value="elementum_points_leaderboard">ELEMENTUM</option>
+                        <option value="plethora_points_leaderboard">PLETHORA</option>
                     </select>
                     </div>
                 </div>
@@ -47,7 +47,7 @@ const Members = () => {
                 <p className="w-20 text-xl">Rank</p>
                 <p className="w-72 text-xl">User</p>
                 <p className="w-40 text-xl">Guild XP</p>
-                <p className="w-40 text-xl">Rewards</p>
+                { (leaderboard == "boom_leaderboard") ? <p className="w-44 text-xl">Rewards</p> : <p className="w-44 text-xl">Airdrop Points</p> }
                 <p className="w-40 text-xl">Join Date</p>
             </div>
             {/* <Space/> */}
@@ -70,7 +70,7 @@ const Members = () => {
                                             </div>
                                             <p className="w-40 font-light pl-1 pt-2">{guilds}</p>
                                             {
-                                                (leaderboard == "Boom") ? <p className="w-40 font-light pl-1 pt-2">{reward} BOOM</p> : <></>
+                                                (leaderboard == "boom_leaderboard") ? <p className="w-44 font-light pl-1 pt-2">{reward} BOOM</p> : <p className="w-44 font-light pl-1 pt-2">{reward} Pts</p>
                                             }
                                             <p className="w-40 font-light pl-1 pt-2">{joinDate}</p>
                                         </div>
