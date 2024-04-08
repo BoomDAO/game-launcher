@@ -327,7 +327,10 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string): U
     return useQuery({
         queryKey: [queryKeys.all_guild_members_info, page, leaderboardOf],
         queryFn: async () => {
-            console.log(leaderboardOf);
+            let sortingType = leaderboardOf;
+            if(leaderboardOf == "boom_leaderboard") {
+                sortingType = "xp_leaderboard";
+            }
             let response: MembersInfo = {
                 totalMembers: "",
                 members: [],
@@ -339,7 +342,7 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string): U
             let entities: { ok: StableEntity[] } = { ok: [] };
             // Here 1 call will get added for Cases when leaderboards of different worlds will be fetched as well, currently we have only BOOM leaderboard
             await Promise.all(
-                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_members"]) as Promise<{ ok: StableEntity[]; }>, actor[methods.getUserEntitiesFromWorldNodeComposite](gamingGuildsCanisterId, gamingGuildsCanisterId, [BigInt(page - 1)]) as Promise<{ ok: StableEntity[] }>]
+                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_members"]) as Promise<{ ok: StableEntity[]; }>, actor[methods.getUserEntitiesFromWorldNodeFilteredSortingComposite](gamingGuildsCanisterId, gamingGuildsCanisterId, sortingType, { 'Descending' : null },  [BigInt(page - 1)]) as Promise<{ ok: StableEntity[] }>]
             ).then((results => {
                 totalMembersEntity = results[0];
                 entities = results[1];

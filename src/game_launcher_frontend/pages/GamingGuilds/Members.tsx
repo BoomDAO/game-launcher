@@ -46,7 +46,7 @@ const Members = () => {
             <div className="w-full flex justify-around">
                 <p className="w-20 text-xl">Rank</p>
                 <p className="w-72 text-xl">User</p>
-                <p className="w-40 text-xl">Guild XP</p>
+                { (leaderboard == "boom_leaderboard") ? <p className="w-40 text-xl">Guild XP</p> : <></> }
                 { (leaderboard == "boom_leaderboard") ? <p className="w-44 text-xl">Rewards</p> : <p className="w-44 text-xl">Airdrop Points</p> }
                 <p className="w-40 text-xl">Join Date</p>
             </div>
@@ -68,7 +68,9 @@ const Members = () => {
                                                 <img src={image} className="h-10 w-10 object-cover rounded-3xl overflow-hidden" />
                                                 <p className="font-light pl-2 pt-2">{username}</p>
                                             </div>
-                                            <p className="w-40 font-light pl-1 pt-2">{guilds}</p>
+                                            {
+                                                (leaderboard == "boom_leaderboard") ? <p className="w-40 font-light pl-1 pt-2">{guilds}</p> : <></>
+                                            }
                                             {
                                                 (leaderboard == "boom_leaderboard") ? <p className="w-44 font-light pl-1 pt-2">{reward} BOOM</p> : <p className="w-44 font-light pl-1 pt-2">{reward} Pts</p>
                                             }

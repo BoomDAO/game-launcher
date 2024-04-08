@@ -416,7 +416,8 @@ export const useGamingGuildsWorldNodeClient = async () => {
       getAllUserEntitiesOfSpecificWorlds: "getAllUserEntitiesOfSpecificWorlds",
       getAllUserActionStates: "getAllUserActionStates",
       getActionHistory: "getActionHistory",
-      getUserEntitiesFromWorldNodeComposite: "getUserEntitiesFromWorldNodeComposite"
+      getUserEntitiesFromWorldNodeComposite: "getUserEntitiesFromWorldNodeComposite",
+      getUserEntitiesFromWorldNodeFilteredSortingComposite: "getUserEntitiesFromWorldNodeFilteredSortingComposite"
     },
   };
 };
