@@ -30,6 +30,8 @@ import { idlFactory as GamingGuildsFactory } from "../dids/gaming_guilds.did.js"
 import { idlFactory as BOOMLedgerFactory } from "../dids/boom_ledger.did.js"
 // @ts-ignore
 import { idlFactory as GamingGuildsWorldNodeFactory } from "../dids/gaming_guilds_worldnode.did.js";
+// @ts-ignore
+import { idlFactory as SwapCanisterFactory } from "../dids/swap.did.js";
 
 const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
@@ -46,6 +48,7 @@ const worldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
 const guildsVerifierCanisterId = "yv22q-myaaa-aaaal-adeuq-cai"
 export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
 const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
+const swapCanisterId = "w73yo-siaaa-aaaak-qib2q-cai";
 
 //Production
 
@@ -456,6 +459,24 @@ export const useICRCLedgerClient = async (canister_id: string) => {
       icrc1_balance_of: "icrc1_balance_of",
       icrc1_transfer: "icrc1_transfer",
       icrc1_fee: "icrc1_fee"
+    },
+  };
+};
+
+export const useSwapCanisterClient = async () => {
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
+  const agent = await getAgent(identity);
+  return {
+    actor: Actor.createActor(SwapCanisterFactory, {
+      agent,
+      canisterId: swapCanisterId,
+    }),
+    methods: {
+      getAllTokensInfo: "getAllTokensInfo",
+      total_icp_contributed_e8s_and_total_participants: "total_icp_contributed_e8s_and_total_participants"
     },
   };
 };

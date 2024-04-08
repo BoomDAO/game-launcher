@@ -38,13 +38,15 @@ module {
 
     public type AccountIdentifier = Text;
 
-    public type TokenInfo = {
+    public type TokenProject = {
         name: Text;
-        symbol: Text;
-        decimals: Nat8;
-        fee: Nat;
-        init_total_supply: Nat64;
-        token_canister_id: Text;
+        website: Text;
+        bannerUrl: Text;
+        description: {
+            #plainText: Text;
+            #formattedText: Text;
+        };
+        metadata: [(Text, Text)];
     };
 
     public type Token = {
@@ -114,4 +116,17 @@ module {
         refund_result: ?ICP.Icrc1TransferResult;
         mint_result: ?ICRC.TransferResult;
     };
+
+    public type TokenInfo = {
+        token_canister_id: Text;
+        token_configs: Token;
+        token_project_configs: TokenProject;
+        token_swap_configs: TokenSwapConfigs;
+    };
+
+    public type TokensInfo = {
+        active: [TokenInfo];
+        inactive: [TokenInfo];
+    };
+
 }

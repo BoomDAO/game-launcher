@@ -563,5 +563,11 @@
         "success": "Username updated successfully"
       }
     }
+  },
+  "launchpad": {
+    "home": {
+      "loading": "HODL On, We are loading Launches for you ...",
+      "no_launches": "Oops, looks like there are no Launches currently"
+    } 
   }
 }

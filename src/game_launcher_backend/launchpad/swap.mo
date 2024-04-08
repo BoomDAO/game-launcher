@@ -45,6 +45,7 @@ actor SwapCanister {
 
   private stable var _ledger_wasms : Trie.Trie<Nat32, [Nat8]> = Trie.empty(); // version_number <-> icrc_ledger_wasm
   private stable var _tokens : Trie.Trie<Text, Swap.Token> = Trie.empty(); // token_canister_id <-> Token detail
+  private stable var _projects : Trie.Trie<Text, Swap.TokenProject> = Trie.empty(); // // token_canister_id <-> Token Project detail
 
   private stable var _swap_configs : Trie.Trie<Text, Swap.TokenSwapConfigs> = Trie.empty(); // token_canister_id <-> token_swap_details
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
@@ -400,6 +401,21 @@ actor SwapCanister {
   };
 
   // query methods
+  public query func total_icp_contributed_e8s_and_total_participants(arg : { canister_id : Text }) : async ((Nat64, Nat)) {
+    var total_icp : Nat64 = 0;
+    switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
+      case (?participants) {
+        for ((participant_id, info) in Trie.iter(participants)) {
+          total_icp := total_icp + info.icp_e8s;
+        };
+        return (total_icp, Trie.size(participants));
+      };
+      case _ {
+        return (0, 0);
+      };
+    };
+  };
+
   public query func total_icp_contributed_e8s(arg : { canister_id : Text }) : async (Nat64) {
     var total_icp : Nat64 = 0;
     switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
@@ -422,10 +438,11 @@ actor SwapCanister {
     _wasm_version_id := _wasm_version_id + 1;
   };
 
-  public shared ({ caller }) func create_icrc_token(init_arg : ICRC.InitArgs) : async ({
+  public shared ({ caller }) func create_icrc_token(args : { project : Swap.TokenProject; token_init_arg : ICRC.InitArgs; }) : async ({
     canister_id : Text;
   }) {
     // assert (caller == dev_principal);
+    Cycles.add(1000000000000);
     let res = await management_canister.create_canister({
       settings = ?{
         freezing_threshold = null;
@@ -433,34 +450,40 @@ actor SwapCanister {
         memory_allocation = null;
         compute_allocation = null;
       };
-      sender_canister_version = ?Nat64.fromNat32(_wasm_version_id);
+      sender_canister_version = null;
     });
 
     let canister_id = res.canister_id;
     let arg : {
       #Init : ICRC.InitArgs;
       #Upgrade : ?ICRC.UpgradeArgs;
-    } = #Init init_arg;
+    } = #Init (args.token_init_arg);
     await management_canister.install_code({
       arg = to_candid (arg);
       wasm_module = getLatestIcrcWasm_();
       mode = #install;
       canister_id = canister_id;
-      sender_canister_version = ?Nat64.fromNat32(_wasm_version_id);
+      sender_canister_version = null;
     });
-    let metadata = getFormattedMetadata_(init_arg.metadata);
+    let metadata = getFormattedMetadata_(args.token_init_arg.metadata);
     let token : Swap.Token = {
-      name = init_arg.token_name;
+      name = args.token_init_arg.token_name;
       url = metadata.url;
       logo = metadata.logo;
       description = metadata.description;
-      symbol = init_arg.token_symbol;
-      decimals = init_arg.decimals;
-      fee = init_arg.transfer_fee;
+      symbol = args.token_init_arg.token_symbol;
+      decimals = args.token_init_arg.decimals;
+      fee = args.token_init_arg.transfer_fee;
       token_canister_id = Principal.toText(canister_id);
     };
     _tokens := Trie.put(_tokens, Helper.keyT(Principal.toText(canister_id)), Text.equal, token).0;
+    _projects := Trie.put(_projects, Helper.keyT(Principal.toText(canister_id)), Text.equal, args.project).0;
     return { canister_id = Principal.toText(canister_id) };
+  };
+
+  public shared ({ caller }) func list_icrc_token(token : Swap.Token) : async () {
+    // assert (caller == dev_principal);
+    _tokens := Trie.put(_tokens, Helper.keyT(token.token_canister_id), Text.equal, token).0;
   };
 
   public shared ({ caller }) func set_token_swap_configs(arg : { configs : Swap.TokenSwapConfigs; canister_id : Text }) : async (Result.Result<Swap.TokenSwapConfigs, Text>) {
@@ -606,7 +629,7 @@ actor SwapCanister {
       case (?configs) {
         let current_time_in_seconds = Time.now() / 1000000000;
         if ((configs.swap_due_timestamp_seconds + configs.swap_start_timestamp_seconds) > current_time_in_seconds) {
-          return #err("token swap is still running.");
+          return #err("token swap is still running or due time not passed yet.");
         };
       };
       case _ {
@@ -719,6 +742,55 @@ actor SwapCanister {
 
   public shared ({caller}) func removeLedgerWasmVersion(arg : {version : Nat32}) : async () {
     _ledger_wasms := Trie.remove(_ledger_wasms, Helper.key(arg.version), Nat32.equal).0;
+  };
+
+  public query func cycleBalance() : async (Nat) {
+    return Cycles.balance();
+  };
+
+  public query func getAllTokensInfo() : async (Result.Result<Swap.TokensInfo, Text>) {
+    var active = Buffer.Buffer<Swap.TokenInfo>(0);
+    var inactive = Buffer.Buffer<Swap.TokenInfo>(0);
+    for((i, v) in Trie.iter(_swap_status)) {
+      if(v.running) {
+        let ?swap_config = Trie.find(_swap_configs, Helper.keyT(i), Text.equal) else {
+          return #err("Token : " #i #" swap is active but swap configs not found");
+        };
+        let ?token_config = Trie.find(_tokens, Helper.keyT(i), Text.equal) else {
+          return #err("Token : " #i #" swap is active but token configs not found");
+        };
+        let ?project_config = Trie.find(_projects, Helper.keyT(i), Text.equal) else {
+          return #err("Token : " #i #" swap is active but token project configs not found");
+        };
+        active.add({
+          token_canister_id= i;
+          token_configs= token_config;
+          token_project_configs= project_config;
+          token_swap_configs= swap_config;
+        });
+      } else {
+        let ?swap_config = Trie.find(_swap_configs, Helper.keyT(i), Text.equal) else {
+          return #err("Token : " #i #" swap is inactive but swap configs not found");
+        };
+        let ?token_config = Trie.find(_tokens, Helper.keyT(i), Text.equal) else {
+          return #err("Token : " #i #" swap is inactive but token configs not found");
+        };
+        let ?project_config = Trie.find(_projects, Helper.keyT(i), Text.equal) else {
+          return #err("Token : " #i #" swap is inactive but token project configs not found");
+        };
+        inactive.add({
+          token_canister_id= i;
+          token_configs= token_config;
+          token_project_configs= project_config;
+          token_swap_configs= swap_config;
+        });
+      }
+    };
+
+    return #ok({
+      active = Buffer.toArray(active);
+      inactive = Buffer.toArray(inactive);
+    });
   };
 
 };

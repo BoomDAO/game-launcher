@@ -35,6 +35,7 @@ import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
 import QuestTwitterPost from "./pages/GamingGuilds/QuestTwitterPost";
 import BrowseGames from "./pages/BrowseGames";
 import Launchpad from "./pages/Launchpad";
+import LaunchpadProject from "./pages/Launchpad/LaunchpadProject";
 
 function App() {
   return (
@@ -50,9 +51,9 @@ function App() {
                 path={`${navPaths.browse_games}`}
                 element={<BrowseGames />}
               />
-
+              <Route path={navPaths.launchpad} element={<Launchpad/>}/>
+              <Route path={`${navPaths.launchpad}/:canisterId`} element={<LaunchpadProject/>}/>
               <Route element={<ProtectedRoute />}>
-                <Route path={navPaths.launchpad} element={<Launchpad/>}/>
               {/* <Route path={navPaths.twitterPost} element={<QuestTwitterPost/>} /> */}
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
                 <Route

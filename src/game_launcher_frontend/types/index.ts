@@ -1,3 +1,4 @@
+import { Principal } from "@dfinity/principal";
 import { UseMutateAsyncFunction } from "@tanstack/react-query";
 
 export type Platform = "Browser" | "Android" | "Windows";
@@ -535,3 +536,131 @@ export interface UpdateEntity {
   'updates' : Array<UpdateEntityType>,
 }
 export type UpdateEntityType = { 'setNumber': SetNumber } | { 'incrementNumber': IncrementNumber } | { 'decrementNumber': DecrementNumber };
+
+
+
+export interface Account {
+  'owner' : Principal,
+  'subaccount' : [] | [Uint8Array | number[]],
+}
+export type AccountIdentifier = string;
+export interface FeatureFlags { 'icrc2' : boolean }
+export type Icrc1BlockIndex = bigint;
+export type Icrc1Tokens = bigint;
+export type Icrc1TransferError = {
+    'GenericError' : { 'message' : string, 'error_code' : bigint }
+  } |
+  { 'TemporarilyUnavailable' : null } |
+  { 'BadBurn' : { 'min_burn_amount' : Icrc1Tokens } } |
+  { 'Duplicate' : { 'duplicate_of' : Icrc1BlockIndex } } |
+  { 'BadFee' : { 'expected_fee' : Icrc1Tokens } } |
+  { 'CreatedInFuture' : { 'ledger_time' : bigint } } |
+  { 'TooOld' : null } |
+  { 'InsufficientFunds' : { 'balance' : Icrc1Tokens } };
+export type Icrc1TransferResult = { 'Ok' : Icrc1BlockIndex } |
+  { 'Err' : Icrc1TransferError };
+
+export type MetadataValue = { 'Int' : bigint } |
+  { 'Nat' : bigint } |
+  { 'Blob' : Uint8Array | number[] } |
+  { 'Text' : string };
+export interface SupplyConfigs {
+  'participants' : { 'icrc' : bigint },
+  'team' : {
+    'icp' : bigint,
+    'icrc' : bigint,
+    'account' : Account,
+    'icrc_result' : [] | [TransferResult__1],
+    'icp_result' : [] | [Icrc1TransferResult],
+  },
+  'boom_dao' : {
+    'icp' : bigint,
+    'icrc' : bigint,
+    'icp_account' : AccountIdentifier,
+    'icrc_result' : [] | [TransferResult__1],
+    'icrc_account' : Account,
+    'icp_result' : [] | [TransferResult],
+  },
+  'liquidity_pool' : {
+    'icp' : bigint,
+    'icrc' : bigint,
+    'account' : Account,
+    'icrc_result' : [] | [TransferResult__1],
+    'icp_result' : [] | [Icrc1TransferResult],
+  },
+  'gaming_guilds' : {
+    'icp' : bigint,
+    'icrc' : bigint,
+    'account' : Account,
+    'icrc_result' : [] | [TransferResult__1],
+    'icp_result' : [] | [Icrc1TransferResult],
+  },
+}
+export interface Token {
+  'fee' : bigint,
+  'decimals' : [] | [number],
+  'logo' : string,
+  'name' : string,
+  'description' : string,
+  'token_canister_id' : string,
+  'symbol' : string,
+}
+export interface TokenInfo {
+  'token_canister_id' : string,
+  'token_swap_configs' : TokenSwapConfigs,
+  'token_configs' : Token,
+  'token_project_configs' : TokenProject,
+}
+export interface TokenProject {
+  'metadata' : Array<[string, string]>,
+  'name' : string,
+  'description' : { 'formattedText' : string } | { 'plainText' : string },
+  'website' : string,
+  'bannerUrl' : string,
+}
+export interface TokenSwapConfigs {
+  'min_participant_icp_e8s' : bigint,
+  'max_icp_e8s' : bigint,
+  'swap_start_timestamp_seconds' : bigint,
+  'swap_due_timestamp_seconds' : bigint,
+  'token_supply_configs' : SupplyConfigs,
+  'max_participant_icp_e8s' : bigint,
+  'min_icp_e8s' : bigint,
+}
+export interface TokensInfo {
+  'active' : Array<TokenInfo>,
+  'inactive' : Array<TokenInfo>,
+}
+
+export interface TokenConfigs {
+  name: string;
+  symbol: string;
+  logoUrl: string;
+  description: string;
+}
+
+export interface SwapConfigs {
+  raisedIcp: string;
+  maxIcp: string;
+  minIcp: string;
+  minParticipantIcp: string;
+  maxParticipantIcp: string;
+  participants: string;
+  endTimestamp: string;
+  status: boolean;
+  result: boolean;
+}
+
+export interface ProjectConfigs {
+  name: string;
+  bannerUrl: string;
+  description: string;
+  website: string;
+}
+
+export interface LaunchCardProps {
+  id: string;
+  project: ProjectConfigs;
+  swap: SwapConfigs;
+  token: TokenConfigs;
+}

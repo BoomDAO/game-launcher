@@ -6,7 +6,7 @@ import { useGlobalContext } from "@/context/globalContext";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-const Launchpad = () => {
+const LaunchpadProject = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { setIsOpenNavSidebar } = useGlobalContext();
@@ -79,4 +79,4 @@ const Launchpad = () => {
     );
 };
 
-export default Launchpad;
+export default LaunchpadProject;
