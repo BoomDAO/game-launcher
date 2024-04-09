@@ -35,6 +35,7 @@ export const idlFactory = ({ IDL }) => {
     'feature_flags' : IDL.Opt(FeatureFlags),
   });
   const TokenProject = IDL.Record({
+    'creator' : IDL.Text,
     'metadata' : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)),
     'name' : IDL.Text,
     'description' : IDL.Variant({
@@ -43,6 +44,8 @@ export const idlFactory = ({ IDL }) => {
     }),
     'website' : IDL.Text,
     'bannerUrl' : IDL.Text,
+    'creatorImageUrl' : IDL.Text,
+    'creatorAbout' : IDL.Text,
   });
   const Result = IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text });
   const Token = IDL.Record({

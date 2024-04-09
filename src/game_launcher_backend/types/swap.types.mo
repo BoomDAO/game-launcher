@@ -47,6 +47,9 @@ module {
             #formattedText: Text;
         };
         metadata: [(Text, Text)];
+        creator: Text;
+        creatorAbout: Text;
+        creatorImageUrl: Text;
     };
 
     public type Token = {

@@ -9,7 +9,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { useSwapCanisterClient } from "@/hooks";
+import { swapCanisterId, useICRCLedgerClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
 import { LaunchCardProps, TokensInfo } from "@/types";
@@ -17,9 +17,16 @@ import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import { string } from "zod";
 import { AccountIdentifier } from "@dfinity/ledger-icp";
+import Tokens from "../locale/en/Tokens.json";
 
 export const queryKeys = {
     tokens_info: "tokens_info"
+};
+
+function closeToast() {
+    clearTimeout(setTimeout(() => {
+        toast.remove();
+    }, 3000));
 };
 
 function isDescriptionPlainText(data: { 'formattedText' : string } | { 'plainText' : string }): data is { 'plainText' : string } {
@@ -66,6 +73,9 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             bannerUrl: current_token_info.token_project_configs.bannerUrl,
                             description: isDescriptionPlainText(current_token_info.token_project_configs.description) ? current_token_info.token_project_configs.description.plainText : "",
                             website: current_token_info.token_project_configs.website,
+                            creator: current_token_info.token_project_configs.creator,
+                            creatorAbout: current_token_info.token_project_configs.creatorAbout,
+                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
                         },
                         swap: {
                             raisedIcp: "0",
@@ -97,6 +107,9 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             bannerUrl: current_token_info.token_project_configs.bannerUrl,
                             description: isDescriptionPlainText(current_token_info.token_project_configs.description) ? current_token_info.token_project_configs.description.plainText : "",
                             website: current_token_info.token_project_configs.website,
+                            creator: current_token_info.token_project_configs.creator,
+                            creatorAbout: current_token_info.token_project_configs.creatorAbout,
+                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
                         },
                         swap: {
                             raisedIcp: "0",
@@ -130,6 +143,71 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 }
             }));
             return res;
+        },
+    });
+};
+
+
+export const useParticipateICPTransfer = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({
+            amount,
+            canisterId,
+        }: {
+            amount: string;
+            canisterId?: string;
+        }) => {
+            try {
+                const { actor, methods } = await useICRCLedgerClient((canisterId != undefined) ? canisterId : "");
+                let fee = 0;
+                for (let i = 0; i < Tokens.tokens.length; i += 1) {
+                    if (Tokens.tokens[i].ledger == canisterId) {
+                        fee = Tokens.tokens[i].fee
+                    }
+                };
+                let amount_e8s: number = parseFloat(amount);
+                amount_e8s = amount_e8s * 100000000.0;
+                let req = {
+                    to: {
+                        owner: Principal.fromText(swapCanisterId),
+                        subaccount: [],
+                    },
+                    fee: [fee],
+                    memo: [],
+                    from_subaccount: [],
+                    created_at_time: [],
+                    amount: amount_e8s,
+                };
+                let res = await actor[methods.icrc1_transfer](req) as {
+                    Ok: number | undefined, Err: {
+                        InsufficientFunds: {} | undefined
+                    } | undefined
+                };
+                if (res.Ok == undefined) {
+                    if (res.Err?.InsufficientFunds == undefined) {
+                        toast.error("ICRC1 Transfer error. Contact dev team in discord.");
+                        closeToast();
+                    } else {
+                        toast.error("Insufficient funds. Use amount available to withdraw.");
+                        closeToast();
+                    }
+                    throw (res.Err);
+                };
+                return res;
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+        },
+        onSuccess: () => {
+            toast.success("Participated successfully");
+            closeToast();
         },
     });
 };

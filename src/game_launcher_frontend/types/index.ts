@@ -612,11 +612,14 @@ export interface TokenInfo {
   'token_project_configs' : TokenProject,
 }
 export interface TokenProject {
+  'creator' : string,
   'metadata' : Array<[string, string]>,
   'name' : string,
   'description' : { 'formattedText' : string } | { 'plainText' : string },
   'website' : string,
   'bannerUrl' : string,
+  'creatorImageUrl' : string,
+  'creatorAbout' : string,
 }
 export interface TokenSwapConfigs {
   'min_participant_icp_e8s' : bigint,
@@ -656,6 +659,9 @@ export interface ProjectConfigs {
   bannerUrl: string;
   description: string;
   website: string;
+  creator: string;
+  creatorAbout: string;
+  creatorImageUrl: string;
 }
 
 export interface LaunchCardProps {

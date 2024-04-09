@@ -15,7 +15,6 @@ const Launchpad = () => {
     return (
         <>
             <div className="w-full text-center"><p className="gradient-text text-5xl font-semibold pb-10 mt-10">CROWDFUND YOUR GAMING PROJECT</p></div>
-
             <div className="mt-10">
                 <div className="">
                     {isLoading ? (

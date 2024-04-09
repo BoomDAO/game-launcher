@@ -48,7 +48,7 @@ const worldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
 const guildsVerifierCanisterId = "yv22q-myaaa-aaaal-adeuq-cai"
 export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
 const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
-const swapCanisterId = "w73yo-siaaa-aaaak-qib2q-cai";
+export const swapCanisterId = "w73yo-siaaa-aaaak-qib2q-cai";
 
 //Production
 

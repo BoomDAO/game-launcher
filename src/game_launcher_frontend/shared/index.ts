@@ -29,7 +29,8 @@ export const navPaths = {
   twitterPost: "gaming-guilds/onboarding-quests/twitter-post",
   browse_games: "/all-games",
   gaming_guilds: "/gaming-guilds",
-  launchpad: "/launchpad"
+  launchpad: "/launchpad",
+  launchpad_participate: "/launchpad/participate"
 };
 
 export const platform_types: SelectOption[] = [
