@@ -32,9 +32,9 @@ const Members = () => {
                         onChange={(event) => { setLeaderboard(event.target.value); }}
                         className="w-60 p-2 cursor-pointer" name="leaderboard" id="leaderboard">
                         <option value="boom_leaderboard">BOOM DAO</option>
-                        <option value="paws_points_leaderboard">PAWS ARENA</option>
-                        <option value="elementum_points_leaderboard">ELEMENTUM</option>
-                        <option value="plethora_points_leaderboard">PLETHORA</option>
+                        <option value="paws_airdrop_pts_leaderboard">PAWS ARENA</option>
+                        <option value="elementum_airdrop_pts_leaderboard">ELEMENTUM</option>
+                        <option value="plethora_airdrop_pts_leaderboard">PLETHORA</option>
                     </select>
                     </div>
                 </div>

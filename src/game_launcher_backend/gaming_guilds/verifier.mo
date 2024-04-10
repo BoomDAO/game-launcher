@@ -119,7 +119,7 @@ actor Verifier {
     return number;
   };
 
-  public shared({caller}) func getPhoneStatus(p : Text) : async ((Text, Bool)) {
+  public shared ({ caller }) func getPhoneStatus(p : Text) : async ((Text, Bool)) {
     assert (caller == Principal.fromText(Constants.devPrincipalId));
     let ?number = Trie.find(_phones, Utils.keyT(p), Text.equal) else return (("", false));
     return number;
@@ -240,7 +240,10 @@ actor Verifier {
     assert (caller != Principal.fromText(Constants.anonPrincipalId));
     switch (await generateOTP(_email)) {
       case (#ok _otp) {
-        let res = await ping_server_to_email_courier({ email = _email; otp = _otp });
+        let res = await ping_server_to_email_courier({
+          email = _email;
+          otp = _otp;
+        });
         return #ok("");
       };
       case (#err e) {
@@ -331,6 +334,26 @@ actor Verifier {
     };
   };
 
+  public shared ({ caller }) func processActionForAllUsersAsAdmin(arg : { actionId : Text }) : async () {
+    let worldHub = actor (Constants.WorldHubCanisterId) : actor {
+      getAllUserIds : shared () -> async ([Text]);
+    };
+    let uids = await worldHub.getAllUserIds();
+    let gaming_guild_canister = actor (Constants.GamingGuildsCanisterId) : actor {
+      processAction : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
+      processActionAwait : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
+    };
+    for (uid in uids.vals()) {
+      ignore await gaming_guild_canister.processAction({
+        actionId = arg.actionId;
+        fields = [{
+          fieldName = "target_principal_id";
+          fieldValue = uid;
+        }];
+      });
+    };
+  };
+
   public query func getTotalEmails() : async Nat {
     return Trie.size(_emails);
   };
@@ -376,5 +399,9 @@ actor Verifier {
   //   };
   //   return Buffer.toArray(b);
   // };
+
+  public query func cycleBalance() : async Nat {
+    Cycles.balance();
+  };
 
 };
