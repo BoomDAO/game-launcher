@@ -730,7 +730,7 @@ const TopBar = () => {
               <div className="relative mb-2 flex-shrink-0">
                 <img
                   src={`/logo-${theme}.svg`}
-                  width={164}
+                  width={148}
                   alt="logo"
                   className="hidden md:flex"
                 />
