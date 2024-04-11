@@ -29,8 +29,8 @@ function closeToast() {
     }, 3000));
 };
 
-function isDescriptionPlainText(data: { 'formattedText' : string } | { 'plainText' : string }): data is { 'plainText' : string } {
-    return ((data as { 'plainText' : string }) !== undefined);
+function isDescriptionPlainText(data: { 'formattedText': string } | { 'plainText': string }): data is { 'plainText': string } {
+    return ((data as { 'plainText': string }) !== undefined);
 }
 
 const msToTime = (ms: number) => {
@@ -41,11 +41,11 @@ const msToTime = (ms: number) => {
     minutes = minutes % 60;
     let days = (hours / 24).toString().split(".")[0];
     hours = hours % 24;
-    let res = "";
-    if (days != "0") res = res + days + "Days ";
-    if (hours != 0) res = res + hours + "Hours ";
-    if (minutes != 0) res = res + minutes + "Minutes ";
-    // if (seconds != 0) res = res + seconds + "Seconds";
+    let res = {
+        days: (days != "") ? days : "",
+        hrs: (hours != 0) ? String(hours) : "",
+        mins: (minutes != 0) ? String(minutes) : ""
+    };
     return res;
 }
 
@@ -58,15 +58,15 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
             let tokensInfoRes = await actor[methods.getAllTokensInfo]() as {
                 ok: TokensInfo
             };
-            let res : LaunchCardProps[] = [];
+            let res: LaunchCardProps[] = [];
             let icp_contributed_promises = [];
             let token_canister_ids = [];
-            if(tokensInfoRes.ok) {
+            if (tokensInfoRes.ok) {
                 let tokensInfo = tokensInfoRes.ok;
-                for(let i = 0; i < tokensInfo.active.length; i += 1) {
+                for (let i = 0; i < tokensInfo.active.length; i += 1) {
                     let current_token_info = tokensInfo.active[i];
                     token_canister_ids.push(current_token_info.token_canister_id);
-                    let cardInfo : LaunchCardProps = {
+                    let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
                         project: {
                             name: current_token_info.token_project_configs.name,
@@ -97,10 +97,10 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                     };
                     res.push(cardInfo);
                 }
-                for(let i = 0; i < tokensInfo.inactive.length; i += 1) {
+                for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
                     let current_token_info = tokensInfo.inactive[i];
                     token_canister_ids.push(current_token_info.token_canister_id);
-                    let cardInfo : LaunchCardProps = {
+                    let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
                         project: {
                             name: current_token_info.token_project_configs.name,
@@ -133,11 +133,11 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 }
             }
 
-            for(let i = 0; i < token_canister_ids.length; i += 1) {
+            for (let i = 0; i < token_canister_ids.length; i += 1) {
                 icp_contributed_promises.push(actor[methods.total_icp_contributed_e8s_and_total_participants]({ canister_id: token_canister_ids[i] }) as Promise<[BigInt, BigInt]>)
             }
             await Promise.all(icp_contributed_promises).then((results => {
-                for(let i = 0; i < res.length; i += 1) {
+                for (let i = 0; i < res.length; i += 1) {
                     res[i].swap.raisedIcp = String(results[i][0]);
                     res[i].swap.participants = String(results[i][1])
                 }

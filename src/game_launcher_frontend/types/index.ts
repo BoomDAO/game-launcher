@@ -649,7 +649,11 @@ export interface SwapConfigs {
   minParticipantIcp: string;
   maxParticipantIcp: string;
   participants: string;
-  endTimestamp: string;
+  endTimestamp: {
+    days: string,
+    hrs: string,
+    mins: string
+  };
   status: boolean;
   result: boolean;
 }

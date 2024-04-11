@@ -11,6 +11,7 @@ import { useGlobalContext } from "@/context/globalContext";
 import toast from "react-hot-toast";
 import { cx } from "@/utils";
 import { navPaths } from "@/shared";
+import FormattedDate from "./FormattedDate";
 
 interface TokenConfigs {
     name: string;
@@ -26,7 +27,11 @@ interface SwapConfigs {
     minParticipantIcp: string;
     maxParticipantIcp: string;
     participants: string;
-    endTimestamp: string;
+    endTimestamp: {
+        days: string,
+        hrs: string,
+        mins: string,
+    }
     status: boolean;
     result: boolean;
 }
@@ -61,13 +66,13 @@ const LaunchCard = ({
     const { canisterId } = useParams();
 
     const handleCardOnClick = () => {
-        if(!canisterId) {
+        if (!canisterId) {
             navigate(navPaths.launchpad + "/" + id);
         }
     }
 
     const handleParticipate = () => {
-        if(session) {
+        if (session) {
             navigate(navPaths.launchpad_participate + "/" + canisterId);
         } else {
             setIsOpenNavSidebar(true);
@@ -83,62 +88,63 @@ const LaunchCard = ({
                         (!canisterId) ? "cursor-pointer" : ""
                     )
                 } onClick={handleCardOnClick}>
-                    <div className="w-1/2 p-2 relative">
+                    <div className="w-7/12 p-2 relative">
                         <img src={project.bannerUrl} className="h-80 w-full object-cover rounded-xl" />
-                        <div className="absolute bottom-4 text-white">
-                            <p className="font-bold text-3xl px-5">{project.name}</p>
-                            <p className="w-full px-5 text-sm">{project.description}</p>
+                        <div className="absolute bottom-5 text-white">
+                            <p className="font-bold text-6xl px-5 pb-1">{project.name}</p>
+                            <p className="w-9/12 px-5 text-xs">{project.description}</p>
                         </div>
                     </div>
                     <div className={cx(
-                        "w-1/2 p-5",
-                        (canisterId == undefined)? "mt-10" : "" 
+                        "w-5/12 p-5",
+                        (canisterId == undefined) ? "mt-10" : ""
                     )} >
                         <div className="flex text-white dark:text-black justify-between">
                             <div>
-                                <p>Token</p>
+                                <p className="font-light">TOKEN</p>
                                 <div className="flex">
                                     <img className="w-10" src={token.logoUrl} />
-                                    <p>{token.symbol}</p>
+                                    <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
                                 </div>
                             </div>
                             <div>
-                                <p>Total Raised</p>
+                                <p className="font-light">TOTAL RAISED</p>
                                 <div className="flex">
-                                    <img src="/icp.svg" className="w-10" />
-                                    <p>{swap.raisedIcp} ICP</p>
+                                    <img src="/icp.svg" className="w-12" />
+                                    <p className="pt-1.5 pl-1 font-semibold">{swap.raisedIcp} ICP</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="h-0.5 bg-white dark:bg-black mt-2"></div>
+                        <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
                         {
                             (canisterId) ? <div className="">
-                                <Button className="gradient-bg-blue rounded mt-2" onClick={handleParticipate}>PARTICIPATE</Button>
+                                <Button className="gradient-bg-blue rounded-sm mt-2" onClick={handleParticipate}>PARTICIPATE</Button>
                                 <p className="dark:text-black text-white text-xs mt-1">Minimum {swap.minParticipantIcp} ICP required to Participate. </p>
-                                <div className="h-0.5 bg-white dark:bg-black mt-2"></div>
+                                <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
                             </div> : <></>
                         }
                         <div className="pt-2">
-                            <div className="flex text-white dark:text-black justify-between">
+                            <div className="flex text-white dark:text-black justify-between font-light text-sm">
                                 <div>
-                                    <p>{swap.raisedIcp} / {swap.maxIcp}</p>
+                                    <p>{swap.raisedIcp} / {swap.maxIcp} ICP</p>
                                 </div>
                                 <div>
-                                    Progress : {(100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%
+                                    PROGRESS : {(100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%
                                 </div>
                             </div>
-                            <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
+                            <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
                                 <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
                                 <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedIcp) / Number(swap.maxIcp)) >= 100) ? 100 : (100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%` }}></div>
                             </div>
-                            <div className="text-white dark:text-black float-right pt-2">
-                                <p>Participants : {swap.participants}</p>
+                            <div className="text-white dark:text-black float-right font-light text-sm mt-1">
+                                <p>PARTICIPANTS : {swap.participants}</p>
                             </div>
                         </div>
-                        <div className="h-0.5 bg-white dark:bg-black mt-10"></div>
+                        <div className="h-0.5 bg-white dark:bg-gray-300 mt-10"></div>
                         {
-                            (swap.status) ? <div className="text-white dark:text-black w-full mt-2">
-                                <p>ENDS IN : {swap.endTimestamp}</p>
+                            (swap.status) ? <div className="flex text-white dark:text-black w-full mt-2">
+                                <p className="font-light w-1/4">ENDS IN  </p>
+                                <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} />
                             </div> : <div className="text-white dark:text-black mt-2 w-full">
                                 {(swap.result) ? <p>STATUS : PASSED</p> : <p>STATUS : FAILED</p>}
                             </div>
@@ -146,53 +152,53 @@ const LaunchCard = ({
                     </div>
                 </div> :
                     <div className="flex w-full bg-dark dark:bg-white rounded-xl">
-                        <div className="w-1/2 p-2 relative">
+                        <div className="w-7/12 p-2 relative">
                             <img src={project.bannerUrl} className="h-60 w-full object-cover rounded-xl" />
                             <div className="absolute bottom-4 text-white">
-                                <p className="font-bold text-3xl px-5">{project.name}</p>
-                                <p className="w-full px-5 text-sm">{project.description}</p>
+                                <p className="font-bold text-4xl px-5 pb-1">{project.name}</p>
+                                <p className="w-9/12 px-5 text-xs">{project.description}</p>
                             </div>
                         </div>
-                        <div className="w-1/2 p-5">
+                        <div className="w-5/12 p-5">
                             <div className="flex text-white dark:text-black justify-between">
                                 <div>
-                                    <p>Token</p>
+                                    <p className="font-light">TOKEN</p>
                                     <div className="flex">
                                         <img className="w-10" src={token.logoUrl} />
-                                        <p>{token.symbol}</p>
+                                        <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
                                     </div>
                                 </div>
                                 <div>
-                                    <p>Total Raised</p>
+                                    <p className="font-light">TOTAL RAISED</p>
                                     <div className="flex">
-                                        <img src="/icp.svg" className="w-10" />
-                                        <p>{swap.raisedIcp} ICP</p>
+                                        <img src="/icp.svg" className="w-12" />
+                                        <p className="pt-1.5 pl-1 font-semibold">{swap.raisedIcp} ICP</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="h-0.5 bg-white dark:bg-black mt-2"></div>
+                            <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
                             <div className="pt-2">
-                                <div className="flex text-white dark:text-black justify-between">
+                                <div className="flex text-white dark:text-black justify-between font-light text-sm">
                                     <div>
-                                        <p>{swap.raisedIcp} / {swap.maxIcp}</p>
+                                        <p>{swap.raisedIcp} / {swap.maxIcp} ICP</p>
                                     </div>
                                     <div>
-                                        Progress : {(100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%
+                                        PROGRESS : {(100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%
                                     </div>
                                 </div>
-                                <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
+                                <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
                                     <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
                                     <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedIcp) / Number(swap.maxIcp)) >= 100) ? 100 : (100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%` }}></div>
                                 </div>
-                                <div className="text-white dark:text-black float-right pt-2">
-                                    <p>Participants : {swap.participants}</p>
+                                <div className="text-white dark:text-black float-right font-light text-sm mt-1">
+                                    <p>PARTICIPANTS : {swap.participants}</p>
                                 </div>
                             </div>
-                            <div className="h-0.5 bg-white dark:bg-black mt-10"></div>
+                            <div className="h-0.5 bg-white dark:bg-gray-300 mt-10"></div>
                             {
                                 (swap.status) ? <div className="text-white dark:text-black w-full mt-2">
-                                    <p>ENDS IN : {swap.endTimestamp}</p>
-                                </div> : <div className="text-white dark:text-black mt-2 w-full">
+                                    <p>ENDS IN : <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} /></p>
+                                </div> : <div className="text-white dark:text-black mt-2 w-full font-light">
                                     {(swap.result) ? <p>STATUS : PASSED</p> : <p>STATUS : FAILED</p>}
                                 </div>
                             }
