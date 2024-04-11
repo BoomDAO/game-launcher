@@ -163,6 +163,11 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
+    'createEntityForAllUsers' : IDL.Func(
+        [worldId, entityId, IDL.Vec(Field)],
+        [Result],
+        [],
+      ),
     'cycleBalance' : IDL.Func([], [IDL.Nat], ['query']),
     'deleteActionHistoryForUser' : IDL.Func(
         [IDL.Record({ 'uid' : userId })],
@@ -257,6 +262,17 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getUserEntitiesFromWorldNodeComposite' : IDL.Func(
         [userId, worldId, IDL.Opt(IDL.Nat)],
+        [Result_1],
+        ['composite_query'],
+      ),
+    'getUserEntitiesFromWorldNodeFilteredSortingComposite' : IDL.Func(
+        [
+          userId,
+          worldId,
+          IDL.Text,
+          IDL.Variant({ 'Descending' : IDL.Null, 'Ascending' : IDL.Null }),
+          IDL.Opt(IDL.Nat),
+        ],
         [Result_1],
         ['composite_query'],
       ),

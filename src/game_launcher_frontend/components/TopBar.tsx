@@ -34,16 +34,16 @@ const TopBar = () => {
 
   const paths = [
     {
-      name: t("navigation.browse_games"),
-      path: navPaths.home,
-    },
-    {
       name: t("navigation.gaming_guilds"),
-      path: navPaths.gaming_guilds
+      path: navPaths.home
     }
   ];
 
   const dev_tools = [
+    {
+      name: t("navigation.browse_games"),
+      path: navPaths.browse_games,
+    },
     {
       name: t("navigation.upload_games"),
       path: navPaths.upload_games,
@@ -730,7 +730,7 @@ const TopBar = () => {
               <div className="relative mb-2 flex-shrink-0">
                 <img
                   src={`/logo-${theme}.svg`}
-                  width={164}
+                  width={148}
                   alt="logo"
                   className="hidden md:flex"
                 />

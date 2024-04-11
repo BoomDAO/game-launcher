@@ -18,16 +18,16 @@ export const navPaths = {
   create_new_world: "/world-deployer/create-world",
   boomdao_candid_url: "https://5pati-hyaaa-aaaal-qb3yq-cai.raw.icp0.io/",
   manage_worlds: "/world-deployer/manage-worlds",
-  gaming_guilds: "/gaming-guilds",
-  gaming_guilds_email_verification: "/gaming-guilds/verify-email",
-  gaming_guilds_phone_verification: "/gaming-guilds/verify-phone",
+  gaming_guilds_email_verification: "/verify-email",
+  gaming_guilds_phone_verification: "/verify-phone",
   profile_picture: "/profile/picture",
   profile_username: "/profile/username",
   wallet_tokens: "/wallet/tokens",
   wallet_nfts: "/wallet/nfts",
   transfer: "/wallet/transfer",
   nftTransfer: "/wallet/transfer/nft",
-  twitterPost: "gaming-guilds/onboarding-quests/twitter-post"
+  twitterPost: "gaming-guilds/onboarding-quests/twitter-post",
+  browse_games: "/browse-games"
 };
 
 export const platform_types: SelectOption[] = [

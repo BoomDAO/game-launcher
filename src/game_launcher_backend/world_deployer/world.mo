@@ -127,6 +127,7 @@ actor class WorldTemplate(owner : Principal) = this {
         deleteUserEntityFromWorldNode : shared ({ uid : TGlobal.userId }) -> async ();
         deleteUser : shared ({ uid : TGlobal.userId }) -> async ();
         getUserEntitiesFromWorldNodeComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
+        getUserEntitiesFromWorldNodeFilteredSortingComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, fieldName : Text, order : { #Ascending; #Descending; }, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
     };
     type WorldHub = actor {
         createNewUser : shared ({ user : Principal; requireEntireNode : Bool; }) -> async (Result.Result<Text, Text>);
@@ -137,6 +138,8 @@ actor class WorldTemplate(owner : Principal) = this {
         removeEntityPermission : shared (TEntity.EntityPermission) -> async ();
         grantGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
         removeGlobalPermission : shared (TEntity.GlobalPermission) -> async ();
+        getAllNodeIds : shared () -> async ([Text]);
+        getAllUserIds : shared () -> async ([Text]);
     };
     type NFT = actor {
         ext_mint : ([(EXT.AccountIdentifier, EXT.Metadata)]) -> async [EXT.TokenIndex];
@@ -435,7 +438,7 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok("you have created a new action");
     };
 
-    public shared ({ caller }) func createMinigameWinAction(gameName : Text, xpAmount : Float) : async (Result.Result<Text, Text>)  {
+    public shared ({ caller }) func createMinigameWinAction() : async (Result.Result<Text, Text>)  {
         assert (isAdmin_(caller) or caller == WorldId());
 
         return await createAction({ 
@@ -446,15 +449,15 @@ actor class WorldTemplate(owner : Principal) = this {
                     outcomes = [
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; eid = gameName#"_minigame_count"; updates = [
+                                { option = #updateEntity { wid = null; eid = "minigame_count"; updates = [
                                     #incrementNumber { fieldName = "amount"; fieldValue =  #number 1; },
                                 ]; };  weight = 100;},
                             ]
                         },
                         {
                             possibleOutcomes = [
-                                { option = #updateEntity { wid = null; eid = gameName#"_xp"; updates = [
-                                    #incrementNumber { fieldName = "amount"; fieldValue =  #number xpAmount; },
+                                { option = #updateEntity { wid = null; eid = "xp"; updates = [
+                                    #incrementNumber { fieldName = "amount"; fieldValue =  #number 500; },
                                 ]; };  weight = 100;},
                             ]
                         }
@@ -648,6 +651,18 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
 
+    public composite query func getUserEntitiesFromWorldNodeFilteredSortingComposite(args : { uid : Text; fieldName : Text; order : { #Ascending; #Descending; }; page : ?Nat; }) : async (Result.Result<[TEntity.StableEntity], Text>) {
+        switch (await worldHub.getUserNodeCanisterIdComposite(args.uid)) {
+            case (#ok(userNodeId)) {
+                let userNode : UserNode = actor (userNodeId);
+                return await userNode.getUserEntitiesFromWorldNodeFilteredSortingComposite(args.uid, worldPrincipalId(), args.fieldName, args.order, args.page);
+            };
+            case (#err(errMsg)) {
+                return #err(errMsg);
+            };
+        };
+    };
+
     public func getActionHistory(args : { uid : TGlobal.userId }) : async (Result.Result<[TAction.ActionOutcomeHistory], Text>) {
         switch (await getUserNode_(args.uid)) {
             case (#ok(userNodeId)) {
@@ -709,6 +724,20 @@ actor class WorldTemplate(owner : Principal) = this {
                 return #err(errMsg);
             };
         };
+    };
+
+    public shared ({caller}) func createEntityForAllUsers(args : {eid : TGlobal.entityId; fields : [TGlobal.Field];}) : async (Result.Result<Text, Text>) {
+        assert (isAdmin_(caller));
+        let nodeIds : [Text] = await worldHub.getAllNodeIds();
+        var res = Buffer.Buffer<async (Result.Result<Text, Text>)>(0);
+        var b = Buffer.Buffer<(Result.Result<Text, Text>)>(0);
+        for(id in nodeIds.vals()) {
+            let userNode = actor (id) : actor {
+                createEntityForAllUsers : shared (TGlobal.worldId, TGlobal.entityId, [TGlobal.Field]) -> async (Result.Result<Text, Text>);
+            };
+            ignore userNode.createEntityForAllUsers(worldPrincipalId(), args.eid, args.fields);
+        };
+        return #ok(":)");
     };
 
     public shared ({ caller }) func deleteEntity(args : { uid : Text; eid : Text }) : async (Result.Result<Text, Text>) {
@@ -2516,6 +2545,118 @@ actor class WorldTemplate(owner : Principal) = this {
 
         ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
         return #ok(outcomes);
+    };
+
+    public shared ({caller}) func processActionForAllUsers(actionArg : TAction.ActionArg) : async () {
+        assert (isAdmin_(caller));
+        let userIds : [Text] = await worldHub.getAllUserIds();
+        for(uid in userIds.vals()) {
+            let actionId = actionArg.actionId;
+            let callerPrincipalId = Principal.toText(caller);
+            processActionCount += 1;
+            var worldAction : TAction.SubAction = {
+                actionConstraint = null;
+                actionResult = { outcomes = [] };
+            };
+            var callerAction : TAction.SubAction = {
+                actionConstraint = null;
+                actionResult = { outcomes = [] };
+            };
+            var targetAction : TAction.SubAction = {
+                actionConstraint = null;
+                actionResult = { outcomes = [] };
+            };
+
+            //world
+            var hasSubActionWorld = false;
+            //caller
+            var hasSubActionCaller = false;
+            //target
+            var targetPrincipalId : Text = "";
+            var hasSubActionTarget = false;
+
+            var subActions = Buffer.Buffer<SubAction>(0);
+
+            //CHECK IF ACTION EXIST TO TRY SETUP BOTH CALLER AND TARGET SUB ACTIONS
+            switch (getSpecificAction_(actionId)) {
+                case (?_action) {
+                    //SETUP CALLER ACTION
+                    switch (_action.callerAction) {
+                        case (?_callerAction) {
+                            callerAction := _callerAction;
+                            hasSubActionCaller := true;
+                        };
+                        case (_) {};
+                    };
+                    //TRY SETUP TARGET ACTION
+                    switch (_action.targetAction) {
+                        case (?_targetAction) {
+                            targetAction := _targetAction;
+                            hasSubActionTarget := true;
+                        };
+                        case (_) {};
+                    };
+                    //TRY SETUP TARGET ACTION
+                    switch (_action.worldAction) {
+                        case (?_worldAction) {
+                            worldAction := _worldAction;
+                            hasSubActionWorld := true;
+                        };
+                        case (_) {};
+                    };
+                };
+                case (_) {};
+            };
+
+            //Generate Outcomes
+            var worldOutcomes : [TAction.ActionOutcomeOption] = [];
+            var callerOutcomes : [TAction.ActionOutcomeOption] = [];
+            var targetOutcomes : [TAction.ActionOutcomeOption] = [];
+
+            let generateActionResultOutcomesWorldHandler = generateActionResultOutcomes_(worldAction.actionResult);
+            let generateActionResultOutcomesCallerandler = generateActionResultOutcomes_(callerAction.actionResult);
+            let generateActionResultOutcomesTargetHandler = generateActionResultOutcomes_(targetAction.actionResult);
+
+            worldOutcomes := await generateActionResultOutcomesWorldHandler;
+            callerOutcomes := await generateActionResultOutcomesCallerandler;
+            targetOutcomes := await generateActionResultOutcomesTargetHandler;
+
+            //
+            if (hasSubActionWorld) {
+                subActions.add({
+                    sourcePrincipalId = worldPrincipalId();
+                    sourceActionConstraint = worldAction.actionConstraint;
+                    sourceOutcomes = worldOutcomes;
+                });
+
+            };
+            if (hasSubActionCaller) {
+                subActions.add({
+                    sourcePrincipalId = callerPrincipalId;
+                    sourceActionConstraint = callerAction.actionConstraint;
+                    sourceOutcomes = callerOutcomes;
+                });
+            };
+            if (hasSubActionTarget) {
+                targetPrincipalId := uid;
+                targetOutcomes := await generateActionResultOutcomes_(targetAction.actionResult);
+                subActions.add({
+                    sourcePrincipalId = targetPrincipalId;
+                    sourceActionConstraint = targetAction.actionConstraint;
+                    sourceOutcomes = targetOutcomes;
+                });
+            };
+            ignore processActionNew_(callerPrincipalId, targetPrincipalId, actionId, actionArg.fields, Buffer.toArray(subActions));
+            let outcomes = {
+                callerPrincipalId = callerPrincipalId;
+                targetPrincipalId = targetPrincipalId;
+                worldPrincipalId = worldPrincipalId();
+                callerOutcomes = callerOutcomes;
+                targetOutcomes = targetOutcomes;
+                worldOutcomes = worldOutcomes;
+            };
+            ignore tryBroadcastOutcomes_(callerPrincipalId, outcomes);
+        };
     };
 
     //targetPrincipalId is optional, you can set it up as an empty string

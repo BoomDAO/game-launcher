@@ -1,5 +1,5 @@
 import { Actor } from "@dfinity/agent";
-import { getAgent, getAuthClient } from "@/utils";
+import { getAgent, getAuthClient, getNfid } from "@/utils";
 // @ts-ignore
 import { idlFactory as AssetFactory } from "../dids/asset.did.js";
 // @ts-ignore
@@ -60,10 +60,10 @@ const gamingGuildsWorldNodeCanisterId = "ewfpk-4qaaa-aaaap-ab4mq-cai";
 
 
 export const useWorldDeployerClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
   return {
     actor: Actor.createActor(WorldDeployerFactory, {
@@ -95,10 +95,10 @@ export const useWorldDeployerClient = async () => {
 };
 
 export const useWorldHubClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
   return {
     actor: Actor.createActor(WorldHubFactory, {
@@ -119,10 +119,10 @@ export const useWorldHubClient = async () => {
 };
 
 export const useWorldClient = async (canisterId : string) => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
   return {
     actor: Actor.createActor(WorldFactory, {
@@ -138,16 +138,17 @@ export const useWorldClient = async (canisterId : string) => {
       remove_admin: "removeAdmin",
       addTrustedOrigin: "addTrustedOrigins",
       removeTrustedOrigin: "removeTrustedOrigins",
-      getTrustedOrigins: "get_trusted_origins"
+      getTrustedOrigins: "get_trusted_origins",
+      getAllConfigs: "getAllConfigs",
     }
   }
 };
 
 export const useTokenDeployerClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -172,10 +173,10 @@ export const useTokenDeployerClient = async () => {
 }
 
 export const useTokenClient = async (token_canister_id : string) => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -196,10 +197,10 @@ export const useTokenClient = async (token_canister_id : string) => {
 }
 
 export const useGameClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -230,10 +231,10 @@ export const useGameClient = async () => {
 };
 
 export const useAssetClient = async (canister_id: string) => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -252,10 +253,10 @@ export const useAssetClient = async (canister_id: string) => {
 };
 
 export const useMintingDeployerClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -283,10 +284,10 @@ export const useMintingDeployerClient = async () => {
 };
 
 export const useLedgerClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -300,10 +301,10 @@ export const useLedgerClient = async () => {
 };
 
 export const useExtClient = async (canister_id?: string) => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -324,10 +325,10 @@ export const useExtClient = async (canister_id?: string) => {
 };
 
 export const useManagementClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -346,10 +347,10 @@ export const useManagementClient = async () => {
 
 
 export const useGuildsVerifierClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -368,10 +369,10 @@ export const useGuildsVerifierClient = async () => {
 };
 
 export const useGamingGuildsClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -397,10 +398,10 @@ export const useGamingGuildsClient = async () => {
 };
 
 export const useGamingGuildsWorldNodeClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -415,16 +416,17 @@ export const useGamingGuildsWorldNodeClient = async () => {
       getAllUserEntitiesOfSpecificWorlds: "getAllUserEntitiesOfSpecificWorlds",
       getAllUserActionStates: "getAllUserActionStates",
       getActionHistory: "getActionHistory",
-      getUserEntitiesFromWorldNodeComposite: "getUserEntitiesFromWorldNodeComposite"
+      getUserEntitiesFromWorldNodeComposite: "getUserEntitiesFromWorldNodeComposite",
+      getUserEntitiesFromWorldNodeFilteredSortingComposite: "getUserEntitiesFromWorldNodeFilteredSortingComposite"
     },
   };
 };
 
 export const useBoomLedgerClient = async () => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
 
   const agent = await getAgent(identity);
 
@@ -441,10 +443,10 @@ export const useBoomLedgerClient = async () => {
 
 
 export const useICRCLedgerClient = async (canister_id: string) => {
-  const authClient = await getAuthClient();
-  const identity = authClient?.getIdentity();
-  // const nfidClient = await getNfid();
-  // const identity = nfidClient.getIdentity();
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
   return {
     actor: Actor.createActor(BOOMLedgerFactory, {

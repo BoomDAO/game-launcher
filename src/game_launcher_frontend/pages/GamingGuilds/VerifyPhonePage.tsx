@@ -58,7 +58,7 @@ const VerifyPhonePage = () => {
     
       const close = (): void => {
         setState({ isOpen: false });
-        navigate(navPaths.gaming_guilds);
+        navigate(navPaths.home);
       };
     
       const [state, setState] = React.useState<StateTypes>({

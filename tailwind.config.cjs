@@ -15,6 +15,8 @@ module.exports = {
         error: colors.red[400],
         success: colors.green[500],
         info: colors.yellow[500],
+        p_blue_light: "#0C60D0",
+        p_blue_dark: "#2BC1E7",
       },
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],

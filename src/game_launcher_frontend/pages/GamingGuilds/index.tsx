@@ -42,7 +42,6 @@ const GamingGuilds = () => {
     return (
         <>
             <GamingGuildBanner />
-            <Space size="medium" />
             <div className="flex justify-around">
                 <div className="w-full">
                     <GuildTabs tabs={tabItems} active={activeTab} setActive={setActiveTab} />
