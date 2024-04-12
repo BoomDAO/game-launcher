@@ -165,7 +165,15 @@ export const idlFactory = ({ IDL }) => {
     'active' : IDL.Vec(TokenInfo),
     'inactive' : IDL.Vec(TokenInfo),
   });
-  const Result_2 = IDL.Variant({ 'ok' : TokensInfo, 'err' : IDL.Text });
+  const Result_3 = IDL.Variant({ 'ok' : TokensInfo, 'err' : IDL.Text });
+  const ParticipantDetails = IDL.Record({
+    'icp_e8s' : IDL.Nat64,
+    'account' : Account,
+    'refund_result' : IDL.Opt(Icrc1TransferResult),
+    'token_e8s' : IDL.Opt(IDL.Nat),
+    'mint_result' : IDL.Opt(TransferResult__1),
+  });
+  const Result_2 = IDL.Variant({ 'ok' : ParticipantDetails, 'err' : IDL.Text });
   const Result_1 = IDL.Variant({ 'ok' : TokenSwapConfigs, 'err' : IDL.Text });
   return IDL.Service({
     'create_icrc_token' : IDL.Func(
@@ -184,10 +192,20 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Text, Token))],
         ['query'],
       ),
-    'getAllTokensInfo' : IDL.Func([], [Result_2], ['query']),
+    'getAllTokensInfo' : IDL.Func([], [Result_3], ['query']),
     'getLedgerWasmDetails' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Nat32, IDL.Vec(IDL.Nat8)))],
+        ['query'],
+      ),
+    'getParticipationDetails' : IDL.Func(
+        [
+          IDL.Record({
+            'tokenCanisterId' : IDL.Text,
+            'participantId' : IDL.Text,
+          }),
+        ],
+        [Result_2],
         ['query'],
       ),
     'getTotalLedgerWasms' : IDL.Func([], [IDL.Nat], ['query']),

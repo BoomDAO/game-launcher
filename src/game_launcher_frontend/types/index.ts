@@ -674,3 +674,11 @@ export interface LaunchCardProps {
   swap: SwapConfigs;
   token: TokenConfigs;
 }
+
+export interface ParticipantDetails {
+  'icp_e8s' : bigint,
+  'account' : Account,
+  'refund_result' : [] | [Icrc1TransferResult],
+  'token_e8s' : [] | [bigint],
+  'mint_result' : [] | [TransferResult__1],
+}

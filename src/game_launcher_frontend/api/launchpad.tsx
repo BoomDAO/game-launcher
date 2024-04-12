@@ -12,7 +12,7 @@ import {
 import { swapCanisterId, useICRCLedgerClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { LaunchCardProps, TokensInfo } from "@/types";
+import { LaunchCardProps, ParticipantDetails, TokensInfo } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import { string } from "zod";
@@ -20,7 +20,8 @@ import { AccountIdentifier } from "@dfinity/ledger-icp";
 import Tokens from "../locale/en/Tokens.json";
 
 export const queryKeys = {
-    tokens_info: "tokens_info"
+    tokens_info: "tokens_info",
+    participant_details: "participant_details"
 };
 
 function closeToast() {
@@ -147,6 +148,27 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
     });
 };
 
+export const useGetParticipationDetails = (canisterId? : string): UseQueryResult<String> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.participant_details],
+        queryFn: async () => {
+            const { actor, methods } = await useSwapCanisterClient();
+            let details = await actor[methods.getParticipationDetails]({
+                tokenCanisterId: canisterId? canisterId : "",
+                participantId: (session?.address)
+            }) as {
+                ok: ParticipantDetails
+            };
+            if(details.ok == undefined) {
+                return "0";
+            } else {
+                let amt = (details.ok.icp_e8s / BigInt(100000000));
+                return String(amt);
+            }
+        },
+    });
+};
 
 export const useParticipateICPTransfer = () => {
     const { t } = useTranslation();

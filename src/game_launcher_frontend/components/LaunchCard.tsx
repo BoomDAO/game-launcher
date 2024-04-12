@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { cx } from "@/utils";
 import { navPaths } from "@/shared";
 import FormattedDate from "./FormattedDate";
+import { useGetParticipationDetails } from "@/api/launchpad";
 
 interface TokenConfigs {
     name: string;
@@ -79,6 +80,8 @@ const LaunchCard = ({
         }
     }
 
+    const { data, isLoading } = useGetParticipationDetails(canisterId);
+
     return (
         <Center>
             {
@@ -116,12 +119,26 @@ const LaunchCard = ({
                             </div>
                         </div>
                         <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
+                        <div className="flex">
+                            {
+                                (canisterId) ? <div className="w-1/2">
+                                    <button className="w-11/12 gradient-bg-blue rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>PARTICIPATE</button>
+                                    <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantIcp} ICP required to Participate. </p>
+                                </div> : <></>
+                            }
+                            {
+                                (isLoading) ? <Loader className="w-10"></Loader> :
+                                    (data != "0") ? <div className={cx("dark:text-black text-white text-xs mt-3 pl-2 font-light", (canisterId)? "border-l-2" : "")}>
+                                        <p>YOU HAVE ALREADY CONTRIBUTED</p>
+                                        <div className="flex">
+                                            <img src="/icp.svg" className="w-10 mt-0.5" />
+                                            <p className="pt-1.5 font-semibold text-sm">{data} ICP</p>
+                                        </div>
+                                    </div> : <></>
+                            }
+                        </div>
                         {
-                            (canisterId) ? <div className="">
-                                <Button className="gradient-bg-blue rounded-sm mt-2" onClick={handleParticipate}>PARTICIPATE</Button>
-                                <p className="dark:text-black text-white text-xs mt-1">Minimum {swap.minParticipantIcp} ICP required to Participate. </p>
-                                <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
-                            </div> : <></>
+                            (canisterId) ? <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div> : <></>
                         }
                         <div className="pt-2">
                             <div className="flex text-white dark:text-black justify-between font-light text-sm">

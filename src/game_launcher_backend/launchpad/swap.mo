@@ -793,4 +793,14 @@ actor SwapCanister {
     });
   };
 
+  public query func getParticipationDetails(args : { participantId : Text; tokenCanisterId : Text; }) : async (Result.Result<Swap.ParticipantDetails, Text>) {
+    let ?allParticipants = Trie.find(_swap_participants, Helper.keyT(args.tokenCanisterId), Text.equal) else {
+      return #err("There are no swap participants yet.");
+    };
+    let ?details = Trie.find(allParticipants, Helper.keyT(args.participantId), Text.equal) else {
+      return #err("no current participation");
+    };
+    return #ok(details);
+  };
+
 };
