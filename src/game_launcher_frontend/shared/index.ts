@@ -6,6 +6,7 @@ export const serverErrorMsg = "Something went wrong.";
 
 export const navPaths = {
   home: "/",
+  gaming_guilds: "/gaming-guilds",
   upload_games: "/upload-games",
   upload_games_new: "/upload-games/create-game",
   manage_nfts: "/manage-nfts",

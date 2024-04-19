@@ -8,9 +8,11 @@ import Button from "./ui/Button";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/context/authContext";
 import { useGlobalContext } from "@/context/globalContext";
-import { useClaimReward } from "@/api/guilds";
+import { useClaimReward, useGetUserProfileDetail } from "@/api/guilds";
 import toast from "react-hot-toast";
 import { cx } from "@/utils";
+import { UserProfile } from "@/types";
+import { useGetTexts } from "@/api/common";
 
 interface CardProps {
   aid: string;
@@ -52,7 +54,9 @@ const GuildCard = ({
   const navigate = useNavigate();
   const session = useAuthContext();
   const { setIsOpenNavSidebar } = useGlobalContext();
+  const { data: userProfile, isLoading: isProfileLoading } = useGetUserProfileDetail();
   const { mutate, data, isLoading, isSuccess } = useClaimReward();
+  const { data: text, isLoading: isTextLoading } = useGetTexts();
 
   const handleItemsOnClick = (name: string, imageUrl: string, description: string) => {
     toast.custom((t) => (
@@ -64,6 +68,42 @@ const GuildCard = ({
               <p className="pt-2 pl-3 text-xl">{name}</p>
             </div>
             <p className="text-base pt-3 pb-6">{description}</p>
+            <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
+          </div>
+        </div>
+      </div>
+    ));
+  };
+
+  const checkUserDetailsExist = (detail: UserProfile | undefined) => {
+    if (detail == undefined) {
+      return false;
+    }
+    else if (detail.uid.substring(0, 10) == detail.username.substring(0, 10) || detail.image == "/usericon.png") {
+      return false;
+    }
+    else return true;
+  };
+
+  const handleUserDetailsNotExist = () => {
+    toast.custom((t) => (
+      <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+        <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
+          <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+            <div className="text-center">
+              <p className="text-xl font-semibold">SET UP YOUR ACCOUNT</p>
+              {
+                (isTextLoading) ? <Loader className="w-10 h-10"></Loader> : <p className="mt-2">{text.guild_card.setup_detail}</p>
+              }
+              {
+                (isTextLoading) ? <Loader className="w-10 h-10"></Loader> : <p className="mt-4"><b>Warning</b> : {text.guild_card.setup_warning}</p>
+              }
+              <Button onClick={() => {
+                let current_url = new URL(window.location.href);
+                navigate("/profile/picture");
+                toast.remove();
+              }} className="m-auto mt-4">PROCEED</Button>
+            </div>
             <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
           </div>
         </div>
@@ -87,7 +127,7 @@ const GuildCard = ({
               <div className="w-8/12 ml-4">
                 <div className="w-full flex">
                   <div className="text-xl font-semibold mt-1">{title}</div>
-                  <Button className="order-2 ml-auto gradient-bg-green h-8" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); mutate({ aid, rewards }); }} isLoading={isLoading} isClaimSuccess={isSuccess}>{t("gaming_guilds.Quests.complete_button")}</Button>
+                  <Button className="order-2 ml-auto gradient-bg-green h-8" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); if (!checkUserDetailsExist(userProfile)) return handleUserDetailsNotExist(); mutate({ aid, rewards }); }} isLoading={isLoading} isClaimSuccess={isSuccess}>{t("gaming_guilds.Quests.complete_button")}</Button>
                 </div>
                 <div className="text-sm font-light mt-2">{description}</div>
                 {
@@ -191,6 +231,7 @@ const GuildCard = ({
                           if (session.session == null) {
                             return setIsOpenNavSidebar(true);
                           };
+                          if (!checkUserDetailsExist(userProfile)) return handleUserDetailsNotExist();
                           let new_url = new URL(gameUrl);
                           let current_url = new URL(window.location.href);
                           if (new_url.origin == current_url.origin) {
@@ -295,7 +336,7 @@ const GuildCard = ({
                 <div className="w-8/12 ml-4">
                   <div className="w-full flex">
                     <div className="text-xl font-semibold mt-1">{title}</div>
-                    <Button className="order-2 ml-auto gradient-bg-grey h-8 cursor-default" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); }}>{t("gaming_guilds.Quests.claimed_button")}</Button>
+                    <Button className="order-2 ml-auto gradient-bg-grey h-8 cursor-default" onClick={() => { if (session.session == null) return setIsOpenNavSidebar(true); if (!checkUserDetailsExist(userProfile)) return handleUserDetailsNotExist(); }}>{t("gaming_guilds.Quests.claimed_button")}</Button>
                   </div>
                   <div className="text-sm font-light mt-2">{description}</div>
                   {

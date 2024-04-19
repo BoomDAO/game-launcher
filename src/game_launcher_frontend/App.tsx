@@ -44,6 +44,7 @@ function App() {
             <Toast />
             <Routes>
               <Route path={navPaths.home} element={<Home />} />
+              <Route path={navPaths.gaming_guilds} element={<Home />} />
               <Route
                 path={`${navPaths.browse_games}`}
                 element={<BrowseGames />}

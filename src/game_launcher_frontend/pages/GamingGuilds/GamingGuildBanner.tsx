@@ -17,7 +17,7 @@ const GamingGuildBanner = () => {
 
     // const { t } = useTranslation();
     // const { data : balance = "0" } = useGetBoomBalance();
-    const { t, isLoading } = useGetTexts();
+    const { data, isLoading } = useGetTexts();
     const { smallHeight } = useBreakpoint();
 
     return (
@@ -27,7 +27,7 @@ const GamingGuildBanner = () => {
                     {
                         isLoading ? <Loader className="w-20"></Loader> :
                             <TypeAnimation
-                                sequence={t.home.title_sequence}
+                                sequence={data.home.title_sequence}
                                 speed={20}
                                 style={{ fontSize: '2.5em' }}
                                 repeat={Infinity}

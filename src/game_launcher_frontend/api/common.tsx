@@ -30,6 +30,6 @@ export const useGetTexts = () => {
         },
     });
     console.log(data);
-    if (data) return { t: data, ...rest };
-    return { t: defaultTexts, ...rest };
+    if (data) return { data: data, ...rest };
+    return { data: defaultTexts, ...rest };
 };

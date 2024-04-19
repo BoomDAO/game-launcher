@@ -4,5 +4,9 @@
     "title_speed": 20,
     "title_deletion_speed": 40,
     "title_sequence": []
+  },
+  "guild_card": {
+    "setup_detail": "",
+    "setup_warning": ""
   }
 }
