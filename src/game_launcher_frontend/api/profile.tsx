@@ -279,7 +279,6 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string): U
             if (isAnonPresent) {
                 response.totalMembers = (Number(response.totalMembers) - 1).toString();
             }
-            console.log(response);
             return response;
         },
     });
@@ -646,11 +645,12 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                 for (let f = 0; f < outcomes.length; f += 1) {
                                     let possible_outcome_type = outcomes[f]['possibleOutcomes'][0]['option'];
                                     if (isTransferIcrc(possible_outcome_type)) {
+                                        let token_config = getFieldsOfConfig(configs, possible_outcome_type.transferIcrc.canister);
                                         entry.rewards.push({
-                                            name: "BOOM",
-                                            imageUrl: "/boom-logo.png",
+                                            name: token_config.name,
+                                            imageUrl: token_config.imageUrl,
                                             value: (possible_outcome_type.transferIcrc.quantity).toString(),
-                                            description: "The BOOM token that powers the BOOM gaming ecosystem and can be traded on ICP DEXs."
+                                            description: token_config.description
                                         });
                                     };
                                     if (isUpdateEntity(possible_outcome_type)) {
@@ -731,7 +731,6 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                     final_response.push(response[x]);
                 }
             };
-            console.log(final_response);
             return final_response;
         },
     });

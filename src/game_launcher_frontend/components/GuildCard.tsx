@@ -135,7 +135,7 @@ const GuildCard = ({
                     <>
                       {
                         progress.map(({ name, imageUrl, quantity, description }) => (
-                          <div className="flex w-2/3 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
+                          <div className="flex w-2/3 h-6 bg-gray-300/50 rounded-3xl mt-4 relative" key={imageUrl}>
                             <div className="flex cursor-pointer text-sm z-10 absolute pl-3" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
                               {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
                               <div className="mt-0.5 ml-1">{name}</div>
@@ -248,7 +248,7 @@ const GuildCard = ({
                       <>
                         {
                           progress.map(({ name, imageUrl, quantity, description }) => (
-                            <div className="flex w-2/3 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
+                            <div className="flex w-2/3 h-6 bg-gray-300/50 rounded-3xl mt-4 relative" key={imageUrl}>
                               <div className="flex cursor-pointer text-sm z-10 absolute pl-3" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
                                 {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
                                 <div className="mt-0.5 ml-1">{name}</div>
@@ -344,7 +344,7 @@ const GuildCard = ({
                       <>
                         {
                           progress.map(({ name, imageUrl, quantity, description }) => (
-                            <div className="flex w-2/3 h-6 bg-gray-300/50 rounded-3xl mt-4 relative">
+                            <div className="flex w-2/3 h-6 bg-gray-300/50 rounded-3xl mt-4 relative" key={imageUrl}>
                               <div className="flex cursor-pointer text-sm z-10 absolute pl-3" key={imageUrl} onClick={() => handleItemsOnClick(name, imageUrl, description)}>
                                 {(quantity != "") ? <div className="mt-0.5">{quantity}</div> : <></>}
                                 <div className="mt-0.5 ml-1">{name}</div>

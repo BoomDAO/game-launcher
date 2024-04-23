@@ -29,7 +29,6 @@ export const useGetTexts = () => {
             } as Texts;
         },
     });
-    console.log(data);
     if (data) return { data: data, ...rest };
     return { data: defaultTexts, ...rest };
 };
