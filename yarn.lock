@@ -1047,10 +1047,10 @@
     prop-types "^15.8.1"
     react-is "^18.2.0"
 
-"@nfid/embed@^0.10.1-alpha.6":
-  version "0.10.1-alpha.6"
-  resolved "https://registry.npmjs.org/@nfid/embed/-/embed-0.10.1-alpha.6.tgz"
-  integrity sha512-zIYqgpu70ZONPvxlMIxJ/S5YuPMCFp5zssjAg5e/7clZjQfMBi8PAnGVaZn0fGUAUVUJYUSsC9OzSyU3chQw8g==
+"@nfid/embed@^0.10.3":
+  version "0.10.3"
+  resolved "https://registry.npmjs.org/@nfid/embed/-/embed-0.10.3.tgz"
+  integrity sha512-ZEcMG8YxZCvZUXt1V+XZsThhvuMKC199lZoHJk+5gBl74AQDpr/moo8Ex0JcKeY03khyAm16ogx3WyDw/eIDew==
   dependencies:
     uuid "9"
 

@@ -255,7 +255,7 @@ const getFieldsOfConfig = (configs: GuildConfig[], config: string) => {
         gameUrl: "",
         description: ""
     };
-    for (let i = 0; i < configs.length; i += 1) {
+    for (let i = 0; i < (configs.length)? configs.length : 0; i += 1) {
         if (configs[i].cid == config) {
             for (let j = 0; j < configs[i].fields.length; j += 1) {
                 if (configs[i].fields[j].fieldName == "name") {
@@ -595,7 +595,13 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         all_promises.push(actor[methods.getActionStatusComposite]({ uid: current_user_principal, aid: actions[k].aid }) as Promise<Result_7>);
                         for (let field = 0; field < quest_fields.length; field += 1) {
                             if (quest_fields[field].fieldName == actions[k].aid) {
-                                let ids_arr = (quest_fields[field].fieldValue).split(",", 5);
+                                let x = (quest_fields[field].fieldValue).split(",", 5);
+                                let ids_arr : string[] = [];
+                                let p_string = (quest_fields[field].fieldValue);
+                                if(x.length > 0)ids_arr.push(p_string.substring(p_string.length - 63));
+                                if(x.length > 1)ids_arr.push(p_string.substring(p_string.length - 127, p_string.length - 64));
+                                if(x.length > 2)ids_arr.push(p_string.substring(p_string.length - 191 , p_string.length - 128));
+                                ids_arr.push("lgjp4-nfvab-rl4wt-77he2-3hnxe-24pvi-7rykv-6yyr4-sqwdd-4j2fz-fae");
                                 for (let j = 0; j < ids_arr.length; j += 1) {
                                     user_ids_map.set(ids_arr[j], true);
                                 };
@@ -919,7 +925,11 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         let quest_fields: Field[] = getFieldsOfEntity(entities.ok, "quest_participants");
                         for (let field = 0; field < quest_fields.length; field += 1) {
                             if (quest_fields[field].fieldName == actions[k].aid) {
-                                user_principals = (quest_fields[field].fieldValue).split(",", 5);
+                                let x = (quest_fields[field].fieldValue).split(",", 5);
+                                let p_string = (quest_fields[field].fieldValue);
+                                if(x.length > 0)user_principals.push(p_string.substring(p_string.length - 63));
+                                if(x.length > 1)user_principals.push(p_string.substring(p_string.length - 127, p_string.length - 64));
+                                if(x.length > 2)user_principals.push(p_string.substring(p_string.length - 191 , p_string.length - 128));
                             };
                         };
                         if (user_principals.length == 0) {
