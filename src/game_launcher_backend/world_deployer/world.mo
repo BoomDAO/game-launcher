@@ -79,6 +79,7 @@ actor class WorldTemplate(owner : Principal) = this {
     //stable memory
     private stable var _owner : Text = Principal.toText(owner);
     private stable var _admins : [Text] = [Principal.toText(owner)];
+    private stable var _devWorldCanisterId : Text = "";
 
     //Configs
     // empty stable memory used for migration - (used in preupgrade currently)
@@ -168,6 +169,12 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     //# INTERNAL FUNCTIONS
+    private func isDevWorldCanister_() : Bool {
+        let currentWorldCanisterId = Principal.toText(WorldId());
+        if(_devWorldCanisterId != "" and _devWorldCanisterId == currentWorldCanisterId) return true;
+        return false;
+    };
+
     private func isAdmin_(_p : Principal) : (Bool) {
         var p : Text = Principal.toText(_p);
         for (i in _admins.vals()) {
@@ -240,6 +247,11 @@ actor class WorldTemplate(owner : Principal) = this {
     public shared ({ caller }) func removeAllUserNodeRef() : async () {
         assert (isAdmin_(caller));
         userPrincipalToUserNode := Trie.empty();
+    };
+
+    public shared ({caller}) func setDevWorldCanisterId(cid : Text) : async () {
+        assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe")); 
+        _devWorldCanisterId := cid;
     };
 
     //# UTILS
@@ -433,7 +445,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared ({ caller }) func createTestQuestConfigs(args : [{ cid : Text; name : Text; description : Text; image_url : Text; quest_url : Text }]) : async (Result.Result<Text, Text>) {
-        assert (WorldId() == Principal.fromText("6ehny-oaaaa-aaaal-qclyq-cai"));
+        assert (isDevWorldCanister_());
         for (arg in args.vals()) {
             var fieldsBuffer = Buffer.Buffer<(Text, Text)>(0);
             fieldsBuffer.add(("name", arg.name));
@@ -465,7 +477,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared ({ caller }) func createTestQuestActions(arg : { game_world_canister_id : Text; actionId_1 : Text; actionId_2 : Text }) : async (Result.Result<Text, Text>) {
-        assert (WorldId() == Principal.fromText("6ehny-oaaaa-aaaal-qclyq-cai"));
+        assert (isDevWorldCanister_());
         // add Game Canister Id field in "games_world" config
         var configResult = getSpecificConfig_("games_world");
         switch configResult {
@@ -606,57 +618,6 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok("You have created two actions : " #newActionId_1 # " and " #newActionId_2);
     };
 
-    // public shared ({ caller }) func createMinigameWinAction() : async (Result.Result<Text, Text>) {
-    //     assert (isAdmin_(caller) or caller == WorldId());
-
-    //     return await createAction({
-    //         aid = "minigame_win";
-    //         callerAction = ?{
-    //             actionConstraint = null;
-    //             actionResult = {
-    //                 outcomes = [
-    //                     {
-    //                         possibleOutcomes = [
-    //                             {
-    //                                 option = #updateEntity {
-    //                                     wid = null;
-    //                                     eid = "minigame_count";
-    //                                     updates = [
-    //                                         #incrementNumber {
-    //                                             fieldName = "amount";
-    //                                             fieldValue = #number 1;
-    //                                         },
-    //                                     ];
-    //                                 };
-    //                                 weight = 100;
-    //                             },
-    //                         ];
-    //                     },
-    //                     {
-    //                         possibleOutcomes = [
-    //                             {
-    //                                 option = #updateEntity {
-    //                                     wid = null;
-    //                                     eid = "xp";
-    //                                     updates = [
-    //                                         #incrementNumber {
-    //                                             fieldName = "amount";
-    //                                             fieldValue = #number 500;
-    //                                         },
-    //                                     ];
-    //                                 };
-    //                                 weight = 100;
-    //                             },
-    //                         ];
-    //                     },
-    //                 ];
-    //             };
-    //         };
-    //         targetAction = null;
-    //         worldAction = null;
-    //     });
-    // };
-
     //DELETE CONFIG
     public shared ({ caller }) func deleteConfig(args : { cid : Text }) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
@@ -734,8 +695,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared ({ caller }) func deleteTestQuestActionStateForUser(args : { aid : Text }) : async (Result.Result<(), (Text)>) {
-        assert (WorldId() == Principal.fromText("6ehny-oaaaa-aaaal-qclyq-cai"));
-
+        assert (isDevWorldCanister_());
         switch ((Trie.find(userPrincipalToUserNode, Utils.keyT(Principal.toText(caller)), Text.equal))) {
             case (?nodeId) {
                 let userNode : UserNode = actor (nodeId);
