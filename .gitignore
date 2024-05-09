@@ -30,3 +30,4 @@ package-set.dhall
 *.sw?
 *.tsbuildinfo
 sendgrid.env
+.env

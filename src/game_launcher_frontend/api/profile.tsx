@@ -179,9 +179,9 @@ const msToTime = (ms: number) => {
     let days = (hours / 24).toString().split(".")[0];
     hours = hours % 24;
     let res = "";
-    if(days != "0") res = res + days + "D ";
-    if(hours != 0) res = res + hours + "H ";
-    if(minutes != 0) res = res + minutes + "M ";
+    if (days != "0") res = res + days + "D ";
+    if (hours != 0) res = res + hours + "H ";
+    if (minutes != 0) res = res + minutes + "M ";
     return res;
 }
 
@@ -191,7 +191,7 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string): U
         queryKey: [queryKeys.all_guild_members_info, page, leaderboardOf],
         queryFn: async () => {
             let sortingType = leaderboardOf;
-            if(leaderboardOf == "boom_leaderboard") {
+            if (leaderboardOf == "boom_leaderboard") {
                 sortingType = "xp_leaderboard";
             }
             let response: MembersInfo = {
@@ -205,7 +205,7 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string): U
             let entities: { ok: StableEntity[] } = { ok: [] };
             // Here 1 call will get added for Cases when leaderboards of different worlds will be fetched as well, currently we have only BOOM leaderboard
             await Promise.all(
-                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_members"]) as Promise<{ ok: StableEntity[]; }>, actor[methods.getUserEntitiesFromWorldNodeFilteredSortingComposite](gamingGuildsCanisterId, gamingGuildsCanisterId, sortingType, { 'Descending' : null },  [BigInt(page - 1)]) as Promise<{ ok: StableEntity[] }>]
+                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, ["total_members"]) as Promise<{ ok: StableEntity[]; }>, actor[methods.getUserEntitiesFromWorldNodeFilteredSortingComposite](gamingGuildsCanisterId, gamingGuildsCanisterId, sortingType, { 'Descending': null }, [BigInt(page - 1)]) as Promise<{ ok: StableEntity[] }>]
             ).then((results => {
                 totalMembersEntity = results[0];
                 entities = results[1];
@@ -356,12 +356,11 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         for (let field = 0; field < quest_fields.length; field += 1) {
                             if (quest_fields[field].fieldName == actions[k].aid) {
                                 let x = (quest_fields[field].fieldValue).split(",", 5);
-                                let ids_arr : string[] = [];
+                                let ids_arr: string[] = [];
                                 let p_string = (quest_fields[field].fieldValue);
-                                if(x.length > 0)ids_arr.push(p_string.substring(p_string.length - 63));
-                                if(x.length > 1)ids_arr.push(p_string.substring(p_string.length - 127, p_string.length - 64));
-                                if(x.length > 2)ids_arr.push(p_string.substring(p_string.length - 191 , p_string.length - 128));
-                                ids_arr.push("lgjp4-nfvab-rl4wt-77he2-3hnxe-24pvi-7rykv-6yyr4-sqwdd-4j2fz-fae");
+                                if (x.length > 0) ids_arr.push(p_string.substring(p_string.length - 63));
+                                if (x.length > 1) ids_arr.push(p_string.substring(p_string.length - 127, p_string.length - 64));
+                                if (x.length > 2) ids_arr.push(p_string.substring(p_string.length - 191, p_string.length - 128));
                                 for (let j = 0; j < ids_arr.length; j += 1) {
                                     user_ids_map.set(ids_arr[j], true);
                                 };
@@ -371,6 +370,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                     };
                 }
             };
+            user_ids_map.set("lgjp4-nfvab-rl4wt-77he2-3hnxe-24pvi-7rykv-6yyr4-sqwdd-4j2fz-fae", true);
             for (const id of user_ids_map.keys()) {
                 all_promises.push(worldHub.actor[worldHub.methods.getUserProfile]({ uid: id }) as Promise<{ uid: string; username: string; image: string; }>);
                 total_user_profiles = total_user_profiles + 1;
@@ -379,7 +379,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                 for (let i = 0; i < world_ids.length; i += 1) {
                     other_worlds_configs.set(world_ids[i], results[i]);
                 };
-                for(let x = total_world_configs; x < total_world_configs + total_actionStatus; x += 1) {
+                for (let x = total_world_configs; x < total_world_configs + total_actionStatus; x += 1) {
                     actionStatusResponseOfUser.push(results[x]);
                 };
                 for (let x = total_actionStatus + total_world_configs; x < results.length; x += 1) {
@@ -485,7 +485,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                             let world_configs = other_worlds_configs.get(world_id);
                                             let fields = getFieldsOfConfig(world_configs, actionHistoryConstraints.updateEntity.eid);
                                             if (fields.name != "" && fields.imageUrl != "") {
-                                                if(actionHistoryConstraints.updateEntity.eid.includes("badge") || actionHistoryConstraints.updateEntity.eid.includes("Badge")) {
+                                                if (actionHistoryConstraints.updateEntity.eid.includes("badge") || actionHistoryConstraints.updateEntity.eid.includes("Badge")) {
                                                     let mustHaveEntry = {
                                                         name: fields.name,
                                                         imageUrl: fields.imageUrl,
@@ -508,7 +508,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         } else {
                                             let fields = getFieldsOfConfig(configs, status.actionHistoryStatus[x].eid);
                                             if (fields.name != "" && fields.imageUrl != "") {
-                                                if(status.actionHistoryStatus[x].eid.includes("badge") || status.actionHistoryStatus[x].eid.includes("Badge")) {
+                                                if (status.actionHistoryStatus[x].eid.includes("badge") || status.actionHistoryStatus[x].eid.includes("Badge")) {
                                                     let mustHaveEntry = {
                                                         name: fields.name,
                                                         imageUrl: fields.imageUrl,
@@ -535,7 +535,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         let expected = (status.entitiesStatus[x].expectedValue).split(".")[0].toString();
                                         let fields = getFieldsOfConfig(configs, status.entitiesStatus[x].eid);
                                         if (fields.name != "" && fields.imageUrl != "") {
-                                            if(status.entitiesStatus[x].eid.includes("badge") || status.entitiesStatus[x].eid.includes("Badge")) {
+                                            if (status.entitiesStatus[x].eid.includes("badge") || status.entitiesStatus[x].eid.includes("Badge")) {
                                                 let mustHaveEntry = {
                                                     name: fields.name,
                                                     imageUrl: fields.imageUrl,
@@ -557,7 +557,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                         };
                                         fields = getFieldsOfConfig(configs, status.entitiesStatus[x].fieldName);
                                         if (fields.name != "" && fields.imageUrl != "") {
-                                            if(status.entitiesStatus[x].fieldName.includes("badge") || status.entitiesStatus[x].fieldName.includes("Badge")) {
+                                            if (status.entitiesStatus[x].fieldName.includes("badge") || status.entitiesStatus[x].fieldName.includes("Badge")) {
                                                 let mustHaveEntry = {
                                                     name: fields.name,
                                                     imageUrl: fields.imageUrl,
@@ -640,7 +640,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                                     entry.type = "Incomplete"
                                 }
 
-                            } 
+                            }
                             else { // if actionConstraints not present
                                 entry.type = "Completed";
                             };
@@ -687,9 +687,9 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                             if (quest_fields[field].fieldName == actions[k].aid) {
                                 let x = (quest_fields[field].fieldValue).split(",", 5);
                                 let p_string = (quest_fields[field].fieldValue);
-                                if(x.length > 0)user_principals.push(p_string.substring(p_string.length - 63));
-                                if(x.length > 1)user_principals.push(p_string.substring(p_string.length - 127, p_string.length - 64));
-                                if(x.length > 2)user_principals.push(p_string.substring(p_string.length - 191 , p_string.length - 128));
+                                if (x.length > 0) user_principals.push(p_string.substring(p_string.length - 63));
+                                if (x.length > 1) user_principals.push(p_string.substring(p_string.length - 127, p_string.length - 64));
+                                if (x.length > 2) user_principals.push(p_string.substring(p_string.length - 191, p_string.length - 128));
                             };
                         };
                         if (user_principals.length == 0) {
@@ -761,14 +761,12 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
             const { actor, methods } = await useGamingGuildsWorldNodeClient();
             const worldHub = await useWorldHubClient();
             let UserEntity: Result_5 = { ok: [] };
-            let entities: Result_5 = { ok: [] };
             let profile: { uid: string; username: string; image: string; } = { uid: "", username: "", image: "" };
             await Promise.all(
-                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, [current_user_principal]) as Promise<Result_5>, worldHub.actor[worldHub.methods.getUserProfile]({ uid: current_user_principal }) as Promise<{ uid: string; username: string; image: string; }>, actor[methods.getAllUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, []) as Promise<Result_5>]
+                [actor[methods.getSpecificUserEntities](gamingGuildsCanisterId, gamingGuildsCanisterId, [current_user_principal]) as Promise<Result_5>, worldHub.actor[worldHub.methods.getUserProfile]({ uid: current_user_principal }) as Promise<{ uid: string; username: string; image: string; }>]
             ).then((results) => {
                 UserEntity = results[0];
                 profile = results[1];
-                entities = results[2];
             });
             if (isResult_5Ok(UserEntity)) {
                 let fields = UserEntity.ok[0].fields;
@@ -778,19 +776,11 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
                     }
                 };
             } else {
-                let userIsMember = false;
-                for (let i = 0; i < entities.ok.length; i += 1) {
-                    if (entities.ok[i].eid == current_user_principal) {
-                        userIsMember = true;
-                    }
-                };
-                if (!userIsMember) {
-                    let guildCanister = await useGamingGuildsClient();
-                    let res = await guildCanister.actor[guildCanister.methods.processAction]({
-                        fields: [],
-                        actionId: "create_profile"
-                    });
-                }
+                let guildCanister = await useGamingGuildsClient();
+                let res = await guildCanister.actor[guildCanister.methods.processAction]({
+                    fields: [],
+                    actionId: "create_profile"
+                });
             };
             response = {
                 uid: profile.uid,

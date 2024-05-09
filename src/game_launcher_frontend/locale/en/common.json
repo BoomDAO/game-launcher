@@ -534,7 +534,7 @@
     "tab_2": {
       "title": "NFTs",
       "nfts_loading": "Loading Your NFTs",
-      "no_nfts": "You dont hold any NFTs from our supported NFT collections.",
+      "no_nfts": "You dont hold any NFTs from this supported NFT collection.",
       "transfer_success": "NFT transferred successfully.",
       "transfer_error": "Some error occured. Contact dev team."
     }
