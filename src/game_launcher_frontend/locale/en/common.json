@@ -514,6 +514,7 @@
       "complete_button": "CLAIM",
       "incomplete_button": "GO",
       "claimed_button": "DONE",
+      "twitter_quest_button": "VERIFY TWEET",
       "claim_reward_error": "Error in claiming reward, contact dev team in discord"
     }
   },

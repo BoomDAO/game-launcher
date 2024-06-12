@@ -25,6 +25,20 @@ export interface UserProfile {
   image: string;
 };
 
+export interface UserCompleteDetail {
+  uid: string;
+  username: string;
+  xp: string;
+  image: string;
+  twitter: {
+    username: string;
+    id: string;
+  },
+  discord: {
+    username: string;
+  }
+};
+
 export interface Game {
   url: string;
   name: string;
@@ -282,8 +296,17 @@ export interface UserNftInfo {
   balance: string;
   logo: string;
   url: string;
-  nfts: string[];
+  stakedNfts: [[string, Number]];
+  unstakedNfts: [[string, Number]];
+  dissolvedNfts : [[string, Number, string]];
 };
+
+export interface EXTStake {
+  'staker' : string,
+  'dissolvedAt' : bigint,
+  'stakedAt' : bigint,
+  'tokenIndex' : number,
+}
 
 export interface Profile {
   principal: string;

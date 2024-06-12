@@ -12,7 +12,7 @@ import {
 import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useWorldClient, useICRCLedgerClient, useWorldHubClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { Profile, UserNftInfo, GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState, UpdateAction, ActionOutcomeHistory, ActionStatusReturn, configId, StableConfig, ConfigData, QuestGamersInfo, Result_6, Result_7, Result_5 } from "@/types";
+import { Profile, UserNftInfo, GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState, UpdateAction, ActionOutcomeHistory, ActionStatusReturn, configId, StableConfig, ConfigData, QuestGamersInfo, Result_6, Result_7, Result_5, EXTStake } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import Tokens from "../locale/en/Tokens.json";
@@ -321,6 +321,10 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         requireEntireNode: false
                     });
                     console.log("createNewUser response : " + new_user);
+                    let res = await actor[methods.processAction]({
+                        fields: [],
+                        actionId: "create_profile"
+                    });
                     actionStates = await actor[methods.getAllUserActionStatesComposite]({ uid: current_user_principal }) as Result_6;
                 }
             };
@@ -776,11 +780,7 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
                     }
                 };
             } else {
-                let guildCanister = await useGamingGuildsClient();
-                let res = await guildCanister.actor[guildCanister.methods.processAction]({
-                    fields: [],
-                    actionId: "create_profile"
-                });
+                response.xp = "0";
             };
             response = {
                 uid: profile.uid,
@@ -870,8 +870,11 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
     return useQuery({
         queryKey: [queryKeys.user_nfts],
         queryFn: async () => {
+            const { actor, methods } = await useGamingGuildsClient();
+            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
             let res: UserNftInfo[] = [];
             let registries = [];
+            let stakedRegistries : [[string, EXTStake]] = await actor[methods.getUserExtStakesInfo](current_user_principal) as [[string, EXTStake]];
             for (let i = 0; i < Nfts.nfts.length; i += 1) {
                 const nft_canister = await useExtClient(Nfts.nfts[i].canister);
                 registries.push(nft_canister.actor[nft_canister.methods.getRegistry]());
@@ -886,21 +889,42 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
                             balance: "0",
                             logo: Nfts.nfts[k].logo,
                             url: Nfts.nfts[k].url,
-                            nfts: []
+                            stakedNfts: [],
+                            unstakedNfts: [],
+                            dissolvedNfts: []
                         };
                         let _nfts = [];
+                        let _stakedNfts = [];
+                        let _dissolvedNfts = [];
                         for (let j = 0; j < _registries[k].length; j++) {
                             if (AccountIdentifier.fromPrincipal({
                                 principal: Principal.fromText((session?.address) ? (session.address) : ""),
                                 subAccount: undefined
                             }).toHex() == _registries[k][j][1]) {
-                                _nfts.push(getTokenIdentifier(Nfts.nfts[k].canister, _registries[k][j][0]));
+                                _nfts.push([getTokenIdentifier(Nfts.nfts[k].canister, _registries[k][j][0]), _registries[k][j][0]]);
                             };
                         };
                         if (_nfts.length > 0) {
                             entry.balance = _nfts.length.toString();
-                            entry.nfts = _nfts;
+                            entry.unstakedNfts = _nfts as [[string, Number]];
                         };
+                        for(let j = 0; j < stakedRegistries.length; j += 1) {
+                            let r = stakedRegistries[j][0].split("|");
+                            let collectionCanisterId = r[0];
+                            let tokenIndex = r[1];
+                            if(collectionCanisterId == Nfts.nfts[k].canister && stakedRegistries[j][1].dissolvedAt == BigInt(0)) {
+                                _stakedNfts.push([getTokenIdentifier(Nfts.nfts[k].canister, Number(tokenIndex)), Number(tokenIndex)]);
+                            } else if(collectionCanisterId == Nfts.nfts[k].canister && stakedRegistries[j][1].dissolvedAt != BigInt(0)) {
+                                let delay = 86400000; // 24hrs - ms
+                                let dissolveAt = Number(stakedRegistries[j][1].dissolvedAt / BigInt(1000000));
+                                let current = Date.now();
+                                let remained = Math.max(Math.floor((delay + dissolveAt - current)), 0);
+                                let time_remained = (remained > 0)? String(msToTime(remained)) : "0";
+                                _dissolvedNfts.push([getTokenIdentifier(Nfts.nfts[k].canister, Number(tokenIndex)), Number(tokenIndex), time_remained]);
+                            }
+                        }
+                        entry.stakedNfts = _stakedNfts as [[string, Number]];
+                        entry.dissolvedNfts = _dissolvedNfts as [[string, Number, string]];
                         res.push(entry);
                     };
                     return _registries;
@@ -910,7 +934,163 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
                     registries = response;
                 }
             );
+            console.log(res);
             return res;
+        },
+    });
+};
+
+export const useStakeNft = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async ({
+            collectionCanisterId,
+            index,
+            id
+        }: {
+            collectionCanisterId: string,
+            index: Number,
+            id: string
+        }) => {
+            try {
+                const { actor, methods } = await useGamingGuildsClient();
+                const current_user_principal = (session?.address) ? (session?.address) : "";
+
+                const extCanister = await useExtClient(collectionCanisterId);
+                let req = {
+                    to: {
+                        principal: Principal.fromText(gamingGuildsCanisterId)
+                    },
+                    token: id,
+                    notify: false,
+                    from: {
+                        principal: Principal.fromText(current_user_principal),
+                    },
+                    memo: [],
+                    subaccount: [],
+                    amount: 1,
+                };
+                let transfer_res = await extCanister.actor[extCanister.methods.transfer](req) as {
+                    ok: string,
+                    err: string
+                };
+                if(transfer_res.ok == undefined) {
+                    toast.error("some error occured while transferring your NFT to BOOM Gaming Guild for staking, You can still manually transfer your NFT and then Stake it here otherwise contact dev team in discord.");
+                } else {
+                    toast.success("NFT transferred successfully, do not close before it get staked!");
+                }
+                let res = await actor[methods.stakeExtNft](index, gamingGuildsCanisterId, current_user_principal, collectionCanisterId) as {
+                    ok: string,
+                    err: string
+                };
+                if(res.err != undefined) {
+                    toast.error(res.err);
+                    throw res.err;
+                } else {
+                    toast.success(res.ok);
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
+        },
+    });
+};
+
+export const useDissolveNft = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async ({
+            collectionCanisterId,
+            index,
+        }: {
+            collectionCanisterId: string,
+            index: Number,
+        }) => {
+            try {
+                const { actor, methods } = await useGamingGuildsClient();
+                const current_user_principal = (session?.address) ? (session?.address) : "";
+                let res = await actor[methods.dissolveExtNft](collectionCanisterId, index) as {
+                    ok: string,
+                    err: string
+                };
+                if(res.err != undefined) {
+                    toast.error(res.err);
+                    throw res.err;
+                } else {
+                    toast.success(res.ok);
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
+        },
+    });
+};
+
+export const useDisburseNft = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async ({
+            collectionCanisterId,
+            index,
+        }: {
+            collectionCanisterId: string,
+            index: Number,
+        }) => {
+            try {
+                const { actor, methods } = await useGamingGuildsClient();
+                const current_user_principal = (session?.address) ? (session?.address) : "";
+                let res = await actor[methods.disburseExtNft](collectionCanisterId, index) as {
+                    ok: string,
+                    err: string
+                };
+                if(res.err != undefined) {
+                    toast.error(res.err);
+                    throw res.err;
+                } else {
+                    toast.success(res.ok);
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.user_nfts] });
+            closeToast();
         },
     });
 };

@@ -1,7 +1,7 @@
 export const idlFactory = ({ IDL }) => {
   const Result = IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text });
-  const AccountIdentifier = IDL.Text;
   const userId = IDL.Text;
+  const AccountIdentifier = IDL.Text;
   const nodeId = IDL.Text;
   const entityId = IDL.Text;
   const worldId = IDL.Text;
@@ -104,7 +104,14 @@ export const idlFactory = ({ IDL }) => {
     'addAdmin' : IDL.Func([IDL.Text], [], []),
     'admin_create_user' : IDL.Func([IDL.Text], [Result], []),
     'admin_delete_user' : IDL.Func([IDL.Text], [], []),
+    'checkIfUserProfileExist' : IDL.Func(
+        [IDL.Text],
+        [IDL.Bool],
+        ['composite_query'],
+      ),
     'checkUsernameAvailability' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'clearDiscords' : IDL.Func([], [], []),
+    'clearTwitters' : IDL.Func([], [], []),
     'createNewUser' : IDL.Func(
         [
           IDL.Record({
@@ -116,6 +123,8 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'cycleBalance' : IDL.Func([], [IDL.Nat], ['query']),
+    'deleteUser' : IDL.Func([IDL.Record({ 'uid' : userId })], [], []),
+    'deleteUsersProfile' : IDL.Func([IDL.Text], [IDL.Vec(IDL.Text)], []),
     'delete_cache' : IDL.Func([], [], []),
     'getAccountIdentifier' : IDL.Func(
         [IDL.Text],
@@ -126,6 +135,7 @@ export const idlFactory = ({ IDL }) => {
     'getAllAssetNodeIds' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'getAllNodeIds' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'getAllUserIds' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
+    'getAllWorldNodeIds' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'getDeleteCacheResponse' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(userId, nodeId))],
@@ -147,6 +157,9 @@ export const idlFactory = ({ IDL }) => {
         [TokenIdentifier],
         ['query'],
       ),
+    'getTotalDiscordAccountsAuthenticated' : IDL.Func([], [IDL.Nat], ['query']),
+    'getTotalTwitterAccountsAuthenticated' : IDL.Func([], [IDL.Nat], ['query']),
+    'getUidFromDiscord' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
     'getUserActionHistory' : IDL.Func(
         [userId, worldId],
         [IDL.Vec(ActionOutcomeHistory)],
@@ -157,6 +170,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(ActionOutcomeHistory)],
         ['composite_query'],
       ),
+    'getUserDiscordDetails' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
     'getUserNodeCanisterId' : IDL.Func([IDL.Text], [Result], ['query']),
     'getUserNodeCanisterIdComposite' : IDL.Func(
         [IDL.Text],
@@ -175,6 +189,11 @@ export const idlFactory = ({ IDL }) => {
         ],
         ['composite_query'],
       ),
+    'getUserTwitterDetails' : IDL.Func(
+        [IDL.Text],
+        [IDL.Text, IDL.Text],
+        ['query'],
+      ),
     'grantEntityPermission' : IDL.Func([EntityPermission], [], []),
     'grantGlobalPermission' : IDL.Func([GlobalPermission], [], []),
     'importAllPermissionsOfWorld' : IDL.Func([IDL.Text], [Result], []),
@@ -182,6 +201,12 @@ export const idlFactory = ({ IDL }) => {
     'removeAdmin' : IDL.Func([IDL.Text], [], []),
     'removeEntityPermission' : IDL.Func([EntityPermission], [], []),
     'removeGlobalPermission' : IDL.Func([GlobalPermission], [], []),
+    'setDiscordDetails' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
+    'setTwitterDetails' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [Result],
+        [],
+      ),
     'setUsername' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'totalUsers' : IDL.Func([], [IDL.Nat], ['query']),
     'updateEntity' : IDL.Func(

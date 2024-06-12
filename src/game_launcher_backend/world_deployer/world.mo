@@ -171,7 +171,7 @@ actor class WorldTemplate(owner : Principal) = this {
     //# INTERNAL FUNCTIONS
     private func isDevWorldCanister_() : Bool {
         let currentWorldCanisterId = Principal.toText(WorldId());
-        if(_devWorldCanisterId != "" and _devWorldCanisterId == currentWorldCanisterId) return true;
+        if (_devWorldCanisterId != "" and _devWorldCanisterId == currentWorldCanisterId) return true;
         return false;
     };
 
@@ -249,8 +249,8 @@ actor class WorldTemplate(owner : Principal) = this {
         userPrincipalToUserNode := Trie.empty();
     };
 
-    public shared ({caller}) func setDevWorldCanisterId(cid : Text) : async () {
-        assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe")); 
+    public shared ({ caller }) func setDevWorldCanisterId(cid : Text) : async () {
+        assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
         _devWorldCanisterId := cid;
     };
 
@@ -1418,7 +1418,7 @@ actor class WorldTemplate(owner : Principal) = this {
                                         case (#ok(fieldValue)) {
 
                                             refinedUpdateEntityTypes.add(
-                                                #removeFromList {
+                                                #addToList {
                                                     fieldName = update.fieldName;
                                                     value = fieldValue;
                                                 }
@@ -2418,6 +2418,8 @@ actor class WorldTemplate(owner : Principal) = this {
 
     public shared ({ caller }) func processActionAwait(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
 
+        updateDauCount(Principal.toText(caller)); // Update DAU Count
+
         let actionId = actionArg.actionId;
         let callerPrincipalId = Principal.toText(caller);
 
@@ -2564,6 +2566,8 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared ({ caller }) func processAction(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
+        
+        updateDauCount(Principal.toText(caller)); // Update DAU Count
 
         let actionId = actionArg.actionId;
         let callerPrincipalId = Principal.toText(caller);
@@ -4074,6 +4078,7 @@ actor class WorldTemplate(owner : Principal) = this {
     public query func logsGetCount() : async (Nat) {
         return logs.size();
     };
+
     private func debugLog(msg : Text) : () {
         logs.add("index: " #Nat.toText(logsCount) # " -> " #msg);
         logsCount += 1;
@@ -4873,6 +4878,243 @@ actor class WorldTemplate(owner : Principal) = this {
             };
             case _ {};
         };
+    };
+
+    // NFT Staking for Gaming Guild
+    private stable var _extStakes : Trie.Trie<Text, TStaking.EXTStake> = Trie.empty(); // key -> (collection_canister_id + "|" + nft_index)
+    //EXT tx verification checks
+    //1. Our StakingHubCanister owns the NFT
+    //2. NFT is not already staked by someone else in our NFT vault
+    private func queryExtTx_(collectionCanisterId : Text, nftIndex : Nat32, fromPrincipal : Text, toPrincipal : Text) : async (Result.Result<Text, Text>) {
+        let EXT = actor (collectionCanisterId) : actor {
+            getRegistry : shared () -> async [(Nat32, Text)];
+        };
+        var _registry : [(Nat32, Text)] = await EXT.getRegistry();
+        for (i in _registry.vals()) {
+            if (i.0 == nftIndex) {
+                if (i.1 != AccountIdentifier.fromText(toPrincipal, null)) {
+                    return #err("BOOM Gaming Guild do not hold this NFT of index : " # Nat32.toText(nftIndex) # ", contact dev team in discord.");
+                };
+            };
+        };
+        var key : Text = collectionCanisterId # "|" #Nat32.toText(nftIndex);
+        switch (Trie.find(_extStakes, Utils.keyT(key), Text.equal)) {
+            case (?stake) {
+                return #err("NFT already staked by someone, contact dev team in discord.");
+            };
+            case _ {
+                return #ok("");
+            };
+        };
+    };
+
+    public shared ({ caller }) func stakeExtNft(index : Nat32, toPrincipal : Text, fromPrincipal : Text, collectionCanisterId : Text) : async (Result.Result<Text, Text>) {
+        assert (Principal.fromText(fromPrincipal) == caller);
+        assert (Principal.fromText(toPrincipal) == WorldId());
+        switch (await queryExtTx_(collectionCanisterId, index, fromPrincipal, toPrincipal)) {
+            case (#ok _) {
+                let key = collectionCanisterId # "|" #Nat32.toText(index); //key = "canisterId" + "|" + "nftIndex"
+                var e : TStaking.EXTStake = {
+                    staker = fromPrincipal;
+                    tokenIndex = index;
+                    stakedAt = Time.now();
+                    dissolvedAt = 0;
+                };
+                _extStakes := Trie.put(_extStakes, Utils.keyT(key), Text.equal, e).0;
+
+                // update stakes entity value
+                let entityId : Text = collectionCanisterId # ":NftStake";
+                var quantityText : Text = "0.0";
+                var fieldsBuffer = Buffer.Buffer<TGlobal.Field>(0);
+                switch (await getUserNode_(fromPrincipal)) {
+                    case (#ok(userNodeId)) {
+                        let userNode : UserNode = actor (userNodeId);
+                        let entities = await userNode.getEntity(fromPrincipal, worldPrincipalId(), entityId);
+                        for (i in entities.fields.vals()) {
+                            if (i.fieldName == "quantity") {
+                                quantityText := i.fieldValue;
+                            } else {
+                                fieldsBuffer.add(i);
+                            };
+                        };
+                    };
+                    case (#err(errMsg)) {};
+                };
+
+                var quantity : Float = Utils.textToFloat(quantityText);
+                quantity := Float.add(quantity, 1.0);
+                fieldsBuffer.add({
+                    fieldName = "quantity";
+                    fieldValue = Float.toText(quantity);
+                });
+
+                switch (await createEntity({ uid = fromPrincipal; eid = entityId; fields = Buffer.toArray(fieldsBuffer) })) {
+                    case (#ok _) {
+                        return #ok("NFT staked successfully.");
+                    };
+                    case _ {
+                        return #err("NFT staked successfully but some error occured on Gaming Guilds backend, contact dev team in discord");
+                    };
+                };
+            };
+            case (#err e) {
+                return #err(e);
+            };
+        };
+    };
+
+    public shared ({ caller }) func dissolveExtNft(collectionCanisterId : Text, index : Nat32) : async (Result.Result<Text, Text>) {
+        let _of : Text = Principal.toText(caller);
+        let key : Text = collectionCanisterId # "|" #Nat32.toText(index);
+        switch (Trie.find(_extStakes, Utils.keyT(key), Text.equal)) {
+            case (?stake) {
+                if (stake.staker != _of) {
+                    return #err("You are not authorized to dissolve this NFT stake, NFT was staked by someone else.");
+                };
+                var e : TStaking.EXTStake = {
+                    staker = stake.staker;
+                    tokenIndex = stake.tokenIndex;
+                    stakedAt = stake.stakedAt;
+                    dissolvedAt = Time.now();
+                };
+                _extStakes := Trie.put(_extStakes, Utils.keyT(key), Text.equal, e).0;
+                // update stake entity value when NFT is already dissolved
+                let entityId : Text = collectionCanisterId # ":NftStake";
+                var quantityText : Text = "0.0";
+                var fieldsBuffer = Buffer.Buffer<TGlobal.Field>(0);
+                switch (await getUserNode_(_of)) {
+                    case (#ok(userNodeId)) {
+                        let userNode : UserNode = actor (userNodeId);
+                        let entities = await userNode.getEntity(_of, worldPrincipalId(), entityId);
+                        for (i in entities.fields.vals()) {
+                            if (i.fieldName == "quantity") {
+                                quantityText := i.fieldValue;
+                            } else {
+                                fieldsBuffer.add(i);
+                            };
+                        };
+                    };
+                    case (#err(errMsg)) {};
+                };
+
+                var quantity : Float = Utils.textToFloat(quantityText);
+                quantity := Float.sub(quantity, 1.0);
+                fieldsBuffer.add({
+                    fieldName = "quantity";
+                    fieldValue = Float.toText(Float.max(quantity, 0.0));
+                });
+
+                switch (await createEntity({ uid = _of; eid = entityId; fields = Buffer.toArray(fieldsBuffer) })) {
+                    case (#ok _) {
+                        return #ok("NFT dissolved successfully, now wait for 24Hrs to withdraw/disburse this NFT to your Wallet.");
+                    };
+                    case _ {
+                        return #err("NFT dissolved successfully but some error occured on Gaming Guild backend, report this to dev team in discord");
+                    };
+                };
+                return #ok("");
+            };
+            case _ {
+                return #err("You do not have NFT of this collection staked");
+            };
+        };
+    };
+
+    public shared ({ caller }) func disburseExtNft(collectionCanisterId : Text, index : Nat32) : async Result.Result<Text, Text> {
+        // transfer EXT NFT to user back after checking time-period
+        let delay : Int = 86400000000000;
+        let _of : Text = Principal.toText(caller);
+        let key : Text = collectionCanisterId # "|" #Nat32.toText(index);
+        switch (Trie.find(_extStakes, Utils.keyT(key), Text.equal)) {
+            case (?stake) {
+                if (stake.dissolvedAt != 0 and stake.dissolvedAt + delay <= Time.now()) {
+                    var _req : EXTCORE.TransferRequest = {
+                        from = #principal(WorldId());
+                        to = #principal(Principal.fromText(stake.staker));
+                        token = EXTCORE.TokenIdentifier.fromText(collectionCanisterId, index);
+                        amount = 1;
+                        memo = Text.encodeUtf8("BGG-NFT-Unlocking");
+                        notify = false;
+                        subaccount = null;
+                    };
+                    let EXT : Ledger.EXT = actor (collectionCanisterId);
+                    var res : EXTCORE.TransferResponse = await EXT.transfer(_req);
+                    switch (res) {
+                        case (#ok _) {
+                            _extStakes := Trie.remove(_extStakes, Utils.keyT(key), Text.equal).0;
+                            return #ok("NFT transferred back successfully.");
+                        };
+                        case _ {
+                            return #err("some error occured while transferring NFT from BGG NFT Vault back to User, contact dev team in discord");
+                        };
+                    };
+                } else {
+                    return #err("unfortunately you can not disburse your NFT before 24hrs after dissolving it.");
+                };
+            };
+            case _ {
+                return #err("You do not have NFT of this collection staked with BGG");
+            };
+        };
+    };
+
+    public query func getTokenIndex(id : Text) : async (Nat32) {
+        return EXTCORE.TokenIdentifier.getIndex(id);
+    };
+
+    public query func getUserSpecificExtStakes(arg : { uid : Text; collectionCanisterId : Text }) : async [Text] {
+        var b = Buffer.Buffer<Text>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            if (v.staker == arg.uid) {
+                let key = Iter.toArray(Text.tokens(i, #text("|")));
+                if (key[0] == arg.collectionCanisterId) {
+                    b.add(key[1]);
+                };
+            };
+        };
+        return Buffer.toArray(b);
+    };
+
+    public query func getUserExtStakes(uid : Text) : async [(Text, Text)] {
+        var b = Buffer.Buffer<(Text, Text)>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            if (v.staker == uid) {
+                let key = Iter.toArray(Text.tokens(i, #text("|")));
+                b.add((key[0], key[1]));
+            };
+        };
+        return Buffer.toArray(b);
+    };
+
+    public query func getUserExtStakesInfo(uid : Text) : async [(Text, TStaking.EXTStake)] {
+        var b = Buffer.Buffer<(Text, TStaking.EXTStake)>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            if (v.staker == uid) {
+                b.add((i, v));
+            };
+        };
+        return Buffer.toArray(b);
+    };
+
+    // DAU tracking for BGG Games
+    private stable var _dau : Trie.Trie<Text, Nat> = Trie.empty();
+
+    private func updateDauCount(uid : Text) : () {
+        let ?x = Trie.find(_dau, Utils.keyT(uid), Text.equal) else {
+            _dau := Trie.put(_dau, Utils.keyT(uid), Text.equal, 1).0;
+            return ();
+        };
+    };
+
+    public shared ({ caller }) func storeDauCount() : async (Nat) {
+        assert (caller == Principal.fromText(ENV.AnalyticsCanisterId));
+        let currentDAU = Trie.size(_dau);
+        _dau := Trie.empty();
+        return currentDAU;
+    };
+
+    public query func getCurrentDauCount() : async Nat {
+        return Trie.size(_dau);
     };
 
     // func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {

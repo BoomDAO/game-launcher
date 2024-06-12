@@ -124,7 +124,9 @@ export const useWorldHubClient = async () => {
       uploadProfilePicture: "uploadProfilePicture",
       getActionHistory: "getActionHistory",
       getActionHistoryComposite: "getActionHistoryComposite",
-      createNewUser: "createNewUser"
+      createNewUser: "createNewUser",
+      getUserTwitterDetails: "getUserTwitterDetails",
+      getUserDiscordDetails: "getUserDiscordDetails"
     }
   }
 };
@@ -403,7 +405,13 @@ export const useGamingGuildsClient = async () => {
       validateConstraints: "validateConstraints",
       getAllUserActionStates: "getAllUserActionStates",
       getActionStatusComposite: "getActionStatusComposite",
-      getAllUserActionStatesComposite: "getAllUserActionStatesComposite"
+      getAllUserActionStatesComposite: "getAllUserActionStatesComposite",
+      getUserExtStakes: "getUserExtStakes",
+      getUserSpecificExtStakes: "getUserSpecificExtStakes",
+      stakeExtNft: "stakeExtNft",
+      getUserExtStakesInfo: "getUserExtStakesInfo",
+      disburseExtNft: "disburseExtNft",
+      dissolveExtNft: "dissolveExtNft"
     },
   };
 };

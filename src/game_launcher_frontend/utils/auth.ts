@@ -5,6 +5,7 @@ import { NFID } from "@nfid/embed";
 import { SignIdentity } from "@dfinity/agent";
 import { AuthClientStorage } from "@dfinity/auth-client/lib/cjs/storage";
 import { IdleOptions } from "@dfinity/auth-client";
+// import { MyStorage } from "./MyStorage";
 
 type NFIDConfig = {
   origin?: string; // default is "https://nfid.one"
@@ -18,7 +19,8 @@ type NFIDConfig = {
   idleOptions?: IdleOptions;
 };
 
-var nfid : NFID | null = null;
+var nfid: NFID | null = null;
+// let storage = new MyStorage();
 const APPLICATION_NAME = "BOOM DAO";
 const APPLICATION_LOGO_URL = "https://i.postimg.cc/L4f471FF/logo.png";
 const AUTH_PATH =
@@ -47,8 +49,8 @@ export const nfidLogin = async (authClient: AuthClient) => {
   return authClient.getIdentity();
 };
 
-export const nfidEmbedLogin = async (nfid : NFID) => {
-  if(nfid.isAuthenticated) {
+export const nfidEmbedLogin = async (nfid: NFID) => {
+  if (nfid.isAuthenticated) {
     return nfid.getIdentity();
   };
   const delegationIdentity: Identity = await nfid.getDelegation({
@@ -65,7 +67,7 @@ export const getAuthClient = async () =>
   });
 
 export const getNfid = async () => {
-  if(nfid) {
+  if (nfid) {
     return nfid;
   };
   const new_nfid = await NFID.init({
@@ -73,6 +75,8 @@ export const getNfid = async () => {
       name: APPLICATION_NAME,
       logo: APPLICATION_LOGO_URL
     },
+    // storage: storage,
+    keyType: 'Ed25519',
     idleOptions: { idleTimeout: 1000 * 60 * 60 * 24 },
   });
   nfid = new_nfid;

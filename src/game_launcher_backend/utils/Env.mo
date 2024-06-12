@@ -46,10 +46,14 @@ module {
     // public let WorldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
     // public let WorldDeployerCanisterId = "js5r2-paaaa-aaaap-abf7q-cai";
     // public let GamingGuildsCanisterId = "erej6-riaaa-aaaap-ab4ma-cai";
+    // public let AnalyticsCanisterId = "imqio-gaaaa-aaaal-adlxa-cai";
+    // public let GamingGuildWorldNodeCanisterId = "ewfpk-4qaaa-aaaap-ab4mq-cai";
 
     //Stag
     public let WorldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
     public let WorldDeployerCanisterId = "na2jz-uqaaa-aaaal-qbtfq-cai";
     public let GamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
+    public let AnalyticsCanisterId = "imqio-gaaaa-aaaal-adlxa-cai";
+    public let GamingGuildWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
 
 };

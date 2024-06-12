@@ -45,6 +45,8 @@ actor Verifier {
   private stable var _emails : Trie.Trie<Text, (Text, Bool)> = Trie.empty(); // email -> (otp, status)
   private stable var _phones : Trie.Trie<Text, (Text, Bool)> = Trie.empty(); // phone -> (otp, status)
   private stable var _idempotency_key : Nat = 0;
+  private stable var _auth_key : Text = "";
+  private func VerifierId() : Principal = Principal.fromActor(Verifier);
 
   type TransformType = {
     #function : shared CanisterHttpResponsePayload -> async CanisterHttpResponsePayload;
@@ -81,6 +83,34 @@ actor Verifier {
     status : Nat;
     headers : [HttpHeader];
     body : [Nat8];
+  };
+  type Token = {
+    arbitrary_data : Text;
+  };
+  type CallbackStrategy = {
+    callback : shared query (Token) -> async StreamingCallbackHttpResponse;
+    token : Token;
+  };
+  type StreamingCallbackHttpResponse = {
+    body : Blob;
+    token : ?Token;
+  };
+  type StreamingStrategy = {
+    #Callback : CallbackStrategy;
+  };
+  type HeaderField = (Text, Text);
+  type HttpResponse = {
+    status_code : Nat16;
+    headers : [HeaderField];
+    body : Blob;
+    streaming_strategy : ?StreamingStrategy;
+    upgrade : ?Bool;
+  };
+  type HttpRequest = {
+    method : Text;
+    url : Text;
+    headers : [HeaderField];
+    body : Blob;
   };
 
   type Response = {
@@ -402,6 +432,364 @@ actor Verifier {
 
   public query func cycleBalance() : async Nat {
     Cycles.balance();
+  };
+
+  public shared ({ caller }) func setTwitterDetails(arg : { tid : Text; uid : Text; tusername : Text }) : async (Result.Result<Text, Text>) {
+    assert (caller == VerifierId());
+    let worldHub = actor (Constants.WorldHubCanisterId) : actor {
+      setTwitterDetails : shared (Text, Text, Text) -> async (Result.Result<Text, Text>);
+    };
+
+    let res = await worldHub.setTwitterDetails(arg.uid, arg.tid, arg.tusername);
+    let _ = await processActionAsAdminForTarget({ uid = arg.uid; aid = "twitter_login_quest_01_admin" });
+    return res;
+  };
+
+  public shared ({ caller }) func setDiscordDetails(arg : { did : Text; uid : Text }) : async (Result.Result<Text, Text>) {
+    assert (caller == VerifierId());
+    let worldHub = actor (Constants.WorldHubCanisterId) : actor {
+      setDiscordDetails : shared (Text, Text) -> async (Result.Result<Text, Text>);
+    };
+    let res = await worldHub.setDiscordDetails(arg.uid, arg.did);
+    let _ = await processActionAsAdminForTarget({ uid = arg.uid; aid = "discord_login_quest_01_admin" });
+    return res;
+  };
+
+  public shared ({caller}) func getUidFromDiscord(dname : Text) : async Text {
+    assert (caller == VerifierId());
+    let worldHub = actor (Constants.WorldHubCanisterId) : actor {
+      getUidFromDiscord : shared Text -> async Text;
+    };
+    return await worldHub.getUidFromDiscord(dname);
+  };
+
+  public shared ({ caller }) func processActionAsAdminForTarget(arg : { uid : Text; aid : Text }) : async (Result.Result<Text, Text>) {
+    // assert (caller == VerifierId());
+    let gaming_guild_canister = actor (Constants.GamingGuildsCanisterId) : actor {
+      processAction : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
+      processActionAwait : shared (TAction.ActionArg) -> async (Result.Result<TAction.ActionReturn, Text>);
+    };
+    ignore await gaming_guild_canister.processAction({
+      actionId = arg.aid;
+      fields = [{
+        fieldName = "target_principal_id";
+        fieldValue = arg.uid;
+      }];
+    });
+    return #ok("");
+  };
+
+  public shared ({ caller }) func setHttpAuthKey(k : Text) : async () {
+    assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+    _auth_key := k;
+  };
+
+  public shared ({ caller }) func getSpecificUserEntities(arg : { uid : Text; wid : Text; eids : [Text] }) : async [(Text, Text)] {
+    let worldNode = actor (Constants.GamingGuildWorldNodeCanisterId) : actor {
+      getSpecificUserEntities : shared (Text, Text, [Text]) -> async (Result.Result<[TEntity.StableEntity], Text>);
+    };
+    var entities : [TEntity.StableEntity] = [];
+    switch (await worldNode.getSpecificUserEntities(arg.uid, arg.wid, arg.eids)) {
+      case (#ok o) {
+        entities := o;
+      };
+      case _ {};
+    };
+    var res = Buffer.Buffer<(Text, Text)>(0);
+    for(e in entities.vals()) {
+      for(fields in e.fields.vals()) {
+        if(fields.fieldName == "quantity") {
+          res.add((e.eid, fields.fieldValue));
+        };
+      };
+    };
+    return Buffer.toArray(res);
+  };
+
+  public query func http_request(req : HttpRequest) : async (HttpResponse) {
+    var key : Text = "";
+    for (h in req.headers.vals()) {
+      if (h.0 == "key") {
+        key := h.1;
+      };
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/get-user-entities-from-uid"), key == _auth_key) {
+      case ("POST", true, true) {
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/get-uid-from-discord"), key == _auth_key) {
+      case ("POST", true, true) {
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/set-user-twitter-details"), key == _auth_key) {
+      case ("POST", true, true) {
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/set-user-discord-details"), key == _auth_key) {
+      case ("POST", true, true) {
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/process-action-as-admin"), key == _auth_key) {
+      case ("POST", true, true) {
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/grant-twitter-quest-entity"), key == _auth_key) {
+      case ("POST", true, true) {
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8("");
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    return {
+      status_code = 404;
+      headers = [("content-type", "text/plain")];
+      body = "Invalid request";
+      streaming_strategy = null;
+      upgrade = null;
+    };
+
+  };
+
+  public func http_request_update(req : HttpRequest) : async (HttpResponse) {
+    var key : Text = "";
+    var _uid : Text = "";
+    var _tid : Text = "";
+    var _tusername : Text = "";
+    var _aid : Text = "";
+    var _eid : Text = "";
+    for (h in req.headers.vals()) {
+      if (h.0 == "key") {
+        key := h.1;
+      } else if (h.0 == "uid") {
+        _uid := h.1;
+      } else if (h.0 == "tid") {
+        _tid := h.1;
+      } else if (h.0 == "aid") {
+        _aid := h.1;
+      } else if (h.0 == "tusername") {
+        _tusername := h.1;
+      } else if (h.0 == "eid") {
+        _eid := h.1;
+      };
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/get-user-entities-from-uid"), key == _auth_key) {
+      case ("POST", true, true) {
+        let res = await getSpecificUserEntities({ uid = _uid; wid = Constants.GamingGuildsCanisterId; eids = [_eid] });
+        var resJson = "{";
+        var counter = 0;
+        for(i in res.vals()) {
+          counter := counter + 1;
+          resJson := resJson #"\"" #i.0 #"\"";
+          resJson := resJson #":";
+          resJson := resJson #"\"" #i.1 #"\"";
+          if(counter != res.size()) {
+            resJson := resJson #",";
+          }
+        };
+        resJson := resJson #"}";
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8(resJson);
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/get-uid-from-discord"), key == _auth_key) {
+      case ("POST", true, true) {
+        let res = await getUidFromDiscord(_tusername);
+        return {
+          status_code = 200;
+          headers = [("content-type", "text/plain")];
+          body = Text.encodeUtf8(res);
+          streaming_strategy = null;
+          upgrade = ?true;
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/set-user-twitter-details"), key == _auth_key) {
+      case ("POST", true, true) {
+        let res = await setTwitterDetails({
+          tid = _tid;
+          uid = _uid;
+          tusername = _tusername;
+        });
+        switch (res) {
+          case (#ok o) {
+            return {
+              status_code = 200;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(o);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+          case (#err e) {
+            return {
+              status_code = 400;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(e);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/set-user-discord-details"), key == _auth_key) {
+      case ("POST", true, true) {
+        let res = await setDiscordDetails({
+          did = _tusername;
+          uid = _uid;
+        });
+        switch (res) {
+          case (#ok o) {
+            return {
+              status_code = 200;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(o);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+          case (#err e) {
+            return {
+              status_code = 400;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(e);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/process-action-as-admin"), key == _auth_key) {
+      case ("POST", true, true) {
+        let res = await processActionAsAdminForTarget({ uid = _uid; aid = _aid });
+        switch (res) {
+          case (#ok o) {
+            return {
+              status_code = 200;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(o);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+          case (#err e) {
+            return {
+              status_code = 400;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(e);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+        };
+      };
+      case _ {};
+    };
+
+    switch (req.method, Text.contains(req.url, #text "/grant-twitter-quest-entity"), key == _auth_key) {
+      case ("POST", true, true) {
+        let res = await processActionAsAdminForTarget({
+          uid = _uid;
+          aid = "grant_twitter_post";
+        });
+        switch (res) {
+          case (#ok o) {
+            return {
+              status_code = 200;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(o);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+          case (#err e) {
+            return {
+              status_code = 400;
+              headers = [("content-type", "text/plain")];
+              body = Text.encodeUtf8(e);
+              streaming_strategy = null;
+              upgrade = null;
+            };
+          };
+        };
+      };
+      case _ {};
+    };
+
+    return {
+      status_code = 404;
+      headers = [("content-type", "text/plain")];
+      body = Text.encodeUtf8("Invalid request");
+      streaming_strategy = null;
+      upgrade = null;
+    };
   };
 
 };

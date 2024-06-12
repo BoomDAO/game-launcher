@@ -34,6 +34,7 @@ import WalletTransfer from "./pages/Wallet/WalletTransfer";
 import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
 import QuestTwitterPost from "./pages/GamingGuilds/QuestTwitterPost";
 import BrowseGames from "./pages/BrowseGames";
+import Iframe from "./pages/GamingGuilds/Iframe";
 
 function App() {
   return (
@@ -133,6 +134,10 @@ function App() {
                 <Route
                   path={`${navPaths.nftTransfer}/:canisterId/:tokenid`}
                   element={<NftWalletTransfer/>}
+                />
+                <Route
+                  path={`${navPaths.game_iframe}/:canisterId`}
+                  element={<Iframe/>}
                 />
               </Route>
 

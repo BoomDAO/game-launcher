@@ -31,3 +31,4 @@ package-set.dhall
 *.tsbuildinfo
 sendgrid.env
 .env
+env.json
