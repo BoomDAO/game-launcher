@@ -61,6 +61,17 @@ export const swapCanisterId = "w73yo-siaaa-aaaak-qib2q-cai";
 // export const gamingGuildsCanisterId = "erej6-riaaa-aaaap-ab4ma-cai";
 // const gamingGuildsWorldNodeCanisterId = "ewfpk-4qaaa-aaaap-ab4mq-cai";
 
+//Development
+
+// const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
+// const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
+// const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
+// const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
+// const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
+// const guildsVerifierCanisterId = "jvcsg-6aaaa-aaaan-qeqvq-cai"
+// export const gamingGuildsCanisterId = "7d6va-pyaaa-aaaap-ahdxa-cai";
+// const gamingGuildsWorldNodeCanisterId = "7e7tu-caaaa-aaaap-ahdxq-cai";
+
 
 export const useWorldDeployerClient = async () => {
   // const authClient = await getAuthClient();
@@ -116,7 +127,9 @@ export const useWorldHubClient = async () => {
       uploadProfilePicture: "uploadProfilePicture",
       getActionHistory: "getActionHistory",
       getActionHistoryComposite: "getActionHistoryComposite",
-      createNewUser: "createNewUser"
+      createNewUser: "createNewUser",
+      getUserTwitterDetails: "getUserTwitterDetails",
+      getUserDiscordDetails: "getUserDiscordDetails"
     }
   }
 };
@@ -395,7 +408,13 @@ export const useGamingGuildsClient = async () => {
       validateConstraints: "validateConstraints",
       getAllUserActionStates: "getAllUserActionStates",
       getActionStatusComposite: "getActionStatusComposite",
-      getAllUserActionStatesComposite: "getAllUserActionStatesComposite"
+      getAllUserActionStatesComposite: "getAllUserActionStatesComposite",
+      getUserExtStakes: "getUserExtStakes",
+      getUserSpecificExtStakes: "getUserSpecificExtStakes",
+      stakeExtNft: "stakeExtNft",
+      getUserExtStakesInfo: "getUserExtStakesInfo",
+      disburseExtNft: "disburseExtNft",
+      dissolveExtNft: "dissolveExtNft"
     },
   };
 };
@@ -419,7 +438,8 @@ export const useGamingGuildsWorldNodeClient = async () => {
       getAllUserEntitiesOfSpecificWorlds: "getAllUserEntitiesOfSpecificWorlds",
       getAllUserActionStates: "getAllUserActionStates",
       getActionHistory: "getActionHistory",
-      getUserEntitiesFromWorldNodeComposite: "getUserEntitiesFromWorldNodeComposite"
+      getUserEntitiesFromWorldNodeComposite: "getUserEntitiesFromWorldNodeComposite",
+      getUserEntitiesFromWorldNodeFilteredSortingComposite: "getUserEntitiesFromWorldNodeFilteredSortingComposite"
     },
   };
 };

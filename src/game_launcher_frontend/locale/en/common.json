@@ -19,7 +19,7 @@
     "profile": "Profile",
     "wallet": "Wallet",
     "logout": "Logout",
-    "browse_games": "ALL GAMES",
+    "browse_games": "BROWSE GAMES",
     "upload_games": "UPLOAD GAMES",
     "manage_NFTs": "DEPLOY NFTS",
     "token_deployer": "DEPLOY TOKENS",
@@ -515,6 +515,7 @@
       "complete_button": "CLAIM",
       "incomplete_button": "GO",
       "claimed_button": "DONE",
+      "twitter_quest_button": "VERIFY TWEET",
       "claim_reward_error": "Error in claiming reward, contact dev team in discord"
     }
   },
@@ -535,7 +536,7 @@
     "tab_2": {
       "title": "NFTs",
       "nfts_loading": "Loading Your NFTs",
-      "no_nfts": "You dont hold any NFTs from our supported NFT collections.",
+      "no_nfts": "You dont hold any NFTs from this supported NFT collection.",
       "transfer_success": "NFT transferred successfully.",
       "transfer_error": "Some error occured. Contact dev team."
     }

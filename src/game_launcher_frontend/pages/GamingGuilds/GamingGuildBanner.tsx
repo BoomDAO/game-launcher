@@ -5,28 +5,37 @@ import Divider from "@/components/ui/Divider";
 import H1 from "@/components/ui/H1";
 import Space from "@/components/ui/Space";
 import { useGetBoomBalance } from "@/api/guilds";
+import { TypeAnimation } from 'react-type-animation';
+import { useGetTexts } from "@/api/common";
+import { useBreakpoint } from "src/game_launcher_frontend/hooks/useBreakpoint";
+import { TypeSpeed } from "@/types";
+import { cx } from "@/utils";
+import Loader from "@/components/ui/Loader";
 
 
 const GamingGuildBanner = () => {
 
-    const { t } = useTranslation();
+    // const { t } = useTranslation();
     // const { data : balance = "0" } = useGetBoomBalance();
+    const { data, isLoading } = useGetTexts();
+    const { smallHeight } = useBreakpoint();
 
     return (
         <>
-            <div>
+            <div className="h-200">
                 <section style={{ position: "relative", justifyContent: "center", alignItems: "center" }}>
-                    <img src={t("gaming_guilds.banner_image")} className="" alt="logo" />
-                    {/* <div className="w-9/12 rounded-3xl m-auto py-7 dark:bg-white bg-dark text-center">
-                        <div className="text-4xl font-semibold gradient-text">Treasury</div>
-                        <div className="flex justify-around pt-5">
-                            <div className="dark:text-black text-white flex justify-around">
-                                <img src="/boom-logo.png" className="pr-2 h-10" />
-                                <p className="text-3xl font-medium pt-1" >{balance}</p>
-                                <p className="text-xl pt-2 pl-2">BOOM Tokens</p>
-                            </div>
-                        </div>
-                    </div> */}
+                    {
+                        isLoading ? <Loader className="w-20"></Loader> :
+                            <TypeAnimation
+                                sequence={data.home.title_sequence}
+                                speed={20}
+                                style={{ fontSize: '2.5em' }}
+                                repeat={Infinity}
+                                className={cx(
+                                    "ml-28 mt-20 gradient-text flex items-center pr-4 text-center font-black",
+                                )}
+                            />
+                    }
                 </section>
             </div>
         </>

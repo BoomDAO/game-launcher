@@ -6,6 +6,7 @@ export const serverErrorMsg = "Something went wrong.";
 
 export const navPaths = {
   home: "/",
+  gaming_guilds: "/gaming-guilds",
   upload_games: "/upload-games",
   upload_games_new: "/upload-games/create-game",
   manage_nfts: "/manage-nfts",
@@ -27,10 +28,10 @@ export const navPaths = {
   transfer: "/wallet/transfer",
   nftTransfer: "/wallet/transfer/nft",
   twitterPost: "gaming-guilds/onboarding-quests/twitter-post",
-  browse_games: "/all-games",
-  gaming_guilds: "/gaming-guilds",
   launchpad: "/launchpad",
-  launchpad_participate: "/launchpad/participate"
+  launchpad_participate: "/launchpad/participate",
+  browse_games: "/browse-games",
+  game_iframe: "/game-iframe"
 };
 
 export const platform_types: SelectOption[] = [

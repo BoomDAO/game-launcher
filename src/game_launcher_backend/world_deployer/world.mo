@@ -79,6 +79,7 @@ actor class WorldTemplate(owner : Principal) = this {
     //stable memory
     private stable var _owner : Text = Principal.toText(owner);
     private stable var _admins : [Text] = [Principal.toText(owner)];
+    private stable var _devWorldCanisterId : Text = "";
 
     //Configs
     // empty stable memory used for migration - (used in preupgrade currently)
@@ -108,13 +109,13 @@ actor class WorldTemplate(owner : Principal) = this {
     type UserNode = actor {
         createEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId, fields : [TGlobal.Field]) -> async (Result.Result<Text, Text>);
         editEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId, fields : [TGlobal.Field]) -> async (Result.Result<Text, Text>);
-        deleteActionState : shared  (uid : TGlobal.userId, wid : TGlobal.worldId, aid : TGlobal.actionId) -> async (Result.Result<Text, Text>);
+        deleteActionState : shared (uid : TGlobal.userId, wid : TGlobal.worldId, aid : TGlobal.actionId) -> async (Result.Result<Text, Text>);
         deleteEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId) -> async (Result.Result<Text, Text>);
         applyOutcomes : shared (uid : TGlobal.userId, actionState : TAction.ActionState, outcomes : [TAction.ActionOutcomeOption]) -> async (Result.Result<(), Text>);
         getAllUserEntities : shared (uid : TGlobal.userId, wid : TGlobal.worldId, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
         getAllUserEntitiesComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
         getAllUserActionStates : shared (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.ActionState], Text>);
-        getAllUserActionStatesComposite : composite query  (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.ActionState], Text>);
+        getAllUserActionStatesComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId) -> async (Result.Result<[TAction.ActionState], Text>);
         getActionState : query (uid : TGlobal.userId, wid : TGlobal.worldId, aid : TGlobal.actionId) -> async (?TAction.ActionState);
         getEntity : shared (uid : TGlobal.userId, wid : TGlobal.worldId, eid : TGlobal.entityId) -> async (TEntity.StableEntity);
         getAllUserEntitiesOfSpecificWorlds : shared (uid : TGlobal.userId, wids : [TGlobal.worldId], page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
@@ -127,10 +128,10 @@ actor class WorldTemplate(owner : Principal) = this {
         deleteUserEntityFromWorldNode : shared ({ uid : TGlobal.userId }) -> async ();
         deleteUser : shared ({ uid : TGlobal.userId }) -> async ();
         getUserEntitiesFromWorldNodeComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
-        getUserEntitiesFromWorldNodeFilteredSortingComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, fieldName : Text, order : { #Ascending; #Descending; }, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
+        getUserEntitiesFromWorldNodeFilteredSortingComposite : composite query (uid : TGlobal.userId, wid : TGlobal.worldId, fieldName : Text, order : { #Ascending; #Descending }, page : ?Nat) -> async (Result.Result<[TEntity.StableEntity], Text>);
     };
     type WorldHub = actor {
-        createNewUser : shared ({ user : Principal; requireEntireNode : Bool; }) -> async (Result.Result<Text, Text>);
+        createNewUser : shared ({ user : Principal; requireEntireNode : Bool }) -> async (Result.Result<Text, Text>);
         getUserNodeCanisterId : shared (Text) -> async (Result.Result<Text, Text>);
         getUserNodeCanisterIdComposite : composite query (Text) -> async (Result.Result<Text, Text>);
 
@@ -168,6 +169,12 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     //# INTERNAL FUNCTIONS
+    private func isDevWorldCanister_() : Bool {
+        let currentWorldCanisterId = Principal.toText(WorldId());
+        if (_devWorldCanisterId != "" and _devWorldCanisterId == currentWorldCanisterId) return true;
+        return false;
+    };
+
     private func isAdmin_(_p : Principal) : (Bool) {
         var p : Text = Principal.toText(_p);
         for (i in _admins.vals()) {
@@ -218,7 +225,10 @@ actor class WorldTemplate(owner : Principal) = this {
                         return #ok(userNodeId);
                     };
                     case (#err(errMsg0)) {
-                        var newUserNodeId = await worldHub.createNewUser({ user = Principal.fromText(userPrincipalTxt); requireEntireNode = false; });
+                        var newUserNodeId = await worldHub.createNewUser({
+                            user = Principal.fromText(userPrincipalTxt);
+                            requireEntireNode = false;
+                        });
                         switch (newUserNodeId) {
                             case (#ok(userNodeId)) {
                                 userPrincipalToUserNode := Trie.put(userPrincipalToUserNode, Utils.keyT(userPrincipalTxt), Text.equal, userNodeId).0;
@@ -237,6 +247,11 @@ actor class WorldTemplate(owner : Principal) = this {
     public shared ({ caller }) func removeAllUserNodeRef() : async () {
         assert (isAdmin_(caller));
         userPrincipalToUserNode := Trie.empty();
+    };
+
+    public shared ({ caller }) func setDevWorldCanisterId(cid : Text) : async () {
+        assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+        _devWorldCanisterId := cid;
     };
 
     //# UTILS
@@ -428,6 +443,29 @@ actor class WorldTemplate(owner : Principal) = this {
         if (configExist) return #ok("you have overwriten the config");
         return #ok("you have created a new config");
     };
+
+    public shared ({ caller }) func createTestQuestConfigs(args : [{ cid : Text; name : Text; description : Text; image_url : Text; quest_url : Text }]) : async (Result.Result<Text, Text>) {
+        assert (isDevWorldCanister_());
+        for (arg in args.vals()) {
+            var fieldsBuffer = Buffer.Buffer<(Text, Text)>(0);
+            fieldsBuffer.add(("name", arg.name));
+            fieldsBuffer.add(("description", arg.description));
+            fieldsBuffer.add(("image_url", arg.image_url));
+            fieldsBuffer.add(("quest_url", arg.quest_url));
+            let fields : Map.Map<Text, Text> = Map.fromIter(Iter.fromArray(Buffer.toArray(fieldsBuffer)), thash);
+            configsStorage := Trie.put(
+                configsStorage,
+                Utils.keyT(arg.cid),
+                Text.equal,
+                {
+                    cid = arg.cid;
+                    fields = fields;
+                },
+            ).0;
+        };
+        return #ok("you have updated all the configs");
+    };
+
     public shared ({ caller }) func createAction(config : TAction.Action) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller) or caller == WorldId());
         let configExist = actionExist_(config.aid);
@@ -438,35 +476,146 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok("you have created a new action");
     };
 
-    public shared ({ caller }) func createMinigameWinAction() : async (Result.Result<Text, Text>)  {
-        assert (isAdmin_(caller) or caller == WorldId());
+    public shared ({ caller }) func createTestQuestActions(arg : { game_world_canister_id : Text; actionId_1 : Text; actionId_2 : Text }) : async (Result.Result<Text, Text>) {
+        assert (isDevWorldCanister_());
+        // add Game Canister Id field in "games_world" config
+        var configResult = getSpecificConfig_("games_world");
+        switch configResult {
+            case (?config) {
+                var fieldsBuffer : Buffer.Buffer<(Text, Text)> = Buffer.fromArray(Map.toArray(config.fields));
+                let fieldName : Text = "TEST WORLD " #Nat.toText(fieldsBuffer.size());
+                fieldsBuffer.add((fieldName, arg.game_world_canister_id));
+                let fields : Map.Map<Text, Text> = Map.fromIter(Iter.fromArray(Buffer.toArray(fieldsBuffer)), thash);
+                configsStorage := Trie.put(
+                    configsStorage,
+                    Utils.keyT(config.cid),
+                    Text.equal,
+                    {
+                        cid = config.cid;
+                        fields = fields;
+                    },
+                ).0;
+            };
+            case _ return #err("could not find config, cid: games_world");
+        };
 
-        return await createAction({ 
-            aid = "minigame_win";
-            callerAction = ? {
-                actionConstraint = null;
-                actionResult = {
-                    outcomes = [
-                        {
-                            possibleOutcomes = [
-                                { option = #updateEntity { wid = null; eid = "minigame_count"; updates = [
-                                    #incrementNumber { fieldName = "amount"; fieldValue =  #number 1; },
-                                ]; };  weight = 100;},
-                            ]
-                        },
-                        {
-                            possibleOutcomes = [
-                                { option = #updateEntity { wid = null; eid = "xp"; updates = [
-                                    #incrementNumber { fieldName = "amount"; fieldValue =  #number 500; },
-                                ]; };  weight = 100;},
-                            ]
-                        }
-                    ]
+        let newActionId_1 = arg.actionId_1;
+        let newActionId_2 = arg.actionId_2;
+
+        let ?_action_01 = getSpecificAction_("test_quest_01") else return #err("Test Quest 1 does not exist yet. Contact dev team.");
+        let ?_action_02 = getSpecificAction_("test_quest_02") else return #err("Test Quest 2 does not exist yet. Contact dev team.");
+
+        var new_action_01 = _action_01;
+        var new_action_02 = _action_02;
+
+        var newCallerAction_01 : ?TAction.SubAction = null;
+        var newCallerAction_02 : ?TAction.SubAction = null;
+        switch (new_action_01.callerAction) {
+            case (?cAction) {
+                switch (cAction.actionConstraint) {
+                    case (?cons) {
+                        switch (cons.timeConstraint) {
+                            case (?t_cons) {
+                                var _eid = "";
+                                var _updates : [TAction.UpdateEntityType] = [];
+                                switch (t_cons.actionHistory[0]) {
+                                    case (#updateEntity u) {
+                                        _eid := u.eid;
+                                        _updates := u.updates;
+                                    };
+                                    case _ {};
+                                };
+                                newCallerAction_01 := ?{
+                                    actionConstraint = ?{
+                                        timeConstraint = ?{
+                                            actionTimeInterval = t_cons.actionTimeInterval;
+                                            actionStartTimestamp = t_cons.actionStartTimestamp;
+                                            actionExpirationTimestamp = t_cons.actionExpirationTimestamp;
+                                            actionHistory = [
+                                                #updateEntity {
+                                                    wid = ?arg.game_world_canister_id;
+                                                    eid = _eid;
+                                                    updates = _updates;
+                                                }
+                                            ];
+                                        };
+                                        entityConstraint = cons.entityConstraint;
+                                        icrcConstraint = cons.icrcConstraint;
+                                        nftConstraint = cons.nftConstraint;
+                                    };
+                                    actionResult = cAction.actionResult;
+                                };
+                            };
+                            case _ {};
+                        };
+                    };
+                    case _ {};
                 };
             };
-            targetAction = null;
-            worldAction = null;
-        })
+            case _ {};
+        };
+
+        new_action_01 := {
+            aid = newActionId_1;
+            callerAction = newCallerAction_01;
+            targetAction = new_action_01.targetAction;
+            worldAction = new_action_01.worldAction;
+        };
+        actionsStorage := Trie.put(actionsStorage, Utils.keyT(newActionId_1), Text.equal, new_action_01).0;
+
+        switch (new_action_02.callerAction) {
+            case (?cAction) {
+                switch (cAction.actionConstraint) {
+                    case (?cons) {
+                        switch (cons.timeConstraint) {
+                            case (?t_cons) {
+                                var _eid = "";
+                                var _updates : [TAction.UpdateEntityType] = [];
+                                switch (t_cons.actionHistory[0]) {
+                                    case (#updateEntity u) {
+                                        _eid := u.eid;
+                                        _updates := u.updates;
+                                    };
+                                    case _ {};
+                                };
+                                newCallerAction_02 := ?{
+                                    actionConstraint = ?{
+                                        timeConstraint = ?{
+                                            actionTimeInterval = t_cons.actionTimeInterval;
+                                            actionStartTimestamp = t_cons.actionStartTimestamp;
+                                            actionExpirationTimestamp = t_cons.actionExpirationTimestamp;
+                                            actionHistory = [
+                                                #updateEntity {
+                                                    wid = ?arg.game_world_canister_id;
+                                                    eid = _eid;
+                                                    updates = _updates;
+                                                }
+                                            ];
+                                        };
+                                        entityConstraint = cons.entityConstraint;
+                                        icrcConstraint = cons.icrcConstraint;
+                                        nftConstraint = cons.nftConstraint;
+                                    };
+                                    actionResult = cAction.actionResult;
+                                };
+                            };
+                            case _ {};
+                        };
+                    };
+                    case _ {};
+                };
+            };
+            case _ {};
+        };
+
+        new_action_02 := {
+            aid = newActionId_2;
+            callerAction = newCallerAction_02;
+            targetAction = new_action_02.targetAction;
+            worldAction = new_action_02.worldAction;
+        };
+        actionsStorage := Trie.put(actionsStorage, Utils.keyT(newActionId_2), Text.equal, new_action_02).0;
+        return #ok("You have created two actions : " #newActionId_1 # " and " #newActionId_2);
     };
 
     //DELETE CONFIG
@@ -524,37 +673,51 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok();
     };
 
-    public shared ({ caller }) func deleteActionStateForUser(args : { aid : Text; uid: Text}) : async (Result.Result<(), (Text)>) {
+    public shared ({ caller }) func deleteActionStateForUser(args : { aid : Text; uid : Text }) : async (Result.Result<(), (Text)>) {
         assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId());
 
-        switch((Trie.find(userPrincipalToUserNode, Utils.keyT(args.uid), Text.equal))){
-            case(? nodeId){
+        switch ((Trie.find(userPrincipalToUserNode, Utils.keyT(args.uid), Text.equal))) {
+            case (?nodeId) {
                 let userNode : UserNode = actor (nodeId);
-
                 var deleteActionStateResult = await userNode.deleteActionState(args.uid, worldPrincipalId(), args.aid);
-
-                switch(deleteActionStateResult){
-                    case(#ok _){
-
-                    };
-                    case (#err errMsg){
+                switch (deleteActionStateResult) {
+                    case (#ok _) {};
+                    case (#err errMsg) {
                         return #err(errMsg);
-                    }
-                }
+                    };
+                };
             };
             case _ {
-                return #err("Usernode doesn't exist!")
-            }
+                return #err("Usernode doesn't exist!");
+            };
         };
-
         return #ok();
     };
-    
-    public shared ({ caller }) func deleteActionStateForAllUsers(args : { aid : Text; }) : async (Result.Result<(), ()>) {
+
+    public shared ({ caller }) func deleteTestQuestActionStateForUser(args : { aid : Text }) : async (Result.Result<(), (Text)>) {
+        assert (isDevWorldCanister_());
+        switch ((Trie.find(userPrincipalToUserNode, Utils.keyT(Principal.toText(caller)), Text.equal))) {
+            case (?nodeId) {
+                let userNode : UserNode = actor (nodeId);
+                var deleteActionStateResult = await userNode.deleteActionState(Principal.toText(caller), worldPrincipalId(), args.aid);
+                switch (deleteActionStateResult) {
+                    case (#ok _) {};
+                    case (#err errMsg) {
+                        return #err(errMsg);
+                    };
+                };
+            };
+            case _ {
+                return #err("Usernode doesn't exist!");
+            };
+        };
+        return #ok();
+    };
+
+    public shared ({ caller }) func deleteActionStateForAllUsers(args : { aid : Text }) : async (Result.Result<(), ()>) {
         // assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId());
 
-        for((uid, nodeId) in Trie.iter(userPrincipalToUserNode))
-        {
+        for ((uid, nodeId) in Trie.iter(userPrincipalToUserNode)) {
             let userNode : UserNode = actor (nodeId);
 
             ignore userNode.deleteActionState(uid, worldPrincipalId(), args.aid);
@@ -563,14 +726,14 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok();
     };
 
-    public shared ({caller}) func deleteUser(args : { uid : TGlobal.userId }) : async () {
+    public shared ({ caller }) func deleteUser(args : { uid : TGlobal.userId }) : async () {
         assert (isAdmin_(caller));
-        switch((Trie.find(userPrincipalToUserNode, Utils.keyT(args.uid), Text.equal))){
-            case(?nodeId){
+        switch ((Trie.find(userPrincipalToUserNode, Utils.keyT(args.uid), Text.equal))) {
+            case (?nodeId) {
                 let userNode : UserNode = actor (nodeId);
                 await userNode.deleteUser(args);
             };
-            case _ {}
+            case _ {};
         };
         switch (await getUserNode_(worldPrincipalId())) {
             case (#ok(worldNodeId)) {
@@ -651,7 +814,7 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
 
-    public composite query func getUserEntitiesFromWorldNodeFilteredSortingComposite(args : { uid : Text; fieldName : Text; order : { #Ascending; #Descending; }; page : ?Nat; }) : async (Result.Result<[TEntity.StableEntity], Text>) {
+    public composite query func getUserEntitiesFromWorldNodeFilteredSortingComposite(args : { uid : Text; fieldName : Text; order : { #Ascending; #Descending }; page : ?Nat }) : async (Result.Result<[TEntity.StableEntity], Text>) {
         switch (await worldHub.getUserNodeCanisterIdComposite(args.uid)) {
             case (#ok(userNodeId)) {
                 let userNode : UserNode = actor (userNodeId);
@@ -726,12 +889,12 @@ actor class WorldTemplate(owner : Principal) = this {
         };
     };
 
-    public shared ({caller}) func createEntityForAllUsers(args : {eid : TGlobal.entityId; fields : [TGlobal.Field];}) : async (Result.Result<Text, Text>) {
+    public shared ({ caller }) func createEntityForAllUsers(args : { eid : TGlobal.entityId; fields : [TGlobal.Field] }) : async (Result.Result<Text, Text>) {
         assert (isAdmin_(caller));
         let nodeIds : [Text] = await worldHub.getAllNodeIds();
         var res = Buffer.Buffer<async (Result.Result<Text, Text>)>(0);
         var b = Buffer.Buffer<(Result.Result<Text, Text>)>(0);
-        for(id in nodeIds.vals()) {
+        for (id in nodeIds.vals()) {
             let userNode = actor (id) : actor {
                 createEntityForAllUsers : shared (TGlobal.worldId, TGlobal.entityId, [TGlobal.Field]) -> async (Result.Result<Text, Text>);
             };
@@ -1255,7 +1418,7 @@ actor class WorldTemplate(owner : Principal) = this {
                                         case (#ok(fieldValue)) {
 
                                             refinedUpdateEntityTypes.add(
-                                                #removeFromList {
+                                                #addToList {
                                                     fieldName = update.fieldName;
                                                     value = fieldValue;
                                                 }
@@ -1953,7 +2116,7 @@ actor class WorldTemplate(owner : Principal) = this {
                                     return #err("actionCount has already reached actionsPerInterval limit for this time interval");
                                 };
 
-                                if (last_action_time == 0 and  (Int.abs(Time.now()) > actionTimeInterval.intervalDuration)) {
+                                if (last_action_time == 0 and (Int.abs(Time.now()) > actionTimeInterval.intervalDuration)) {
                                     last_action_time := (Int.abs(Time.now()) - actionTimeInterval.intervalDuration);
                                 };
                             };
@@ -2255,6 +2418,8 @@ actor class WorldTemplate(owner : Principal) = this {
 
     public shared ({ caller }) func processActionAwait(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
 
+        updateDauCount(Principal.toText(caller)); // Update DAU Count
+
         let actionId = actionArg.actionId;
         let callerPrincipalId = Principal.toText(caller);
 
@@ -2401,6 +2566,8 @@ actor class WorldTemplate(owner : Principal) = this {
     };
 
     public shared ({ caller }) func processAction(actionArg : TAction.ActionArg) : async (Result.Result<TAction.ActionReturn, Text>) {
+        
+        updateDauCount(Principal.toText(caller)); // Update DAU Count
 
         let actionId = actionArg.actionId;
         let callerPrincipalId = Principal.toText(caller);
@@ -2547,10 +2714,10 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok(outcomes);
     };
 
-    public shared ({caller}) func processActionForAllUsers(actionArg : TAction.ActionArg) : async () {
+    public shared ({ caller }) func processActionForAllUsers(actionArg : TAction.ActionArg) : async () {
         assert (isAdmin_(caller));
         let userIds : [Text] = await worldHub.getAllUserIds();
-        for(uid in userIds.vals()) {
+        for (uid in userIds.vals()) {
             let actionId = actionArg.actionId;
             let callerPrincipalId = Principal.toText(caller);
             processActionCount += 1;
@@ -2737,24 +2904,23 @@ actor class WorldTemplate(owner : Principal) = this {
                 sourceData : [TEntity.StableEntity] = [];
             };
 
-            switch(Trie.find(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal)){
-                case(? tempStoredSubAction){
+            switch (Trie.find(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal)) {
+                case (?tempStoredSubAction) {
 
-                    switch(tempStoredSubAction.sourceActionConstraint){
-                        case(? storedConstraint){
+                    switch (tempStoredSubAction.sourceActionConstraint) {
+                        case (?storedConstraint) {
 
-                            switch(newTrie.sourceActionConstraint){
-                                case(? constraint){
+                            switch (newTrie.sourceActionConstraint) {
+                                case (?constraint) {
 
                                     newTrie := {
                                         sourcePrincipalId = tempStoredSubAction.sourcePrincipalId;
-                                        sourceActionConstraint = ?
-                                            {
-                                                timeConstraint = storedConstraint.timeConstraint; 
-                                                entityConstraint = Array.append(storedConstraint.entityConstraint, constraint.entityConstraint);
-                                                icrcConstraint = Array.append(storedConstraint.icrcConstraint, constraint.icrcConstraint);
-                                                nftConstraint = Array.append(storedConstraint.nftConstraint, constraint.nftConstraint);
-                                            };
+                                        sourceActionConstraint = ?{
+                                            timeConstraint = storedConstraint.timeConstraint;
+                                            entityConstraint = Array.append(storedConstraint.entityConstraint, constraint.entityConstraint);
+                                            icrcConstraint = Array.append(storedConstraint.icrcConstraint, constraint.icrcConstraint);
+                                            nftConstraint = Array.append(storedConstraint.nftConstraint, constraint.nftConstraint);
+                                        };
                                         sourceOutcomes = Array.append(tempStoredSubAction.sourceOutcomes, newTrie.sourceOutcomes);
                                         worldsToFetchEntitiesFrom = Array.append(tempStoredSubAction.worldsToFetchEntitiesFrom, newTrie.worldsToFetchEntitiesFrom);
                                         worldsToFetchActionHistoryFrom = Array.append(tempStoredSubAction.worldsToFetchActionHistoryFrom, newTrie.worldsToFetchActionHistoryFrom);
@@ -2768,7 +2934,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     newTrie := {
                                         sourcePrincipalId = tempStoredSubAction.sourcePrincipalId;
-                                        sourceActionConstraint = ? storedConstraint;
+                                        sourceActionConstraint = ?storedConstraint;
                                         sourceOutcomes = Array.append(tempStoredSubAction.sourceOutcomes, newTrie.sourceOutcomes);
                                         worldsToFetchEntitiesFrom = Array.append(tempStoredSubAction.worldsToFetchEntitiesFrom, newTrie.worldsToFetchEntitiesFrom);
                                         worldsToFetchActionHistoryFrom = Array.append(tempStoredSubAction.worldsToFetchActionHistoryFrom, newTrie.worldsToFetchActionHistoryFrom);
@@ -2785,7 +2951,7 @@ actor class WorldTemplate(owner : Principal) = this {
                         };
                     };
                 };
-                case _ { };
+                case _ {};
             };
 
             subActions_ := Trie.put(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal, newTrie).0;
@@ -2928,7 +3094,7 @@ actor class WorldTemplate(owner : Principal) = this {
                                     return;
                                 };
                             };
-                            
+
                             //Validate Constraints
                             var sourceValidationResult = validateConstraints_(sourceData, sourceActionHistoryData, sourcePrincipalId, actionId, sourceRefinedConstraints, currentActionState);
 
@@ -3108,24 +3274,23 @@ actor class WorldTemplate(owner : Principal) = this {
                 sourceData : [TEntity.StableEntity] = [];
             };
 
-            switch(Trie.find(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal)){
-                case(? tempStoredSubAction){
+            switch (Trie.find(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal)) {
+                case (?tempStoredSubAction) {
 
-                    switch(tempStoredSubAction.sourceActionConstraint){
-                        case(? storedConstraint){
+                    switch (tempStoredSubAction.sourceActionConstraint) {
+                        case (?storedConstraint) {
 
-                            switch(newTrie.sourceActionConstraint){
-                                case(? constraint){
+                            switch (newTrie.sourceActionConstraint) {
+                                case (?constraint) {
 
                                     newTrie := {
                                         sourcePrincipalId = tempStoredSubAction.sourcePrincipalId;
-                                        sourceActionConstraint = ?
-                                            {
-                                                timeConstraint = storedConstraint.timeConstraint; 
-                                                entityConstraint = Array.append(storedConstraint.entityConstraint, constraint.entityConstraint);
-                                                icrcConstraint = Array.append(storedConstraint.icrcConstraint, constraint.icrcConstraint);
-                                                nftConstraint = Array.append(storedConstraint.nftConstraint, constraint.nftConstraint);
-                                            };
+                                        sourceActionConstraint = ?{
+                                            timeConstraint = storedConstraint.timeConstraint;
+                                            entityConstraint = Array.append(storedConstraint.entityConstraint, constraint.entityConstraint);
+                                            icrcConstraint = Array.append(storedConstraint.icrcConstraint, constraint.icrcConstraint);
+                                            nftConstraint = Array.append(storedConstraint.nftConstraint, constraint.nftConstraint);
+                                        };
                                         sourceOutcomes = Array.append(tempStoredSubAction.sourceOutcomes, newTrie.sourceOutcomes);
                                         worldsToFetchEntitiesFrom = Array.append(tempStoredSubAction.worldsToFetchEntitiesFrom, newTrie.worldsToFetchEntitiesFrom);
                                         worldsToFetchActionHistoryFrom = Array.append(tempStoredSubAction.worldsToFetchActionHistoryFrom, newTrie.worldsToFetchActionHistoryFrom);
@@ -3139,7 +3304,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
                                     newTrie := {
                                         sourcePrincipalId = tempStoredSubAction.sourcePrincipalId;
-                                        sourceActionConstraint = ? storedConstraint;
+                                        sourceActionConstraint = ?storedConstraint;
                                         sourceOutcomes = Array.append(tempStoredSubAction.sourceOutcomes, newTrie.sourceOutcomes);
                                         worldsToFetchEntitiesFrom = Array.append(tempStoredSubAction.worldsToFetchEntitiesFrom, newTrie.worldsToFetchEntitiesFrom);
                                         worldsToFetchActionHistoryFrom = Array.append(tempStoredSubAction.worldsToFetchActionHistoryFrom, newTrie.worldsToFetchActionHistoryFrom);
@@ -3156,7 +3321,7 @@ actor class WorldTemplate(owner : Principal) = this {
                         };
                     };
                 };
-                case _ { };
+                case _ {};
             };
 
             subActions_ := Trie.put(subActions_, Utils.keyT(subAction.sourcePrincipalId), Text.equal, newTrie).0;
@@ -3299,7 +3464,7 @@ actor class WorldTemplate(owner : Principal) = this {
                                     return;
                                 };
                             };
-                            
+
                             //Validate Constraints
                             var sourceValidationResult = validateConstraints_(sourceData, sourceActionHistoryData, sourcePrincipalId, actionId, sourceRefinedConstraints, currentActionState);
 
@@ -3913,6 +4078,7 @@ actor class WorldTemplate(owner : Principal) = this {
     public query func logsGetCount() : async (Nat) {
         return logs.size();
     };
+
     private func debugLog(msg : Text) : () {
         logs.add("index: " #Nat.toText(logsCount) # " -> " #msg);
         logsCount += 1;
@@ -4232,7 +4398,7 @@ actor class WorldTemplate(owner : Principal) = this {
                                     };
                                 };
 
-                                if (last_action_time == 0 and  (Int.abs(Time.now()) > actionTimeInterval.intervalDuration)) {
+                                if (last_action_time == 0 and (Int.abs(Time.now()) > actionTimeInterval.intervalDuration)) {
                                     last_action_time := (Int.abs(Time.now()) - actionTimeInterval.intervalDuration);
                                 };
                             };
@@ -4702,7 +4868,9 @@ actor class WorldTemplate(owner : Principal) = this {
         return #ok(returnValue);
     };
 
-    public shared ({caller}) func deleteActionHistoryForUser(args : { uid : TGlobal.userId }) : async () {
+    public shared ({ caller }) func deleteActionHistoryForUser(args : { uid : TGlobal.userId }) : async () {
+        assert (isAdmin_(caller) or Principal.toText(caller) == worldPrincipalId());
+
         switch (await getUserNode_(args.uid)) {
             case (#ok(userNodeId)) {
                 let usernode : UserNode = actor (userNodeId);
@@ -4710,6 +4878,243 @@ actor class WorldTemplate(owner : Principal) = this {
             };
             case _ {};
         };
+    };
+
+    // NFT Staking for Gaming Guild
+    private stable var _extStakes : Trie.Trie<Text, TStaking.EXTStake> = Trie.empty(); // key -> (collection_canister_id + "|" + nft_index)
+    //EXT tx verification checks
+    //1. Our StakingHubCanister owns the NFT
+    //2. NFT is not already staked by someone else in our NFT vault
+    private func queryExtTx_(collectionCanisterId : Text, nftIndex : Nat32, fromPrincipal : Text, toPrincipal : Text) : async (Result.Result<Text, Text>) {
+        let EXT = actor (collectionCanisterId) : actor {
+            getRegistry : shared () -> async [(Nat32, Text)];
+        };
+        var _registry : [(Nat32, Text)] = await EXT.getRegistry();
+        for (i in _registry.vals()) {
+            if (i.0 == nftIndex) {
+                if (i.1 != AccountIdentifier.fromText(toPrincipal, null)) {
+                    return #err("BOOM Gaming Guild do not hold this NFT of index : " # Nat32.toText(nftIndex) # ", contact dev team in discord.");
+                };
+            };
+        };
+        var key : Text = collectionCanisterId # "|" #Nat32.toText(nftIndex);
+        switch (Trie.find(_extStakes, Utils.keyT(key), Text.equal)) {
+            case (?stake) {
+                return #err("NFT already staked by someone, contact dev team in discord.");
+            };
+            case _ {
+                return #ok("");
+            };
+        };
+    };
+
+    public shared ({ caller }) func stakeExtNft(index : Nat32, toPrincipal : Text, fromPrincipal : Text, collectionCanisterId : Text) : async (Result.Result<Text, Text>) {
+        assert (Principal.fromText(fromPrincipal) == caller);
+        assert (Principal.fromText(toPrincipal) == WorldId());
+        switch (await queryExtTx_(collectionCanisterId, index, fromPrincipal, toPrincipal)) {
+            case (#ok _) {
+                let key = collectionCanisterId # "|" #Nat32.toText(index); //key = "canisterId" + "|" + "nftIndex"
+                var e : TStaking.EXTStake = {
+                    staker = fromPrincipal;
+                    tokenIndex = index;
+                    stakedAt = Time.now();
+                    dissolvedAt = 0;
+                };
+                _extStakes := Trie.put(_extStakes, Utils.keyT(key), Text.equal, e).0;
+
+                // update stakes entity value
+                let entityId : Text = collectionCanisterId # ":NftStake";
+                var quantityText : Text = "0.0";
+                var fieldsBuffer = Buffer.Buffer<TGlobal.Field>(0);
+                switch (await getUserNode_(fromPrincipal)) {
+                    case (#ok(userNodeId)) {
+                        let userNode : UserNode = actor (userNodeId);
+                        let entities = await userNode.getEntity(fromPrincipal, worldPrincipalId(), entityId);
+                        for (i in entities.fields.vals()) {
+                            if (i.fieldName == "quantity") {
+                                quantityText := i.fieldValue;
+                            } else {
+                                fieldsBuffer.add(i);
+                            };
+                        };
+                    };
+                    case (#err(errMsg)) {};
+                };
+
+                var quantity : Float = Utils.textToFloat(quantityText);
+                quantity := Float.add(quantity, 1.0);
+                fieldsBuffer.add({
+                    fieldName = "quantity";
+                    fieldValue = Float.toText(quantity);
+                });
+
+                switch (await createEntity({ uid = fromPrincipal; eid = entityId; fields = Buffer.toArray(fieldsBuffer) })) {
+                    case (#ok _) {
+                        return #ok("NFT staked successfully.");
+                    };
+                    case _ {
+                        return #err("NFT staked successfully but some error occured on Gaming Guilds backend, contact dev team in discord");
+                    };
+                };
+            };
+            case (#err e) {
+                return #err(e);
+            };
+        };
+    };
+
+    public shared ({ caller }) func dissolveExtNft(collectionCanisterId : Text, index : Nat32) : async (Result.Result<Text, Text>) {
+        let _of : Text = Principal.toText(caller);
+        let key : Text = collectionCanisterId # "|" #Nat32.toText(index);
+        switch (Trie.find(_extStakes, Utils.keyT(key), Text.equal)) {
+            case (?stake) {
+                if (stake.staker != _of) {
+                    return #err("You are not authorized to dissolve this NFT stake, NFT was staked by someone else.");
+                };
+                var e : TStaking.EXTStake = {
+                    staker = stake.staker;
+                    tokenIndex = stake.tokenIndex;
+                    stakedAt = stake.stakedAt;
+                    dissolvedAt = Time.now();
+                };
+                _extStakes := Trie.put(_extStakes, Utils.keyT(key), Text.equal, e).0;
+                // update stake entity value when NFT is already dissolved
+                let entityId : Text = collectionCanisterId # ":NftStake";
+                var quantityText : Text = "0.0";
+                var fieldsBuffer = Buffer.Buffer<TGlobal.Field>(0);
+                switch (await getUserNode_(_of)) {
+                    case (#ok(userNodeId)) {
+                        let userNode : UserNode = actor (userNodeId);
+                        let entities = await userNode.getEntity(_of, worldPrincipalId(), entityId);
+                        for (i in entities.fields.vals()) {
+                            if (i.fieldName == "quantity") {
+                                quantityText := i.fieldValue;
+                            } else {
+                                fieldsBuffer.add(i);
+                            };
+                        };
+                    };
+                    case (#err(errMsg)) {};
+                };
+
+                var quantity : Float = Utils.textToFloat(quantityText);
+                quantity := Float.sub(quantity, 1.0);
+                fieldsBuffer.add({
+                    fieldName = "quantity";
+                    fieldValue = Float.toText(Float.max(quantity, 0.0));
+                });
+
+                switch (await createEntity({ uid = _of; eid = entityId; fields = Buffer.toArray(fieldsBuffer) })) {
+                    case (#ok _) {
+                        return #ok("NFT dissolved successfully, now wait for 24Hrs to withdraw/disburse this NFT to your Wallet.");
+                    };
+                    case _ {
+                        return #err("NFT dissolved successfully but some error occured on Gaming Guild backend, report this to dev team in discord");
+                    };
+                };
+                return #ok("");
+            };
+            case _ {
+                return #err("You do not have NFT of this collection staked");
+            };
+        };
+    };
+
+    public shared ({ caller }) func disburseExtNft(collectionCanisterId : Text, index : Nat32) : async Result.Result<Text, Text> {
+        // transfer EXT NFT to user back after checking time-period
+        let delay : Int = 86400000000000;
+        let _of : Text = Principal.toText(caller);
+        let key : Text = collectionCanisterId # "|" #Nat32.toText(index);
+        switch (Trie.find(_extStakes, Utils.keyT(key), Text.equal)) {
+            case (?stake) {
+                if (stake.dissolvedAt != 0 and stake.dissolvedAt + delay <= Time.now()) {
+                    var _req : EXTCORE.TransferRequest = {
+                        from = #principal(WorldId());
+                        to = #principal(Principal.fromText(stake.staker));
+                        token = EXTCORE.TokenIdentifier.fromText(collectionCanisterId, index);
+                        amount = 1;
+                        memo = Text.encodeUtf8("BGG-NFT-Unlocking");
+                        notify = false;
+                        subaccount = null;
+                    };
+                    let EXT : Ledger.EXT = actor (collectionCanisterId);
+                    var res : EXTCORE.TransferResponse = await EXT.transfer(_req);
+                    switch (res) {
+                        case (#ok _) {
+                            _extStakes := Trie.remove(_extStakes, Utils.keyT(key), Text.equal).0;
+                            return #ok("NFT transferred back successfully.");
+                        };
+                        case _ {
+                            return #err("some error occured while transferring NFT from BGG NFT Vault back to User, contact dev team in discord");
+                        };
+                    };
+                } else {
+                    return #err("unfortunately you can not disburse your NFT before 24hrs after dissolving it.");
+                };
+            };
+            case _ {
+                return #err("You do not have NFT of this collection staked with BGG");
+            };
+        };
+    };
+
+    public query func getTokenIndex(id : Text) : async (Nat32) {
+        return EXTCORE.TokenIdentifier.getIndex(id);
+    };
+
+    public query func getUserSpecificExtStakes(arg : { uid : Text; collectionCanisterId : Text }) : async [Text] {
+        var b = Buffer.Buffer<Text>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            if (v.staker == arg.uid) {
+                let key = Iter.toArray(Text.tokens(i, #text("|")));
+                if (key[0] == arg.collectionCanisterId) {
+                    b.add(key[1]);
+                };
+            };
+        };
+        return Buffer.toArray(b);
+    };
+
+    public query func getUserExtStakes(uid : Text) : async [(Text, Text)] {
+        var b = Buffer.Buffer<(Text, Text)>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            if (v.staker == uid) {
+                let key = Iter.toArray(Text.tokens(i, #text("|")));
+                b.add((key[0], key[1]));
+            };
+        };
+        return Buffer.toArray(b);
+    };
+
+    public query func getUserExtStakesInfo(uid : Text) : async [(Text, TStaking.EXTStake)] {
+        var b = Buffer.Buffer<(Text, TStaking.EXTStake)>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            if (v.staker == uid) {
+                b.add((i, v));
+            };
+        };
+        return Buffer.toArray(b);
+    };
+
+    // DAU tracking for BGG Games
+    private stable var _dau : Trie.Trie<Text, Nat> = Trie.empty();
+
+    private func updateDauCount(uid : Text) : () {
+        let ?x = Trie.find(_dau, Utils.keyT(uid), Text.equal) else {
+            _dau := Trie.put(_dau, Utils.keyT(uid), Text.equal, 1).0;
+            return ();
+        };
+    };
+
+    public shared ({ caller }) func storeDauCount() : async (Nat) {
+        assert (caller == Principal.fromText(ENV.AnalyticsCanisterId));
+        let currentDAU = Trie.size(_dau);
+        _dau := Trie.empty();
+        return currentDAU;
+    };
+
+    public query func getCurrentDauCount() : async Nat {
+        return Trie.size(_dau);
     };
 
     // func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {

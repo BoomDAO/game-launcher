@@ -37,6 +37,7 @@ import BrowseGames from "./pages/BrowseGames";
 import Launchpad from "./pages/Launchpad";
 import LaunchpadProject from "./pages/Launchpad/LaunchpadProject";
 import Participate from "./pages/Launchpad/Participate";
+import Iframe from "./pages/GamingGuilds/Iframe";
 
 function App() {
   return (
@@ -138,6 +139,10 @@ function App() {
                 <Route
                   path={`${navPaths.nftTransfer}/:canisterId/:tokenid`}
                   element={<NftWalletTransfer />}
+                />
+                <Route
+                  path={`${navPaths.game_iframe}/:canisterId`}
+                  element={<Iframe/>}
                 />
               </Route>
 

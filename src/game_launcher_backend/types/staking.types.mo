@@ -30,28 +30,10 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
-    public type ICPStake = {
-    amount : Nat64;
-    dissolveAt : Int;
-    isDissolved : Bool;
-    };
-    public type ICRCStake = {
-    amount : Nat;
-    dissolveAt : Int;
-    isDissolved : Bool;
-    };
-    public type EXTStake = {
+  public type EXTStake = {
     staker : Text; //principal
     tokenIndex : Nat32;
-    dissolveAt : Int;
-    isDissolved : Bool;
-    };
-    public type Stake = {
-    canister_id : Text;
-    token_type : Text;
-    amount : Nat;
-    index : ?Text;
-    dissolveAt : Int;
-    isDissolved : Bool;
-    };
-}
+    stakedAt : Int;
+    dissolvedAt : Int;
+  };
+};

@@ -2,7 +2,7 @@
   "game-launcher": {
     "ic": "awcae-maaaa-aaaam-abmyq-cai",
     "stag": "n7z64-2yaaa-aaaam-abnsa-cai",
-    "test": "t2qzd-6qaaa-aaaak-qdbdq-cai"
+    "dev": "t2qzd-6qaaa-aaaak-qdbdq-cai"
   },
   "game_deployer": {
     "ic": "6rvbl-uqaaa-aaaal-ab24a-cai",
@@ -32,6 +32,8 @@
     "stag": "w73yo-siaaa-aaaak-qib2q-cai"
   },
   "icrc_ledger": {
-    "stag": "x3wx4-liaaa-aaaak-qib4q-cai"
+    "stag": "x3wx4-liaaa-aaaak-qib4q-cai",
+    "ic": "erej6-riaaa-aaaap-ab4ma-cai",
+    "dev": "7d6va-pyaaa-aaaap-ahdxa-cai"
   }
 }

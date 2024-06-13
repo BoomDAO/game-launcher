@@ -68,7 +68,7 @@
             ],
             "type": "persistent"
         },
-        "test": {
+        "dev": {
             "providers": [
                 "https://icp0.io"
             ],

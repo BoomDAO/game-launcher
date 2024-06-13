@@ -191,7 +191,7 @@ export const idlFactory = ({ IDL }) => {
     'targetAction' : IDL.Opt(SubAction),
     'worldAction' : IDL.Opt(SubAction),
   });
-  const Result_4 = IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text });
+  const Result_2 = IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text });
   const configId = IDL.Text;
   const Field = IDL.Record({ 'fieldName' : IDL.Text, 'fieldValue' : IDL.Text });
   const StableConfig = IDL.Record({
@@ -208,7 +208,7 @@ export const idlFactory = ({ IDL }) => {
     'aid' : IDL.Text,
     'uid' : IDL.Text,
   });
-  const Result_2 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Null });
+  const Result_3 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Null });
   const Result_9 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   const ActionOutcomeHistory = IDL.Record({
     'wid' : worldId,
@@ -259,6 +259,12 @@ export const idlFactory = ({ IDL }) => {
     'err' : IDL.Text,
   });
   const EntityPermission = IDL.Record({ 'eid' : entityId, 'wid' : worldId });
+  const EXTStake = IDL.Record({
+    'staker' : IDL.Text,
+    'dissolvedAt' : IDL.Int,
+    'stakedAt' : IDL.Int,
+    'tokenIndex' : IDL.Nat32,
+  });
   const GlobalPermission = IDL.Record({ 'wid' : worldId });
   const ActionArg = IDL.Record({
     'fields' : IDL.Vec(Field),
@@ -272,7 +278,7 @@ export const idlFactory = ({ IDL }) => {
     'worldPrincipalId' : IDL.Text,
     'callerOutcomes' : IDL.Vec(ActionOutcomeOption),
   });
-  const Result_3 = IDL.Variant({ 'ok' : ActionReturn, 'err' : IDL.Text });
+  const Result_4 = IDL.Variant({ 'ok' : ActionReturn, 'err' : IDL.Text });
   const BlockIndex__1 = IDL.Nat64;
   const Tokens__1 = IDL.Record({ 'e8s' : IDL.Nat64 });
   const TransferError__1 = IDL.Variant({
@@ -321,13 +327,44 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
-    'createAction' : IDL.Func([Action], [Result_4], []),
-    'createConfig' : IDL.Func([StableConfig], [Result_4], []),
-    'createEntity' : IDL.Func([EntitySchema], [Result_4], []),
+    'createAction' : IDL.Func([Action], [Result_2], []),
+    'createConfig' : IDL.Func([StableConfig], [Result_2], []),
+    'createEntity' : IDL.Func([EntitySchema], [Result_2], []),
+    'createEntityForAllUsers' : IDL.Func(
+        [IDL.Record({ 'eid' : entityId, 'fields' : IDL.Vec(Field) })],
+        [Result_2],
+        [],
+      ),
+    'createTestQuestActions' : IDL.Func(
+        [
+          IDL.Record({
+            'actionId_1' : IDL.Text,
+            'actionId_2' : IDL.Text,
+            'game_world_canister_id' : IDL.Text,
+          }),
+        ],
+        [Result_2],
+        [],
+      ),
+    'createTestQuestConfigs' : IDL.Func(
+        [
+          IDL.Vec(
+            IDL.Record({
+              'cid' : IDL.Text,
+              'image_url' : IDL.Text,
+              'name' : IDL.Text,
+              'description' : IDL.Text,
+              'quest_url' : IDL.Text,
+            })
+          ),
+        ],
+        [Result_2],
+        [],
+      ),
     'cycleBalance' : IDL.Func([], [IDL.Nat], ['query']),
     'deleteAction' : IDL.Func(
         [IDL.Record({ 'aid' : IDL.Text })],
-        [Result_4],
+        [Result_2],
         [],
       ),
     'deleteActionHistoryForUser' : IDL.Func(
@@ -338,7 +375,7 @@ export const idlFactory = ({ IDL }) => {
     'deleteActionLockState' : IDL.Func([ActionLockStateArgs], [], []),
     'deleteActionStateForAllUsers' : IDL.Func(
         [IDL.Record({ 'aid' : IDL.Text })],
-        [Result_2],
+        [Result_3],
         [],
       ),
     'deleteActionStateForUser' : IDL.Func(
@@ -347,20 +384,27 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'deleteAllActionLockStates' : IDL.Func([], [], []),
-    'deleteAllActions' : IDL.Func([], [Result_2], []),
-    'deleteAllConfigs' : IDL.Func([], [Result_2], []),
+    'deleteAllActions' : IDL.Func([], [Result_3], []),
+    'deleteAllConfigs' : IDL.Func([], [Result_3], []),
     'deleteCache' : IDL.Func([], [], ['oneway']),
     'deleteConfig' : IDL.Func(
         [IDL.Record({ 'cid' : IDL.Text })],
-        [Result_4],
+        [Result_2],
         [],
       ),
     'deleteEntity' : IDL.Func(
         [IDL.Record({ 'eid' : IDL.Text, 'uid' : IDL.Text })],
-        [Result_4],
+        [Result_2],
+        [],
+      ),
+    'deleteTestQuestActionStateForUser' : IDL.Func(
+        [IDL.Record({ 'aid' : IDL.Text })],
+        [Result_9],
         [],
       ),
     'deleteUser' : IDL.Func([IDL.Record({ 'uid' : userId })], [], []),
+    'disburseExtNft' : IDL.Func([IDL.Text, IDL.Nat32], [Result_2], []),
+    'dissolveExtNft' : IDL.Func([IDL.Text, IDL.Nat32], [Result_2], []),
     'editAction' : IDL.Func([IDL.Record({ 'aid' : IDL.Text })], [Action], []),
     'editConfig' : IDL.Func(
         [IDL.Record({ 'cid' : IDL.Text })],
@@ -428,39 +472,71 @@ export const idlFactory = ({ IDL }) => {
     'getGlobalPermissionsOfWorld' : IDL.Func([], [IDL.Vec(worldId)], []),
     'getOwner' : IDL.Func([], [IDL.Text], ['query']),
     'getProcessActionCount' : IDL.Func([], [IDL.Nat], ['query']),
+    'getTokenIndex' : IDL.Func([IDL.Text], [IDL.Nat32], ['query']),
     'getUserEntitiesFromWorldNodeComposite' : IDL.Func(
         [IDL.Record({ 'uid' : IDL.Text, 'page' : IDL.Opt(IDL.Nat) })],
         [Result_5],
         ['composite_query'],
+      ),
+    'getUserEntitiesFromWorldNodeFilteredSortingComposite' : IDL.Func(
+        [
+          IDL.Record({
+            'uid' : IDL.Text,
+            'order' : IDL.Variant({
+              'Descending' : IDL.Null,
+              'Ascending' : IDL.Null,
+            }),
+            'page' : IDL.Opt(IDL.Nat),
+            'fieldName' : IDL.Text,
+          }),
+        ],
+        [Result_5],
+        ['composite_query'],
+      ),
+    'getUserExtStakes' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
+        ['query'],
+      ),
+    'getUserExtStakesInfo' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(IDL.Tuple(IDL.Text, EXTStake))],
+        ['query'],
+      ),
+    'getUserSpecificExtStakes' : IDL.Func(
+        [IDL.Record({ 'uid' : IDL.Text, 'collectionCanisterId' : IDL.Text })],
+        [IDL.Vec(IDL.Text)],
+        ['query'],
       ),
     'get_trusted_origins' : IDL.Func([], [IDL.Vec(IDL.Text)], []),
     'grantEntityPermission' : IDL.Func([EntityPermission], [], []),
     'grantGlobalPermission' : IDL.Func([GlobalPermission], [], []),
     'importAllActionsOfWorld' : IDL.Func(
         [IDL.Record({ 'ofWorldId' : IDL.Text })],
-        [Result_4],
+        [Result_2],
         [],
       ),
     'importAllConfigsOfWorld' : IDL.Func(
         [IDL.Record({ 'ofWorldId' : IDL.Text })],
-        [Result_4],
+        [Result_2],
         [],
       ),
     'importAllPermissionsOfWorld' : IDL.Func(
         [IDL.Record({ 'ofWorldId' : IDL.Text })],
-        [Result_4],
+        [Result_2],
         [],
       ),
     'importAllUsersDataOfWorld' : IDL.Func(
         [IDL.Record({ 'ofWorldId' : IDL.Text })],
-        [Result_4],
+        [Result_2],
         [],
       ),
     'logsClear' : IDL.Func([], [], []),
     'logsGet' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
     'logsGetCount' : IDL.Func([], [IDL.Nat], ['query']),
-    'processAction' : IDL.Func([ActionArg], [Result_3], []),
-    'processActionAwait' : IDL.Func([ActionArg], [Result_3], []),
+    'processAction' : IDL.Func([ActionArg], [Result_4], []),
+    'processActionAwait' : IDL.Func([ActionArg], [Result_4], []),
+    'processActionForAllUsers' : IDL.Func([ActionArg], [], []),
     'removeAdmin' : IDL.Func([IDL.Record({ 'principal' : IDL.Text })], [], []),
     'removeAllUserNodeRef' : IDL.Func([], [], []),
     'removeEntityPermission' : IDL.Func([EntityPermission], [], []),
@@ -470,7 +546,13 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
-    'resetActionsAndConfigsToHardcodedTemplate' : IDL.Func([], [Result_2], []),
+    'resetActionsAndConfigsToHardcodedTemplate' : IDL.Func([], [Result_3], []),
+    'setDevWorldCanisterId' : IDL.Func([IDL.Text], [], []),
+    'stakeExtNft' : IDL.Func(
+        [IDL.Nat32, IDL.Text, IDL.Text, IDL.Text],
+        [Result_2],
+        [],
+      ),
     'validateConstraints' : IDL.Func(
         [IDL.Text, actionId, IDL.Opt(ActionConstraint)],
         [IDL.Record({ 'aid' : IDL.Text, 'status' : IDL.Bool })],

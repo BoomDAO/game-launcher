@@ -734,7 +734,7 @@ const TopBar = () => {
               <div className="relative mb-2 flex-shrink-0">
                 <img
                   src={`/logo-${theme}.svg`}
-                  width={164}
+                  width={148}
                   alt="logo"
                   className="hidden md:flex"
                 />
@@ -865,9 +865,9 @@ const TopBar = () => {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <Button onClick={login} className="mt-56 justify-center inline-block">{t("navigation.login")}</Button>
+                        <Button onClick={login} className="justify-center inline-block">{t("navigation.login")}</Button>
                         <div className="space-y-1">
-                          <p>Login to the Game Launcher to Curate, Play and Earn!</p>
+                          <p>Login to the BOOM Gaming Guild to Play, Compete and Earn!</p>
                         </div>
                       </div>
                     )}
