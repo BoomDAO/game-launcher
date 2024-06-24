@@ -14,9 +14,6 @@ import Loader from "@/components/ui/Loader";
 
 
 const GamingGuildBanner = () => {
-
-    // const { t } = useTranslation();
-    // const { data : balance = "0" } = useGetBoomBalance();
     const { data, isLoading } = useGetTexts();
     const { smallHeight } = useBreakpoint();
 
