@@ -73,6 +73,12 @@
                 "https://icp0.io"
             ],
             "type": "persistent"
+        },
+        "lp": {
+            "providers": [
+                "https://icp0.io"
+            ],
+            "type": "persistent"
         }
     },
     "version": 1

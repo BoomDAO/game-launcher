@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { getTokenSymbol } from "@/api/profile";
 import Loader from "@/components/ui/Loader";
 import { useAuthContext } from "@/context/authContext";
-import { useICRCLedgerClient } from "@/hooks";
+import { ledger_canisterId, useICRCLedgerClient } from "@/hooks";
 import { useParticipateICPTransfer } from "@/api/launchpad";
 
 const scheme = z.object({
@@ -35,7 +35,7 @@ const ParticipateTransfer = () => {
         (async () => {
             if (canisterId != undefined) {
                 setIsTransferAmountLoading(true);
-                const { actor, methods } = await useICRCLedgerClient(canisterId ? canisterId : "");
+                const { actor, methods } = await useICRCLedgerClient(ledger_canisterId);
                 let balance = await actor[methods.icrc1_balance_of]({
                     owner: session?.identity?.getPrincipal(),
                     subaccount: []

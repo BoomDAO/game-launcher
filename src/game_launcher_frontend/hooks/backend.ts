@@ -33,7 +33,7 @@ import { idlFactory as GamingGuildsWorldNodeFactory } from "../dids/gaming_guild
 // @ts-ignore
 import { idlFactory as SwapCanisterFactory } from "../dids/swap.did.js";
 
-const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+export const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
 const boom_ledger_canisterId = "vtrom-gqaaa-aaaaq-aabia-cai";
@@ -312,7 +312,11 @@ export const useLedgerClient = async () => {
       agent,
       canisterId: ledger_canisterId,
     }),
-    methods: {},
+    methods: {
+      icrc1_balance_of: "icrc1_balance_of",
+      icrc1_transfer: "icrc1_transfer",
+      icrc1_fee: "icrc1_fee"
+    },
   };
 };
 
@@ -497,7 +501,8 @@ export const useSwapCanisterClient = async () => {
     methods: {
       getAllTokensInfo: "getAllTokensInfo",
       total_icp_contributed_e8s_and_total_participants: "total_icp_contributed_e8s_and_total_participants",
-      getParticipationDetails: "getParticipationDetails"
+      getParticipationDetails: "getParticipationDetails",
+      participate_in_token_swap: "participate_in_token_swap"
     },
   };
 };

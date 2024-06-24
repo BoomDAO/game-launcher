@@ -9,7 +9,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { swapCanisterId, useICRCLedgerClient, useSwapCanisterClient } from "@/hooks";
+import { ledger_canisterId, swapCanisterId, useICRCLedgerClient, useLedgerClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
 import { LaunchCardProps, ParticipantDetails, TokensInfo } from "@/types";
@@ -80,10 +80,10 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                         },
                         swap: {
                             raisedIcp: "0",
-                            maxIcp: String(current_token_info.token_swap_configs.max_icp_e8s),
-                            minIcp: String(current_token_info.token_swap_configs.min_icp_e8s),
-                            minParticipantIcp: String(current_token_info.token_swap_configs.min_participant_icp_e8s),
-                            maxParticipantIcp: String(current_token_info.token_swap_configs.max_participant_icp_e8s),
+                            maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
+                            minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
+                            minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
+                            maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
                             status: true,
@@ -114,10 +114,10 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                         },
                         swap: {
                             raisedIcp: "0",
-                            maxIcp: String(current_token_info.token_swap_configs.max_icp_e8s),
-                            minIcp: String(current_token_info.token_swap_configs.min_icp_e8s),
-                            minParticipantIcp: String(current_token_info.token_swap_configs.min_participant_icp_e8s),
-                            maxParticipantIcp: String(current_token_info.token_swap_configs.max_participant_icp_e8s),
+                            maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
+                            minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
+                            minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
+                            maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
                             status: false,
@@ -139,7 +139,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
             }
             await Promise.all(icp_contributed_promises).then((results => {
                 for (let i = 0; i < res.length; i += 1) {
-                    res[i].swap.raisedIcp = String(results[i][0]);
+                    res[i].swap.raisedIcp = String(Number(results[i][0]) / 100000000);
                     res[i].swap.participants = String(results[i][1])
                 }
             }));
@@ -148,22 +148,23 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
     });
 };
 
-export const useGetParticipationDetails = (canisterId? : string): UseQueryResult<String> => {
+export const useGetParticipationDetails = (canisterId?: string): UseQueryResult<String> => {
     const { session } = useAuthContext();
     return useQuery({
         queryKey: [queryKeys.participant_details],
         queryFn: async () => {
             const { actor, methods } = await useSwapCanisterClient();
             let details = await actor[methods.getParticipationDetails]({
-                tokenCanisterId: canisterId? canisterId : "",
-                participantId: (session?.address)
+                tokenCanisterId: canisterId ? canisterId : "",
+                participantId: (session) ? session.address : "2vxsx-fae"
             }) as {
                 ok: ParticipantDetails
             };
-            if(details.ok == undefined) {
+            if (details.ok == undefined) {
                 return "0";
             } else {
                 let amt = (details.ok.icp_e8s / BigInt(100000000));
+                console.log(String(amt));
                 return String(amt);
             }
         },
@@ -182,10 +183,11 @@ export const useParticipateICPTransfer = () => {
             canisterId?: string;
         }) => {
             try {
-                const { actor, methods } = await useICRCLedgerClient((canisterId != undefined) ? canisterId : "");
+                const { actor, methods } = await useICRCLedgerClient(ledger_canisterId);
+                const swapCanister = await useSwapCanisterClient();
                 let fee = 0;
                 for (let i = 0; i < Tokens.tokens.length; i += 1) {
-                    if (Tokens.tokens[i].ledger == canisterId) {
+                    if (Tokens.tokens[i].ledger == ledger_canisterId) {
                         fee = Tokens.tokens[i].fee
                     }
                 };
@@ -202,11 +204,13 @@ export const useParticipateICPTransfer = () => {
                     created_at_time: [],
                     amount: amount_e8s,
                 };
+                console.log(req);
                 let res = await actor[methods.icrc1_transfer](req) as {
                     Ok: number | undefined, Err: {
                         InsufficientFunds: {} | undefined
                     } | undefined
                 };
+                console.log(res);
                 if (res.Ok == undefined) {
                     if (res.Err?.InsufficientFunds == undefined) {
                         toast.error("ICRC1 Transfer error. Contact dev team in discord.");
@@ -216,7 +220,16 @@ export const useParticipateICPTransfer = () => {
                         closeToast();
                     }
                     throw (res.Err);
-                };
+                } else {
+                    let res2 = await swapCanister.actor[swapCanister.methods.participate_in_token_swap]({
+                        canister_id: (canisterId != undefined) ? canisterId : "",
+                        amount: {
+                            e8s: amount_e8s
+                        },
+                        blockIndex: 12525476
+                    });
+                    console.log(res2);
+                }
                 return res;
             } catch (error) {
                 if (error instanceof Error) {

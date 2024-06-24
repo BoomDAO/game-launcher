@@ -73,7 +73,7 @@ const LaunchCard = ({
     }
 
     const handleParticipate = () => {
-        if (session) {
+        if (session.session) {
             navigate(navPaths.launchpad_participate + "/" + canisterId);
         } else {
             setIsOpenNavSidebar(true);

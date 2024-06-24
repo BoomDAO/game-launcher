@@ -51,6 +51,23 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
+  // public func setFix() : async () {
+  //   for((i, configs) in Trie.iter(_swap_configs)) {
+  //     if(i == "au5fy-riaaa-aaaak-qicaq-cai") {
+  //       let configs_with_transfer_results : Swap.TokenSwapConfigs = {
+  //         token_supply_configs = configs.token_supply_configs;
+  //         min_icp_e8s = 1000000000;
+  //         max_icp_e8s = 10000000000;
+  //         min_participant_icp_e8s = 100000000;
+  //         max_participant_icp_e8s = 10000000000;
+  //         swap_start_timestamp_seconds = configs.swap_start_timestamp_seconds;
+  //         swap_due_timestamp_seconds = configs.swap_due_timestamp_seconds;
+  //       };
+  //       _swap_configs := Trie.put(_swap_configs, Helper.keyT(i), Text.equal, configs_with_transfer_results).0;
+  //     };
+  //   };
+  // };
+
   // actor interfaces
   let management_canister : Management.Self = actor (ENV.IC_Management);
   let icp_ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);

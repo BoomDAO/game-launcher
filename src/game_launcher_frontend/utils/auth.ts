@@ -55,7 +55,7 @@ export const nfidEmbedLogin = async (nfid: NFID) => {
   };
   const delegationIdentity: Identity = await nfid.getDelegation({
     targets: [],
-    derivationOrigin: "https://7p3gx-jaaaa-aaaal-acbda-cai.ic0.app",
+    // derivationOrigin: "https://7p3gx-jaaaa-aaaal-acbda-cai.ic0.app",
     maxTimeToLive: BigInt(24) * BigInt(3_600_000_000_000) // 24 hrs
   });
   return delegationIdentity;
