@@ -1382,7 +1382,8 @@
 
 "@superfaceai/passport-twitter-oauth2@github:superfaceai/passport-twitter-oauth2":
   version "1.2.4"
-  resolved "git+ssh://git@github.com/superfaceai/passport-twitter-oauth2.git#885ed094b1ed6a4d484d937e289266018b4b34cd"
+  resolved "git+ssh://git@github.com/superfaceai/passport-twitter-oauth2.git"
+  integrity sha512-0tpqdrWfFyekhjEav2lPmXKZrhDSnzmJzdtuwZGu8/2RdajdjrDZE2Dn32mD9gJCathhaibLDedZ+GAAi4paig==
   dependencies:
     passport-oauth2 "^1.6.1"
   optionalDependencies:
@@ -2741,11 +2742,6 @@ fs-minipass@^3.0.0, fs-minipass@^3.0.3:
   version "3.0.3"
   dependencies:
     minipass "^7.0.3"
-
-fsevents@~2.3.2, fsevents@~2.3.3:
-  version "2.3.3"
-  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz"
-  integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
 
 function-bind@^1.1.2:
   version "1.1.2"

@@ -27,6 +27,20 @@
             "logo": "https://game-launcher.nyc3.cdn.digitaloceanspaces.com/toyoworld.jpg",
             "description": "ToyoWorld official nft collection.",
             "url": "https://t5t44-naaaa-aaaah-qcutq-cai.raw.icp0.io/collection/6kdwg-paaaa-aaaap-qbuea-cai/summary"
+        },
+        {
+            "name": "Elementum: Interitus",
+            "canister": "zejmq-rqaaa-aaaah-qcnsq-cai",
+            "logo": "https://s3.amazonaws.com/pf-user-files-01/u-166728/uploads/2023-03-22/jh13xzk/Avatar_Interitus.gif",
+            "description": "Elementum official nft collection.",
+            "url": "https://t5t44-naaaa-aaaah-qcutq-cai.raw.icp0.io/collection/zejmq-rqaaa-aaaah-qcnsq-cai/summary"
+        },
+        {
+            "name": "Faceted Meninas",
+            "canister": "k4qsa-4aaaa-aaaah-qbvnq-cai",
+            "logo": "https://s3.amazonaws.com/pf-user-files-01/u-166728/uploads/2023-03-22/0m03x44/Avatar_Meninas.gif",
+            "description": "Faceted Meninas nft collection.",
+            "url": "https://t5t44-naaaa-aaaah-qcutq-cai.raw.icp0.io/collection/k4qsa-4aaaa-aaaah-qbvnq-cai/summary"
         }
     ]
 }
