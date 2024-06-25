@@ -280,6 +280,19 @@ const getFieldsOfConfig = (configs: GuildConfig[], config: string) => {
     return res;
 };
 
+const getTypeFieldOfConfig = (configs: GuildConfig[], config: string) => {
+    for (let i = 0; i < (configs.length) ? configs.length : 0; i += 1) {
+        if (configs[i].cid == config) {
+            for (let j = 0; j < configs[i].fields.length; j += 1) {
+                if (configs[i].fields[j].fieldName == "type") {
+                    return configs[i].fields[j].fieldValue;
+                };
+            };
+        };
+    };
+    return "Gaming";
+};
+
 const getAllFieldsOfConfig = (configs: GuildConfig[], config: string) => {
     for (let i = 0; i < configs.length; i += 1) {
         if (configs[i].cid == config) {
@@ -705,9 +718,11 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                         dailyQuest: {
                             isDailyQuest: false,
                             resetsIn: ""
-                        }
+                        },
+                        kind: "Gaming"
                     };
                     if (configs[i].cid == actions[k].aid) {
+                        entry.kind = getTypeFieldOfConfig(configs, configs[i].cid) as "Gaming" | "Featured" | "Social";
                         let diff: bigint = 0n;
                         let config_fields: { name: string; imageUrl: string; gameUrl: string; description: string; } = getFieldsOfConfig(configs, configs[i].cid);
                         entry.aid = actions[k].aid;
@@ -1015,11 +1030,6 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
                 };
             };
             let final_response: GuildCard[] = [];
-            // for (let x = 0; x < response.length; x += 1) {
-            //     if(current_user_principal == "2vxsx-fae") {
-            //         response[x].type = "Incomplete";
-            //     };
-            // };
             for (let x = 0; x < response.length; x += 1) {
                 if (response[x].type == "Completed") {
                     final_response.push(response[x]);

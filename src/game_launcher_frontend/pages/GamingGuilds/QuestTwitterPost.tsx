@@ -3,12 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { navPaths } from "@/shared";
 import DialogProvider from "@/components/DialogProvider";
-import GamingGuilds from ".";
 import {
     OpenDialogType,
     StateTypes
 } from "../../types/dialogTypes";
 import TwitterPost from "./TwitterPost";
+import Home from "../Home";
 
 const QuestTwitterPost = () => {
     const { t } = useTranslation();
@@ -62,7 +62,7 @@ const QuestTwitterPost = () => {
     return (
         <>
             <DialogProvider state={state}>
-                <GamingGuilds />
+                <Home/>
             </DialogProvider>
         </>
     );

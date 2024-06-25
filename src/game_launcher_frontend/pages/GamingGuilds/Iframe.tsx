@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { navPaths } from "@/shared";
 import DialogProvider from "@/components/DialogProvider";
-import GamingGuilds from ".";
 import {
     DialogWidthType,
     DialogPropTypes,
@@ -20,6 +19,7 @@ import {
 import { useVerifyEmail } from "@/api/guilds";
 import GameIframe from "./GameIframe";
 import IframeDialogProvider from "@/components/IframeDialoadProvider";
+import Home from "../Home";
 
 const scheme = z.object({
     email: z.string().min(1, "Email is required."),
@@ -80,7 +80,7 @@ const Iframe = () => {
     return (
         <>
             <IframeDialogProvider state={state}>
-                <GamingGuilds />
+                <Home/>
             </IframeDialogProvider>
         </>
     );

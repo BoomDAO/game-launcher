@@ -35,6 +35,7 @@ const Members = () => {
                         <option value="paws_airdrop_pts_leaderboard">PAWS ARENA</option>
                         <option value="elementum_airdrop_pts_leaderboard">ELEMENTUM</option>
                         <option value="plethora_airdrop_pts_leaderboard">PLETHORA</option>
+                        <option value="toyoworld_airdrop_pts_leaderboard">TOYOWORLD</option>
                     </select>
                     </div>
                 </div>

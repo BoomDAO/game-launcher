@@ -3,12 +3,13 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { navPaths } from "@/shared";
 import DialogProvider from "@/components/DialogProvider";
-import GamingGuilds from ".";
+// import GamingGuilds from ".";
 import {
     OpenDialogType,
     StateTypes
 } from "../../types/dialogTypes";
 import EmailOtpPage from "./EmailOtpPage";
+import Home from "../Home";
 
 
 const VerifyOtpPage = () => {
@@ -63,7 +64,7 @@ const VerifyOtpPage = () => {
     return (
         <>
             <DialogProvider state={state}>
-                <GamingGuilds />
+                <Home/>
             </DialogProvider>
         </>
     );
