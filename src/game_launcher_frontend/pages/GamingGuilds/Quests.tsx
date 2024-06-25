@@ -35,6 +35,15 @@ const Quests = () => {
     req.push("phone_badge");
     const { data: badges = [], isLoading: loading } = getConfigsData(req);
 
+    const doesQuestKindExist = (kind: string) => {
+        for (let i = 0; i < configs.length; i += 1) {
+            if (configs[i].kind == kind) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     const onVerifyEmailButtonClick = () => {
         if (!session) {
             return setIsOpenNavSidebar(true);
@@ -51,65 +60,49 @@ const Quests = () => {
 
     const handleItemsOnClick = (name: string, imageUrl: string, description: string) => {
         toast.custom((t) => (
-          <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
-            <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
-              <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
-                <div className="flex justify-center mt-5">
-                  <img src={imageUrl} className="mx-2 h-12" />
-                  <p className="pt-2 pl-3 text-xl">{name}</p>
+            <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+                <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
+                    <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+                        <div className="flex justify-center mt-5">
+                            <img src={imageUrl} className="mx-2 h-12" />
+                            <p className="pt-2 pl-3 text-xl">{name}</p>
+                        </div>
+                        <p className="text-base pt-3 pb-6">{description}</p>
+                        <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
+                    </div>
                 </div>
-                <p className="text-base pt-3 pb-6">{description}</p>
-                <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
-              </div>
             </div>
-          </div>
         ));
-      };
+    };
 
     return (
         <>
             <div className="flex w-auto h-fit float-right">
                 <div className="dark:text-black text-white flex dark:bg-white bg-dark rounded-full text-center p-2 justify-around cursor-pointer" onClick={() => handleItemsOnClick(badges[0].name, badges[0].imageUrl, badges[0].description)}>
-                    <img src={(!loading)? badges[0].imageUrl : ""} alt="Airdrop Badge" className="w-8 h-8 mt-0.5" />
+                    <img src={(!loading) ? badges[0].imageUrl : ""} alt="Airdrop Badge" className="w-8 h-8 mt-0.5" />
                     <p className="text-lg p-1">Airdrop Badge : {(status.emailVerified) ? "Verified" : "Unverified"}</p>
-                    {/* {
-                        (status.emailVerified) ? <></> : <Button
-                            onClick={onVerifyEmailButtonClick}
-                            className="py-2 px-3"
-                            rightArrow
-                            size="normal"
-                        >
-                            {t("gaming_guilds.items.item_3.verify_email_button")}
-                        </Button>
-                    } */}
                 </div>
                 <div className="dark:text-black text-white flex dark:bg-white bg-dark rounded-full text-center p-2 justify-around ml-3 mr-2 cursor-pointer" onClick={() => handleItemsOnClick(badges[1].name, badges[1].imageUrl, badges[1].description)}>
-                    <img src={(!loading)? badges[1].imageUrl : ""} alt="Phone Badge" className="w-8 h-8 mt-0.5" />
+                    <img src={(!loading) ? badges[1].imageUrl : ""} alt="Phone Badge" className="w-8 h-8 mt-0.5" />
                     <p className="text-lg p-1">Phone Badge : {(status.phoneVerified) ? "Verified" : "Unverified"}</p>
-                    {/* {
-                        (status.phoneVerified) ? <></> : <Button
-                            onClick={onVerifyPhoneButtonClick}
-                            className="py-2 px-3"
-                            rightArrow
-                            size="normal"
-                        >
-                            {t("gaming_guilds.items.item_3.verify_phone_button")}
-                        </Button>
-                    } */}
                 </div>
             </div>
-            <Space />
+            <Space size="small" />
+            <div className="flex gradient-bg-amber w-1/4 rounded-primary">
+                <div className="pl-4 py-1 text-2xl font-bold">FEATURED</div>
+                <div className="pl-1 pt-2.5 text-xxl font-bold">QUESTS</div>
+            </div>
             <div className="">
                 {isLoading ? (
-                    <LoadingResult>{t("gaming_guilds.Quests.loading")}</LoadingResult>
+                    <LoadingResult>{t("gaming_guilds.Quests.feature_loading")}</LoadingResult>
                 ) : isError ? (
                     <ErrorResult>{t("error")}</ErrorResult>
                 ) :
-                    configs.length ? (
+                    doesQuestKindExist("Featured") ? (
                         <>
                             <div className="grid grid-cols-2 gap-4">
-                                {configs.map(({ title, image, rewards, countCompleted, gameUrl, mustHave, progress, expiration, type, aid, description, gamersImages, dailyQuest }) => (
-                                    <div key={aid}>
+                                {configs.map(({ title, image, rewards, countCompleted, gameUrl, mustHave, progress, expiration, type, aid, description, gamersImages, dailyQuest, kind }) => {
+                                    return (kind == "Featured") ? <div key={aid}>
                                         <GuildCard
                                             aid={aid}
                                             title={title}
@@ -125,13 +118,91 @@ const Quests = () => {
                                             gamersImages={gamersImages}
                                             dailyQuest={dailyQuest}
                                         />
-                                    </div>
-                                ))}
+                                    </div> : <></>
+                                })}
                                 <EmptyGameCard length={configs.length} />
                             </div>
                         </>
                     ) : (
-                        <NoDataResult>{t("gaming_guilds.items.item_1.no_quest")}</NoDataResult>
+                        <NoDataResult>{t("gaming_guilds.quest_kinds.feature_error")}</NoDataResult>
+                    )}
+            </div>
+            <div className="flex gradient-bg-amber w-1/4 rounded-primary">
+                <div className="pl-4 py-1 text-2xl font-bold">GAMING</div>
+                <div className="pl-1 pt-2.5 text-xxl font-bold">QUESTS</div>
+            </div>
+            <div className="">
+                {isLoading ? (
+                    <LoadingResult>{t("gaming_guilds.Quests.gaming_loading")}</LoadingResult>
+                ) : isError ? (
+                    <ErrorResult>{t("error")}</ErrorResult>
+                ) :
+                    doesQuestKindExist("Gaming") ? (
+                        <>
+                            <div className="grid grid-cols-2 gap-4">
+                                {configs.map(({ title, image, rewards, countCompleted, gameUrl, mustHave, progress, expiration, type, aid, description, gamersImages, dailyQuest, kind }) => {
+                                    return (kind == "Gaming") ? <div key={aid}>
+                                        <GuildCard
+                                            aid={aid}
+                                            title={title}
+                                            description={description}
+                                            image={image}
+                                            rewards={rewards}
+                                            countCompleted={countCompleted}
+                                            gameUrl={gameUrl}
+                                            mustHave={mustHave}
+                                            progress={progress}
+                                            expiration={expiration}
+                                            type={type}
+                                            gamersImages={gamersImages}
+                                            dailyQuest={dailyQuest}
+                                        />
+                                    </div> : <></>
+                                })}
+                                <EmptyGameCard length={configs.length} />
+                            </div>
+                        </>
+                    ) : (
+                        <NoDataResult>{t("gaming_guilds.quest_kinds.gaming_error")}</NoDataResult>
+                    )}
+            </div>
+            <div className="flex gradient-bg-amber w-1/4 rounded-primary">
+                <div className="pl-4 py-1 text-2xl font-bold">SOCIAL</div>
+                <div className="pl-1 pt-2.5 text-xxl font-bold">QUESTS</div>
+            </div>
+            <div className="">
+                {isLoading ? (
+                    <LoadingResult>{t("gaming_guilds.Quests.social_loading")}</LoadingResult>
+                ) : isError ? (
+                    <ErrorResult>{t("error")}</ErrorResult>
+                ) :
+                    doesQuestKindExist("Social") ? (
+                        <>
+                            <div className="grid grid-cols-2 gap-4">
+                                {configs.map(({ title, image, rewards, countCompleted, gameUrl, mustHave, progress, expiration, type, aid, description, gamersImages, dailyQuest, kind }) => {
+                                    return (kind == "Social") ? <div key={aid}>
+                                        <GuildCard
+                                            aid={aid}
+                                            title={title}
+                                            description={description}
+                                            image={image}
+                                            rewards={rewards}
+                                            countCompleted={countCompleted}
+                                            gameUrl={gameUrl}
+                                            mustHave={mustHave}
+                                            progress={progress}
+                                            expiration={expiration}
+                                            type={type}
+                                            gamersImages={gamersImages}
+                                            dailyQuest={dailyQuest}
+                                        />
+                                    </div> : <></>
+                                })}
+                                <EmptyGameCard length={configs.length} />
+                            </div>
+                        </>
+                    ) : (
+                        <NoDataResult>{t("gaming_guilds.quest_kinds.social_error")}</NoDataResult>
                     )}
             </div>
         </>

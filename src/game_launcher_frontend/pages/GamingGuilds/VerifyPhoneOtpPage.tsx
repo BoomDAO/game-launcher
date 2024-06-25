@@ -10,12 +10,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { navPaths } from "@/shared";
 import DialogProvider from "@/components/DialogProvider";
-import GamingGuilds from ".";
 import {
     OpenDialogType,
     StateTypes
 } from "../../types/dialogTypes";
 import PhoneOtpPage from "./PhoneOtpPage";
+import Home from "../Home";
 
 const VerifyPhoneOtpPage = () => {
     
@@ -72,7 +72,7 @@ const VerifyPhoneOtpPage = () => {
     return (
         <>
             <DialogProvider state={state}>
-                <GamingGuilds />
+                <Home/>
             </DialogProvider>
         </>
     );

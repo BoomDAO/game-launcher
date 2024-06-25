@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { navPaths } from "@/shared";
 import DialogProvider from "@/components/DialogProvider";
-import GamingGuilds from ".";
 import {
     DialogWidthType,
     DialogPropTypes,
@@ -19,6 +18,7 @@ import {
 } from "../../types/dialogTypes";
 import { useVerifyEmail } from "@/api/guilds";
 import EmailPage from "./EmailPage";
+import Home from "../Home";
 
 const scheme = z.object({
     email: z.string().min(1, "Email is required."),
@@ -78,7 +78,7 @@ const VerifyEmailPage = () => {
     return (
         <>
             <DialogProvider state={state}>
-                <GamingGuilds />
+                <Home/>
             </DialogProvider>
         </>
     );

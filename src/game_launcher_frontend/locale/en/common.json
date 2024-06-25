@@ -494,6 +494,11 @@
   ],
   "gaming_guilds": {
     "banner_image": "/guilds-banner.png",
+    "quest_kinds": {
+      "gaming_error": "No Gaming Quests added yet ...",
+      "feature_error": "No Featured Quests added yet ...",
+      "social_error": "No Social Quests added yet ..."
+    },
     "items": {
       "item_1": {
         "title": "QUESTS",
@@ -510,7 +515,9 @@
       }
     },
     "Quests": {
-      "loading": "HODL On, We are loading Quests for you ...",
+      "feature_loading": "HODL On, We are loading Featured Quests for you ...",
+      "gaming_loading": "HODL On, We are loading Gaming Quests for you ...",
+      "social_loading": "HODL On, We are loading Social Quests for you ...",
       "complete_button": "CLAIM",
       "incomplete_button": "GO",
       "claimed_button": "DONE",

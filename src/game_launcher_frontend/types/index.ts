@@ -256,6 +256,7 @@ export interface GuildCard {
     isDailyQuest : boolean;
     resetsIn : string;
   };
+  kind: "Gaming" | "Featured" | "Social";
 }
 
 export interface Member {
