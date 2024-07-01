@@ -80,7 +80,7 @@ module {
             icp_result: ?ICP.Icrc1TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
-        boom_dao: {
+        boom_dao_treasury: {
             icp_account: AccountIdentifier;
             icrc_account: Account;
             icp: Nat64;
@@ -89,6 +89,13 @@ module {
             icrc_result: ?ICRC.TransferResult;
         };
         liquidity_pool: {
+            account: Account;
+            icp: Nat64;
+            icrc: Nat;
+            icp_result: ?ICP.Icrc1TransferResult;
+            icrc_result: ?ICRC.TransferResult;
+        };
+        other: ?{ // For more flexibility in case there are other peoples for token allocation
             account: Account;
             icp: Nat64;
             icrc: Nat;

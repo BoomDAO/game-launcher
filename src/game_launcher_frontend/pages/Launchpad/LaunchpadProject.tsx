@@ -1,4 +1,4 @@
-import { useGetAllTokensInfo } from "@/api/launchpad";
+import { useGetAllTokensInfo, useGetTokenInfo } from "@/api/launchpad";
 import EmptyGameCard from "@/components/EmptyGameCard";
 import LaunchCard from "@/components/LaunchCard";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
@@ -13,15 +13,13 @@ const LaunchpadProject = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { setIsOpenNavSidebar } = useGlobalContext();
-    const { data: launchCards, isLoading, isError } = useGetAllTokensInfo();
-
+    const { data: launchCards, isLoading, isError } = useGetTokenInfo();
     const [activeTab, setActiveTab] = React.useState(1);
     const tabItems = [
         { id: 1, name: "About Project" },
         { id: 2, name: "Token Allocations" },
         { id: 3, name: "FAQS" }
     ];
-
     return (
         <>
             <div>
@@ -36,7 +34,6 @@ const LaunchpadProject = () => {
                                 <>
                                     <div className="">
                                         {launchCards.map(({ id, project, swap, token }) => (
-                                            (swap.status) ?
                                                 <div key={id}>
                                                     <LaunchCard
                                                         id={id}
@@ -74,7 +71,7 @@ const LaunchpadProject = () => {
                                                             )}
                                                         </div>
                                                     </div>
-                                                </div> : <></>
+                                                </div>
                                         ))}
                                         <EmptyGameCard length={launchCards.length} />
                                     </div>

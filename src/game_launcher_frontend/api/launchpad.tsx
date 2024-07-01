@@ -1,6 +1,6 @@
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 import {
@@ -50,10 +50,114 @@ const msToTime = (ms: number) => {
     return res;
 }
 
+export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
+    const { session } = useAuthContext();
+    const { canisterId } = useParams();
+    return useQuery({
+        queryKey: [queryKeys.tokens_info, canisterId],
+        queryFn: async () => {
+            const { actor, methods } = await useSwapCanisterClient();
+            let tokensInfoRes = await actor[methods.getAllTokensInfo]() as {
+                ok: TokensInfo
+            };
+            let res: LaunchCardProps[] = [];
+            let icp_contributed_promises = [];
+            let token_canister_ids = [];
+            if (tokensInfoRes.ok) {
+                let tokensInfo = tokensInfoRes.ok;
+                for (let i = 0; i < tokensInfo.active.length; i += 1) {
+                    let current_token_info = tokensInfo.active[i];
+                    if (current_token_info.token_canister_id == canisterId) {
+                        token_canister_ids.push(current_token_info.token_canister_id);
+                        let cardInfo: LaunchCardProps = {
+                            id: current_token_info.token_canister_id,
+                            project: {
+                                name: current_token_info.token_project_configs.name,
+                                bannerUrl: current_token_info.token_project_configs.bannerUrl,
+                                description: isDescriptionPlainText(current_token_info.token_project_configs.description) ? current_token_info.token_project_configs.description.plainText : "",
+                                website: current_token_info.token_project_configs.website,
+                                creator: current_token_info.token_project_configs.creator,
+                                creatorAbout: current_token_info.token_project_configs.creatorAbout,
+                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                            },
+                            swap: {
+                                raisedIcp: "0",
+                                maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
+                                minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
+                                minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
+                                maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
+                                participants: "0",
+                                endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
+                                status: true,
+                                result: false
+                            },
+                            token: {
+                                name: current_token_info.token_configs.name,
+                                symbol: current_token_info.token_configs.symbol,
+                                logoUrl: current_token_info.token_configs.logo,
+                                description: current_token_info.token_configs.description,
+                            },
+                        };
+                        res.push(cardInfo);
+                    }
+                }
+                for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
+                    let current_token_info = tokensInfo.inactive[i];
+                    if (current_token_info.token_canister_id == canisterId) {
+                        token_canister_ids.push(current_token_info.token_canister_id);
+                        let cardInfo: LaunchCardProps = {
+                            id: current_token_info.token_canister_id,
+                            project: {
+                                name: current_token_info.token_project_configs.name,
+                                bannerUrl: current_token_info.token_project_configs.bannerUrl,
+                                description: isDescriptionPlainText(current_token_info.token_project_configs.description) ? current_token_info.token_project_configs.description.plainText : "",
+                                website: current_token_info.token_project_configs.website,
+                                creator: current_token_info.token_project_configs.creator,
+                                creatorAbout: current_token_info.token_project_configs.creatorAbout,
+                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                            },
+                            swap: {
+                                raisedIcp: "0",
+                                maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
+                                minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
+                                minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
+                                maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
+                                participants: "0",
+                                endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
+                                status: false,
+                                result: false
+                            },
+                            token: {
+                                name: current_token_info.token_configs.name,
+                                symbol: current_token_info.token_configs.symbol,
+                                logoUrl: current_token_info.token_configs.logo,
+                                description: current_token_info.token_configs.description,
+                            },
+                        };
+                        res.push(cardInfo);
+                    }
+                }
+            }
+
+            for (let i = 0; i < token_canister_ids.length; i += 1) {
+                icp_contributed_promises.push(actor[methods.total_icp_contributed_e8s_and_total_participants]({ canister_id: token_canister_ids[i] }) as Promise<[BigInt, BigInt]>)
+            }
+            await Promise.all(icp_contributed_promises).then((results => {
+                for (let i = 0; i < res.length; i += 1) {
+                    res[i].swap.raisedIcp = String(Number(results[i][0]) / 100000000);
+                    res[i].swap.participants = String(results[i][1])
+                }
+            }));
+            return res;
+        },
+    });
+};
+
 export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
     const { session } = useAuthContext();
+    const { canisterId } = useParams();
     return useQuery({
-        queryKey: [queryKeys.tokens_info],
+        queryKey: [queryKeys.tokens_info, canisterId],
         queryFn: async () => {
             const { actor, methods } = await useSwapCanisterClient();
             let tokensInfoRes = await actor[methods.getAllTokensInfo]() as {
@@ -85,7 +189,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
                             maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
                             participants: "0",
-                            endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
+                            endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                             status: true,
                             result: false
                         },
@@ -140,7 +244,10 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
             await Promise.all(icp_contributed_promises).then((results => {
                 for (let i = 0; i < res.length; i += 1) {
                     res[i].swap.raisedIcp = String(Number(results[i][0]) / 100000000);
-                    res[i].swap.participants = String(results[i][1])
+                    res[i].swap.participants = String(results[i][1]);
+                    if(Number(res[i].swap.minIcp) <= Number(res[i].swap.raisedIcp)) {
+                        res[i].swap.result = true;
+                    }
                 }
             }));
             return res;
@@ -151,7 +258,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
 export const useGetParticipationDetails = (canisterId?: string): UseQueryResult<String> => {
     const { session } = useAuthContext();
     return useQuery({
-        queryKey: [queryKeys.participant_details],
+        queryKey: [queryKeys.participant_details, canisterId],
         queryFn: async () => {
             const { actor, methods } = await useSwapCanisterClient();
             let details = await actor[methods.getParticipationDetails]({
@@ -163,8 +270,7 @@ export const useGetParticipationDetails = (canisterId?: string): UseQueryResult<
             if (details.ok == undefined) {
                 return "0";
             } else {
-                let amt = (details.ok.icp_e8s / BigInt(100000000));
-                console.log(String(amt));
+                let amt = Number(details.ok.icp_e8s * 100000000n / 100000000n) / 100000000;
                 return String(amt);
             }
         },
@@ -204,13 +310,11 @@ export const useParticipateICPTransfer = () => {
                     created_at_time: [],
                     amount: amount_e8s,
                 };
-                console.log(req);
                 let res = await actor[methods.icrc1_transfer](req) as {
                     Ok: number | undefined, Err: {
                         InsufficientFunds: {} | undefined
                     } | undefined
                 };
-                console.log(res);
                 if (res.Ok == undefined) {
                     if (res.Err?.InsufficientFunds == undefined) {
                         toast.error("ICRC1 Transfer error. Contact dev team in discord.");
@@ -226,9 +330,8 @@ export const useParticipateICPTransfer = () => {
                         amount: {
                             e8s: amount_e8s
                         },
-                        blockIndex: 12525476
+                        blockIndex: res.Ok
                     });
-                    console.log(res2);
                 }
                 return res;
             } catch (error) {

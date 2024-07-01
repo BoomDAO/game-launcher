@@ -57,10 +57,7 @@ export const idlFactory = ({ IDL }) => {
     'token_canister_id' : IDL.Text,
     'symbol' : IDL.Text,
   });
-  const Account = IDL.Record({
-    'owner' : IDL.Principal,
-    'subaccount' : IDL.Opt(IDL.Vec(IDL.Nat8)),
-  });
+  const AccountIdentifier = IDL.Text;
   const BlockIndex__1 = IDL.Nat;
   const Tokens__1 = IDL.Nat;
   const Timestamp = IDL.Nat64;
@@ -81,6 +78,23 @@ export const idlFactory = ({ IDL }) => {
     'Ok' : BlockIndex__1,
     'Err' : TransferError__1,
   });
+  const Account = IDL.Record({
+    'owner' : IDL.Principal,
+    'subaccount' : IDL.Opt(IDL.Vec(IDL.Nat8)),
+  });
+  const BlockIndex = IDL.Nat64;
+  const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
+  const TransferError = IDL.Variant({
+    'TxTooOld' : IDL.Record({ 'allowed_window_nanos' : IDL.Nat64 }),
+    'BadFee' : IDL.Record({ 'expected_fee' : Tokens }),
+    'TxDuplicate' : IDL.Record({ 'duplicate_of' : BlockIndex }),
+    'TxCreatedInFuture' : IDL.Null,
+    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens }),
+  });
+  const TransferResult = IDL.Variant({
+    'Ok' : BlockIndex,
+    'Err' : TransferError,
+  });
   const Icrc1BlockIndex = IDL.Nat;
   const Icrc1Tokens = IDL.Nat;
   const Icrc1TransferError = IDL.Variant({
@@ -100,36 +114,31 @@ export const idlFactory = ({ IDL }) => {
     'Ok' : Icrc1BlockIndex,
     'Err' : Icrc1TransferError,
   });
-  const AccountIdentifier = IDL.Text;
-  const BlockIndex = IDL.Nat64;
-  const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
-  const TransferError = IDL.Variant({
-    'TxTooOld' : IDL.Record({ 'allowed_window_nanos' : IDL.Nat64 }),
-    'BadFee' : IDL.Record({ 'expected_fee' : Tokens }),
-    'TxDuplicate' : IDL.Record({ 'duplicate_of' : BlockIndex }),
-    'TxCreatedInFuture' : IDL.Null,
-    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens }),
-  });
-  const TransferResult = IDL.Variant({
-    'Ok' : BlockIndex,
-    'Err' : TransferError,
-  });
   const SupplyConfigs = IDL.Record({
-    'participants' : IDL.Record({ 'icrc' : IDL.Nat }),
-    'team' : IDL.Record({
-      'icp' : IDL.Nat64,
-      'icrc' : IDL.Nat,
-      'account' : Account,
-      'icrc_result' : IDL.Opt(TransferResult__1),
-      'icp_result' : IDL.Opt(Icrc1TransferResult),
-    }),
-    'boom_dao' : IDL.Record({
+    'boom_dao_treasury' : IDL.Record({
       'icp' : IDL.Nat64,
       'icrc' : IDL.Nat,
       'icp_account' : AccountIdentifier,
       'icrc_result' : IDL.Opt(TransferResult__1),
       'icrc_account' : Account,
       'icp_result' : IDL.Opt(TransferResult),
+    }),
+    'participants' : IDL.Record({ 'icrc' : IDL.Nat }),
+    'other' : IDL.Opt(
+      IDL.Record({
+        'icp' : IDL.Nat64,
+        'icrc' : IDL.Nat,
+        'account' : Account,
+        'icrc_result' : IDL.Opt(TransferResult__1),
+        'icp_result' : IDL.Opt(Icrc1TransferResult),
+      })
+    ),
+    'team' : IDL.Record({
+      'icp' : IDL.Nat64,
+      'icrc' : IDL.Nat,
+      'account' : Account,
+      'icrc_result' : IDL.Opt(TransferResult__1),
+      'icp_result' : IDL.Opt(Icrc1TransferResult),
     }),
     'liquidity_pool' : IDL.Record({
       'icp' : IDL.Nat64,

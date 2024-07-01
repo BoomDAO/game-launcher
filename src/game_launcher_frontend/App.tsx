@@ -21,7 +21,7 @@ import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
 import Game from "./pages/UploadGames/Games/Game";
 import ManageWorlds from "./pages/WorldDeployer/ManageWorlds";
-import GamingGuilds from "./pages/GamingGuilds";
+// import GamingGuilds from "./pages/GamingGuilds";
 import VerifyPage from "./pages/GamingGuilds/VerifyOtpPage";
 import EmailPage from "./pages/GamingGuilds/EmailPage";
 import VerifyOtpPage from "./pages/GamingGuilds/VerifyOtpPage";
@@ -56,8 +56,7 @@ function App() {
               <Route path={navPaths.launchpad} element={<Launchpad />} />
               <Route path={`${navPaths.launchpad}/:canisterId`} element={<LaunchpadProject />} />
               <Route element={<ProtectedRoute />}>
-                {/* <Route path={navPaths.twitterPost} element={<QuestTwitterPost/>} /> */}
-                <Route path={`${navPaths.launchpad_participate}/:canisterId`} element={<Participate/>} />
+                <Route path={`${navPaths.launchpad_participate}/:canisterId`} element={<Participate />} />
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
                 <Route
                   path={`${navPaths.upload_games_new}`}
@@ -142,7 +141,7 @@ function App() {
                 />
                 <Route
                   path={`${navPaths.game_iframe}/:canisterId`}
-                  element={<Iframe/>}
+                  element={<Iframe />}
                 />
               </Route>
 

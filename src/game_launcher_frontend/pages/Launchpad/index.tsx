@@ -57,7 +57,7 @@ const Launchpad = () => {
                                 <div className="">
                                     {launchCards.map(({ id, project, swap, token }) => (
                                         (!swap.status) ?
-                                            <div key={id}>
+                                            <div key={id} className="mb-4">
                                                 <LaunchCard
                                                     id={id}
                                                     token={token}
