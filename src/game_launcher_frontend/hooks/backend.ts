@@ -501,9 +501,10 @@ export const useSwapCanisterClient = async () => {
     }),
     methods: {
       getAllTokensInfo: "getAllTokensInfo",
-      total_icp_contributed_e8s_and_total_participants: "total_icp_contributed_e8s_and_total_participants",
+      total_token_contributed_e8s_and_total_participants: "total_token_contributed_e8s_and_total_participants",
       getParticipationDetails: "getParticipationDetails",
-      participate_in_token_swap: "participate_in_token_swap"
+      participate_in_token_swap: "participate_in_token_swap",
+      getTokenSwapType: "getTokenSwapType"
     },
   };
 };

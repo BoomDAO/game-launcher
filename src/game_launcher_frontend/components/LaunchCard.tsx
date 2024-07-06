@@ -13,46 +13,7 @@ import { cx } from "@/utils";
 import { navPaths } from "@/shared";
 import FormattedDate from "./FormattedDate";
 import { useGetParticipationDetails } from "@/api/launchpad";
-
-interface TokenConfigs {
-    name: string;
-    symbol: string;
-    logoUrl: string;
-    description: string;
-}
-
-interface SwapConfigs {
-    raisedIcp: string;
-    maxIcp: string;
-    minIcp: string;
-    minParticipantIcp: string;
-    maxParticipantIcp: string;
-    participants: string;
-    endTimestamp: {
-        days: string,
-        hrs: string,
-        mins: string,
-    }
-    status: boolean;
-    result: boolean;
-}
-
-interface ProjectConfigs {
-    name: string;
-    bannerUrl: string;
-    description: string;
-    website: string;
-    creator: string;
-    creatorAbout: string;
-    creatorImageUrl: string;
-}
-
-interface LaunchCardProps {
-    id: string;
-    project: ProjectConfigs;
-    swap: SwapConfigs;
-    token: TokenConfigs;
-}
+import { LaunchCardProps } from "@/types";
 
 const LaunchCard = ({
     id,
@@ -117,8 +78,8 @@ const LaunchCard = ({
                                 <div>
                                     <p className="font-light">TOTAL RAISED</p>
                                     <div className="flex">
-                                        <img src="/icp.svg" className="w-12" />
-                                        <p className="pt-1.5 pl-1 font-semibold">{swap.raisedIcp} ICP</p>
+                                        <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-12" />
+                                        <p className="pt-1.5 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
                                     </div>
                                 </div>
                             </div>
@@ -127,7 +88,7 @@ const LaunchCard = ({
                                 {
                                     (canisterId) ? <div className="w-1/2">
                                         <button className="w-11/12 gradient-bg-blue rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>PARTICIPATE</button>
-                                        <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantIcp} ICP required to Participate. </p>
+                                        <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantToken} {swap.swapType} required to Participate. </p>
                                     </div> : <></>
                                 }
                                 {
@@ -136,8 +97,8 @@ const LaunchCard = ({
                                             <div className={cx("dark:text-black text-white text-xs mt-3 pl-2 font-light", (canisterId) ? "border-l-2" : "")}>
                                                 <p>YOU HAVE ALREADY CONTRIBUTED</p>
                                                 <div className="flex">
-                                                    <img src="/icp.svg" className="w-10 mt-0.5" />
-                                                    <p className="pt-1.5 font-semibold text-sm">{data} ICP</p>
+                                                    <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 mt-0.5" />
+                                                    <p className="pt-1.5 font-semibold text-sm">{data} {swap.swapType}</p>
                                                 </div>
                                             </div> : <></>
                                 }
@@ -148,15 +109,15 @@ const LaunchCard = ({
                             <div className="pt-2">
                                 <div className="flex text-white dark:text-black justify-between font-light text-sm">
                                     <div>
-                                        <p>{swap.raisedIcp} / {swap.maxIcp} ICP</p>
+                                        <p>{swap.raisedToken} / {swap.maxToken} {swap.swapType}</p>
                                     </div>
                                     <div>
-                                        PROGRESS : {(100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%
+                                        PROGRESS : {(100 * Number(swap.raisedToken) / Number(swap.maxToken))}%
                                     </div>
                                 </div>
                                 <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
                                     <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
-                                    <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedIcp) / Number(swap.maxIcp)) >= 100) ? 100 : (100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%` }}></div>
+                                    <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
                                 </div>
                                 <div className="text-white dark:text-black float-right font-light text-sm mt-1">
                                     <p>PARTICIPANTS : {swap.participants}</p>
@@ -203,8 +164,8 @@ const LaunchCard = ({
                                     <div>
                                         <p className="font-light">TOTAL RAISED</p>
                                         <div className="flex">
-                                            <img src="/icp.svg" className="w-12" />
-                                            <p className="pt-1.5 pl-1 font-semibold">{swap.raisedIcp} ICP</p>
+                                            <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10" />
+                                            <p className="pt-1.5 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -212,15 +173,15 @@ const LaunchCard = ({
                                 <div className="pt-2">
                                     <div className="flex text-white dark:text-black justify-between font-light text-sm">
                                         <div>
-                                            <p>{swap.raisedIcp} / {swap.maxIcp} ICP</p>
+                                            <p>{swap.raisedToken} / {swap.maxToken} {swap.swapType}</p>
                                         </div>
                                         <div>
-                                            PROGRESS : {(100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%
+                                            PROGRESS : {(100 * Number(swap.raisedToken) / Number(swap.maxToken))}%
                                         </div>
                                     </div>
                                     <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
                                         <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
-                                        <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedIcp) / Number(swap.maxIcp)) >= 100) ? 100 : (100 * Number(swap.raisedIcp) / Number(swap.maxIcp))}%` }}></div>
+                                        <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
                                     </div>
                                     <div className="text-white dark:text-black float-right font-light text-sm mt-1">
                                         <p>PARTICIPANTS : {swap.participants}</p>

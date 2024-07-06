@@ -12,7 +12,7 @@ import {
 import { ledger_canisterId, swapCanisterId, useICRCLedgerClient, useLedgerClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { LaunchCardProps, ParticipantDetails, TokensInfo } from "@/types";
+import { LaunchCardProps, ParticipantDetails, TokenSwapType, TokensInfo } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import { string } from "zod";
@@ -61,14 +61,14 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 ok: TokensInfo
             };
             let res: LaunchCardProps[] = [];
-            let icp_contributed_promises = [];
-            let token_canister_ids = [];
+            let token_contributed_promises = [];
+            let token_canister_ids_and_swap_type = [];
             if (tokensInfoRes.ok) {
                 let tokensInfo = tokensInfoRes.ok;
                 for (let i = 0; i < tokensInfo.active.length; i += 1) {
                     let current_token_info = tokensInfo.active[i];
                     if (current_token_info.token_canister_id == canisterId) {
-                        token_canister_ids.push(current_token_info.token_canister_id);
+                        token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
                         let cardInfo: LaunchCardProps = {
                             id: current_token_info.token_canister_id,
                             project: {
@@ -81,11 +81,12 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
                             },
                             swap: {
-                                raisedIcp: "0",
-                                maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
-                                minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
-                                minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
-                                maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
+                                swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
+                                raisedToken: "0",
+                                maxToken: String(Number(current_token_info.token_swap_configs.max_token_e8s) / 100000000),
+                                minToken: String(Number(current_token_info.token_swap_configs.min_token_e8s) / 100000000),
+                                minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
+                                maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                                 participants: "0",
                                 endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                                 status: true,
@@ -104,7 +105,7 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
                     let current_token_info = tokensInfo.inactive[i];
                     if (current_token_info.token_canister_id == canisterId) {
-                        token_canister_ids.push(current_token_info.token_canister_id);
+                        token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
                         let cardInfo: LaunchCardProps = {
                             id: current_token_info.token_canister_id,
                             project: {
@@ -117,11 +118,12 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
                             },
                             swap: {
-                                raisedIcp: "0",
-                                maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
-                                minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
-                                minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
-                                maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
+                                swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
+                                raisedToken: "0",
+                                maxToken: String(Number(current_token_info.token_swap_configs.max_token_e8s) / 100000000),
+                                minToken: String(Number(current_token_info.token_swap_configs.min_token_e8s) / 100000000),
+                                minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
+                                maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                                 participants: "0",
                                 endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
                                 status: false,
@@ -139,12 +141,16 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 }
             }
 
-            for (let i = 0; i < token_canister_ids.length; i += 1) {
-                icp_contributed_promises.push(actor[methods.total_icp_contributed_e8s_and_total_participants]({ canister_id: token_canister_ids[i] }) as Promise<[BigInt, BigInt]>)
+            for (let i = 0; i < token_canister_ids_and_swap_type.length; i += 1) {
+                let tokenType: TokenSwapType = { 'icp': null };
+                if (token_canister_ids_and_swap_type[i][1] == "BOOM") {
+                    tokenType = { 'boom': null };
+                }
+                token_contributed_promises.push(actor[methods.total_token_contributed_e8s_and_total_participants]({ canister_id: token_canister_ids_and_swap_type[i][0], token: tokenType }) as Promise<[BigInt, BigInt]>)
             }
-            await Promise.all(icp_contributed_promises).then((results => {
+            await Promise.all(token_contributed_promises).then((results => {
                 for (let i = 0; i < res.length; i += 1) {
-                    res[i].swap.raisedIcp = String(Number(results[i][0]) / 100000000);
+                    res[i].swap.raisedToken = String(Number(results[i][0]) / 100000000);
                     res[i].swap.participants = String(results[i][1])
                 }
             }));
@@ -152,6 +158,13 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
         },
     });
 };
+
+function isTokenSwapTypeBOOM(data: { 'icp': null } | { 'boom': null }): data is { 'boom': null } {
+    return ((data as { 'boom': null }) !== undefined);
+}
+function isTokenSwapTypeICP(data: { 'icp': null } | { 'boom': null }): data is { 'icp': null } {
+    return ((data as { 'icp': null }) !== undefined);
+}
 
 export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
     const { session } = useAuthContext();
@@ -164,13 +177,13 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 ok: TokensInfo
             };
             let res: LaunchCardProps[] = [];
-            let icp_contributed_promises = [];
-            let token_canister_ids = [];
+            let token_contributed_promises = [];
+            let token_canister_ids_and_swap_type = [];
             if (tokensInfoRes.ok) {
                 let tokensInfo = tokensInfoRes.ok;
                 for (let i = 0; i < tokensInfo.active.length; i += 1) {
                     let current_token_info = tokensInfo.active[i];
-                    token_canister_ids.push(current_token_info.token_canister_id);
+                    token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
                         project: {
@@ -183,11 +196,12 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
                         },
                         swap: {
-                            raisedIcp: "0",
-                            maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
-                            minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
-                            minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
-                            maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
+                            swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
+                            raisedToken: "0",
+                            maxToken: String(Number(current_token_info.token_swap_configs.max_token_e8s) / 100000000),
+                            minToken: String(Number(current_token_info.token_swap_configs.min_token_e8s) / 100000000),
+                            minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
+                            maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                             status: true,
@@ -204,7 +218,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 }
                 for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
                     let current_token_info = tokensInfo.inactive[i];
-                    token_canister_ids.push(current_token_info.token_canister_id);
+                    token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
                         project: {
@@ -217,11 +231,12 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
                         },
                         swap: {
-                            raisedIcp: "0",
-                            maxIcp: String(Number(current_token_info.token_swap_configs.max_icp_e8s) / 100000000),
-                            minIcp: String(Number(current_token_info.token_swap_configs.min_icp_e8s) / 100000000),
-                            minParticipantIcp: String(Number(current_token_info.token_swap_configs.min_participant_icp_e8s) / 100000000),
-                            maxParticipantIcp: String(Number(current_token_info.token_swap_configs.max_participant_icp_e8s) / 100000000),
+                            swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
+                            raisedToken: "0",
+                            maxToken: String(Number(current_token_info.token_swap_configs.max_token_e8s) / 100000000),
+                            minToken: String(Number(current_token_info.token_swap_configs.min_token_e8s) / 100000000),
+                            minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
+                            maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
                             status: false,
@@ -238,14 +253,18 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 }
             }
 
-            for (let i = 0; i < token_canister_ids.length; i += 1) {
-                icp_contributed_promises.push(actor[methods.total_icp_contributed_e8s_and_total_participants]({ canister_id: token_canister_ids[i] }) as Promise<[BigInt, BigInt]>)
+            for (let i = 0; i < token_canister_ids_and_swap_type.length; i += 1) {
+                let tokenType: TokenSwapType = { 'icp': null };
+                if (token_canister_ids_and_swap_type[i][1] == "BOOM") {
+                    tokenType = { 'boom': null };
+                }
+                token_contributed_promises.push(actor[methods.total_token_contributed_e8s_and_total_participants]({ canister_id: token_canister_ids_and_swap_type[i][0], token: tokenType }) as Promise<[BigInt, BigInt]>)
             }
-            await Promise.all(icp_contributed_promises).then((results => {
+            await Promise.all(token_contributed_promises).then((results => {
                 for (let i = 0; i < res.length; i += 1) {
-                    res[i].swap.raisedIcp = String(Number(results[i][0]) / 100000000);
+                    res[i].swap.raisedToken = String(Number(results[i][0]) / 100000000);
                     res[i].swap.participants = String(results[i][1]);
-                    if(Number(res[i].swap.minIcp) <= Number(res[i].swap.raisedIcp)) {
+                    if (Number(res[i].swap.minToken) <= Number(res[i].swap.raisedToken)) {
                         res[i].swap.result = true;
                     }
                 }
@@ -261,18 +280,28 @@ export const useGetParticipationDetails = (canisterId?: string): UseQueryResult<
         queryKey: [queryKeys.participant_details, canisterId],
         queryFn: async () => {
             const { actor, methods } = await useSwapCanisterClient();
-            let details = await actor[methods.getParticipationDetails]({
+            Promise.all([actor[methods.getParticipationDetails]({
                 tokenCanisterId: canisterId ? canisterId : "",
                 participantId: (session) ? session.address : "2vxsx-fae"
-            }) as {
+            }) as Promise<{
                 ok: ParticipantDetails
-            };
-            if (details.ok == undefined) {
-                return "0";
-            } else {
-                let amt = Number(details.ok.icp_e8s * 100000000n / 100000000n) / 100000000;
-                return String(amt);
-            }
+            }>, actor[methods.getTokenSwapType](canisterId) as Promise<string>]).then((res) => {
+                let details = res[0] as { ok: ParticipantDetails };
+                let swapType = res[1];
+                if (details.ok == undefined) {
+                    return "0";
+                } else {
+                    if (swapType == "ICP") {
+                        let amt = Number(details.ok.icp_e8s * 100000000n / 100000000n) / 100000000;
+                        console.log(String(amt));
+                        return String(amt);
+                    } else {
+                        let amt = Number(details.ok.boom_e8s * 100000000n / 100000000n) / 100000000;
+                        console.log(String(amt));
+                        return String(amt);
+                    }
+                }
+            })
         },
     });
 };

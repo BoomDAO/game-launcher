@@ -48,52 +48,29 @@ export const idlFactory = ({ IDL }) => {
     'creatorAbout' : IDL.Text,
   });
   const Result = IDL.Variant({ 'ok' : IDL.Text, 'err' : IDL.Text });
-  const Token = IDL.Record({
-    'fee' : IDL.Nat,
-    'decimals' : IDL.Opt(IDL.Nat8),
-    'logo' : IDL.Text,
-    'name' : IDL.Text,
-    'description' : IDL.Text,
-    'token_canister_id' : IDL.Text,
-    'symbol' : IDL.Text,
-  });
-  const AccountIdentifier = IDL.Text;
-  const BlockIndex__1 = IDL.Nat;
-  const Tokens__1 = IDL.Nat;
+  const BlockIndex = IDL.Nat;
+  const Tokens = IDL.Nat;
   const Timestamp = IDL.Nat64;
-  const TransferError__1 = IDL.Variant({
+  const TransferError = IDL.Variant({
     'GenericError' : IDL.Record({
       'message' : IDL.Text,
       'error_code' : IDL.Nat,
     }),
     'TemporarilyUnavailable' : IDL.Null,
-    'BadBurn' : IDL.Record({ 'min_burn_amount' : Tokens__1 }),
-    'Duplicate' : IDL.Record({ 'duplicate_of' : BlockIndex__1 }),
-    'BadFee' : IDL.Record({ 'expected_fee' : Tokens__1 }),
+    'BadBurn' : IDL.Record({ 'min_burn_amount' : Tokens }),
+    'Duplicate' : IDL.Record({ 'duplicate_of' : BlockIndex }),
+    'BadFee' : IDL.Record({ 'expected_fee' : Tokens }),
     'CreatedInFuture' : IDL.Record({ 'ledger_time' : Timestamp }),
     'TooOld' : IDL.Null,
-    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens__1 }),
-  });
-  const TransferResult__1 = IDL.Variant({
-    'Ok' : BlockIndex__1,
-    'Err' : TransferError__1,
-  });
-  const Account = IDL.Record({
-    'owner' : IDL.Principal,
-    'subaccount' : IDL.Opt(IDL.Vec(IDL.Nat8)),
-  });
-  const BlockIndex = IDL.Nat64;
-  const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
-  const TransferError = IDL.Variant({
-    'TxTooOld' : IDL.Record({ 'allowed_window_nanos' : IDL.Nat64 }),
-    'BadFee' : IDL.Record({ 'expected_fee' : Tokens }),
-    'TxDuplicate' : IDL.Record({ 'duplicate_of' : BlockIndex }),
-    'TxCreatedInFuture' : IDL.Null,
     'InsufficientFunds' : IDL.Record({ 'balance' : Tokens }),
   });
   const TransferResult = IDL.Variant({
     'Ok' : BlockIndex,
     'Err' : TransferError,
+  });
+  const Account = IDL.Record({
+    'owner' : IDL.Principal,
+    'subaccount' : IDL.Opt(IDL.Vec(IDL.Nat8)),
   });
   const Icrc1BlockIndex = IDL.Nat;
   const Icrc1Tokens = IDL.Nat;
@@ -114,55 +91,103 @@ export const idlFactory = ({ IDL }) => {
     'Ok' : Icrc1BlockIndex,
     'Err' : Icrc1TransferError,
   });
+  const ParticipantDetails = IDL.Record({
+    'boom_e8s' : IDL.Nat,
+    'icp_e8s' : IDL.Nat64,
+    'boom_refund_result' : IDL.Opt(TransferResult),
+    'account' : Account,
+    'token_e8s' : IDL.Opt(IDL.Nat),
+    'mint_result' : IDL.Opt(TransferResult),
+    'icp_refund_result' : IDL.Opt(Icrc1TransferResult),
+  });
+  const Result_4 = IDL.Variant({
+    'ok' : IDL.Vec(ParticipantDetails),
+    'err' : IDL.Text,
+  });
+  const Token = IDL.Record({
+    'fee' : IDL.Nat,
+    'decimals' : IDL.Opt(IDL.Nat8),
+    'logo' : IDL.Text,
+    'name' : IDL.Text,
+    'description' : IDL.Text,
+    'token_canister_id' : IDL.Text,
+    'symbol' : IDL.Text,
+  });
+  const AccountIdentifier = IDL.Text;
+  const BlockIndex__1 = IDL.Nat64;
+  const Tokens__1 = IDL.Record({ 'e8s' : IDL.Nat64 });
+  const TransferError__1 = IDL.Variant({
+    'TxTooOld' : IDL.Record({ 'allowed_window_nanos' : IDL.Nat64 }),
+    'BadFee' : IDL.Record({ 'expected_fee' : Tokens__1 }),
+    'TxDuplicate' : IDL.Record({ 'duplicate_of' : BlockIndex__1 }),
+    'TxCreatedInFuture' : IDL.Null,
+    'InsufficientFunds' : IDL.Record({ 'balance' : Tokens__1 }),
+  });
+  const TransferResult__1 = IDL.Variant({
+    'Ok' : BlockIndex__1,
+    'Err' : TransferError__1,
+  });
   const SupplyConfigs = IDL.Record({
     'boom_dao_treasury' : IDL.Record({
       'icp' : IDL.Nat64,
+      'boom' : IDL.Nat,
       'icrc' : IDL.Nat,
       'icp_account' : AccountIdentifier,
-      'icrc_result' : IDL.Opt(TransferResult__1),
+      'icrc_result' : IDL.Opt(TransferResult),
       'icrc_account' : Account,
-      'icp_result' : IDL.Opt(TransferResult),
+      'icp_result' : IDL.Opt(TransferResult__1),
+      'boom_result' : IDL.Opt(TransferResult),
     }),
     'participants' : IDL.Record({ 'icrc' : IDL.Nat }),
     'other' : IDL.Opt(
       IDL.Record({
         'icp' : IDL.Nat64,
+        'boom' : IDL.Nat,
         'icrc' : IDL.Nat,
         'account' : Account,
-        'icrc_result' : IDL.Opt(TransferResult__1),
+        'icrc_result' : IDL.Opt(TransferResult),
         'icp_result' : IDL.Opt(Icrc1TransferResult),
+        'boom_result' : IDL.Opt(TransferResult),
       })
     ),
     'team' : IDL.Record({
       'icp' : IDL.Nat64,
+      'boom' : IDL.Nat,
       'icrc' : IDL.Nat,
       'account' : Account,
-      'icrc_result' : IDL.Opt(TransferResult__1),
+      'icrc_result' : IDL.Opt(TransferResult),
       'icp_result' : IDL.Opt(Icrc1TransferResult),
+      'boom_result' : IDL.Opt(TransferResult),
     }),
     'liquidity_pool' : IDL.Record({
       'icp' : IDL.Nat64,
+      'boom' : IDL.Nat,
       'icrc' : IDL.Nat,
       'account' : Account,
-      'icrc_result' : IDL.Opt(TransferResult__1),
+      'icrc_result' : IDL.Opt(TransferResult),
       'icp_result' : IDL.Opt(Icrc1TransferResult),
+      'boom_result' : IDL.Opt(TransferResult),
     }),
     'gaming_guilds' : IDL.Record({
       'icp' : IDL.Nat64,
+      'boom' : IDL.Nat,
       'icrc' : IDL.Nat,
       'account' : Account,
-      'icrc_result' : IDL.Opt(TransferResult__1),
+      'icrc_result' : IDL.Opt(TransferResult),
       'icp_result' : IDL.Opt(Icrc1TransferResult),
+      'boom_result' : IDL.Opt(TransferResult),
     }),
   });
+  const TokenSwapType = IDL.Variant({ 'icp' : IDL.Null, 'boom' : IDL.Null });
   const TokenSwapConfigs = IDL.Record({
-    'min_participant_icp_e8s' : IDL.Nat64,
-    'max_icp_e8s' : IDL.Nat64,
+    'max_token_e8s' : IDL.Nat64,
+    'min_token_e8s' : IDL.Nat64,
+    'min_participant_token_e8s' : IDL.Nat64,
     'swap_start_timestamp_seconds' : IDL.Int,
     'swap_due_timestamp_seconds' : IDL.Int,
     'token_supply_configs' : SupplyConfigs,
-    'max_participant_icp_e8s' : IDL.Nat64,
-    'min_icp_e8s' : IDL.Nat64,
+    'max_participant_token_e8s' : IDL.Nat64,
+    'swap_type' : TokenSwapType,
   });
   const TokenInfo = IDL.Record({
     'token_canister_id' : IDL.Text,
@@ -175,13 +200,6 @@ export const idlFactory = ({ IDL }) => {
     'inactive' : IDL.Vec(TokenInfo),
   });
   const Result_3 = IDL.Variant({ 'ok' : TokensInfo, 'err' : IDL.Text });
-  const ParticipantDetails = IDL.Record({
-    'icp_e8s' : IDL.Nat64,
-    'account' : Account,
-    'refund_result' : IDL.Opt(Icrc1TransferResult),
-    'token_e8s' : IDL.Opt(IDL.Nat),
-    'mint_result' : IDL.Opt(TransferResult__1),
-  });
   const Result_2 = IDL.Variant({ 'ok' : ParticipantDetails, 'err' : IDL.Text });
   const Result_1 = IDL.Variant({ 'ok' : TokenSwapConfigs, 'err' : IDL.Text });
   return IDL.Service({
@@ -195,6 +213,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Record({ 'canister_id' : IDL.Text })],
         [Result],
         [],
+      ),
+    'getAllParticipantsDetails' : IDL.Func(
+        [IDL.Record({ 'tokenCanisterId' : IDL.Text })],
+        [Result_4],
+        ['query'],
       ),
     'getAllTokenDetails' : IDL.Func(
         [],
@@ -217,6 +240,7 @@ export const idlFactory = ({ IDL }) => {
         [Result_2],
         ['query'],
       ),
+    'getTokenSwapType' : IDL.Func([IDL.Text], [IDL.Text], ['query']),
     'getTotalLedgerWasms' : IDL.Func([], [IDL.Nat], ['query']),
     'list_icrc_token' : IDL.Func([Token], [], []),
     'participate_in_token_swap' : IDL.Func(
@@ -224,7 +248,7 @@ export const idlFactory = ({ IDL }) => {
           IDL.Record({
             'canister_id' : IDL.Text,
             'blockIndex' : IDL.Nat64,
-            'amount' : Tokens,
+            'amount' : IDL.Nat64,
           }),
         ],
         [Result],
@@ -255,14 +279,14 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
-    'total_icp_contributed_e8s' : IDL.Func(
-        [IDL.Record({ 'canister_id' : IDL.Text })],
-        [IDL.Nat64],
+    'total_token_contributed_e8s' : IDL.Func(
+        [IDL.Record({ 'token' : TokenSwapType, 'canister_id' : IDL.Text })],
+        [IDL.Nat],
         ['query'],
       ),
-    'total_icp_contributed_e8s_and_total_participants' : IDL.Func(
-        [IDL.Record({ 'canister_id' : IDL.Text })],
-        [IDL.Tuple(IDL.Nat64, IDL.Nat)],
+    'total_token_contributed_e8s_and_total_participants' : IDL.Func(
+        [IDL.Record({ 'token' : TokenSwapType, 'canister_id' : IDL.Text })],
+        [IDL.Tuple(IDL.Nat, IDL.Nat)],
         ['query'],
       ),
     'upload_ledger_wasm' : IDL.Func(

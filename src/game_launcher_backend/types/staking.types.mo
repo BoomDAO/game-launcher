@@ -30,6 +30,20 @@ import Trie "mo:base/Trie";
 import Trie2D "mo:base/Trie";
 
 module {
+  public type ICRCStakeKind = {
+    #pro;
+    #elite;
+  };
+
+  public type ICRCStake = {
+    staker : Text;
+    tokenCanisterId : Text;
+    amount : Nat;
+    kind : ICRCStakeKind;
+    stakedAt : Int;
+    dissolvedAt : Int;
+  };
+
   public type EXTStake = {
     staker : Text; //principal
     tokenIndex : Nat32;

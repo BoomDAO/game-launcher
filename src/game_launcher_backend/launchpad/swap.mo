@@ -54,6 +54,7 @@ actor SwapCanister {
   // actor interfaces
   let management_canister : Management.Self = actor (ENV.IC_Management);
   let icp_ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);
+  let boom_ledger : ICRC.Self = actor (ENV.BoomLedgerCanisterId);
 
   // private methods
   private func getLatestIcrcWasm_() : (Blob) {
@@ -123,7 +124,7 @@ actor SwapCanister {
   private func isAmountValid_(arg : { canister_id : Text; amount : Nat64 }) : Bool {
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
-        if (arg.amount >= configs.min_participant_icp_e8s and arg.amount <= configs.max_participant_icp_e8s) {
+        if (arg.amount >= configs.min_participant_token_e8s and arg.amount <= configs.max_participant_token_e8s) {
           return true;
         } else {
           return false;
@@ -178,41 +179,156 @@ actor SwapCanister {
     return #ok("");
   };
 
-  private func error_refund_icp(arg : { canister_id : Text }) : async () {
-    switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
-      case (?participants) {
-        for ((principal, info) in Trie.iter(participants)) {
-          let req : ICP.TransferArg = {
-            to = info.account;
-            fee = ?10000;
-            memo = null;
-            from_subaccount = null;
-            created_at_time = null;
-            amount = Nat64.toNat(info.icp_e8s);
+  //ICRC1 Ledger Canister Query to verify ICRC-1 tx blockIndex
+  //NOTE : Do Not Forget to change tokenCanisterId to query correct ICRC-1 Ledger
+  private func queryIcrcTx_(blockIndex : Nat, toPrincipal : Text, fromPrincipal : Text, amt : Nat, tokenCanisterId : Text) : async (Result.Result<Text, Text>) {
+    var _req : ICRC.GetTransactionsRequest = {
+      start = blockIndex;
+      length = blockIndex + 1;
+    };
+
+    var to_ : ICRC.Account = {
+      owner = Principal.fromText(toPrincipal);
+      subaccount = null;
+    };
+    var from_ : ICRC.Account = {
+      owner = Principal.fromText(fromPrincipal);
+      subaccount = null;
+    };
+    let ICRC_Ledger : ICRC.Self = actor (tokenCanisterId);
+    var t : ICRC.GetTransactionsResponse = {
+      first_index = 0;
+      log_length = 0;
+      transactions = [];
+      archived_transactions = [];
+    };
+    t := await ICRC_Ledger.get_transactions(_req);
+
+    if ((t.transactions).size() == 0) {
+      return #err("tx blockIndex does not exist");
+    };
+    let tx = t.transactions[0];
+    if (tx.kind == "transfer") {
+      let transfer = tx.transfer;
+      switch (transfer) {
+        case (?tt) {
+          if (tt.from == from_ and tt.to == to_ and tt.amount == amt) {
+            return #ok("verified!");
+          } else {
+            return #err("tx transfer details mismatch!");
           };
-          let res : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(req);
-          switch (res) {
-            case (#Ok index) {
-              let p_details : Swap.ParticipantDetails = {
-                account = info.account;
-                icp_e8s = 0;
-                token_e8s = null;
-                refund_result = ?res;
-                mint_result = null;
+        };
+        case (null) {
+          return #err("tx transfer details not found!");
+        };
+      };
+
+    } else if (tx.kind == "mint") {
+      let mint = tx.mint;
+      switch (mint) {
+        case (?tt) {
+          if (tt.to == to_ and tt.amount == amt) {
+            return #ok("verified!");
+          } else {
+            return #err("tx mint details mismatch!");
+          };
+        };
+        case (null) {
+          return #err("tx mint details not found!");
+        };
+      };
+    } else {
+      return #err("not a transfer!");
+    };
+  };
+
+  private func error_refund_token(arg : { canister_id : Text }) : async () {
+    switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
+      case (?configs) {
+        switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
+          case (?participants) {
+            switch (configs.swap_type) {
+              case (#icp) {
+                for ((principal, info) in Trie.iter(participants)) {
+                  let req : ICP.TransferArg = {
+                    to = info.account;
+                    fee = ?10000;
+                    memo = null;
+                    from_subaccount = null;
+                    created_at_time = null;
+                    amount = Nat64.toNat(info.icp_e8s);
+                  };
+                  let res : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(req);
+                  switch (res) {
+                    case (#Ok index) {
+                      let p_details : Swap.ParticipantDetails = {
+                        account = info.account;
+                        icp_e8s = 0;
+                        boom_e8s = 0;
+                        token_e8s = null;
+                        icp_refund_result = ?res;
+                        boom_refund_result = null;
+                        mint_result = null;
+                      };
+                      _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
+                    };
+                    case (#Err e) {
+                      let p_details : Swap.ParticipantDetails = {
+                        account = info.account;
+                        icp_e8s = info.icp_e8s;
+                        boom_e8s = 0;
+                        token_e8s = null;
+                        icp_refund_result = ?res;
+                        boom_refund_result = null;
+                        mint_result = null;
+                      };
+                      _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
+                    };
+                  };
+                };
               };
-              _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
-            };
-            case (#Err e) {
-              let p_details : Swap.ParticipantDetails = {
-                account = info.account;
-                icp_e8s = info.icp_e8s;
-                token_e8s = null;
-                refund_result = ?res;
-                mint_result = null;
+              case (#boom) {
+                for ((principal, info) in Trie.iter(participants)) {
+                  let req : ICRC.TransferArg = {
+                    to = info.account;
+                    fee = ?100000;
+                    memo = null;
+                    from_subaccount = null;
+                    created_at_time = null;
+                    amount = info.boom_e8s;
+                  };
+                  let res : ICRC.TransferResult = await boom_ledger.icrc1_transfer(req);
+                  switch (res) {
+                    case (#Ok index) {
+                      let p_details : Swap.ParticipantDetails = {
+                        account = info.account;
+                        icp_e8s = 0;
+                        boom_e8s = 0;
+                        token_e8s = null;
+                        icp_refund_result = null;
+                        boom_refund_result = ?res;
+                        mint_result = null;
+                      };
+                      _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
+                    };
+                    case (#Err e) {
+                      let p_details : Swap.ParticipantDetails = {
+                        account = info.account;
+                        icp_e8s = 0;
+                        boom_e8s = info.boom_e8s;
+                        token_e8s = null;
+                        icp_refund_result = null;
+                        boom_refund_result = ?res;
+                        mint_result = null;
+                      };
+                      _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
+                    };
+                  };
+                };
               };
-              _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
             };
           };
+          case _ {};
         };
       };
       case _ {};
@@ -241,8 +357,10 @@ actor SwapCanister {
               let p_details : Swap.ParticipantDetails = {
                 account = info.account;
                 icp_e8s = info.icp_e8s;
+                boom_e8s = info.boom_e8s;
                 token_e8s = info.token_e8s;
-                refund_result = null;
+                icp_refund_result = null;
+                boom_refund_result = null;
                 mint_result = ?res;
               };
               _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
@@ -251,8 +369,11 @@ actor SwapCanister {
               let p_details : Swap.ParticipantDetails = {
                 account = info.account;
                 icp_e8s = info.icp_e8s;
+                boom_e8s = info.boom_e8s;
                 token_e8s = info.token_e8s;
                 refund_result = null;
+                icp_refund_result = null;
+                boom_refund_result = null;
                 mint_result = ?res;
               };
               _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(Principal.toText(info.account.owner)), Text.equal, p_details);
@@ -263,191 +384,398 @@ actor SwapCanister {
       case _ {};
     };
 
-    // allocate icrc-tokens and send icp to partners according to supply-configs
+    // allocate icrc-tokens and send token (icp/boom) to partners according to supply-configs
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
-        // guilds transfer
-        var icp_req : ICP.TransferArg = {
-          to = configs.token_supply_configs.gaming_guilds.account;
-          fee = ?10000;
-          memo = null;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = Nat64.toNat(configs.token_supply_configs.gaming_guilds.icp);
-        };
-        var icrc_req : ICRC.TransferArg = {
-          to = configs.token_supply_configs.gaming_guilds.account;
-          fee = null;
-          memo = null;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = configs.token_supply_configs.gaming_guilds.icrc;
-        };
-        let icp_res_guilds : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
-        let icrc_res_guilds : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
 
-        // team transfer
-        icp_req := {
-          to = configs.token_supply_configs.team.account;
-          fee = ?10000;
-          memo = null;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = Nat64.toNat(configs.token_supply_configs.team.icp);
-        };
-        icrc_req := {
-          to = configs.token_supply_configs.team.account;
-          fee = null;
-          memo = null;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = configs.token_supply_configs.team.icrc;
-        };
-        let icp_res_team : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
-        let icrc_res_team : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
-
-        // lp transfer
-        icp_req := {
-          to = configs.token_supply_configs.liquidity_pool.account;
-          fee = ?10000;
-          memo = null;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = Nat64.toNat(configs.token_supply_configs.liquidity_pool.icp);
-        };
-        icrc_req := {
-          to = configs.token_supply_configs.liquidity_pool.account;
-          fee = null;
-          memo = null;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = configs.token_supply_configs.liquidity_pool.icrc;
-        };
-        let icp_res_liquidity_pool : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
-        let icrc_res_liquidity_pool : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
-
-        // boom dao treasury transfer
-        let icp_req_boom_dao_treasury : ICP.TransferArgs = {
-          to = Blob.fromArray(Hex.decode(configs.token_supply_configs.boom_dao_treasury.icp_account));
-          fee = {
-            e8s = 10000;
-          };
-          memo = 0;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = {
-            e8s = configs.token_supply_configs.boom_dao_treasury.icp;
-          };
-        };
-        icrc_req := {
-          to = configs.token_supply_configs.boom_dao_treasury.icrc_account;
-          fee = null;
-          memo = null;
-          from_subaccount = null;
-          created_at_time = null;
-          amount = configs.token_supply_configs.boom_dao_treasury.icrc;
-        };
-        let icp_res_boom_dao : ICP.TransferResult = await icp_ledger.transfer(icp_req_boom_dao_treasury);
-        let icrc_res_boom_dao : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
-
-        // others - transfer (if present)
-        var other_config_with_transfer_result : ?{
-          account : Swap.Account;
-          icp : Nat64;
-          icrc : Nat;
-          icp_result : ?ICP.Icrc1TransferResult;
-          icrc_result : ?ICRC.TransferResult;
-        } = null;
-        switch (configs.token_supply_configs.other) {
-          case (?other_info) {
-            icp_req := {
-              to = other_info.account;
+        switch (configs.swap_type) {
+          case (#icp) {
+            // guilds transfer
+            var icp_req : ICP.TransferArg = {
+              to = configs.token_supply_configs.gaming_guilds.account;
               fee = ?10000;
               memo = null;
               from_subaccount = null;
               created_at_time = null;
-              amount = Nat64.toNat(other_info.icp);
+              amount = Nat64.toNat(configs.token_supply_configs.gaming_guilds.icp);
             };
-            icrc_req := {
-              to = other_info.account;
+            var icrc_req : ICRC.TransferArg = {
+              to = configs.token_supply_configs.gaming_guilds.account;
               fee = null;
               memo = null;
               from_subaccount = null;
               created_at_time = null;
-              amount = other_info.icrc;
+              amount = configs.token_supply_configs.gaming_guilds.icrc;
             };
-            let icp_res_other : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
-            let icrc_res_other : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+            let icp_res_guilds : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
+            let icrc_res_guilds : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
 
-            other_config_with_transfer_result := ?{
-              account = other_info.account;
-              icp = other_info.icp;
-              icrc = other_info.icrc;
-              icp_result = ?icp_res_other;
-              icrc_result = ?icrc_res_other;
+            // team transfer
+            icp_req := {
+              to = configs.token_supply_configs.team.account;
+              fee = ?10000;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = Nat64.toNat(configs.token_supply_configs.team.icp);
             };
-          };
-          case _ {}; // ignored
-        };
+            icrc_req := {
+              to = configs.token_supply_configs.team.account;
+              fee = null;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.team.icrc;
+            };
+            let icp_res_team : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
+            let icrc_res_team : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
 
-        let configs_with_transfer_results : Swap.TokenSwapConfigs = {
-          token_supply_configs = {
-            gaming_guilds = {
-              account = configs.token_supply_configs.gaming_guilds.account;
-              icp = configs.token_supply_configs.gaming_guilds.icp;
-              icrc = configs.token_supply_configs.gaming_guilds.icrc;
-              icp_result = ?icp_res_guilds;
-              icrc_result = ?icrc_res_guilds;
+            // lp transfer
+            icp_req := {
+              to = configs.token_supply_configs.liquidity_pool.account;
+              fee = ?10000;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = Nat64.toNat(configs.token_supply_configs.liquidity_pool.icp);
             };
-            participants = {
-              icrc = configs.token_supply_configs.participants.icrc;
+            icrc_req := {
+              to = configs.token_supply_configs.liquidity_pool.account;
+              fee = null;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.liquidity_pool.icrc;
             };
-            team = {
-              account = configs.token_supply_configs.team.account;
-              icp = configs.token_supply_configs.team.icp;
-              icrc = configs.token_supply_configs.team.icrc;
-              icp_result = ?icp_res_team;
-              icrc_result = ?icrc_res_team;
+            let icp_res_liquidity_pool : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
+            let icrc_res_liquidity_pool : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+            // boom dao treasury transfer
+            let icp_req_boom_dao_treasury : ICP.TransferArgs = {
+              to = Blob.fromArray(Hex.decode(configs.token_supply_configs.boom_dao_treasury.icp_account));
+              fee = {
+                e8s = 10000;
+              };
+              memo = 0;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = {
+                e8s = configs.token_supply_configs.boom_dao_treasury.icp;
+              };
             };
-            boom_dao_treasury = {
-              icp_account = configs.token_supply_configs.boom_dao_treasury.icp_account;
-              icrc_account = configs.token_supply_configs.boom_dao_treasury.icrc_account;
-              icp = configs.token_supply_configs.boom_dao_treasury.icp;
-              icrc = configs.token_supply_configs.boom_dao_treasury.icrc;
-              icp_result = ?icp_res_boom_dao;
-              icrc_result = ?icrc_res_boom_dao;
+            icrc_req := {
+              to = configs.token_supply_configs.boom_dao_treasury.icrc_account;
+              fee = null;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.boom_dao_treasury.icrc;
             };
-            liquidity_pool = {
-              account = configs.token_supply_configs.liquidity_pool.account;
-              icp = configs.token_supply_configs.liquidity_pool.icp;
-              icrc = configs.token_supply_configs.liquidity_pool.icrc;
-              icp_result = ?icp_res_liquidity_pool;
-              icrc_result = ?icrc_res_liquidity_pool;
+            let icp_res_boom_dao : ICP.TransferResult = await icp_ledger.transfer(icp_req_boom_dao_treasury);
+            let icrc_res_boom_dao : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+            // others - transfer (if present)
+            var other_config_with_transfer_result : ?{
+              account : Swap.Account;
+              icp : Nat64;
+              boom : Nat;
+              icrc : Nat;
+              icp_result : ?ICP.Icrc1TransferResult;
+              boom_result : ?ICRC.TransferResult;
+              icrc_result : ?ICRC.TransferResult;
+            } = null;
+            switch (configs.token_supply_configs.other) {
+              case (?other_info) {
+                icp_req := {
+                  to = other_info.account;
+                  fee = ?10000;
+                  memo = null;
+                  from_subaccount = null;
+                  created_at_time = null;
+                  amount = Nat64.toNat(other_info.icp);
+                };
+                icrc_req := {
+                  to = other_info.account;
+                  fee = null;
+                  memo = null;
+                  from_subaccount = null;
+                  created_at_time = null;
+                  amount = other_info.icrc;
+                };
+                let icp_res_other : ICP.Icrc1TransferResult = await icp_ledger.icrc1_transfer(icp_req);
+                let icrc_res_other : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+                other_config_with_transfer_result := ?{
+                  account = other_info.account;
+                  icp = other_info.icp;
+                  boom = other_info.boom;
+                  icrc = other_info.icrc;
+                  icp_result = ?icp_res_other;
+                  boom_result = null;
+                  icrc_result = ?icrc_res_other;
+                };
+              };
+              case _ {}; // ignored
             };
-            other = other_config_with_transfer_result;
+
+            let configs_with_transfer_results : Swap.TokenSwapConfigs = {
+              token_supply_configs = {
+                gaming_guilds = {
+                  account = configs.token_supply_configs.gaming_guilds.account;
+                  icp = configs.token_supply_configs.gaming_guilds.icp;
+                  boom = configs.token_supply_configs.gaming_guilds.boom;
+                  icrc = configs.token_supply_configs.gaming_guilds.icrc;
+                  icp_result = ?icp_res_guilds;
+                  boom_result = null;
+                  icrc_result = ?icrc_res_guilds;
+                };
+                participants = {
+                  icrc = configs.token_supply_configs.participants.icrc;
+                };
+                team = {
+                  account = configs.token_supply_configs.team.account;
+                  icp = configs.token_supply_configs.team.icp;
+                  boom = configs.token_supply_configs.team.boom;
+                  icrc = configs.token_supply_configs.team.icrc;
+                  icp_result = ?icp_res_team;
+                  boom_result = null;
+                  icrc_result = ?icrc_res_team;
+                };
+                boom_dao_treasury = {
+                  icp_account = configs.token_supply_configs.boom_dao_treasury.icp_account;
+                  icrc_account = configs.token_supply_configs.boom_dao_treasury.icrc_account;
+                  icp = configs.token_supply_configs.boom_dao_treasury.icp;
+                  boom = configs.token_supply_configs.boom_dao_treasury.boom;
+                  icrc = configs.token_supply_configs.boom_dao_treasury.icrc;
+                  icp_result = ?icp_res_boom_dao;
+                  boom_result = null;
+                  icrc_result = ?icrc_res_boom_dao;
+                };
+                liquidity_pool = {
+                  account = configs.token_supply_configs.liquidity_pool.account;
+                  icp = configs.token_supply_configs.liquidity_pool.icp;
+                  boom = configs.token_supply_configs.liquidity_pool.boom;
+                  icrc = configs.token_supply_configs.liquidity_pool.icrc;
+                  icp_result = ?icp_res_liquidity_pool;
+                  boom_result = null;
+                  icrc_result = ?icrc_res_liquidity_pool;
+                };
+                other = other_config_with_transfer_result;
+              };
+              min_token_e8s = configs.min_token_e8s;
+              max_token_e8s = configs.max_token_e8s;
+              min_participant_token_e8s = configs.min_participant_token_e8s;
+              max_participant_token_e8s = configs.max_participant_token_e8s;
+              swap_start_timestamp_seconds = configs.swap_start_timestamp_seconds;
+              swap_due_timestamp_seconds = configs.swap_due_timestamp_seconds;
+              swap_type = #icp;
+            };
+            _swap_configs := Trie.put(_swap_configs, Helper.keyT(arg.canister_id), Text.equal, configs_with_transfer_results).0;
           };
-          min_icp_e8s = configs.min_icp_e8s;
-          max_icp_e8s = configs.max_icp_e8s;
-          min_participant_icp_e8s = configs.min_participant_icp_e8s;
-          max_participant_icp_e8s = configs.max_participant_icp_e8s;
-          swap_start_timestamp_seconds = configs.swap_start_timestamp_seconds;
-          swap_due_timestamp_seconds = configs.swap_due_timestamp_seconds;
+          case (#boom) {
+            // guilds transfer
+            var boom_req : ICRC.TransferArg = {
+              to = configs.token_supply_configs.gaming_guilds.account;
+              fee = ?100000;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.gaming_guilds.boom;
+            };
+            var icrc_req : ICRC.TransferArg = {
+              to = configs.token_supply_configs.gaming_guilds.account;
+              fee = null;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.gaming_guilds.icrc;
+            };
+            let boom_res_guilds : ICRC.TransferResult = await boom_ledger.icrc1_transfer(boom_req);
+            let icrc_res_guilds : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+            // team transfer
+            boom_req := {
+              to = configs.token_supply_configs.team.account;
+              fee = ?100000;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.team.boom;
+            };
+            icrc_req := {
+              to = configs.token_supply_configs.team.account;
+              fee = null;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.team.icrc;
+            };
+            let boom_res_team : ICRC.TransferResult = await boom_ledger.icrc1_transfer(boom_req);
+            let icrc_res_team : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+            // lp transfer
+            boom_req := {
+              to = configs.token_supply_configs.liquidity_pool.account;
+              fee = ?100000;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.liquidity_pool.boom;
+            };
+            icrc_req := {
+              to = configs.token_supply_configs.liquidity_pool.account;
+              fee = null;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.liquidity_pool.icrc;
+            };
+            let boom_res_liquidity_pool : ICRC.TransferResult = await boom_ledger.icrc1_transfer(boom_req);
+            let icrc_res_liquidity_pool : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+            // boom dao treasury transfer
+            boom_req := {
+              to = configs.token_supply_configs.boom_dao_treasury.icrc_account;
+              fee = ?100000;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.boom_dao_treasury.boom;
+            };
+            icrc_req := {
+              to = configs.token_supply_configs.boom_dao_treasury.icrc_account;
+              fee = null;
+              memo = null;
+              from_subaccount = null;
+              created_at_time = null;
+              amount = configs.token_supply_configs.boom_dao_treasury.icrc;
+            };
+            let boom_res_boom_dao : ICRC.TransferResult = await boom_ledger.icrc1_transfer(boom_req);
+            let icrc_res_boom_dao : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+            // others - transfer (if present)
+            var other_config_with_transfer_result : ?{
+              account : Swap.Account;
+              icp : Nat64;
+              boom : Nat;
+              icrc : Nat;
+              icp_result : ?ICP.Icrc1TransferResult;
+              boom_result : ?ICRC.TransferResult;
+              icrc_result : ?ICRC.TransferResult;
+            } = null;
+            switch (configs.token_supply_configs.other) {
+              case (?other_info) {
+                boom_req := {
+                  to = other_info.account;
+                  fee = ?100000;
+                  memo = null;
+                  from_subaccount = null;
+                  created_at_time = null;
+                  amount = other_info.boom;
+                };
+                icrc_req := {
+                  to = other_info.account;
+                  fee = null;
+                  memo = null;
+                  from_subaccount = null;
+                  created_at_time = null;
+                  amount = other_info.icrc;
+                };
+                let boom_res_other : ICRC.TransferResult = await boom_ledger.icrc1_transfer(boom_req);
+                let icrc_res_other : ICRC.TransferResult = await icrc_ledger.icrc1_transfer(icrc_req);
+
+                other_config_with_transfer_result := ?{
+                  account = other_info.account;
+                  icp = other_info.icp;
+                  boom = other_info.boom;
+                  icrc = other_info.icrc;
+                  icp_result = null;
+                  boom_result = ?boom_res_other;
+                  icrc_result = ?icrc_res_other;
+                };
+              };
+              case _ {}; // ignored
+            };
+
+            let configs_with_transfer_results : Swap.TokenSwapConfigs = {
+              token_supply_configs = {
+                gaming_guilds = {
+                  account = configs.token_supply_configs.gaming_guilds.account;
+                  icp = configs.token_supply_configs.gaming_guilds.icp;
+                  boom = configs.token_supply_configs.gaming_guilds.boom;
+                  icrc = configs.token_supply_configs.gaming_guilds.icrc;
+                  icp_result = null;
+                  boom_result = ?boom_res_guilds;
+                  icrc_result = ?icrc_res_guilds;
+                };
+                participants = {
+                  icrc = configs.token_supply_configs.participants.icrc;
+                };
+                team = {
+                  account = configs.token_supply_configs.team.account;
+                  icp = configs.token_supply_configs.team.icp;
+                  boom = configs.token_supply_configs.team.boom;
+                  icrc = configs.token_supply_configs.team.icrc;
+                  icp_result = null;
+                  boom_result = ?boom_res_team;
+                  icrc_result = ?icrc_res_team;
+                };
+                boom_dao_treasury = {
+                  icp_account = configs.token_supply_configs.boom_dao_treasury.icp_account;
+                  icrc_account = configs.token_supply_configs.boom_dao_treasury.icrc_account;
+                  icp = configs.token_supply_configs.boom_dao_treasury.icp;
+                  boom = configs.token_supply_configs.boom_dao_treasury.boom;
+                  icrc = configs.token_supply_configs.boom_dao_treasury.icrc;
+                  icp_result = null;
+                  boom_result = ?boom_res_boom_dao;
+                  icrc_result = ?icrc_res_boom_dao;
+                };
+                liquidity_pool = {
+                  account = configs.token_supply_configs.liquidity_pool.account;
+                  icp = configs.token_supply_configs.liquidity_pool.icp;
+                  boom = configs.token_supply_configs.liquidity_pool.boom;
+                  icrc = configs.token_supply_configs.liquidity_pool.icrc;
+                  icp_result = null;
+                  boom_result = ?boom_res_liquidity_pool;
+                  icrc_result = ?icrc_res_liquidity_pool;
+                };
+                other = other_config_with_transfer_result;
+              };
+              min_token_e8s = configs.min_token_e8s;
+              max_token_e8s = configs.max_token_e8s;
+              min_participant_token_e8s = configs.min_participant_token_e8s;
+              max_participant_token_e8s = configs.max_participant_token_e8s;
+              swap_start_timestamp_seconds = configs.swap_start_timestamp_seconds;
+              swap_due_timestamp_seconds = configs.swap_due_timestamp_seconds;
+              swap_type = #boom;
+            };
+            _swap_configs := Trie.put(_swap_configs, Helper.keyT(arg.canister_id), Text.equal, configs_with_transfer_results).0;
+          };
         };
-        _swap_configs := Trie.put(_swap_configs, Helper.keyT(arg.canister_id), Text.equal, configs_with_transfer_results).0;
       };
       case _ {};
     };
   };
 
   // query methods
-  public query func total_icp_contributed_e8s_and_total_participants(arg : { canister_id : Text }) : async ((Nat64, Nat)) {
-    var total_icp : Nat64 = 0;
+  public query func total_token_contributed_e8s_and_total_participants(arg : { canister_id : Text; token : Swap.TokenSwapType }) : async ((Nat, Nat)) {
+    var total_token : Nat = 0;
     switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?participants) {
-        for ((participant_id, info) in Trie.iter(participants)) {
-          total_icp := total_icp + info.icp_e8s;
+        switch (arg.token) {
+          case (#icp) {
+            for ((participant_id, info) in Trie.iter(participants)) {
+              total_token := total_token + Nat64.toNat(info.icp_e8s);
+            };
+            return (total_token, Trie.size(participants));
+          };
+          case (#boom) {
+            for ((participant_id, info) in Trie.iter(participants)) {
+              total_token := total_token + info.boom_e8s;
+            };
+            return (total_token, Trie.size(participants));
+          };
         };
-        return (total_icp, Trie.size(participants));
       };
       case _ {
         return (0, 0);
@@ -455,14 +783,24 @@ actor SwapCanister {
     };
   };
 
-  public query func total_icp_contributed_e8s(arg : { canister_id : Text }) : async (Nat64) {
-    var total_icp : Nat64 = 0;
+  public query func total_token_contributed_e8s(arg : { canister_id : Text; token : Swap.TokenSwapType }) : async (Nat) {
+    var total_token : Nat = 0;
     switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?participants) {
-        for ((participant_id, info) in Trie.iter(participants)) {
-          total_icp := total_icp + info.icp_e8s;
+        switch (arg.token) {
+          case (#icp) {
+            for ((participant_id, info) in Trie.iter(participants)) {
+              total_token := total_token + Nat64.toNat(info.icp_e8s);
+            };
+            return total_token;
+          };
+          case (#boom) {
+            for ((participant_id, info) in Trie.iter(participants)) {
+              total_token := total_token + info.boom_e8s;
+            };
+            return total_token;
+          };
         };
-        return total_icp;
       };
       case _ {
         return 0;
@@ -572,100 +910,204 @@ actor SwapCanister {
 
   // Checks :
   // 1. Is Swap Running?
-  // 2. Is ICP BlockIndex Legit?
+  // 2. Is ICP BlockIndex Legit? / Is BOOM BlockIndex Legit?
   // 3. Is Amount specified is matching SwapConfigs?
-  public shared ({ caller }) func participate_in_token_swap(arg : { canister_id : Text; amount : ICP.Tokens; blockIndex : Nat64 }) : async (Result.Result<Text, Text>) {
+  public shared ({ caller }) func participate_in_token_swap(arg : { canister_id : Text; amount : Nat64; blockIndex : Nat64 }) : async (Result.Result<Text, Text>) {
     if (isTokenSwapRunning_({ canister_id = arg.canister_id }) == false) {
       return #err("token swap is not yet started or ended already.");
     }; // Check-1
-    if (isAmountValid_({ canister_id = arg.canister_id; amount = arg.amount.e8s }) == false) {
+    if (isAmountValid_({ canister_id = arg.canister_id; amount = arg.amount }) == false) {
       return #err("amount passed does not fullfill participants requirements of min/max ICP.");
     }; // Check-2
     let swap_canister_id : Text = Principal.toText(Principal.fromActor(SwapCanister));
     let participant_id : Text = Principal.toText(caller);
-    switch (await queryIcpTx_(arg.blockIndex, swap_canister_id, participant_id, arg.amount)) {
-      // Check-2
-      case (#ok _) {
-        switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
-          case (?participants) {
-            switch (Trie.find(participants, Helper.keyT(participant_id), Text.equal)) {
-              case (?info) {
-                _swap_participants := Trie.put2D(
-                  _swap_participants,
-                  Helper.keyT(arg.canister_id),
-                  Text.equal,
-                  Helper.keyT(participant_id),
-                  Text.equal,
-                  {
-                    account = {
-                      owner = caller;
-                      subaccount = null;
+    switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
+      case (?configs) {
+        switch (configs.swap_type) {
+          case (#icp) {
+            switch (await queryIcpTx_(arg.blockIndex, swap_canister_id, participant_id, { e8s = arg.amount })) {
+              // Check-2
+              case (#ok _) {
+                switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
+                  case (?participants) {
+                    switch (Trie.find(participants, Helper.keyT(participant_id), Text.equal)) {
+                      case (?info) {
+                        _swap_participants := Trie.put2D(
+                          _swap_participants,
+                          Helper.keyT(arg.canister_id),
+                          Text.equal,
+                          Helper.keyT(participant_id),
+                          Text.equal,
+                          {
+                            account = {
+                              owner = caller;
+                              subaccount = null;
+                            };
+                            icp_e8s = info.icp_e8s + arg.amount;
+                            boom_e8s = 0;
+                            token_e8s = null;
+                            icp_refund_result = null;
+                            boom_refund_result = null;
+                            mint_result = null;
+                          },
+                        );
+                        return #ok("");
+                      };
+                      case _ {
+                        _swap_participants := Trie.put2D(
+                          _swap_participants,
+                          Helper.keyT(arg.canister_id),
+                          Text.equal,
+                          Helper.keyT(participant_id),
+                          Text.equal,
+                          {
+                            account = {
+                              owner = caller;
+                              subaccount = null;
+                            };
+                            icp_e8s = arg.amount;
+                            boom_e8s = 0;
+                            token_e8s = null;
+                            icp_refund_result = null;
+                            boom_refund_result = null;
+                            mint_result = null;
+                          },
+                        );
+                        return #ok("");
+                      };
                     };
-                    icp_e8s = info.icp_e8s + arg.amount.e8s;
-                    token_e8s = null;
-                    refund_result = null;
-                    mint_result = null;
-                  },
-                );
-                return #ok("");
+                  };
+                  case _ {
+                    _swap_participants := Trie.put2D(
+                      _swap_participants,
+                      Helper.keyT(arg.canister_id),
+                      Text.equal,
+                      Helper.keyT(participant_id),
+                      Text.equal,
+                      {
+                        account = {
+                          owner = caller;
+                          subaccount = null;
+                        };
+                        icp_e8s = arg.amount;
+                        boom_e8s = 0;
+                        token_e8s = null;
+                        icp_refund_result = null;
+                        boom_refund_result = null;
+                        mint_result = null;
+                      },
+                    );
+                    return #ok("");
+                  };
+                };
               };
-              case _ {
-                _swap_participants := Trie.put2D(
-                  _swap_participants,
-                  Helper.keyT(arg.canister_id),
-                  Text.equal,
-                  Helper.keyT(participant_id),
-                  Text.equal,
-                  {
-                    account = {
-                      owner = caller;
-                      subaccount = null;
-                    };
-                    icp_e8s = arg.amount.e8s;
-                    token_e8s = null;
-                    refund_result = null;
-                    mint_result = null;
-                  },
-                );
-                return #ok("");
+              case (#err e) {
+                return #err(e);
               };
             };
           };
-          case _ {
-            _swap_participants := Trie.put2D(
-              _swap_participants,
-              Helper.keyT(arg.canister_id),
-              Text.equal,
-              Helper.keyT(participant_id),
-              Text.equal,
-              {
-                account = {
-                  owner = caller;
-                  subaccount = null;
+          case (#boom) {
+            switch (await queryIcrcTx_(Nat64.toNat(arg.blockIndex), swap_canister_id, participant_id, Nat64.toNat(arg.amount), arg.canister_id)) {
+              // Check-2
+              case (#ok _) {
+                switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
+                  case (?participants) {
+                    switch (Trie.find(participants, Helper.keyT(participant_id), Text.equal)) {
+                      case (?info) {
+                        let p_details : Swap.ParticipantDetails = {
+                          account = {
+                            owner = caller;
+                            subaccount = null;
+                          };
+                          icp_e8s = 0;
+                          boom_e8s = info.boom_e8s + Nat64.toNat(arg.amount);
+                          token_e8s = null;
+                          icp_refund_result = null;
+                          boom_refund_result = null;
+                          mint_result = null;
+                        };
+                        _swap_participants := Trie.put2D(
+                          _swap_participants,
+                          Helper.keyT(arg.canister_id),
+                          Text.equal,
+                          Helper.keyT(participant_id),
+                          Text.equal,
+                          p_details,
+                        );
+                        return #ok("");
+                      };
+                      case _ {
+                        let p_details : Swap.ParticipantDetails = {
+                          account = {
+                            owner = caller;
+                            subaccount = null;
+                          };
+                          icp_e8s = 0;
+                          boom_e8s = Nat64.toNat(arg.amount);
+                          token_e8s = null;
+                          icp_refund_result = null;
+                          boom_refund_result = null;
+                          mint_result = null;
+                        };
+                        _swap_participants := Trie.put2D(
+                          _swap_participants,
+                          Helper.keyT(arg.canister_id),
+                          Text.equal,
+                          Helper.keyT(participant_id),
+                          Text.equal,
+                          p_details,
+                        );
+                        return #ok("");
+                      };
+                    };
+                  };
+                  case _ {
+                    let p_details : Swap.ParticipantDetails = {
+                      account = {
+                        owner = caller;
+                        subaccount = null;
+                      };
+                      icp_e8s = 0;
+                      boom_e8s = Nat64.toNat(arg.amount);
+                      token_e8s = null;
+                      icp_refund_result = null;
+                      boom_refund_result = null;
+                      mint_result = null;
+                    };
+                    _swap_participants := Trie.put2D(
+                      _swap_participants,
+                      Helper.keyT(arg.canister_id),
+                      Text.equal,
+                      Helper.keyT(participant_id),
+                      Text.equal,
+                      p_details,
+                    );
+                    return #ok("");
+                  };
                 };
-                icp_e8s = arg.amount.e8s;
-                token_e8s = null;
-                refund_result = null;
-                mint_result = null;
-              },
-            );
-            return #ok("");
+              };
+              case (#err e) {
+                return #err(e);
+              };
+            };
           };
         };
       };
-      case (#err e) {
-        return #err(e);
+      case _ {
+        return #err("token swap configs not found, contact dev team in discord");
       };
     };
   };
 
   // Checks :
   // 1. Sale timestamp is it over or not?
-  // 2. total_icp reached the goal?
+  // 2. total_icp/total_boom reached the goal?
   public shared ({ caller }) func settle_swap_status_and_allocate_tokens_if_swap_successfull(arg : { canister_id : Text }) : async (Result.Result<Text, Text>) {
     // assert (caller == dev_principal);
+    var swap_type : Swap.TokenSwapType = #boom;
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
+        swap_type := configs.swap_type;
         let current_time_in_seconds = Time.now() / 1000000000;
         if ((configs.swap_due_timestamp_seconds + configs.swap_start_timestamp_seconds) > current_time_in_seconds) {
           return #err("token swap is still running or due time not passed yet.");
@@ -676,12 +1118,14 @@ actor SwapCanister {
       };
     };
 
-    var total_icp_e8s : Nat64 = await total_icp_contributed_e8s({
+    var total_token_e8s : Nat = await total_token_contributed_e8s({
       canister_id = arg.canister_id;
+      token = swap_type;
     });
+
     let ?_current_swap_configs = Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal) else return #err("swap configs not found.");
-    total_icp_e8s := Nat64.min(total_icp_e8s, _current_swap_configs.max_icp_e8s);
-    let total_icp_float : Float = Helper.nat64ToFloat(total_icp_e8s) / 100000000.0;
+    total_token_e8s := Nat.min(total_token_e8s, Nat64.toNat(_current_swap_configs.max_token_e8s));
+    let total_token_float : Float = Helper.natToFloat(total_token_e8s) / 100000000.0;
     var participants : Trie.Trie<Text, Swap.ParticipantDetails> = Trie.empty();
     switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?par) {
@@ -691,21 +1135,43 @@ actor SwapCanister {
     };
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
-        // if (configs.min_icp_e8s >= total_icp_e8s and configs.max_icp_e8s <= total_icp_e8s) {
-        if (configs.min_icp_e8s <= total_icp_e8s) { // currently only Minimum ICP raised constraint is getting checked, no constraints on Maximum ICP raised
+        // if (configs.min_token_e8s <= total_token_e8s and configs.max_token_e8s >= total_token_e8s) {
+        if (Nat64.toNat(configs.min_token_e8s) <= total_token_e8s) {
+          // currently only Minimum ICP/BOOM raised constraint is getting checked, no constraints on Maximum ICP/BOOM raised
           let total_participants_tokens_float : Float = Helper.nat64ToFloat(Nat64.fromNat(configs.token_supply_configs.participants.icrc)) / 100000000.0;
-          for ((id, info) in Trie.iter(participants)) {
-            var tokens_amount_float : Float = ((Helper.nat64ToFloat(info.icp_e8s) * total_participants_tokens_float) / total_icp_float);
-            // tokens_amount_float := tokens_amount_float * 100000000.0;
-            let tokens_amount : Int = Float.toInt(tokens_amount_float);
-            let p_details : Swap.ParticipantDetails = {
-              account = info.account;
-              icp_e8s = info.icp_e8s;
-              token_e8s = ?Helper.intToNat(tokens_amount);
-              refund_result = null;
-              mint_result = null;
+          switch (swap_type) {
+            case (#boom) {
+              for ((id, info) in Trie.iter(participants)) {
+                var tokens_amount_float : Float = ((Helper.natToFloat(info.boom_e8s) * total_participants_tokens_float) / total_token_float);
+                let tokens_amount : Int = Float.toInt(tokens_amount_float);
+                let p_details : Swap.ParticipantDetails = {
+                  account = info.account;
+                  icp_e8s = info.icp_e8s;
+                  boom_e8s = info.boom_e8s;
+                  token_e8s = ?Helper.intToNat(tokens_amount);
+                  icp_refund_result = null;
+                  boom_refund_result = null;
+                  mint_result = null;
+                };
+                _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(id), Text.equal, p_details);
+              };
             };
-            _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(id), Text.equal, p_details);
+            case (#icp) {
+              for ((id, info) in Trie.iter(participants)) {
+                var tokens_amount_float : Float = ((Helper.nat64ToFloat(info.icp_e8s) * total_participants_tokens_float) / total_token_float);
+                let tokens_amount : Int = Float.toInt(tokens_amount_float);
+                let p_details : Swap.ParticipantDetails = {
+                  account = info.account;
+                  icp_e8s = info.icp_e8s;
+                  boom_e8s = info.boom_e8s;
+                  token_e8s = ?Helper.intToNat(tokens_amount);
+                  icp_refund_result = null;
+                  boom_refund_result = null;
+                  mint_result = null;
+                };
+                _swap_participants := Trie.put2D(_swap_participants, Helper.keyT(arg.canister_id), Text.equal, Helper.keyT(id), Text.equal, p_details);
+              };
+            };
           };
           _swap_status := Trie.put(
             _swap_status,
@@ -751,7 +1217,7 @@ actor SwapCanister {
           await success_mint_tokens(arg);
           return #ok("token swap success, minted tokens.");
         } else {
-          await error_refund_icp(arg);
+          await error_refund_token(arg);
           return #ok("token swap failed, refunded icp.");
         };
       };
@@ -759,6 +1225,14 @@ actor SwapCanister {
         return #err("token swap status not found.");
       };
     };
+  };
+
+  public query func getTokenSwapType(tokenCanisterId : Text) : async (Text) { 
+    let ?swap_configs = Trie.find(_swap_configs, Helper.keyT(tokenCanisterId), Text.equal) else return "";
+    switch (swap_configs.swap_type) {
+      case (#boom) return "BOOM";
+      case (#icp) return "ICP";
+    } ;
   };
 
   public query func getAllTokenDetails() : async [(Text, Swap.Token)] {
@@ -849,7 +1323,7 @@ actor SwapCanister {
     let ?allParticipants = Trie.find(_swap_participants, Helper.keyT(args.tokenCanisterId), Text.equal) else {
       return #err("There are no swap participants yet.");
     };
-    for((i, v) in Trie.iter(allParticipants)) {
+    for ((i, v) in Trie.iter(allParticipants)) {
       b.add(v);
     };
     return #ok(Buffer.toArray(b));
