@@ -98,7 +98,7 @@ const DialogProvider = (props: PropTypes) => {
             >
                 <div className="gradient-bg rounded-xl w-full cursor-pointer p-0.5 ">
                     <div className="w-full rounded-xl bg-white">
-                        <DialogTitle className="text-center">{state.title}</DialogTitle>
+                        {(state.title != "") ? <DialogTitle className="text-center">{state.title}</DialogTitle> : <></>}
                         <DialogContent className="text-center">
                             {state.component}
                         </DialogContent>

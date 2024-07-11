@@ -31,7 +31,8 @@ export const navPaths = {
   launchpad: "/launchpad",
   launchpad_participate: "/launchpad/participate",
   browse_games: "/browse-games",
-  game_iframe: "/game-iframe"
+  game_iframe: "/game-iframe",
+  stake: "/stake"
 };
 
 export const platform_types: SelectOption[] = [

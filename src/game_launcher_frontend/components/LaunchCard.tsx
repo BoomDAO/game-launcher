@@ -14,6 +14,14 @@ import { navPaths } from "@/shared";
 import FormattedDate from "./FormattedDate";
 import { useGetParticipationDetails } from "@/api/launchpad";
 import { LaunchCardProps } from "@/types";
+import { boom_ledger_canisterId } from "@/hooks";
+import { useGetBoomStakeTier } from "@/api/profile";
+import axios from 'axios';
+import ENV from "../../../env.json"
+import defaultTexts from "../api/defaultTexts.json";
+
+type Texts = typeof defaultTexts;
+const IPSTACK_API_KEY = ENV.IPSTACK_API_KEY;
 
 const LaunchCard = ({
     id,
@@ -27,21 +35,57 @@ const LaunchCard = ({
     const { setIsOpenNavSidebar } = useGlobalContext();
     const { canisterId } = useParams();
 
+    const [isGeoInfoLoading, setGeoInfoLoading] = React.useState(false);
+
     const handleCardOnClick = () => {
         if (!canisterId) {
             navigate(navPaths.launchpad + "/" + id);
         }
     }
 
-    const handleParticipate = () => {
+    const { data, isLoading } = useGetParticipationDetails(canisterId || "");
+    const { data: userStakeTier, isLoading: isStakingTierLoading } = useGetBoomStakeTier();
+
+    const handleParticipate = async () => {
         if (session.session) {
-            navigate(navPaths.launchpad_participate + "/" + canisterId);
+            setGeoInfoLoading(true);
+            let isUserBlocked = false;
+            const github = "https://raw.githubusercontent.com/BoomDAO/gaming-guild-content/main";
+            const info = await fetch(`${github}/texts.json`);
+            const texts = (await info.json()) as Texts;
+            const blocked_country_codes: string[] = [];
+            texts.blocked_country_info.codes.map((t) => {
+                blocked_country_codes.push(t);
+            });
+            const geo_blocking_info = texts.blocked_country_info.geo_blocking_info;
+            const response = await axios.get(ENV.FETCH_GEO_INFO_URL);
+            let user_country_code = response.data.country_code;
+            for (let i = 0; i < blocked_country_codes.length; i += 1) {
+                if (user_country_code == blocked_country_codes[i]) {
+                    isUserBlocked = true;
+                    break;
+                }
+            };
+            setGeoInfoLoading(false);
+            if (isUserBlocked) {
+                toast.custom((t) => (
+                    <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+                        <div className="w-2/3 rounded-3xl p-0.5 gradient-bg mt-48 inline-block">
+                            <div className="h-full w-auto dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+                                <div className="text-base py-8 px-8">{geo_blocking_info}</div>
+                                <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
+                            </div>
+                        </div>
+                    </div>
+                ));
+                return;
+            } else {
+                navigate(navPaths.launchpad_participate + "/" + data?.[1] + "/" + canisterId);
+            }
         } else {
             setIsOpenNavSidebar(true);
         }
     }
-
-    const { data, isLoading } = useGetParticipationDetails(canisterId);
 
     return (
         <Center>
@@ -53,8 +97,14 @@ const LaunchCard = ({
                     )
                 } onClick={handleCardOnClick}>
                     <div className="w-7/12 p-2 relative">
-                        <img src={project.bannerUrl} className="h-80 w-full object-cover rounded-xl" />
+                        <img src={project.bannerUrl} className="h-96 w-full object-cover rounded-xl" />
                         <div className="absolute bottom-5 text-white">
+                            <div className="w-1/4 flex bg-sky-500 rounded-xl py-0.5 mb-48 ml-4">
+                                <img src="/live.svg" className="w-2 ml-2" />
+                                {
+                                    (!isStakingTierLoading && userStakeTier != "") ? <p className="font-semibold text-white text-sm pl-2">LIVE : {userStakeTier} STAKER</p> : <p className="font-semibold text-white text-sm pl-2">LIVE : PUBLIC</p>
+                                }
+                            </div>
                             <p className="font-bold text-6xl px-5 pb-1">{project.name}</p>
                             <p className="w-9/12 px-5 text-xs">{project.description}</p>
                         </div>
@@ -78,8 +128,8 @@ const LaunchCard = ({
                                 <div>
                                     <p className="font-light">TOTAL RAISED</p>
                                     <div className="flex">
-                                        <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-12" />
-                                        <p className="pt-1.5 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
+                                        <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10" />
+                                        <p className="pt-2 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
                                     </div>
                                 </div>
                             </div>
@@ -87,18 +137,20 @@ const LaunchCard = ({
                             <div className="flex">
                                 {
                                     (canisterId) ? <div className="w-1/2">
-                                        <button className="w-11/12 gradient-bg-blue rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>PARTICIPATE</button>
+                                        {
+                                            (!isGeoInfoLoading) ? <button className="w-11/12 gradient-bg-blue rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>PARTICIPATE</button> : <Loader className="w-10 mt-2 ml-20 mb-4"></Loader>
+                                        }
                                         <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantToken} {swap.swapType} required to Participate. </p>
                                     </div> : <></>
                                 }
                                 {
                                     (isLoading) ? <Loader className="w-10"></Loader> :
-                                        (data != "0" && canisterId) ?
+                                        (data?.[0] != "0" && canisterId) ?
                                             <div className={cx("dark:text-black text-white text-xs mt-3 pl-2 font-light", (canisterId) ? "border-l-2" : "")}>
                                                 <p>YOU HAVE ALREADY CONTRIBUTED</p>
                                                 <div className="flex">
-                                                    <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 mt-0.5" />
-                                                    <p className="pt-1.5 font-semibold text-sm">{data} {swap.swapType}</p>
+                                                    <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-8 mt-0.5" />
+                                                    <p className="pt-2.5 font-semibold text-sm pl-2">{data?.[0]} {swap.swapType}</p>
                                                 </div>
                                             </div> : <></>
                                 }
@@ -132,6 +184,17 @@ const LaunchCard = ({
                                     {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
                                 </div>
                             }
+                            <div className="flex pt-2">
+                                <div className="dark:text-black text-white text-xxs pt-1.5">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS.</div>
+                                <Button size="small" className="ml-4" onClick={(e) => {
+                                    if (session.session) {
+                                        navigate(navPaths.stake + "/" + boom_ledger_canisterId);
+                                        e.stopPropagation();
+                                    } else {
+                                        setIsOpenNavSidebar(true);
+                                    }
+                                }}>STAKE</Button>
+                            </div>
                         </div>
                     </div>
                 </div> :
@@ -142,7 +205,7 @@ const LaunchCard = ({
                         )
                     } onClick={handleCardOnClick}>
                         <div className="w-7/12 p-2 relative">
-                            <img src={project.bannerUrl} className="h-60 w-full object-cover rounded-xl" />
+                            <img src={project.bannerUrl} className="h-64 w-full object-cover rounded-xl" />
                             <div className="absolute bottom-4 text-white">
                                 <p className="font-bold text-4xl px-5 pb-1">{project.name}</p>
                                 <p className="w-9/12 px-5 text-xs">{project.description}</p>
@@ -152,7 +215,7 @@ const LaunchCard = ({
                             {
                                 (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
                             }
-                            <div className="p-5 mt-4">
+                            <div className="p-5">
                                 <div className="flex text-white dark:text-black justify-between">
                                     <div>
                                         <p className="font-light">TOKEN</p>
@@ -195,6 +258,17 @@ const LaunchCard = ({
                                         {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
                                     </div>
                                 }
+                                <div className="flex pt-2">
+                                    <div className="dark:text-black text-white text-xxs pt-1.5">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS.</div>
+                                    <Button size="small" className="ml-4" onClick={(e) => {
+                                        if (session.session) {
+                                            navigate(navPaths.stake + "/" + boom_ledger_canisterId);
+                                            e.stopPropagation();
+                                        } else {
+                                            setIsOpenNavSidebar(true);
+                                        }
+                                    }}>STAKE</Button>
+                                </div>
                             </div>
                         </div>
                     </div>

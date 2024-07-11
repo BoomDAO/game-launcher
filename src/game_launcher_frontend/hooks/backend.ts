@@ -36,7 +36,7 @@ import { idlFactory as SwapCanisterFactory } from "../dids/swap.did.js";
 export const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
-const boom_ledger_canisterId = "vtrom-gqaaa-aaaaq-aabia-cai";
+export const boom_ledger_canisterId = "vtrom-gqaaa-aaaaq-aabia-cai";
 
 //Staging
 
@@ -419,7 +419,12 @@ export const useGamingGuildsClient = async () => {
       stakeExtNft: "stakeExtNft",
       getUserExtStakesInfo: "getUserExtStakesInfo",
       disburseExtNft: "disburseExtNft",
-      dissolveExtNft: "dissolveExtNft"
+      dissolveExtNft: "dissolveExtNft",
+      stakeBoomTokens: "stakeBoomTokens",
+      dissolveBoomStake: "dissolveBoomStake",
+      disburseBOOMStake: "disburseBOOMStake",
+      getUserBoomStakeTier: "getUserBoomStakeTier",
+      getUserBoomStakeInfo: "getUserBoomStakeInfo"
     },
   };
 };
@@ -463,7 +468,9 @@ export const useBoomLedgerClient = async () => {
       canisterId: boom_ledger_canisterId,
     }),
     methods: {
-      icrc1_balance_of: "icrc1_balance_of"
+      icrc1_balance_of: "icrc1_balance_of",
+      icrc1_fee: "icrc1_fee",
+      icrc1_transfer: "icrc1_transfer"
     },
   };
 };

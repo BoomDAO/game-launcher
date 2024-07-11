@@ -22,15 +22,6 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [session, setSession] = React.useState<Session | null>(null);
 
-  // const assignSession = (authClient: AuthClient) => {
-  //   const identity = authClient.getIdentity();
-  //   const address = identity.getPrincipal().toString();
-
-  //   setSession({
-  //     identity,
-  //     address,
-  //   });
-  // };
   const assignSession = (nfid : NFID) => {
     const identity = nfid.getIdentity();
     const address = identity.getPrincipal().toString();
@@ -42,17 +33,6 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   };
 
   const checkAuth = async () => {
-    // try {
-    //   const authClient = await getAuthClient();
-    //   const isAuthenticated = await authClient.isAuthenticated();
-    //   if (!isAuthenticated) return;
-    //   assignSession(authClient);
-    // } catch (error) {
-    //   console.log("err while checking auth", error);
-    //   setSession(null);
-    // } finally {
-    //   setIsLoading(false);
-    // }
     try {
       const nfid = await getNfid();
       const isAuthenticated = nfid.isAuthenticated;
@@ -71,22 +51,12 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   }, []);
 
   const logout = async () => {
-    // const authClient = await getAuthClient();
-    // await authClient.logout();
-    // setSession(null);
     const nfid = await getNfid();
     await nfid.logout();
     setSession(null);
   };
 
   const login = async () => {
-    // const authClient = await getAuthClient();
-    // const isAuthenticated = await authClient.isAuthenticated();
-    // if (isAuthenticated) return assignSession(authClient);
-
-    // await nfidLogin(authClient!);
-    // window.location.reload();
-    // return checkAuth();
     const nfid = await getNfid();
     const isAuthenticated = nfid.isAuthenticated;
     if(isAuthenticated) return assignSession(nfid);

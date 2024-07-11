@@ -4,7 +4,7 @@ import { cx } from "@/utils";
 import Loader from "./Loader";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  size?: "normal" | "big";
+  size?: "normal" | "big" | "small";
   rightArrow?: boolean;
   isLoading?: boolean;
   isClaimSuccess?: boolean;
@@ -30,6 +30,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cx(
           "flex w-fit items-center rounded-primary uppercase text-white",
           size === "normal" && "gap-2 px-6 py-2 text-sm",
+          size === "small" && "gap-2 px-4 py-1 text-xxs",
           size === "big" && "gap-2 px-12 py-4 text-base md:text-lg",
           isLoading || disabled
             ? "cursor-default bg-gray-600 text-gray-500"

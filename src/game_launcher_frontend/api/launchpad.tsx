@@ -9,7 +9,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { ledger_canisterId, swapCanisterId, useICRCLedgerClient, useLedgerClient, useSwapCanisterClient } from "@/hooks";
+import { boom_ledger_canisterId, gamingGuildsCanisterId, ledger_canisterId, swapCanisterId, useBoomLedgerClient, useGamingGuildsClient, useICRCLedgerClient, useLedgerClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
 import { LaunchCardProps, ParticipantDetails, TokenSwapType, TokensInfo } from "@/types";
@@ -21,7 +21,8 @@ import Tokens from "../locale/en/Tokens.json";
 
 export const queryKeys = {
     tokens_info: "tokens_info",
-    participant_details: "participant_details"
+    participant_details: "participant_details",
+    swap_type: "swap_type"
 };
 
 function closeToast() {
@@ -68,7 +69,7 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 for (let i = 0; i < tokensInfo.active.length; i += 1) {
                     let current_token_info = tokensInfo.active[i];
                     if (current_token_info.token_canister_id == canisterId) {
-                        token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
+                        token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                         let cardInfo: LaunchCardProps = {
                             id: current_token_info.token_canister_id,
                             project: {
@@ -105,7 +106,7 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
                     let current_token_info = tokensInfo.inactive[i];
                     if (current_token_info.token_canister_id == canisterId) {
-                        token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
+                        token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                         let cardInfo: LaunchCardProps = {
                             id: current_token_info.token_canister_id,
                             project: {
@@ -183,7 +184,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 let tokensInfo = tokensInfoRes.ok;
                 for (let i = 0; i < tokensInfo.active.length; i += 1) {
                     let current_token_info = tokensInfo.active[i];
-                    token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
+                    token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
                         project: {
@@ -218,7 +219,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 }
                 for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
                     let current_token_info = tokensInfo.inactive[i];
-                    token_canister_ids_and_swap_type.push((current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"));
+                    token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
                         project: {
@@ -252,7 +253,6 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                     res.push(cardInfo);
                 }
             }
-
             for (let i = 0; i < token_canister_ids_and_swap_type.length; i += 1) {
                 let tokenType: TokenSwapType = { 'icp': null };
                 if (token_canister_ids_and_swap_type[i][1] == "BOOM") {
@@ -274,39 +274,36 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
     });
 };
 
-export const useGetParticipationDetails = (canisterId?: string): UseQueryResult<String> => {
+export const useGetParticipationDetails = (canisterId: string): UseQueryResult<[String, String]> => {
     const { session } = useAuthContext();
     return useQuery({
         queryKey: [queryKeys.participant_details, canisterId],
         queryFn: async () => {
             const { actor, methods } = await useSwapCanisterClient();
-            Promise.all([actor[methods.getParticipationDetails]({
-                tokenCanisterId: canisterId ? canisterId : "",
-                participantId: (session) ? session.address : "2vxsx-fae"
-            }) as Promise<{
-                ok: ParticipantDetails
-            }>, actor[methods.getTokenSwapType](canisterId) as Promise<string>]).then((res) => {
-                let details = res[0] as { ok: ParticipantDetails };
+            let finalRes = ["", ""];
+            await Promise.all([actor[methods.getParticipationDetails]({ tokenCanisterId: canisterId, participantId: (session) ? session.address : "2vxsx-fae" }) as Promise<{ ok: ParticipantDetails }>,
+            actor[methods.getTokenSwapType](canisterId) as Promise<string>]).then((res) => {
+                let details = res[0] as { ok: ParticipantDetails | undefined, err: undefined | string };
                 let swapType = res[1];
+                finalRes[1] = (swapType == "BOOM") ? "boom" : "icp";
                 if (details.ok == undefined) {
-                    return "0";
+                    finalRes[0] = "0";
                 } else {
                     if (swapType == "ICP") {
                         let amt = Number(details.ok.icp_e8s * 100000000n / 100000000n) / 100000000;
-                        console.log(String(amt));
-                        return String(amt);
+                        finalRes[0] = String(amt);
                     } else {
                         let amt = Number(details.ok.boom_e8s * 100000000n / 100000000n) / 100000000;
-                        console.log(String(amt));
-                        return String(amt);
+                        finalRes[0] = String(amt);
                     }
                 }
             })
+            return finalRes;
         },
     });
 };
 
-export const useParticipateICPTransfer = () => {
+export const useParticipateTokenTransfer = (swapType: string) => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     return useMutation({
@@ -318,11 +315,12 @@ export const useParticipateICPTransfer = () => {
             canisterId?: string;
         }) => {
             try {
-                const { actor, methods } = await useICRCLedgerClient(ledger_canisterId);
+                let token_ledger_canister_id = (swapType == "boom") ? boom_ledger_canisterId : ledger_canisterId;
+                const { actor, methods } = await useICRCLedgerClient(token_ledger_canister_id);
                 const swapCanister = await useSwapCanisterClient();
                 let fee = 0;
                 for (let i = 0; i < Tokens.tokens.length; i += 1) {
-                    if (Tokens.tokens[i].ledger == ledger_canisterId) {
+                    if (Tokens.tokens[i].ledger == token_ledger_canister_id) {
                         fee = Tokens.tokens[i].fee
                     }
                 };
@@ -356,9 +354,7 @@ export const useParticipateICPTransfer = () => {
                 } else {
                     let res2 = await swapCanister.actor[swapCanister.methods.participate_in_token_swap]({
                         canister_id: (canisterId != undefined) ? canisterId : "",
-                        amount: {
-                            e8s: amount_e8s
-                        },
+                        amount: amount_e8s,
                         blockIndex: res.Ok
                     });
                 }
@@ -374,6 +370,8 @@ export const useParticipateICPTransfer = () => {
         },
         onSuccess: () => {
             toast.success("Participated successfully");
+            queryClient.refetchQueries({ queryKey: [queryKeys.participant_details] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.tokens_info] });
             closeToast();
         },
     });

@@ -534,10 +534,17 @@
       "token_transfer_button_placeholder": "Withdraw",
       "token_receiver_button_placeholder": "Deposit",
       "no_tokens": "No tokens listed in Game Launcher yet.",
+      "token_staking_button_placeholder": "Stake",
+      "token_dissolve_button_placeholder": "Dissolve",
       "transfer": {
         "heading": "Withdraw Token",
         "success": "ICRC Withdrawal successfull.",
         "error": "Some error occured. Contact dev team for support."
+      },
+      "staking": {
+        "heading": "Stake BOOM Token",
+        "success": "BOOM tokens staked successfully",
+        "error": ""
       }
     },
     "tab_2": {

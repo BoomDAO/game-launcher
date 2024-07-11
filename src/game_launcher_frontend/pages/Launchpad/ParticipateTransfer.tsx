@@ -10,8 +10,8 @@ import { useForm } from "react-hook-form";
 import { getTokenSymbol } from "@/api/profile";
 import Loader from "@/components/ui/Loader";
 import { useAuthContext } from "@/context/authContext";
-import { ledger_canisterId, useICRCLedgerClient } from "@/hooks";
-import { useParticipateICPTransfer } from "@/api/launchpad";
+import { boom_ledger_canisterId, ledger_canisterId, useICRCLedgerClient } from "@/hooks";
+import { useParticipateTokenTransfer } from "@/api/launchpad";
 
 const scheme = z.object({
     amount: z.string().min(1, "Amount is required.")
@@ -20,9 +20,10 @@ type Data = z.infer<typeof scheme>;
 
 const ParticipateTransfer = () => {
     const { t } = useTranslation();
-    const { canisterId } = useParams();
+    const { canisterId, swapType } = useParams();
     const { session } = useAuthContext();
     let [transferAmount, setTransferAmount] = React.useState("");
+    let [transferFee, setTransferFee] = React.useState<Number>(0);
     let [isTransferAmountLoading, setIsTransferAmountLoading] = React.useState(false);
 
     const { control, handleSubmit } = useForm<Data>({
@@ -31,11 +32,13 @@ const ParticipateTransfer = () => {
         },
         resolver: zodResolver(scheme),
     });
+
     React.useEffect(() => {
         (async () => {
-            if (canisterId != undefined) {
+            if (canisterId != undefined && swapType != undefined) {
                 setIsTransferAmountLoading(true);
-                const { actor, methods } = await useICRCLedgerClient(ledger_canisterId);
+                let token_ledger_canister_id = (swapType == "boom") ? boom_ledger_canisterId : ledger_canisterId;
+                const { actor, methods } = await useICRCLedgerClient(token_ledger_canister_id);
                 let balance = await actor[methods.icrc1_balance_of]({
                     owner: session?.identity?.getPrincipal(),
                     subaccount: []
@@ -46,15 +49,16 @@ const ParticipateTransfer = () => {
                     transfer_amount = 0;
                 }
                 let res = ((Number(transfer_amount) * 1.0) / 100000000.0).toFixed(8);
+                let res_fee = ((Number(fee) * 1.0) / 100000000.0);
+                setTransferFee(res_fee);
                 setTransferAmount(res);
                 setIsTransferAmountLoading(false);
             }
         })();
-        return () => {
-        };
+        return () => {};
     }, [canisterId]);
 
-    const { mutate: details, isLoading: isIcrcTransferLoading } = useParticipateICPTransfer();
+    const { mutate: details, isLoading: isIcrcTransferLoading } = useParticipateTokenTransfer(swapType || "");
 
     const onSubmit = (values: Data) =>
         details(
@@ -64,10 +68,10 @@ const ParticipateTransfer = () => {
                 },
             },
         );
-    
+
     const onMaxClick = () => {
         let inputBox = document.getElementById("amount");
-        if(inputBox) {
+        if (inputBox) {
             inputBox.value = (transferAmount).split(".")[0];
         }
     }
@@ -76,7 +80,7 @@ const ParticipateTransfer = () => {
         <>
             <p className="text-2xl pb-4 font-semibold">Participate</p>
             <div className="w-full">
-                <div className="text-left pl-10 pb-5 mt-3 text-xl flex">Your Balance : {
+                <div className="text-left pl-10 pb-5 mt-3 text-xl flex">Your ${swapType?.toUpperCase()} Balance : {
                     isTransferAmountLoading ? <Loader className="w-6 h-6 ml-2"></Loader> : <p className="ml-2">{transferAmount}</p>
                 }</div>
                 <div className="flex px-10 justify-between">
@@ -94,7 +98,7 @@ const ParticipateTransfer = () => {
                             id="amount"
                             value={undefined}
                         />
-                        <p className="w-full mt-0 pt-0 text-left text-sm">Transaction Fee (billed to source) <br></br> 0.0001 ICP</p>
+                        <p className="w-full mt-0 pt-0 text-left text-sm">Transaction Fee (billed to source) <br></br> {String(transferFee)} {swapType?.toUpperCase()} </p>
                         <Button className="rounded-xl" size="big" isLoading={isIcrcTransferLoading}>
                             Continue
                         </Button>

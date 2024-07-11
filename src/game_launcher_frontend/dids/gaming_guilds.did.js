@@ -209,7 +209,7 @@ export const idlFactory = ({ IDL }) => {
     'uid' : IDL.Text,
   });
   const Result_3 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Null });
-  const Result_9 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+  const Result_10 = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   const ActionOutcomeHistory = IDL.Record({
     'wid' : worldId,
     'appliedAt' : IDL.Nat,
@@ -220,7 +220,7 @@ export const idlFactory = ({ IDL }) => {
       'mintNft' : MintNft,
     }),
   });
-  const Result_8 = IDL.Variant({
+  const Result_9 = IDL.Variant({
     'ok' : IDL.Vec(ActionOutcomeHistory),
     'err' : IDL.Text,
   });
@@ -239,13 +239,13 @@ export const idlFactory = ({ IDL }) => {
     'actionHistoryStatus' : IDL.Vec(ConstraintStatus),
     'isValid' : IDL.Bool,
   });
-  const Result_7 = IDL.Variant({ 'ok' : ActionStatusReturn, 'err' : IDL.Text });
+  const Result_8 = IDL.Variant({ 'ok' : ActionStatusReturn, 'err' : IDL.Text });
   const ActionState = IDL.Record({
     'actionCount' : IDL.Nat,
     'intervalStartTs' : IDL.Nat,
     'actionId' : IDL.Text,
   });
-  const Result_6 = IDL.Variant({
+  const Result_7 = IDL.Variant({
     'ok' : IDL.Vec(ActionState),
     'err' : IDL.Text,
   });
@@ -259,6 +259,16 @@ export const idlFactory = ({ IDL }) => {
     'err' : IDL.Text,
   });
   const EntityPermission = IDL.Record({ 'eid' : entityId, 'wid' : worldId });
+  const ICRCStakeKind = IDL.Variant({ 'pro' : IDL.Null, 'elite' : IDL.Null });
+  const ICRCStake = IDL.Record({
+    'staker' : IDL.Text,
+    'dissolvedAt' : IDL.Int,
+    'stakedAt' : IDL.Int,
+    'kind' : ICRCStakeKind,
+    'tokenCanisterId' : IDL.Text,
+    'amount' : IDL.Nat,
+  });
+  const Result_6 = IDL.Variant({ 'ok' : ICRCStake, 'err' : IDL.Text });
   const EXTStake = IDL.Record({
     'staker' : IDL.Text,
     'dissolvedAt' : IDL.Int,
@@ -380,7 +390,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'deleteActionStateForUser' : IDL.Func(
         [IDL.Record({ 'aid' : IDL.Text, 'uid' : IDL.Text })],
-        [Result_9],
+        [Result_10],
         [],
       ),
     'deleteAllActionLockStates' : IDL.Func([], [], []),
@@ -399,11 +409,13 @@ export const idlFactory = ({ IDL }) => {
       ),
     'deleteTestQuestActionStateForUser' : IDL.Func(
         [IDL.Record({ 'aid' : IDL.Text })],
-        [Result_9],
+        [Result_10],
         [],
       ),
     'deleteUser' : IDL.Func([IDL.Record({ 'uid' : userId })], [], []),
+    'disburseBOOMStake' : IDL.Func([], [Result_2], []),
     'disburseExtNft' : IDL.Func([IDL.Text, IDL.Nat32], [Result_2], []),
+    'dissolveBoomStake' : IDL.Func([], [Result_2], []),
     'dissolveExtNft' : IDL.Func([IDL.Text, IDL.Nat32], [Result_2], []),
     'editAction' : IDL.Func([IDL.Record({ 'aid' : IDL.Text })], [Action], []),
     'editConfig' : IDL.Func(
@@ -420,12 +432,12 @@ export const idlFactory = ({ IDL }) => {
     'exportConfigs' : IDL.Func([], [IDL.Vec(StableConfig)], []),
     'getActionHistory' : IDL.Func(
         [IDL.Record({ 'uid' : userId })],
-        [Result_8],
+        [Result_9],
         [],
       ),
     'getActionHistoryComposite' : IDL.Func(
         [IDL.Record({ 'uid' : userId })],
-        [Result_8],
+        [Result_9],
         ['composite_query'],
       ),
     'getActionLockState' : IDL.Func(
@@ -435,19 +447,19 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getActionStatusComposite' : IDL.Func(
         [IDL.Record({ 'aid' : actionId, 'uid' : IDL.Text })],
-        [Result_7],
+        [Result_8],
         ['composite_query'],
       ),
     'getAllActions' : IDL.Func([], [IDL.Vec(Action)], ['query']),
     'getAllConfigs' : IDL.Func([], [IDL.Vec(StableConfig)], ['query']),
     'getAllUserActionStates' : IDL.Func(
         [IDL.Record({ 'uid' : IDL.Text })],
-        [Result_6],
+        [Result_7],
         [],
       ),
     'getAllUserActionStatesComposite' : IDL.Func(
         [IDL.Record({ 'uid' : IDL.Text })],
-        [Result_6],
+        [Result_7],
         ['composite_query'],
       ),
     'getAllUserEntities' : IDL.Func(
@@ -460,6 +472,7 @@ export const idlFactory = ({ IDL }) => {
         [Result_5],
         ['composite_query'],
       ),
+    'getCurrentDauCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getEntityPermissionsOfWorld' : IDL.Func(
         [],
         [
@@ -473,6 +486,8 @@ export const idlFactory = ({ IDL }) => {
     'getOwner' : IDL.Func([], [IDL.Text], ['query']),
     'getProcessActionCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getTokenIndex' : IDL.Func([IDL.Text], [IDL.Nat32], ['query']),
+    'getUserBoomStakeInfo' : IDL.Func([IDL.Text], [Result_6], ['query']),
+    'getUserBoomStakeTier' : IDL.Func([IDL.Text], [Result_2], ['query']),
     'getUserEntitiesFromWorldNodeComposite' : IDL.Func(
         [IDL.Record({ 'uid' : IDL.Text, 'page' : IDL.Opt(IDL.Nat) })],
         [Result_5],
@@ -548,11 +563,17 @@ export const idlFactory = ({ IDL }) => {
       ),
     'resetActionsAndConfigsToHardcodedTemplate' : IDL.Func([], [Result_3], []),
     'setDevWorldCanisterId' : IDL.Func([IDL.Text], [], []),
+    'stakeBoomTokens' : IDL.Func(
+        [IDL.Nat, IDL.Text, IDL.Text, IDL.Nat, ICRCStakeKind],
+        [Result_2],
+        [],
+      ),
     'stakeExtNft' : IDL.Func(
         [IDL.Nat32, IDL.Text, IDL.Text, IDL.Text],
         [Result_2],
         [],
       ),
+    'storeDauCount' : IDL.Func([], [IDL.Nat], []),
     'validateConstraints' : IDL.Func(
         [IDL.Text, actionId, IDL.Opt(ActionConstraint)],
         [IDL.Record({ 'aid' : IDL.Text, 'status' : IDL.Bool })],

@@ -51,6 +51,25 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
+  // public func updateSwapConfig(cid : Text) : async () {
+  //   let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
+  //   _swap_configs := Trie.put(
+  //     _swap_configs,
+  //     Helper.keyT(cid),
+  //     Text.equal,
+  //     {
+  //       token_supply_configs = configs.token_supply_configs;
+  //       min_token_e8s = configs.min_token_e8s;
+  //       max_token_e8s = configs.max_token_e8s;
+  //       min_participant_token_e8s = configs.min_participant_token_e8s;
+  //       max_participant_token_e8s = configs.max_participant_token_e8s;
+  //       swap_start_timestamp_seconds = configs.swap_start_timestamp_seconds;
+  //       swap_due_timestamp_seconds = 259200;
+  //       swap_type = configs.swap_type;
+  //     },
+  //   ).0;
+  // };
+
   // actor interfaces
   let management_canister : Management.Self = actor (ENV.IC_Management);
   let icp_ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);
@@ -877,6 +896,7 @@ actor SwapCanister {
   };
 
   public shared ({ caller }) func start_token_swap(arg : { canister_id : Text }) : async (Result.Result<Text, Text>) {
+    let swap_time_for_elite_tier_in_seconds : Int = 21600; // 6 hours currently, will be adjusted later
     for ((i, v) in Trie.iter(_swap_status)) {
       if (v.running == true and i != arg.canister_id) {
         return #err("Other token swap is already running, wait for it to get over Or contact dev team.");
@@ -884,10 +904,11 @@ actor SwapCanister {
         return #err("Token swap already running.");
       };
     };
+    // Swap will get opened 6hours before for Stakers
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
         let current_time_in_seconds : Int = Time.now() / 1000000000;
-        if (configs.swap_start_timestamp_seconds <= current_time_in_seconds and current_time_in_seconds <= (configs.swap_due_timestamp_seconds + configs.swap_start_timestamp_seconds)) {
+        if ((configs.swap_start_timestamp_seconds - swap_time_for_elite_tier_in_seconds) <= current_time_in_seconds and current_time_in_seconds <= (configs.swap_due_timestamp_seconds + configs.swap_start_timestamp_seconds)) {
           _swap_status := Trie.put(
             _swap_status,
             Helper.keyT(arg.canister_id),
@@ -913,12 +934,50 @@ actor SwapCanister {
   // 2. Is ICP BlockIndex Legit? / Is BOOM BlockIndex Legit?
   // 3. Is Amount specified is matching SwapConfigs?
   public shared ({ caller }) func participate_in_token_swap(arg : { canister_id : Text; amount : Nat64; blockIndex : Nat64 }) : async (Result.Result<Text, Text>) {
+    // Check if token swap running or not
     if (isTokenSwapRunning_({ canister_id = arg.canister_id }) == false) {
       return #err("token swap is not yet started or ended already.");
-    }; // Check-1
+    };
+
+    // Check if user is staker or not and check swap time constraint for stakers/non-stakers
+    switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
+      case (?configs) {
+        let swap_start_time_seconds = configs.swap_start_timestamp_seconds;
+        let swap_time_for_elite_tier_in_seconds : Int = 21600; // 6 hours ELITE tier, will be adjusted later
+        let swap_time_for_pro_tier_in_seconds : Int = 10800; // 3 hours for PRO tier, will be adjusted later
+        let gamingGuild = actor (ENV.GamingGuildsCanisterId) : actor {
+          getUserBoomStakeTier : shared query (Text) -> async (Result.Result<Text, Text>);
+        };
+        let current_time_in_seconds : Int = Time.now() / 1000000000;
+        switch (await gamingGuild.getUserBoomStakeTier(Principal.toText(caller))) {
+          case (#ok tier) {
+            if (tier == "PRO") {
+              if (swap_start_time_seconds - swap_time_for_pro_tier_in_seconds > current_time_in_seconds) {
+                return #err("Being a PRO BOOM Staker you can only participate 3 hours before Token Swap becomes Public.");
+              };
+            } else if (tier == "ELITE") {
+              if (swap_start_time_seconds - swap_time_for_elite_tier_in_seconds > current_time_in_seconds) {
+                return #err("Being a ELITE BOOM Staker you can only participate 6 hours before Token Swap becomes Public.");
+              };
+            };
+          };
+          case (#err e) {
+            if (swap_start_time_seconds > current_time_in_seconds) {
+              return #err("Unfortunately you are not a BOOM Staker, its always a good time to be a BOOM Staker.");
+            };
+          };
+        };
+      };
+      case _ {
+        return #err("token swap configs not found, contact dev team in discord");
+      };
+    };
+
+    // Check-1
     if (isAmountValid_({ canister_id = arg.canister_id; amount = arg.amount }) == false) {
       return #err("amount passed does not fullfill participants requirements of min/max ICP.");
-    }; // Check-2
+    };
+    // Check-2
     let swap_canister_id : Text = Principal.toText(Principal.fromActor(SwapCanister));
     let participant_id : Text = Principal.toText(caller);
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
@@ -1007,7 +1066,7 @@ actor SwapCanister {
             };
           };
           case (#boom) {
-            switch (await queryIcrcTx_(Nat64.toNat(arg.blockIndex), swap_canister_id, participant_id, Nat64.toNat(arg.amount), arg.canister_id)) {
+            switch (await queryIcrcTx_(Nat64.toNat(arg.blockIndex), swap_canister_id, participant_id, Nat64.toNat(arg.amount), ENV.BoomLedgerCanisterId)) {
               // Check-2
               case (#ok _) {
                 switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
@@ -1227,12 +1286,12 @@ actor SwapCanister {
     };
   };
 
-  public query func getTokenSwapType(tokenCanisterId : Text) : async (Text) { 
+  public query func getTokenSwapType(tokenCanisterId : Text) : async (Text) {
     let ?swap_configs = Trie.find(_swap_configs, Helper.keyT(tokenCanisterId), Text.equal) else return "";
     switch (swap_configs.swap_type) {
       case (#boom) return "BOOM";
       case (#icp) return "ICP";
-    } ;
+    };
   };
 
   public query func getAllTokenDetails() : async [(Text, Swap.Token)] {

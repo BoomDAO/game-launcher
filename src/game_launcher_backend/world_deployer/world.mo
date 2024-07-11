@@ -4882,8 +4882,8 @@ actor class WorldTemplate(owner : Principal) = this {
   };
 
   // BOOM token staking for DAO
-  private var _proStake : Nat = 50000;
-  private var _eliteStake : Nat = 100000;
+  private var _proStake : Nat = 50;
+  private var _eliteStake : Nat = 100;
   private stable var _boomStakes : Trie.Trie<Text, TStaking.ICRCStake> = Trie.empty(); // key -> (user principal id)
   //ICRC Stake verification checks and staking
   //1. If user already staked tokens, check for upgrading tier with token difference amount only (excess tokens will be transferred back) TO BE DECIDED
@@ -4957,7 +4957,7 @@ actor class WorldTemplate(owner : Principal) = this {
         subaccount = null;
       };
       fee = ?100000;
-      memo = ?Text.encodeUtf8("BOOM-Token-Unlocking");
+      memo = ?Text.encodeUtf8("BOOM-Token-locking/unlocking");
       from_subaccount = null;
       created_at_time = null;
       amount = amt;
@@ -4975,15 +4975,18 @@ actor class WorldTemplate(owner : Principal) = this {
           case (#pro) {
             let difference_for_tier_upgrade : Nat = _eliteStake - _proStake;
             if (amt < difference_for_tier_upgrade) {
-              return #err("User is already PRO Staker and the amount transferred is not sufficient to upgrade tier to ELITE.");
+              let _ = await transferBoom_(fromPrincipal, amt - 100000);
+              return #err("you are already PRO staker and the amount transferred is not sufficient to upgrade tier to ELITE.");
             } else {
               switch (kind) {
                 case (#pro) {
-                  return #err("User is already a PRO Staker.");
+                  let _ = await transferBoom_(fromPrincipal, amt - 100000);
+                  return #err("you are already a PRO Staker. If you want to upgrade to ELITE, clicke on ELITE BOOM staker.");
                 };
                 case (#elite) {
                   switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
                     case (#ok o) {
+                      let _ = await transferBoom_(fromPrincipal, amt - difference_for_tier_upgrade - 100000);
                       let newStakeInfo : TStaking.ICRCStake = {
                         staker = _staker;
                         tokenCanisterId = ENV.BoomLedgerCanisterId;
@@ -4995,7 +4998,7 @@ actor class WorldTemplate(owner : Principal) = this {
                       _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
                     };
                     case (#err e) {
-                      return #err("We could not verify BOOM token transfer for staking, please contact dev team in discord.");
+                      return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
                     };
                   };
                 };
@@ -5003,7 +5006,7 @@ actor class WorldTemplate(owner : Principal) = this {
             };
           };
           case (#elite) {
-            return #err("User is already a ELITE Staker.");
+            return #err("you are already a ELITE staker.");
           };
         };
       };
@@ -5011,7 +5014,7 @@ actor class WorldTemplate(owner : Principal) = this {
         switch (kind) {
           case (#pro) {
             if (amt < _proStake) {
-              return #err("Amount transferred is not sufficient to become a PRO staker.");
+              return #err("amount transferred is not sufficient to become a PRO staker.");
             } else {
               switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
                 case (#ok o) {
@@ -5026,14 +5029,14 @@ actor class WorldTemplate(owner : Principal) = this {
                   _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
                 };
                 case (#err e) {
-                  return #err("We could not verify BOOM token transfer for staking, please contact dev team in discord.");
+                  return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
                 };
               };
             };
           };
           case (#elite) {
             if (amt < _eliteStake) {
-              return #err("Amount transferred is not sufficient to become a ELITE staker.");
+              return #err("amount transferred is not sufficient to become a ELITE staker.");
             } else {
               switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
                 case (#ok o) {
@@ -5048,7 +5051,7 @@ actor class WorldTemplate(owner : Principal) = this {
                   _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
                 };
                 case (#err e) {
-                  return #err("We could not verify BOOM token transfer for staking, please contact dev team in discord.");
+                  return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
                 };
               };
             };
@@ -5105,22 +5108,22 @@ actor class WorldTemplate(owner : Principal) = this {
         };
         _boomStakes := Trie.put(_boomStakes, Utils.keyT(user), Text.equal, e).0;
         // update BOOM stake entity value when stake is already dissolved
-        switch (await createEntity({ uid = user; eid = "PRO:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "1.0" }] })) {
+        switch (await createEntity({ uid = user; eid = "PRO:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "0.0" }] })) {
           case (#ok _) {};
           case _ {
-            return #err("BOOM tokens staked successfully but some error occured on granting stake entity, contact dev team in discord.");
+            return #err("$BOOM dissolved successfully but some error occured, contact dev team in discord.");
           };
         };
         switch (await createEntity({ uid = user; eid = "ELITE:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "0.0" }] })) {
           case (#ok _) {};
           case _ {
-            return #err("BOOM tokens staked successfully but some error occured on granting stake entity, contact dev team in discord.");
+            return #err("$BOOM dissolved successfully but some error occured, contact dev team in discord.");
           };
         };
-        return #ok("BOOM Stakes dissolved, now wait for 24 Hours to disburse tokens to your account.");
+        return #ok("$BOOM Stakes dissolved, now wait for 24 Hours to disburse $BOOM to your account.");
       };
       case _ {
-        return #err("You do not have any BOOM tokens staked at BOOM DAO.");
+        return #err("You do not have any $BOOM staked at BOOM DAO.");
       };
     };
   };
@@ -5138,7 +5141,7 @@ actor class WorldTemplate(owner : Principal) = this {
               return #ok("BOOM tokens transferred back successfully.");
             };
             case (#Err e) {
-              return #err("some error occured while transferring BOOM tokens from DAO vault back to user, contact dev team in discord.");
+              return #err("some error occured while transferring BOOM tokens from BOOM DAO vault back to user, contact dev team in discord.");
             };
           };
         } else {

@@ -715,6 +715,16 @@ export interface ProjectConfigs {
   creatorImageUrl: string;
 }
 
+export interface ICRCStake {
+  'staker' : string,
+  'dissolvedAt' : bigint,
+  'stakedAt' : bigint,
+  'kind' : ICRCStakeKind,
+  'tokenCanisterId' : string,
+  'amount' : bigint,
+}
+export type ICRCStakeKind = { 'pro' : null } | { 'elite' : null };
+
 export interface LaunchCardProps {
   id: string;
   project: ProjectConfigs;
