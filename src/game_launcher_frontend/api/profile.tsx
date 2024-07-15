@@ -9,7 +9,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useWorldClient, useICRCLedgerClient, useWorldHubClient } from "@/hooks";
+import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useWorldClient, useICRCLedgerClient, useWorldHubClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
 import { Profile, UserNftInfo, GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState, UpdateAction, ActionOutcomeHistory, ActionStatusReturn, configId, StableConfig, ConfigData, QuestGamersInfo, Result_6, Result_7, Result_5, EXTStake, ICRCStake } from "@/types";
@@ -1333,8 +1333,13 @@ export const useEliteStakeBoomTokens = () => {
         }) => {
             try {
                 const { actor, methods } = await useGamingGuildsClient();
+                const swap = await useSwapCanisterClient();
                 const boom_ledger = await useBoomLedgerClient();
                 let amount_e8s: BigInt = 10000000000n;
+                let userStakeTier = await actor[methods.getUserBoomStakeTier](session?.address) as { ok: string | undefined, err: string | undefined };
+                if(userStakeTier.ok != undefined && userStakeTier.ok == "PRO") {
+                    amount_e8s = 5000000000n;
+                }
                 if (balance < amount_e8s) {
                     toast.error("Insufficient balance to become ELITE BOOM Staker.");
                     closeToast();
@@ -1392,6 +1397,8 @@ export const useEliteStakeBoomTokens = () => {
         onSuccess: () => {
             toast.success(t("wallet.tab_1.staking.success"));
             queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
             closeToast();
         },
     });
@@ -1468,6 +1475,8 @@ export const useProStakeBoomTokens = () => {
         onSuccess: () => {
             toast.success(t("wallet.tab_1.staking.success"));
             queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
             closeToast();
         },
     });
@@ -1544,6 +1553,8 @@ export const useDissolveBoomStakes = () => {
         },
         onSuccess: () => {
             queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
             closeToast();
         },
     });
@@ -1579,6 +1590,8 @@ export const useDisburseBoomStakes = () => {
         },
         onSuccess: () => {
             queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
             closeToast();
         },
     });

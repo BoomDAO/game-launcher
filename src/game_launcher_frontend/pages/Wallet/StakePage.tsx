@@ -17,7 +17,6 @@ const StakePage = () => {
     const { t } = useTranslation();
     const { canisterId } = useParams();
     const { session } = useAuthContext();
-    let [symbol, setSymbol] = React.useState(getTokenSymbol(canisterId));
     let [transferAmount, setTransferAmount] = React.useState("");
     let [isTransferAmountLoading, setIsTransferAmountLoading] = React.useState(false);
     let [userStake, setUserStake] = React.useState("");
@@ -52,7 +51,7 @@ const StakePage = () => {
         })();
         return () => {
         };
-    }, [canisterId]);
+    }, [canisterId, userStake, transferAmount]);
 
     const { mutate: proMutate, isLoading: isProStakeBoomLoading } = useProStakeBoomTokens();
     const { mutate: eliteMutate, isLoading: isEliteStakeBoomLoading } = useEliteStakeBoomTokens();
@@ -68,11 +67,11 @@ const StakePage = () => {
                 </div>
                 {
                     (isTransferAmountLoading) ? <Loader className="w-8"></Loader> :
-                    (userStake != "") ? <div className="flex gradient-text">
-                        <img src="/congo.svg" className="w-6"/>
-                        <p className="pl-2">Hey! you are <b>{userStake} BOOM Staker</b>.</p>
-                        {(userStake == "PRO") ? <p>You can always upgrade to ELITE tier by clicking on STAKE button below.</p> : <></>}
-                    </div> : <></>
+                        (userStake != "") ? <div className="flex gradient-text">
+                            <img src="/congo.svg" className="w-6" />
+                            <p className="pl-2">Hey! you are <b>{userStake} BOOM Staker</b>.</p>
+                            {(userStake == "PRO") ? <p>You can always upgrade to ELITE tier by clicking on Upgrade button below.</p> : <></>}
+                        </div> : <></>
                 }
                 <div className="flex p-10 justify-around">
                     <div className="w-5/12 border-2 text-center rounded-3xl text-white bg-blue-400 border-blue-500">
@@ -90,21 +89,23 @@ const StakePage = () => {
                             <div className="flex">
                                 <div className="flex font-semibold text-base">BENEFITS : </div>
                                 <div className="pl-1 text-left">
-                                    <div className="flex">
+                                    <div>1st Priority Whitelist <br /> for Token Launches</div>
+                                    {/* <div className="flex">
                                         <div>LAUNCHPAD</div>
                                         <img className="w-5 ml-2" src="/right.svg" />
                                     </div>
                                     <div className="flex">
                                         <div>GAMING GUILD</div>
                                         <img className="w-5 ml-2" src="/right.svg" />
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>
                         {
                             (isTransferAmountLoading) ? <Loader className="w-8 mx-auto my-4"></Loader> :
-                                (userStake != "ELITE") ? <Button className="w-auto mx-auto my-4" isLoading={isEliteStakeBoomLoading} onClick={() => { eliteMutate({ balance: BigInt(Math.floor(parseFloat(transferAmount)) * 100000000) }) }} >STAKE</Button> :
-                                    <Button className="w-auto mx-auto my-4" disabled isLoading={isEliteStakeBoomLoading} onClick={() => { eliteMutate({ balance: BigInt(Math.floor(parseFloat(transferAmount)) * 100000000) }) }} >STAKE</Button>
+                                (userStake != "ELITE" && userStake == "PRO") ? <Button className="w-auto mx-auto my-4" isLoading={isEliteStakeBoomLoading} onClick={() => { console.log(userStake); eliteMutate({ balance: BigInt(Math.floor(parseFloat(transferAmount)) * 100000000) }) }} >UPGRADE</Button> :
+                                    (userStake != "ELITE") ? <Button className="w-auto mx-auto my-4" isLoading={isEliteStakeBoomLoading} onClick={() => { console.log(userStake); eliteMutate({ balance: BigInt(Math.floor(parseFloat(transferAmount)) * 100000000) }) }} >STAKE</Button> :
+                                        <Button className="w-auto mx-auto my-4" disabled isLoading={isEliteStakeBoomLoading}>STAKE</Button>
                         }
                     </div>
                     <div className="w-5/12 border-2 text-center rounded-3xl text-white bg-emerald-600 border-green-700">
@@ -122,14 +123,15 @@ const StakePage = () => {
                             <div className="flex">
                                 <div className="flex font-semibold text-base">BENEFITS : </div>
                                 <div className="pl-1 text-left">
-                                    <div className="flex">
+                                    <div>2nd Priority Whitelist <br /> for Token Launches</div>
+                                    {/* <div className="flex">
                                         <div>LAUNCHPAD</div>
                                         <img className="w-5 ml-2" src="/right.svg" />
                                     </div>
                                     <div className="flex">
                                         <div>GAMING GUILD</div>
                                         <img className="w-5 ml-2" src="/wrong.svg" />
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>

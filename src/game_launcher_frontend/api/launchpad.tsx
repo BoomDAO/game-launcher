@@ -12,7 +12,7 @@ import {
 import { boom_ledger_canisterId, gamingGuildsCanisterId, ledger_canisterId, swapCanisterId, useBoomLedgerClient, useGamingGuildsClient, useICRCLedgerClient, useLedgerClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { LaunchCardProps, ParticipantDetails, TokenSwapType, TokensInfo } from "@/types";
+import { LaunchCardProps, ParticipantDetails, TokenSwapType, TokensInfo, WhitelistDetails } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import { string } from "zod";
@@ -22,7 +22,9 @@ import Tokens from "../locale/en/Tokens.json";
 export const queryKeys = {
     tokens_info: "tokens_info",
     participant_details: "participant_details",
-    swap_type: "swap_type"
+    swap_type: "swap_type",
+    whitelist_details: "whitelist_details",
+    participation_eligibility: "participation_eligibility"
 };
 
 function closeToast() {
@@ -153,6 +155,9 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 for (let i = 0; i < res.length; i += 1) {
                     res[i].swap.raisedToken = String(Number(results[i][0]) / 100000000);
                     res[i].swap.participants = String(results[i][1])
+                    if (Number(res[i].swap.minToken) <= Number(res[i].swap.raisedToken)) {
+                        res[i].swap.result = true;
+                    }
                 }
             }));
             return res;
@@ -318,6 +323,9 @@ export const useParticipateTokenTransfer = (swapType: string) => {
                 let token_ledger_canister_id = (swapType == "boom") ? boom_ledger_canisterId : ledger_canisterId;
                 const { actor, methods } = await useICRCLedgerClient(token_ledger_canister_id);
                 const swapCanister = await useSwapCanisterClient();
+                let tokensInfoRes = await swapCanister.actor[swapCanister.methods.getAllTokensInfo]() as {
+                    ok: TokensInfo
+                };
                 let fee = 0;
                 for (let i = 0; i < Tokens.tokens.length; i += 1) {
                     if (Tokens.tokens[i].ledger == token_ledger_canister_id) {
@@ -326,6 +334,20 @@ export const useParticipateTokenTransfer = (swapType: string) => {
                 };
                 let amount_e8s: number = parseFloat(amount);
                 amount_e8s = amount_e8s * 100000000.0;
+
+                // Check amount constraint before transfer
+                if (tokensInfoRes.ok) {
+                    let tokensInfo = tokensInfoRes.ok;
+                    for (let i = 0; i < tokensInfo.active.length; i += 1) {
+                        let current_token_info = tokensInfo.active[i];
+                        if(amount_e8s < current_token_info.token_swap_configs.min_participant_token_e8s || amount_e8s > current_token_info.token_swap_configs.max_participant_token_e8s) {
+                            toast.error("Participation amount does not fullfill participants requirements of min/max tokens.");
+                            closeToast();
+                            throw ("");
+                        }
+                    }
+                }
+
                 let req = {
                     to: {
                         owner: Principal.fromText(swapCanisterId),
@@ -356,7 +378,15 @@ export const useParticipateTokenTransfer = (swapType: string) => {
                         canister_id: (canisterId != undefined) ? canisterId : "",
                         amount: amount_e8s,
                         blockIndex: res.Ok
-                    });
+                    }) as {
+                        ok: undefined | string,
+                        err: undefined | string
+                    };
+                    if (res2.ok == undefined) {
+                        toast.error(res2.err || "Participation failed, contact dev team in discord.");
+                        closeToast();
+                        throw res2.err;
+                    };
                 }
                 return res;
             } catch (error) {
@@ -373,6 +403,118 @@ export const useParticipateTokenTransfer = (swapType: string) => {
             queryClient.refetchQueries({ queryKey: [queryKeys.participant_details] });
             queryClient.refetchQueries({ queryKey: [queryKeys.tokens_info] });
             closeToast();
+        },
+    });
+};
+
+export const useGetWhitelistDetails = (): UseQueryResult<WhitelistDetails> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.whitelist_details],
+        queryFn: async () => {
+            const { actor, methods } = await useSwapCanisterClient();
+            let tokensInfoRes = await actor[methods.getAllTokensInfo]() as {
+                ok: TokensInfo
+            };
+            var res: WhitelistDetails = { elite: false, pro: false, public: false };
+            if (tokensInfoRes.ok) {
+                let tokensInfo = tokensInfoRes.ok;
+                for (let i = 0; i < tokensInfo.active.length; i += 1) {
+                    let current_token_info = tokensInfo.active[i];
+                    let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
+                    let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
+                    console.log(current_time_seconds);
+                    console.log(swap_time_seconds);
+                    if (current_time_seconds >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: true
+                        }
+                    } else if (current_time_seconds + 10800n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: false
+                        }
+                    } else if (current_time_seconds + 21600n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: false,
+                            public: false
+                        }
+                    }
+                }
+            };
+            console.log(res);
+            return res;
+        },
+    });
+};
+
+export const useGetParticipationEligibility = (): UseQueryResult<boolean> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.participation_eligibility],
+        queryFn: async () => {
+            const { actor, methods } = await useSwapCanisterClient();
+            const gamingGuild = await useGamingGuildsClient();
+            let tokensInfoRes: { ok: TokensInfo } = {
+                ok: {
+                    active: [],
+                    inactive: []
+                }
+            };
+            let userStakeTier: string = "";
+            await Promise.all([actor[methods.getAllTokensInfo]() as Promise<{ ok: TokensInfo }>, gamingGuild.actor[gamingGuild.methods.getUserBoomStakeTier](session?.address) as Promise<{ ok: string | undefined, err: string | undefined }>]).then((res) => {
+                tokensInfoRes = res[0];
+                if (res[1].ok != undefined) {
+                    userStakeTier = res[1].ok;
+                } else {
+                    userStakeTier = "PUBLIC";
+                }
+            });
+            var res: WhitelistDetails = { elite: false, pro: false, public: false };
+            if (tokensInfoRes?.ok) {
+                let tokensInfo = tokensInfoRes?.ok;
+                for (let i = 0; i < tokensInfo.active.length; i += 1) {
+                    let current_token_info = tokensInfo.active[i];
+                    let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
+                    let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
+                    console.log(current_time_seconds);
+                    console.log(swap_time_seconds);
+                    if (current_time_seconds >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: true
+                        }
+                    } else if (current_time_seconds + 10800n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: false
+                        }
+                    } else if (current_time_seconds + 21600n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: false,
+                            public: false
+                        }
+                    }
+                }
+            };
+            let finalRes = false;
+            if (userStakeTier == "ELITE" && res.elite) {
+                finalRes = true;
+            } else if (userStakeTier == "PRO" && res.pro) {
+                finalRes = true
+            } else if (userStakeTier == "PUBLIC" && res.public) {
+                finalRes = true;
+            }
+            console.log(userStakeTier);
+            console.log(res);
+            return finalRes;
         },
     });
 };

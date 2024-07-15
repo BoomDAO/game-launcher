@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import { cx } from "@/utils";
 import { navPaths } from "@/shared";
 import FormattedDate from "./FormattedDate";
-import { useGetParticipationDetails } from "@/api/launchpad";
+import { useGetParticipationDetails, useGetParticipationEligibility, useGetWhitelistDetails } from "@/api/launchpad";
 import { LaunchCardProps } from "@/types";
 import { boom_ledger_canisterId } from "@/hooks";
 import { useGetBoomStakeTier } from "@/api/profile";
@@ -44,7 +44,9 @@ const LaunchCard = ({
     }
 
     const { data, isLoading } = useGetParticipationDetails(canisterId || "");
-    const { data: userStakeTier, isLoading: isStakingTierLoading } = useGetBoomStakeTier();
+    // const { data: userStakeTier, isLoading: isStakingTierLoading } = useGetBoomStakeTier();
+    const { data: whitelistDetails, isLoading: isWhitelistDetailsLoading } = useGetWhitelistDetails();
+    const { data: eligibility, isLoading: isEligibilityLoading } = useGetParticipationEligibility();
 
     const handleParticipate = async () => {
         if (session.session) {
@@ -80,7 +82,20 @@ const LaunchCard = ({
                 ));
                 return;
             } else {
-                navigate(navPaths.launchpad_participate + "/" + data?.[1] + "/" + canisterId);
+                if(eligibility) {
+                    navigate(navPaths.launchpad_participate + "/" + data?.[1] + "/" + canisterId);
+                } else {
+                    toast.custom((t) => (
+                        <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+                            <div className="w-2/3 rounded-3xl p-0.5 gradient-bg mt-48 inline-block">
+                                <div className="h-full w-auto dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+                                    <div className="text-base py-8 px-8">Please wait for Public Sale to get started else become a BOOM STAKER today to get whitelisted for token launches.</div>
+                                    <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
+                                </div>
+                            </div>
+                        </div>
+                    ));
+                }
             }
         } else {
             setIsOpenNavSidebar(true);
@@ -99,12 +114,24 @@ const LaunchCard = ({
                     <div className="w-7/12 p-2 relative">
                         <img src={project.bannerUrl} className="h-96 w-full object-cover rounded-xl" />
                         <div className="absolute bottom-5 text-white">
-                            <div className="w-1/4 flex bg-sky-500 rounded-xl py-0.5 mb-48 ml-4">
-                                <img src="/live.svg" className="w-2 ml-2" />
-                                {
-                                    (!isStakingTierLoading && userStakeTier != "") ? <p className="font-semibold text-white text-sm pl-2">LIVE : {userStakeTier} STAKER</p> : <p className="font-semibold text-white text-sm pl-2">LIVE : PUBLIC</p>
-                                }
-                            </div>
+                            {
+                                (!isWhitelistDetailsLoading && whitelistDetails?.elite) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-2 ml-4">
+                                    <img src="/live.svg" className="w-2 ml-2" />
+                                    <p className="font-semibold text-white text-sm pl-2">LIVE : ELITE STAKER</p>
+                                </div> : <></>
+                            }
+                            {
+                                (!isWhitelistDetailsLoading && whitelistDetails?.pro) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-2 ml-4">
+                                    <img src="/live.svg" className="w-2 ml-2" />
+                                    <p className="font-semibold text-white text-sm pl-2">LIVE : PRO STAKER</p>
+                                </div> : <></>
+                            }
+                            {
+                                (!isWhitelistDetailsLoading && whitelistDetails?.public) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-44 ml-4">
+                                    <img src="/live.svg" className="w-2 ml-2" />
+                                    <p className="font-semibold text-white text-sm pl-2">LIVE : PUBLIC</p>
+                                </div> : <></>
+                            }
                             <p className="font-bold text-6xl px-5 pb-1">{project.name}</p>
                             <p className="w-9/12 px-5 text-xs">{project.description}</p>
                         </div>
@@ -121,14 +148,14 @@ const LaunchCard = ({
                                 <div>
                                     <p className="font-light">TOKEN</p>
                                     <div className="flex">
-                                        <img className="w-10" src={token.logoUrl} />
+                                        <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
                                         <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
                                     </div>
                                 </div>
                                 <div>
                                     <p className="font-light">TOTAL RAISED</p>
                                     <div className="flex">
-                                        <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10" />
+                                        <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
                                         <p className="pt-2 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
                                     </div>
                                 </div>
@@ -138,7 +165,7 @@ const LaunchCard = ({
                                 {
                                     (canisterId) ? <div className="w-1/2">
                                         {
-                                            (!isGeoInfoLoading) ? <button className="w-11/12 gradient-bg-blue rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>PARTICIPATE</button> : <Loader className="w-10 mt-2 ml-20 mb-4"></Loader>
+                                            (!isGeoInfoLoading && !isEligibilityLoading) ? <button className="w-11/12 gradient-bg-blue rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>PARTICIPATE</button> : <Loader className="w-10 mt-2 ml-20 mb-4"></Loader>
                                         }
                                         <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantToken} {swap.swapType} required to Participate. </p>
                                     </div> : <></>
@@ -220,14 +247,14 @@ const LaunchCard = ({
                                     <div>
                                         <p className="font-light">TOKEN</p>
                                         <div className="flex">
-                                            <img className="w-10" src={token.logoUrl} />
+                                            <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
                                             <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
                                         </div>
                                     </div>
                                     <div>
                                         <p className="font-light">TOTAL RAISED</p>
                                         <div className="flex">
-                                            <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10" />
+                                            <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
                                             <p className="pt-1.5 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
                                         </div>
                                     </div>

@@ -32,8 +32,8 @@ const Token = () => {
     const { data, isLoading, isError } = useGetTokensInfo();
     const { data: userStakeData, isLoading: isStakeLoading } = useGetBoomStakeInfo();
 
-    const { mutate : mutateDissolve, isLoading : isDissolveLoading } = useDissolveBoomStakes();
-    const { mutate : mutateDisburse, isLoading : isDisburseLoading } = useDisburseBoomStakes();
+    const { mutate: mutateDissolve, isLoading: isDissolveLoading } = useDissolveBoomStakes();
+    const { mutate: mutateDisburse, isLoading: isDisburseLoading } = useDisburseBoomStakes();
 
     const onTransferClick = (ledger: string, principal: string) => {
         navigate(navPaths.transfer + `/${ledger}`);
@@ -62,21 +62,6 @@ const Token = () => {
     const onStakingClick = (ledger: string, principal: string) => {
         navigate(navPaths.stake + `/${ledger}`);
     };
-
-    // const onDisburseClick = (time : string) => {
-    //     toast.custom((t) => (
-    //         <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
-    //             <div className="w-2/3 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
-    //                 <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
-    //                     <div className="mt-5 mb-5 text-lg px-10">
-    //                         <p>You will have to wait for <span className="gradient-text font-bold">{time}</span> to be able to withdraw/disburse your $BOOM back to your BGG account as tokens must finish dissolve delay of respective tiers before it can be withdrawn to the wallet.</p>
-    //                     </div>
-    //                     <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     ));
-    // };
 
     return (
         <>
@@ -119,11 +104,16 @@ const Token = () => {
                                                                 {t("wallet.tab_1.token_staking_button_placeholder")}
                                                             </Button>
                                                             {
-                                                                (userStakeData?.dissolvedAt == 0n) ? <Button isLoading={isDissolveLoading} className="mr-2 h-10 mt-2" onClick={() => {mutateDissolve()}}>
-                                                                    Dissolve 
-                                                                </Button> : <Button isLoading={isDisburseLoading} className="mr-2 h-10 mt-2" onClick={() => {mutateDisburse()}}>
-                                                                    Disburse
-                                                                </Button>
+                                                                (userStakeData?.amount == 0n && userStakeData?.dissolvedAt == 0n && userStakeData?.stakedAt == 0n) ?
+                                                                    <Button disabled className="mr-2 h-10 mt-2">
+                                                                        Dissolve
+                                                                    </Button> : (userStakeData?.dissolvedAt == 0n && userStakeData?.stakedAt != 0n) ?
+                                                                        <Button isLoading={isDissolveLoading} className="text-xs mr-2 h-10 mt-2" onClick={() => { mutateDissolve() }}>
+                                                                            Dissolve {(userStakeData?.amount == 100n) ? "ELITE" : "PRO"}
+                                                                        </Button> :
+                                                                        <Button isLoading={isDisburseLoading} className="mr-2 h-10 mt-2" onClick={() => { mutateDisburse() }}>
+                                                                            Disburse
+                                                                        </Button>
                                                             }
                                                         </div> :
                                                         <Button disabled className="mr-2 h-10 mt-2">

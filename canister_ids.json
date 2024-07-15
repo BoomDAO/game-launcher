@@ -27,7 +27,8 @@
   },
   "gaming_guilds": {
     "stag": "6ehny-oaaaa-aaaal-qclyq-cai",
-    "ic": "erej6-riaaa-aaaap-ab4ma-cai"
+    "ic": "erej6-riaaa-aaaap-ab4ma-cai",
+    "dev": "7d6va-pyaaa-aaaap-ahdxa-cai"
   },
   "swap": {
     "stag": "w73yo-siaaa-aaaak-qib2q-cai"
@@ -35,6 +36,6 @@
   "icrc_ledger": {
     "stag": "x3wx4-liaaa-aaaak-qib4q-cai",
     "ic": "",
-    "dev": "7d6va-pyaaa-aaaap-ahdxa-cai"
+    "dev": ""
   }
 }

@@ -725,6 +725,12 @@ export interface ICRCStake {
 }
 export type ICRCStakeKind = { 'pro' : null } | { 'elite' : null };
 
+export interface WhitelistDetails {
+  elite: boolean; 
+  pro: boolean;
+  public: boolean;
+}
+
 export interface LaunchCardProps {
   id: string;
   project: ProjectConfigs;

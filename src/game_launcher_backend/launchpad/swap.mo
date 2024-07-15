@@ -51,7 +51,7 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
-  // public func updateSwapConfig(cid : Text) : async () {
+  // public func updateSwapConfig(cid : Text, due_timestamp_seconds : Int, start : ?Int) : async () {
   //   let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
   //   _swap_configs := Trie.put(
   //     _swap_configs,
@@ -63,8 +63,8 @@ actor SwapCanister {
   //       max_token_e8s = configs.max_token_e8s;
   //       min_participant_token_e8s = configs.min_participant_token_e8s;
   //       max_participant_token_e8s = configs.max_participant_token_e8s;
-  //       swap_start_timestamp_seconds = configs.swap_start_timestamp_seconds;
-  //       swap_due_timestamp_seconds = 259200;
+  //       swap_start_timestamp_seconds = Option.get(start, configs.swap_start_timestamp_seconds);
+  //       swap_due_timestamp_seconds = due_timestamp_seconds;
   //       swap_type = configs.swap_type;
   //     },
   //   ).0;
@@ -937,6 +937,27 @@ actor SwapCanister {
     // Check if token swap running or not
     if (isTokenSwapRunning_({ canister_id = arg.canister_id }) == false) {
       return #err("token swap is not yet started or ended already.");
+    } else {
+      switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
+        case (?configs) {
+          let current_time_in_seconds = Time.now() / 1000000000;
+          if ((configs.swap_due_timestamp_seconds + configs.swap_start_timestamp_seconds) < current_time_in_seconds) {
+            _swap_status := Trie.put(
+              _swap_status,
+              Helper.keyT(arg.canister_id),
+              Text.equal,
+              {
+                running = false;
+                is_successfull = null;
+              },
+            ).0;
+            return #err("token swap is not yet started or ended already.");
+          };
+        };
+        case _ {
+          return #err("token swap configs not found, contact dev team in discord.");
+        };
+      };
     };
 
     // Check if user is staker or not and check swap time constraint for stakers/non-stakers
@@ -975,7 +996,8 @@ actor SwapCanister {
 
     // Check-1
     if (isAmountValid_({ canister_id = arg.canister_id; amount = arg.amount }) == false) {
-      return #err("amount passed does not fullfill participants requirements of min/max ICP.");
+      
+      return #err("amount passed does not fullfill participants requirements of min/max tokens.");
     };
     // Check-2
     let swap_canister_id : Text = Principal.toText(Principal.fromActor(SwapCanister));
@@ -1277,7 +1299,7 @@ actor SwapCanister {
           return #ok("token swap success, minted tokens.");
         } else {
           await error_refund_token(arg);
-          return #ok("token swap failed, refunded icp.");
+          return #ok("token swap failed, refunded tokens to participants.");
         };
       };
       case _ {
