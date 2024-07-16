@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import defaultTexts from "./defaultTexts.json";
+import defaultTwitterTexts from "./defaultTwitterText.json";
 
 type Texts = typeof defaultTexts;
+type twitterTexts = typeof defaultTwitterTexts;
 export const queryKeys = {
     texts: "texts",
+    twitter_texts: "twitter_texts"
 };
 
 const github =
@@ -31,4 +34,18 @@ export const useGetTexts = () => {
     });
     if (data) return { data: data, ...rest };
     return { data: defaultTexts, ...rest };
+};
+
+export const useGetTwitterTexts = () => {
+    const { data, ...rest } = useQuery({
+        queryKey: [queryKeys.twitter_texts],
+        queryFn: async () => {
+            const res = await fetch(`${github}/twitter_content.json`);
+            const texts = (await res.json()) as twitterTexts;
+            console.log(texts);
+            return texts as twitterTexts;
+        },
+    });
+    if (data) return { data: data, ...rest };
+    return { data: defaultTwitterTexts, ...rest };
 };
