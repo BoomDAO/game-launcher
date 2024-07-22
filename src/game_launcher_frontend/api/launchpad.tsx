@@ -423,8 +423,6 @@ export const useGetWhitelistDetails = (): UseQueryResult<WhitelistDetails> => {
                     let current_token_info = tokensInfo.active[i];
                     let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
                     let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
-                    console.log(current_time_seconds);
-                    console.log(swap_time_seconds);
                     if (current_time_seconds >= swap_time_seconds) {
                         res = {
                             elite: true,
@@ -446,7 +444,6 @@ export const useGetWhitelistDetails = (): UseQueryResult<WhitelistDetails> => {
                     }
                 }
             };
-            console.log(res);
             return res;
         },
     });
@@ -481,8 +478,6 @@ export const useGetParticipationEligibility = (): UseQueryResult<boolean> => {
                     let current_token_info = tokensInfo.active[i];
                     let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
                     let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
-                    console.log(current_time_seconds);
-                    console.log(swap_time_seconds);
                     if (current_time_seconds >= swap_time_seconds) {
                         res = {
                             elite: true,
@@ -512,8 +507,6 @@ export const useGetParticipationEligibility = (): UseQueryResult<boolean> => {
             } else if (userStakeTier == "PUBLIC" && res.public) {
                 finalRes = true;
             }
-            console.log(userStakeTier);
-            console.log(res);
             return finalRes;
         },
     });

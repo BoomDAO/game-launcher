@@ -195,15 +195,12 @@ const LaunchCard = ({
                                         <p>PARTICIPANTS : {swap.participants}</p>
                                     </div>
                                 </div>
-                                <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
-                                    <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
-                                    <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
-                                    {/* <div className={
-                                        cx(
-                                            "border-sky-500 h-4 absolute border-2",
-                                        
-                                        )
-                                    }></div> */}
+                                <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
+                                    <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                        <img src="/blue-marker.svg" className="w-4" />
+                                    </div>
+                                    <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
+                                    <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
                                 </div>
                                 <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
                                     <div>
@@ -281,9 +278,12 @@ const LaunchCard = ({
                                             <p>PARTICIPANTS : {swap.participants}</p>
                                         </div>
                                     </div>
-                                    <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
-                                        <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
-                                        <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
+                                    <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-2.5 relative">
+                                        <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                            <img src="/blue-marker.svg" className="w-4" />
+                                        </div>
+                                        <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
+                                        <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
                                     </div>
                                     <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
                                         <div>
