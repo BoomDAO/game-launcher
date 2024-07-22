@@ -43,7 +43,7 @@ const LaunchpadProject = () => {
                                                     />
                                                     <div className="flex mt-20 w-full mb-10">
                                                         <div className="w-1/4">
-                                                            <div className=""><img src={project.creatorImageUrl} className="w-20 rounded-primary" /></div>
+                                                            <div><img src={project.creatorImageUrl} className="w-20 h-20 rounded-primary" /></div>
                                                             <div>{project.creator}</div>
                                                         </div>
                                                         <div className="w-3/4 pt-10 text-sm">

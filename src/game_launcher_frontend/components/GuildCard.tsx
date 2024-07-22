@@ -12,7 +12,7 @@ import { useClaimReward, useGetUserCompleteDetail, useGetUserProfileDetail } fro
 import toast from "react-hot-toast";
 import { cx } from "@/utils";
 import { UserCompleteDetail, UserProfile } from "@/types";
-import { useGetTexts } from "@/api/common";
+import { useGetTexts, useGetTwitterTexts } from "@/api/common";
 import axios from "axios";
 import ENV from "../../../env.json";
 import { navPaths } from "@/shared";
@@ -61,6 +61,7 @@ const GuildCard = ({
   const { data: userProfile, isLoading: isProfileLoading } = useGetUserCompleteDetail();
   const { mutate, data, isLoading, isSuccess } = useClaimReward();
   const { data: text, isLoading: isTextLoading } = useGetTexts();
+  const { data: twitterText, isLoading: isTwitterTextLoading } = useGetTwitterTexts();
 
   const handleItemsOnClick = (name: string, imageUrl: string, description: string) => {
     toast.custom((t) => (
@@ -209,11 +210,11 @@ const GuildCard = ({
         <div className="w-1/2 rounded-3xl mb-7 p-0.5 gradient-bg mt-48 inline-block">
           <div className="h-full w-full dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
             <div className="text-center">
-              <p className="text-xl font-semibold">Make a Tweet about BOOM DAO</p>
-              <p>Make a tweet about BOOM DAO and dont forget to use hashtag #BOOMDAO</p>
+              <p className="text-xl font-semibold">{(!isTwitterTextLoading) ? twitterText.twitter_quest.title : ""}</p>
+              <p>{(!isTwitterTextLoading) ? twitterText.twitter_quest.pop_up_text : ""}</p>
               <Button onClick={async () => {
                 let current_user_principal = ((session?.identity?.getPrincipal())?.toString() != undefined) ? (session?.identity?.getPrincipal())?.toString() : "";
-                let url = "https://twitter.com/intent/post?text=I%20joined%20the%20BOOM%20Gaming%20Guilds%20and%20I%20received%20100%20BOOM%20tokens%20for%20doing%20quests%20in%20%24ICP%20games!%0D%0A%0D%0A%F0%9F%91%89%20guilds.boomdao.xyz%2F%20%F0%9F%91%88%0D%0A%0D%0ASign%20up%20now%20to%20earn%20tokens%20%26%20memecoins!%F0%9F%8F%86%0D%0A%0D%0A%23BOOMDAO%0D%0A%0D%0AID%3A%20" + session?.address;
+                let url = (!isTwitterTextLoading) ? twitterText.twitter_quest.link : "";
                 window.open(url, "_blank");
                 await axios.post(ENV.GRANT_TWITTER_QUEST_ENTITY_URL, {}, {
                   headers: {
@@ -223,7 +224,7 @@ const GuildCard = ({
                   baseURL: ENV.BASE_URL
                 });
                 window.location.reload();
-              }} className="m-auto mt-4">TWEET</Button>
+              }} className="m-auto mt-4">{(!isTwitterTextLoading) ? twitterText.twitter_quest.button_placeholder : ""}</Button>
             </div>
             <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
           </div>

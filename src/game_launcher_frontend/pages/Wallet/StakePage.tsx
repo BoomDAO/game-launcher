@@ -12,6 +12,7 @@ import Loader from "@/components/ui/Loader";
 import { useAuthContext } from "@/context/authContext";
 import { useBoomLedgerClient, useGamingGuildsClient, useICRCLedgerClient } from "@/hooks";
 import { useEliteStakeBoomTokens, useProStakeBoomTokens } from "@/api/profile";
+import { useGetStakingTexts } from "@/api/common";
 
 const StakePage = () => {
     const { t } = useTranslation();
@@ -55,6 +56,7 @@ const StakePage = () => {
 
     const { mutate: proMutate, isLoading: isProStakeBoomLoading } = useProStakeBoomTokens();
     const { mutate: eliteMutate, isLoading: isEliteStakeBoomLoading } = useEliteStakeBoomTokens();
+    const { data, isLoading } = useGetStakingTexts();
 
     return (
         <>
@@ -63,7 +65,7 @@ const StakePage = () => {
                     <div className="flex">Available $BOOM to Stake : {
                         isTransferAmountLoading ? <Loader className="w-6 h-6 ml-2"></Loader> : <p className="ml-2">{transferAmount}</p>
                     }</div>
-                    <Button rightArrow className="float-right">More Info</Button>
+                    <Button rightArrow className="float-right" onClick={() => { window.open(data.staking.info_button_link, "_blank"); }}>More Info</Button>
                 </div>
                 {
                     (isTransferAmountLoading) ? <Loader className="w-8"></Loader> :

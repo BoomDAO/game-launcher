@@ -46,9 +46,9 @@ const msToTime = (ms: number) => {
     let days = (hours / 24).toString().split(".")[0];
     hours = hours % 24;
     let res = {
-        days: (days != "") ? days : "",
-        hrs: (hours != 0) ? String(hours) : "",
-        mins: (minutes != 0) ? String(minutes) : ""
+        days: (days != "") ? days : "00",
+        hrs: (hours != 0) ? String(hours) : "00",
+        mins: (minutes != 0) ? String(minutes) : "00"
     };
     return res;
 }
@@ -341,7 +341,7 @@ export const useParticipateTokenTransfer = (swapType: string) => {
                     for (let i = 0; i < tokensInfo.active.length; i += 1) {
                         let current_token_info = tokensInfo.active[i];
                         if(amount_e8s < current_token_info.token_swap_configs.min_participant_token_e8s || amount_e8s > current_token_info.token_swap_configs.max_participant_token_e8s) {
-                            toast.error("Participation amount does not fullfill participants requirements of min/max tokens.");
+                            toast.error("Please check minimum and maximum participation limits per user before participating.");
                             closeToast();
                             throw ("");
                         }
@@ -399,7 +399,7 @@ export const useParticipateTokenTransfer = (swapType: string) => {
         onError: () => {
         },
         onSuccess: () => {
-            toast.success("Participated successfully");
+            toast.success("Participated successfully, your tokens will be allocated once the sale ends.");
             queryClient.refetchQueries({ queryKey: [queryKeys.participant_details] });
             queryClient.refetchQueries({ queryKey: [queryKeys.tokens_info] });
             closeToast();

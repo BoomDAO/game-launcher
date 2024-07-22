@@ -82,14 +82,14 @@ const LaunchCard = ({
                 ));
                 return;
             } else {
-                if(eligibility) {
+                if (eligibility) {
                     navigate(navPaths.launchpad_participate + "/" + data?.[1] + "/" + canisterId);
                 } else {
                     toast.custom((t) => (
                         <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
                             <div className="w-2/3 rounded-3xl p-0.5 gradient-bg mt-48 inline-block">
                                 <div className="h-full w-auto dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
-                                    <div className="text-base py-8 px-8">Please wait for Public Sale to get started else become a BOOM STAKER today to get whitelisted for token launches.</div>
+                                    <div className="text-base py-8 px-8">Please wait for the Public Sale to open. Otherwise you can get early access to token sales by staking BOOM tokens in the Launchpad wallet to join a BOOM Staking Membership.</div>
                                     <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
                                 </div>
                             </div>
@@ -127,7 +127,7 @@ const LaunchCard = ({
                                 </div> : <></>
                             }
                             {
-                                (!isWhitelistDetailsLoading && whitelistDetails?.public) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-44 ml-4">
+                                (!isWhitelistDetailsLoading && whitelistDetails?.public) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-32 ml-4">
                                     <img src="/live.svg" className="w-2 ml-2" />
                                     <p className="font-semibold text-white text-sm pl-2">LIVE : PUBLIC</p>
                                 </div> : <></>
@@ -179,6 +179,7 @@ const LaunchCard = ({
                                                     <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-8 mt-0.5" />
                                                     <p className="pt-2.5 font-semibold text-sm pl-2">{data?.[0]} {swap.swapType}</p>
                                                 </div>
+                                                <p className="mt-1">LIMIT PER USER : {swap.maxParticipantToken} {swap.swapType}</p>
                                             </div> : <></>
                                 }
                             </div>
@@ -188,21 +189,32 @@ const LaunchCard = ({
                             <div className="pt-2">
                                 <div className="flex text-white dark:text-black justify-between font-light text-sm">
                                     <div>
-                                        <p>{swap.raisedToken} / {swap.maxToken} {swap.swapType}</p>
+                                        PROGRESS : {swap.raisedToken} {swap.swapType}
                                     </div>
-                                    <div>
-                                        PROGRESS : {(100 * Number(swap.raisedToken) / Number(swap.maxToken))}%
+                                    <div className="">
+                                        <p>PARTICIPANTS : {swap.participants}</p>
                                     </div>
                                 </div>
                                 <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
                                     <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
                                     <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
+                                    {/* <div className={
+                                        cx(
+                                            "border-sky-500 h-4 absolute border-2",
+                                        
+                                        )
+                                    }></div> */}
                                 </div>
-                                <div className="text-white dark:text-black float-right font-light text-sm mt-1">
-                                    <p>PARTICIPANTS : {swap.participants}</p>
+                                <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
+                                    <div>
+                                        MIN : {swap.minToken} {swap.swapType}
+                                    </div>
+                                    <div>
+                                        MAX : {swap.maxToken} {swap.swapType}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="h-0.5 bg-white dark:bg-gray-300 mt-10"></div>
+                            <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
                             {
                                 (swap.status) ? <div className="flex text-white dark:text-black w-full mt-2">
                                     <p className="font-light w-1/4">ENDS IN  </p>
@@ -263,21 +275,26 @@ const LaunchCard = ({
                                 <div className="pt-2">
                                     <div className="flex text-white dark:text-black justify-between font-light text-sm">
                                         <div>
-                                            <p>{swap.raisedToken} / {swap.maxToken} {swap.swapType}</p>
+                                            PROGRESS : {swap.raisedToken} {swap.swapType}
                                         </div>
-                                        <div>
-                                            PROGRESS : {(100 * Number(swap.raisedToken) / Number(swap.maxToken))}%
+                                        <div className="">
+                                            <p>PARTICIPANTS : {swap.participants}</p>
                                         </div>
                                     </div>
                                     <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-1 relative">
                                         <div className="flex cursor-pointer text-sm z-10 absolute pl-5"></div>
                                         <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-5" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
                                     </div>
-                                    <div className="text-white dark:text-black float-right font-light text-sm mt-1">
-                                        <p>PARTICIPANTS : {swap.participants}</p>
+                                    <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
+                                        <div>
+                                            MIN : {swap.minToken} {swap.swapType}
+                                        </div>
+                                        <div>
+                                            MAX : {swap.maxToken} {swap.swapType}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="h-0.5 bg-white dark:bg-gray-300 mt-10"></div>
+                                <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
                                 {
                                     (swap.status) ? <div className="text-white dark:text-black w-full mt-2">
                                         <p>ENDS IN : <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} /></p>

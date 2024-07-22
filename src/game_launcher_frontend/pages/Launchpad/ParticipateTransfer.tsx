@@ -11,7 +11,7 @@ import { getTokenSymbol } from "@/api/profile";
 import Loader from "@/components/ui/Loader";
 import { useAuthContext } from "@/context/authContext";
 import { boom_ledger_canisterId, ledger_canisterId, useICRCLedgerClient } from "@/hooks";
-import { useParticipateTokenTransfer } from "@/api/launchpad";
+import { useGetTokenInfo, useParticipateTokenTransfer } from "@/api/launchpad";
 
 const scheme = z.object({
     amount: z.string().min(1, "Amount is required.")
@@ -55,10 +55,11 @@ const ParticipateTransfer = () => {
                 setIsTransferAmountLoading(false);
             }
         })();
-        return () => {};
+        return () => { };
     }, [canisterId]);
 
     const { mutate: details, isLoading: isIcrcTransferLoading } = useParticipateTokenTransfer(swapType || "");
+    const { data, isLoading } = useGetTokenInfo();
 
     const onSubmit = (values: Data) =>
         details(
@@ -70,9 +71,9 @@ const ParticipateTransfer = () => {
         );
 
     const onMaxClick = () => {
-        let inputBox = document.getElementById("amount");
+        let inputBox = document.getElementById("amount") as HTMLInputElement;
         if (inputBox) {
-            inputBox.value = (transferAmount).split(".")[0];
+            inputBox.value = String((transferAmount).split(".")[0]);
         }
     }
 
@@ -80,9 +81,14 @@ const ParticipateTransfer = () => {
         <>
             <p className="text-2xl pb-4 font-semibold">Participate</p>
             <div className="w-full">
-                <div className="text-left pl-10 pb-5 mt-3 text-xl flex">Your ${swapType?.toUpperCase()} Balance : {
-                    isTransferAmountLoading ? <Loader className="w-6 h-6 ml-2"></Loader> : <p className="ml-2">{transferAmount}</p>
-                }</div>
+                <div className="flex justify-between">
+                    <div className="text-left pb-2 pl-10 mt-3 text-xl flex">Your ${swapType?.toUpperCase()} Balance : {
+                        isTransferAmountLoading ? <Loader className="w-6 h-6 ml-2"></Loader> : <p className="ml-2">{transferAmount}</p>
+                    }</div>
+                    <div className="text-left pb-2 pr-10 text-base flex mt-3 font-semibold">LIMIT PER USER : {
+                        isLoading ? <Loader className="w-6 h-6 ml-2"></Loader> : <p className="ml-2">{data?.[0].swap.maxParticipantToken} {data?.[0].swap.swapType}</p>
+                    }</div>
+                </div>
                 <div className="flex px-10 justify-between">
                     <p>Amount</p>
                     <button onClick={onMaxClick}>MAX</button>

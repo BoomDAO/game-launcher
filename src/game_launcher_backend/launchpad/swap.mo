@@ -51,24 +51,34 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
-  // public func updateSwapConfig(cid : Text, due_timestamp_seconds : Int, start : ?Int) : async () {
-  //   let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
-  //   _swap_configs := Trie.put(
-  //     _swap_configs,
-  //     Helper.keyT(cid),
-  //     Text.equal,
-  //     {
-  //       token_supply_configs = configs.token_supply_configs;
-  //       min_token_e8s = configs.min_token_e8s;
-  //       max_token_e8s = configs.max_token_e8s;
-  //       min_participant_token_e8s = configs.min_participant_token_e8s;
-  //       max_participant_token_e8s = configs.max_participant_token_e8s;
-  //       swap_start_timestamp_seconds = Option.get(start, configs.swap_start_timestamp_seconds);
-  //       swap_due_timestamp_seconds = due_timestamp_seconds;
-  //       swap_type = configs.swap_type;
-  //     },
-  //   ).0;
-  // };
+  public func updateSwapConfig(cid : Text, due_timestamp_seconds : Int, start : ?Int) : async () {
+    let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
+    _swap_configs := Trie.put(
+      _swap_configs,
+      Helper.keyT(cid),
+      Text.equal,
+      {
+        token_supply_configs = configs.token_supply_configs;
+        min_token_e8s = configs.min_token_e8s;
+        max_token_e8s = configs.max_token_e8s;
+        min_participant_token_e8s = configs.min_participant_token_e8s;
+        max_participant_token_e8s = configs.max_participant_token_e8s;
+        swap_start_timestamp_seconds = Option.get(start, configs.swap_start_timestamp_seconds);
+        swap_due_timestamp_seconds = due_timestamp_seconds;
+        swap_type = configs.swap_type;
+      },
+    ).0;
+
+    // _swap_status := Trie.put(
+    //   _swap_status,
+    //   Helper.keyT(cid),
+    //   Text.equal,
+    //   {
+    //     running = true;
+    //     is_successfull = null;
+    //   },
+    // ).0;
+  };
 
   // actor interfaces
   let management_canister : Management.Self = actor (ENV.IC_Management);
@@ -282,8 +292,8 @@ actor SwapCanister {
                     case (#Ok index) {
                       let p_details : Swap.ParticipantDetails = {
                         account = info.account;
-                        icp_e8s = 0;
-                        boom_e8s = 0;
+                        icp_e8s = info.icp_e8s;
+                        boom_e8s = info.boom_e8s;
                         token_e8s = null;
                         icp_refund_result = ?res;
                         boom_refund_result = null;
@@ -295,7 +305,7 @@ actor SwapCanister {
                       let p_details : Swap.ParticipantDetails = {
                         account = info.account;
                         icp_e8s = info.icp_e8s;
-                        boom_e8s = 0;
+                        boom_e8s = info.boom_e8s;
                         token_e8s = null;
                         icp_refund_result = ?res;
                         boom_refund_result = null;
@@ -321,8 +331,8 @@ actor SwapCanister {
                     case (#Ok index) {
                       let p_details : Swap.ParticipantDetails = {
                         account = info.account;
-                        icp_e8s = 0;
-                        boom_e8s = 0;
+                        icp_e8s = info.icp_e8s;
+                        boom_e8s = info.boom_e8s;
                         token_e8s = null;
                         icp_refund_result = null;
                         boom_refund_result = ?res;
@@ -333,7 +343,7 @@ actor SwapCanister {
                     case (#Err e) {
                       let p_details : Swap.ParticipantDetails = {
                         account = info.account;
-                        icp_e8s = 0;
+                        icp_e8s = info.icp_e8s;
                         boom_e8s = info.boom_e8s;
                         token_e8s = null;
                         icp_refund_result = null;
@@ -951,7 +961,24 @@ actor SwapCanister {
                 is_successfull = null;
               },
             ).0;
-            return #err("token swap is not yet started or ended already.");
+
+            // Allocate tokens automatically and settle swap as well here only
+            switch (await settle_swap_status_and_allocate_tokens_if_swap_successfull({ canister_id = arg.canister_id})) {
+              case (#ok _) {
+                switch (await finalise_token_swap({ canister_id = arg.canister_id })) {
+                  case (#ok _) {
+                    return #ok("token swap has already ended and tokens has been disbured to participants and partners already");
+                  };
+                  case (#err e) {
+                    return #err e;
+                  };
+                };
+              };
+              case (#err e) {
+                return #err e;
+              };
+            };
+            return #err("token swap has ended already.");
           };
         };
         case _ {
@@ -996,7 +1023,7 @@ actor SwapCanister {
 
     // Check-1
     if (isAmountValid_({ canister_id = arg.canister_id; amount = arg.amount }) == false) {
-      
+
       return #err("amount passed does not fullfill participants requirements of min/max tokens.");
     };
     // Check-2
