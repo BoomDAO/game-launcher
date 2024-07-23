@@ -92,7 +92,7 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                                 participants: "0",
                                 endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
-                                status: true,
+                                status: "Active",
                                 result: false
                             },
                             token: {
@@ -129,7 +129,44 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                                 participants: "0",
                                 endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
-                                status: false,
+                                status: "Inactive",
+                                result: false
+                            },
+                            token: {
+                                name: current_token_info.token_configs.name,
+                                symbol: current_token_info.token_configs.symbol,
+                                logoUrl: current_token_info.token_configs.logo,
+                                description: current_token_info.token_configs.description,
+                            },
+                        };
+                        res.push(cardInfo);
+                    }
+                }
+                for (let i = 0; i < tokensInfo.upcoming.length; i += 1) {
+                    let current_token_info = tokensInfo.upcoming[i];
+                    if (current_token_info.token_canister_id == canisterId) {
+                        token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
+                        let cardInfo: LaunchCardProps = {
+                            id: current_token_info.token_canister_id,
+                            project: {
+                                name: current_token_info.token_project_configs.name,
+                                bannerUrl: current_token_info.token_project_configs.bannerUrl,
+                                description: isDescriptionPlainText(current_token_info.token_project_configs.description) ? current_token_info.token_project_configs.description.plainText : "",
+                                website: current_token_info.token_project_configs.website,
+                                creator: current_token_info.token_project_configs.creator,
+                                creatorAbout: current_token_info.token_project_configs.creatorAbout,
+                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                            },
+                            swap: {
+                                swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
+                                raisedToken: "0",
+                                maxToken: String(Number(current_token_info.token_swap_configs.max_token_e8s) / 100000000),
+                                minToken: String(Number(current_token_info.token_swap_configs.min_token_e8s) / 100000000),
+                                minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
+                                maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
+                                participants: "0",
+                                endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
+                                status: "Upcoming",
                                 result: false
                             },
                             token: {
@@ -210,7 +247,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
-                            status: true,
+                            status: "Active",
                             result: false
                         },
                         token: {
@@ -245,7 +282,42 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
-                            status: false,
+                            status: "Inactive",
+                            result: false
+                        },
+                        token: {
+                            name: current_token_info.token_configs.name,
+                            symbol: current_token_info.token_configs.symbol,
+                            logoUrl: current_token_info.token_configs.logo,
+                            description: current_token_info.token_configs.description,
+                        },
+                    };
+                    res.push(cardInfo);
+                }
+                for (let i = 0; i < tokensInfo.upcoming.length; i += 1) {
+                    let current_token_info = tokensInfo.upcoming[i];
+                    token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
+                    let cardInfo: LaunchCardProps = {
+                        id: current_token_info.token_canister_id,
+                        project: {
+                            name: current_token_info.token_project_configs.name,
+                            bannerUrl: current_token_info.token_project_configs.bannerUrl,
+                            description: isDescriptionPlainText(current_token_info.token_project_configs.description) ? current_token_info.token_project_configs.description.plainText : "",
+                            website: current_token_info.token_project_configs.website,
+                            creator: current_token_info.token_project_configs.creator,
+                            creatorAbout: current_token_info.token_project_configs.creatorAbout,
+                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                        },
+                        swap: {
+                            swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
+                            raisedToken: "0",
+                            maxToken: String(Number(current_token_info.token_swap_configs.max_token_e8s) / 100000000),
+                            minToken: String(Number(current_token_info.token_swap_configs.min_token_e8s) / 100000000),
+                            minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
+                            maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
+                            participants: "0",
+                            endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
+                            status: "Upcoming",
                             result: false
                         },
                         token: {
@@ -459,7 +531,8 @@ export const useGetParticipationEligibility = (): UseQueryResult<boolean> => {
             let tokensInfoRes: { ok: TokensInfo } = {
                 ok: {
                     active: [],
-                    inactive: []
+                    inactive: [],
+                    upcoming: []
                 }
             };
             let userStakeTier: string = "";

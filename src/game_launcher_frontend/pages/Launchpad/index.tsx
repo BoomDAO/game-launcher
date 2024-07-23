@@ -26,7 +26,7 @@ const Launchpad = () => {
                             <>
                                 <div className="">
                                     {launchCards.map(({ id, project, swap, token }) => (
-                                        (swap.status) ?
+                                        (swap.status == "Active") ?
                                             <div key={id}>
                                                 <LaunchCard
                                                     id={id}
@@ -44,8 +44,9 @@ const Launchpad = () => {
                         )}
                 </div>
             </div>
+
             <div className="mt-10">
-                <p className="gradient-text text-5xl font-semibold mt-10 mb-5">Past Launchpads</p>
+                <p className="h-16 gradient-text text-5xl font-semibold mt-4 mb-4">Upcoming Launchpads</p>
                 <div className="">
                     {isLoading ? (
                         <LoadingResult>{t("launchpad.home.loading")}</LoadingResult>
@@ -56,7 +57,38 @@ const Launchpad = () => {
                             <>
                                 <div className="">
                                     {launchCards.map(({ id, project, swap, token }) => (
-                                        (!swap.status) ?
+                                        (swap.status == "Upcoming") ?
+                                            <div key={id} className="mb-4">
+                                                <LaunchCard
+                                                    id={id}
+                                                    token={token}
+                                                    project={project}
+                                                    swap={swap}
+                                                />
+                                            </div> : <></>
+                                    ))}
+                                    <EmptyGameCard length={launchCards.length} />
+                                </div>
+                            </>
+                        ) : (
+                            <NoDataResult>{t("launchpad.home.no_launches")}</NoDataResult>
+                        )}
+                </div>
+            </div>
+
+            <div className="mt-10">
+                <p className="h-16 gradient-text text-5xl font-semibold mt-4 mb-4">Past Launchpads</p>
+                <div className="">
+                    {isLoading ? (
+                        <LoadingResult>{t("launchpad.home.loading")}</LoadingResult>
+                    ) : isError ? (
+                        <ErrorResult>{t("error")}</ErrorResult>
+                    ) :
+                        launchCards.length ? (
+                            <>
+                                <div className="">
+                                    {launchCards.map(({ id, project, swap, token }) => (
+                                        (swap.status == "Inactive") ?
                                             <div key={id} className="mb-4">
                                                 <LaunchCard
                                                     id={id}

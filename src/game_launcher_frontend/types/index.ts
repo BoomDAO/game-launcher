@@ -679,6 +679,7 @@ export type TokenSwapType = { 'icp': null } | { 'boom': null };
 export interface TokensInfo {
   'active': Array<TokenInfo>,
   'inactive': Array<TokenInfo>,
+  'upcoming': Array<TokenInfo>,
 }
 
 export interface TokenConfigs {
@@ -701,7 +702,7 @@ export interface SwapConfigs {
     hrs: string,
     mins: string
   };
-  status: boolean;
+  status: "Active" | "Inactive" | "Upcoming";
   result: boolean;
 }
 

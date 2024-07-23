@@ -197,6 +197,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const TokensInfo = IDL.Record({
     'active' : IDL.Vec(TokenInfo),
+    'upcoming' : IDL.Vec(TokenInfo),
     'inactive' : IDL.Vec(TokenInfo),
   });
   const Result_3 = IDL.Variant({ 'ok' : TokensInfo, 'err' : IDL.Text });
@@ -288,6 +289,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Record({ 'token' : TokenSwapType, 'canister_id' : IDL.Text })],
         [IDL.Tuple(IDL.Nat, IDL.Nat)],
         ['query'],
+      ),
+    'updateSwapConfig' : IDL.Func(
+        [IDL.Text, IDL.Int, IDL.Opt(IDL.Int)],
+        [],
+        [],
       ),
     'upload_ledger_wasm' : IDL.Func(
         [IDL.Record({ 'ledger_wasm' : IDL.Vec(IDL.Nat8) })],

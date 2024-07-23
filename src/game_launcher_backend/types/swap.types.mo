@@ -155,6 +155,7 @@ module {
     public type TokensInfo = {
         active: [TokenInfo];
         inactive: [TokenInfo];
+        upcoming: [TokenInfo];
     };
 
 }

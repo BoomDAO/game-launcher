@@ -69,15 +69,15 @@ actor SwapCanister {
       },
     ).0;
 
-    // _swap_status := Trie.put(
-    //   _swap_status,
-    //   Helper.keyT(cid),
-    //   Text.equal,
-    //   {
-    //     running = true;
-    //     is_successfull = null;
-    //   },
-    // ).0;
+    _swap_status := Trie.put(
+      _swap_status,
+      Helper.keyT(cid),
+      Text.equal,
+      {
+        running = false;
+        is_successfull = null;
+      },
+    ).0;
   };
 
   // actor interfaces
@@ -847,7 +847,6 @@ actor SwapCanister {
   public shared ({ caller }) func create_icrc_token(args : { project : Swap.TokenProject; token_init_arg : ICRC.InitArgs }) : async ({
     canister_id : Text;
   }) {
-    // assert (caller == dev_principal);
     Cycles.add(2000000000000);
     let res = await management_canister.create_canister({
       settings = ?{
@@ -863,7 +862,21 @@ actor SwapCanister {
     let arg : {
       #Init : ICRC.InitArgs;
       #Upgrade : ?ICRC.UpgradeArgs;
-    } = #Init(args.token_init_arg);
+    } = #Init({
+      decimals = ?8; // token_decimals = 8 has been set as default for all tokens
+      token_symbol = args.token_init_arg.token_symbol;
+      transfer_fee = args.token_init_arg.transfer_fee;
+      metadata = args.token_init_arg.metadata;
+      minting_account = args.token_init_arg.minting_account;
+      initial_balances = args.token_init_arg.initial_balances;
+      maximum_number_of_accounts = args.token_init_arg.maximum_number_of_accounts;
+      accounts_overflow_trim_quantity = args.token_init_arg.accounts_overflow_trim_quantity;
+      fee_collector_account = args.token_init_arg.fee_collector_account;
+      archive_options = args.token_init_arg.archive_options;
+      max_memo_length = args.token_init_arg.max_memo_length;
+      token_name = args.token_init_arg.token_name;
+      feature_flags = args.token_init_arg.feature_flags;
+    });
     await management_canister.install_code({
       arg = to_candid (arg);
       wasm_module = getLatestIcrcWasm_();
@@ -878,7 +891,7 @@ actor SwapCanister {
       logo = metadata.logo;
       description = metadata.description;
       symbol = args.token_init_arg.token_symbol;
-      decimals = args.token_init_arg.decimals;
+      decimals = ?8; // token_decimals = 8 has been set as default for all tokens
       fee = args.token_init_arg.transfer_fee;
       token_canister_id = Principal.toText(canister_id);
     };
@@ -963,7 +976,7 @@ actor SwapCanister {
             ).0;
 
             // Allocate tokens automatically and settle swap as well here only
-            switch (await settle_swap_status_and_allocate_tokens_if_swap_successfull({ canister_id = arg.canister_id})) {
+            switch (await settle_swap_status_and_allocate_tokens_if_swap_successfull({ canister_id = arg.canister_id })) {
               case (#ok _) {
                 switch (await finalise_token_swap({ canister_id = arg.canister_id })) {
                   case (#ok _) {
@@ -1374,6 +1387,7 @@ actor SwapCanister {
   public query func getAllTokensInfo() : async (Result.Result<Swap.TokensInfo, Text>) {
     var active = Buffer.Buffer<Swap.TokenInfo>(0);
     var inactive = Buffer.Buffer<Swap.TokenInfo>(0);
+    var upcoming = Buffer.Buffer<Swap.TokenInfo>(0);
     for ((i, v) in Trie.iter(_swap_status)) {
       if (v.running) {
         let ?swap_config = Trie.find(_swap_configs, Helper.keyT(i), Text.equal) else {
@@ -1401,18 +1415,28 @@ actor SwapCanister {
         let ?project_config = Trie.find(_projects, Helper.keyT(i), Text.equal) else {
           return #err("Token : " #i # " swap is inactive but token project configs not found");
         };
-        inactive.add({
-          token_canister_id = i;
-          token_configs = token_config;
-          token_project_configs = project_config;
-          token_swap_configs = swap_config;
-        });
+        if (swap_config.swap_start_timestamp_seconds > (Time.now() / 1000000000)) {
+          upcoming.add({
+            token_canister_id = i;
+            token_configs = token_config;
+            token_project_configs = project_config;
+            token_swap_configs = swap_config;
+          });
+        } else {
+          inactive.add({
+            token_canister_id = i;
+            token_configs = token_config;
+            token_project_configs = project_config;
+            token_swap_configs = swap_config;
+          });
+        };
       };
     };
 
     return #ok({
       active = Buffer.toArray(active);
       inactive = Buffer.toArray(inactive);
+      upcoming = Buffer.toArray(upcoming);
     });
   };
 
