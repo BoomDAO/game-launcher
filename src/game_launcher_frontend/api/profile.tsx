@@ -934,7 +934,6 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
                     registries = response;
                 }
             );
-            console.log(res);
             return res;
         },
     });

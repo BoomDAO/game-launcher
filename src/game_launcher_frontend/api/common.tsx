@@ -42,7 +42,6 @@ export const useGetTwitterTexts = () => {
         queryFn: async () => {
             const res = await fetch(`${github}/twitter_content.json`);
             const texts = (await res.json()) as twitterTexts;
-            console.log(texts);
             return texts as twitterTexts;
         },
     });

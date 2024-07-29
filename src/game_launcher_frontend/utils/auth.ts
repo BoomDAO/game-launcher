@@ -5,6 +5,10 @@ import { NFID } from "@nfid/embed";
 import { SignIdentity } from "@dfinity/agent";
 import { AuthClientStorage } from "@dfinity/auth-client/lib/cjs/storage";
 import { IdleOptions } from "@dfinity/auth-client";
+import { Signer, createDelegationPermissionScope, createAccountsPermissionScope, createCallCanisterPermissionScope } from "@slide-computer/signer";
+import { PlugTransport } from "./plugTransport";
+import { Transport } from "./transport";  
+import { Principal } from "@dfinity/principal";
 // import { MyStorage } from "./MyStorage";
 
 type NFIDConfig = {
@@ -59,6 +63,26 @@ export const nfidEmbedLogin = async (nfid: NFID) => {
     maxTimeToLive: BigInt(24) * BigInt(3_600_000_000_000) // 24 hrs
   });
   return delegationIdentity;
+};
+
+export const plugLogin = async () => {
+  // const publicKey = await window.ic.plug.requestConnect();
+  // console.log(publicKey);
+  const transport : Transport = new PlugTransport();
+  if (transport.connection && !transport.connection.connected) {
+    await transport.connection.connect();
+  }
+  let signer = new Signer({transport});
+  const permissions = await signer.requestPermissions([createAccountsPermissionScope(), createDelegationPermissionScope({}), createCallCanisterPermissionScope()]);
+  console.log(permissions);
+  const accounts = await signer.accounts();
+  console.log(accounts);
+  // let delegation = await signer.delegation({
+  //   publicKey: publicKey.derKey,
+  //   targets: [],
+  //   maxTimeToLive: undefined
+  // });
+  // console.log(delegation);
 };
 
 export const getAuthClient = async () =>

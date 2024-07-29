@@ -25,7 +25,8 @@
       "@/types": ["src/game_launcher_frontend/types/index.ts"],
       "@/hooks": ["src/game_launcher_frontend/hooks/index.ts"],
       "@/shared": ["src/game_launcher_frontend/shared/index.ts"]
-    }
+    },
+    "typeRoots": ["src/game_launcher_frontend/types/*"]
   },
   "include": ["src", "vite.config.ts"],
   "exclude": ["src/game_launcher_frontend/dids"]

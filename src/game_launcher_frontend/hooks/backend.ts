@@ -38,25 +38,25 @@ const boom_ledger_canisterId = "vtrom-gqaaa-aaaaq-aabia-cai";
 
 //Staging
 
-// const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai"; 
-// const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; 
-// const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
-// const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
-// const worldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
-// const guildsVerifierCanisterId = "yv22q-myaaa-aaaal-adeuq-cai"
-// export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
-// const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
+const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai"; 
+const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; 
+const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
+const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
+const worldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
+const guildsVerifierCanisterId = "yv22q-myaaa-aaaal-adeuq-cai"
+export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
+const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
 
 //Production
 
-const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
-const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
-const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
-const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
-const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
-const guildsVerifierCanisterId = "jvcsg-6aaaa-aaaan-qeqvq-cai"
-export const gamingGuildsCanisterId = "erej6-riaaa-aaaap-ab4ma-cai";
-const gamingGuildsWorldNodeCanisterId = "ewfpk-4qaaa-aaaap-ab4mq-cai";
+// const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
+// const minting_canisterId = "j474s-uqaaa-aaaap-abf6q-cai"; 
+// const token_deployerId = "jv4xo-cyaaa-aaaap-abf7a-cai"; 
+// const world_deployerId = "js5r2-paaaa-aaaap-abf7q-cai"; 
+// const worldHubCanisterId = "j362g-ziaaa-aaaap-abf6a-cai";
+// const guildsVerifierCanisterId = "jvcsg-6aaaa-aaaan-qeqvq-cai"
+// export const gamingGuildsCanisterId = "erej6-riaaa-aaaap-ab4ma-cai";
+// const gamingGuildsWorldNodeCanisterId = "ewfpk-4qaaa-aaaap-ab4mq-cai";
 
 //Development
 
