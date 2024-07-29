@@ -44,9 +44,9 @@ const LaunchCard = ({
     }
 
     const { data, isLoading } = useGetParticipationDetails(canisterId || "");
-    // const { data: userStakeTier, isLoading: isStakingTierLoading } = useGetBoomStakeTier();
     const { data: whitelistDetails, isLoading: isWhitelistDetailsLoading } = useGetWhitelistDetails();
     const { data: eligibility, isLoading: isEligibilityLoading } = useGetParticipationEligibility();
+    const { data: stakingTier, isLoading: isStakingTierLoading } = useGetBoomStakeTier();
 
     const handleParticipate = async () => {
         if (session.session) {
@@ -103,301 +103,293 @@ const LaunchCard = ({
     }
 
     return (
-        <Center>
-            {
-                (swap.status == "Active") ? <div className={
-                    cx(
-                        "flex w-full bg-dark  dark:bg-white rounded-xl",
-                        (!canisterId) ? "cursor-pointer" : ""
-                    )
-                } onClick={handleCardOnClick}>
-                    <div className="w-7/12 p-2 relative">
-                        <img src={project.bannerUrl} className="h-96 w-full object-cover rounded-xl" />
-                        <div className="absolute bottom-5 text-white">
-                            {
-                                (!isWhitelistDetailsLoading && whitelistDetails?.elite) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-2 ml-4">
-                                    <img src="/live.svg" className="w-2 ml-2" />
-                                    <p className="font-semibold text-white text-sm pl-2">LIVE : ELITE STAKER</p>
-                                </div> : <></>
-                            }
-                            {
-                                (!isWhitelistDetailsLoading && whitelistDetails?.pro) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-2 ml-4">
-                                    <img src="/live.svg" className="w-2 ml-2" />
-                                    <p className="font-semibold text-white text-sm pl-2">LIVE : PRO STAKER</p>
-                                </div> : <></>
-                            }
-                            {
-                                (!isWhitelistDetailsLoading && whitelistDetails?.public) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-32 ml-4">
-                                    <img src="/live.svg" className="w-2 ml-2" />
-                                    <p className="font-semibold text-white text-sm pl-2">LIVE : PUBLIC</p>
-                                </div> : <></>
-                            }
-                            <p className="font-bold text-6xl px-5 pb-1">{project.name}</p>
-                            <p className="w-9/12 px-5 text-xs">{project.description}</p>
-                        </div>
-                    </div>
-                    <div className="w-5/12">
-                        {
-                            (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
-                        }
-                        <div className={cx(
-                            "p-5",
-                            (canisterId == undefined) ? "mt-10" : ""
-                        )} >
-                            <div className="flex text-white dark:text-black justify-between">
-                                <div>
-                                    <p className="font-light">TOKEN</p>
-                                    <div className="flex">
-                                        <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
-                                        <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="font-light">TOTAL RAISED</p>
-                                    <div className="flex">
-                                        <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
-                                        <p className="pt-2 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
-                            <div className="flex">
-                                {
-                                    (canisterId) ? <div className="w-1/2">
-                                        {
-                                            (!isGeoInfoLoading && !isEligibilityLoading) ? <button className="w-11/12 gradient-bg-blue rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>PARTICIPATE</button> : <Loader className="w-10 mt-2 ml-20 mb-4"></Loader>
-                                        }
-                                        <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantToken} {swap.swapType} required to Participate. </p>
-                                    </div> : <></>
-                                }
-                                {
-                                    (isLoading) ? <Loader className="w-10"></Loader> :
-                                        (data?.[0] != "0" && canisterId) ?
-                                            <div className={cx("dark:text-black text-white text-xs mt-3 pl-2 font-light", (canisterId) ? "border-l-2" : "")}>
-                                                <p>YOU HAVE ALREADY CONTRIBUTED</p>
-                                                <div className="flex">
-                                                    <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-8 mt-0.5" />
-                                                    <p className="pt-2.5 font-semibold text-sm pl-2">{data?.[0]} {swap.swapType}</p>
-                                                </div>
-                                                <p className="mt-1">LIMIT PER USER : {swap.maxParticipantToken} {swap.swapType}</p>
-                                            </div> : <></>
-                                }
-                            </div>
-                            {
-                                (canisterId) ? <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div> : <></>
-                            }
-                            <div className="pt-2">
-                                <div className="flex text-white dark:text-black justify-between font-light text-sm">
-                                    <div>
-                                        PROGRESS : {swap.raisedToken} {swap.swapType}
-                                    </div>
-                                    <div className="">
-                                        <p>PARTICIPANTS : {swap.participants}</p>
-                                    </div>
-                                </div>
-                                <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
-                                    <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
-                                        <img src="/blue-marker.svg" className="w-4" />
-                                    </div>
-                                    <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
-                                    <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
-                                </div>
-                                <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
-                                    <div>
-                                        MIN : {swap.minToken} {swap.swapType}
-                                    </div>
-                                    <div>
-                                        MAX : {swap.maxToken} {swap.swapType}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
-                            {
-                                (swap.status == "Active") ? <div className="flex text-white dark:text-black w-full mt-2">
-                                    <p className="font-light w-1/4">ENDS IN  </p>
-                                    <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} />
-                                </div> : <div className="text-white dark:text-black mt-2 w-full">
-                                    {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
-                                </div>
-                            }
-                            <div className="flex pt-2">
-                                <div className="dark:text-black text-white text-xxs pt-1.5">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS.</div>
-                                <Button size="small" className="ml-4" onClick={(e) => {
-                                    if (session.session) {
-                                        navigate(navPaths.stake + "/" + boom_ledger_canisterId);
-                                        e.stopPropagation();
-                                    } else {
-                                        setIsOpenNavSidebar(true);
+        <>
+            <Center>
+                {
+                    (swap.status == "Active") ? <div className={
+                        cx(
+                            "flex w-full bg-dark  dark:bg-white rounded-xl"
+                        )
+                    } onClick={handleCardOnClick}>
+                        <div className="w-7/12 p-2 relative">
+                            <img src={project.bannerUrl} className="h-96 w-full object-cover rounded-xl" />
+                            <div className="absolute text-white bottom-5">
+                                <div className="mb-48">
+                                    {
+                                        (!isWhitelistDetailsLoading && whitelistDetails?.public) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 ml-4 mb-2">
+                                            <img src="/live.svg" className="w-2 ml-2" />
+                                            <p className="font-semibold text-white text-sm pl-2">LIVE : PUBLIC</p>
+                                        </div> : <></>
                                     }
-                                }}>STAKE</Button>
-                            </div>
-                        </div>
-                    </div>
-                </div> :
-                    (swap.status == "Inactive") ?
-                        <div className={
-                            cx(
-                                "flex w-full bg-dark  dark:bg-white rounded-xl",
-                                (!canisterId) ? "cursor-pointer" : ""
-                            )
-                        } onClick={handleCardOnClick}>
-                            <div className="w-7/12 p-2 relative">
-                                <img src={project.bannerUrl} className="h-64 w-full object-cover rounded-xl" />
-                                <div className="absolute bottom-4 text-white">
-                                    <p className="font-bold text-4xl px-5 pb-1">{project.name}</p>
+                                    {
+                                        (!isWhitelistDetailsLoading && whitelistDetails?.elite) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-2 ml-4">
+                                            <img src="/live.svg" className="w-2 ml-2" />
+                                            <p className="font-semibold text-white text-sm pl-2">LIVE : ELITE STAKER</p>
+                                        </div> : <></>
+                                    }
+                                    {
+                                        (!isWhitelistDetailsLoading && whitelistDetails?.pro) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 mb-2 ml-4">
+                                            <img src="/live.svg" className="w-2 ml-2" />
+                                            <p className="font-semibold text-white text-sm pl-2">LIVE : PRO STAKER</p>
+                                        </div> : <></>
+                                    }
+                                </div>
+                                <div className="">
+                                    <p className="font-bold text-6xl px-5 pb-1">{project.name}</p>
                                     <p className="w-9/12 px-5 text-xs">{project.description}</p>
                                 </div>
                             </div>
-                            <div className="w-5/12">
-                                {
-                                    (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
-                                }
-                                <div className="p-5">
-                                    <div className="flex text-white dark:text-black justify-between">
-                                        <div>
-                                            <p className="font-light">TOKEN</p>
-                                            <div className="flex">
-                                                <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
-                                                <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p className="font-light">TOTAL RAISED</p>
-                                            <div className="flex">
-                                                <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
-                                                <p className="pt-1.5 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
-                                            </div>
+                        </div>
+                        <div className="w-5/12">
+                            {
+                                (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
+                            }
+                            <div className={cx(
+                                "p-5",
+                                (canisterId == undefined) ? "mt-10" : ""
+                            )} >
+                                <div className="flex text-white dark:text-black justify-between">
+                                    <div>
+                                        <p className="font-light">TOKEN</p>
+                                        <div className="flex">
+                                            <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
+                                            <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
                                         </div>
                                     </div>
-                                    <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
-                                    <div className="pt-2">
-                                        <div className="flex text-white dark:text-black justify-between font-light text-sm">
-                                            <div>
-                                                PROGRESS : {swap.raisedToken} {swap.swapType}
-                                            </div>
-                                            <div className="">
-                                                <p>PARTICIPANTS : {swap.participants}</p>
-                                            </div>
+                                    <div>
+                                        <p className="font-light">TOTAL RAISED</p>
+                                        <div className="flex">
+                                            <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
+                                            <p className="pt-2 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
                                         </div>
-                                        <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-2.5 relative">
-                                            <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
-                                                <img src="/blue-marker.svg" className="w-4" />
-                                            </div>
-                                            <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
-                                            <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
-                                        </div>
-                                        <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
-                                            <div>
-                                                MIN : {swap.minToken} {swap.swapType}
-                                            </div>
-                                            <div>
-                                                MAX : {swap.maxToken} {swap.swapType}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
-                                    {
-                                        (swap.status == "Inactive") ? <div className="text-white dark:text-black mt-2 w-full font-light">
-                                            {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
-                                        </div> : <></>
-                                    }
-                                    <div className="flex pt-2">
-                                        <div className="dark:text-black text-white text-xxs pt-1.5">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS.</div>
-                                        <Button size="small" className="ml-4" onClick={(e) => {
-                                            if (session.session) {
-                                                navigate(navPaths.stake + "/" + boom_ledger_canisterId);
-                                                e.stopPropagation();
-                                            } else {
-                                                setIsOpenNavSidebar(true);
-                                            }
-                                        }}>STAKE</Button>
                                     </div>
                                 </div>
-                            </div>
-                        </div> :
-                        <div className={
-                            cx(
-                                "flex w-full bg-dark  dark:bg-white rounded-xl",
-                                (!canisterId) ? "cursor-pointer" : ""
-                            )
-                        } onClick={handleCardOnClick}>
-                            <div className="w-7/12 p-2 relative">
-                                <img src={project.bannerUrl} className="h-96 w-full object-cover rounded-xl" />
-                            </div>
-                            <div className="w-5/12">
-                                {
-                                    (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
-                                }
-                                <div className={cx(
-                                    "p-5 mt-10"
-                                )} >
-                                    <div className="flex text-white dark:text-black justify-between">
-                                        <div>
-                                            <p className="font-light">TOKEN</p>
-                                            <div className="flex">
-                                                <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
-                                                <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p className="font-light">TOTAL RAISED</p>
-                                            <div className="flex">
-                                                <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
-                                                <p className="pt-2 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
+                                <div className="flex">
                                     {
-                                        (canisterId) ? <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div> : <></>
-                                    }
-                                    <div className="pt-2">
-                                        <div className="flex text-white dark:text-black justify-between font-light text-sm">
-                                            <div>
-                                                PROGRESS : {swap.raisedToken} {swap.swapType}
-                                            </div>
-                                            <div className="">
-                                                <p>PARTICIPANTS : {swap.participants}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
-                                            <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
-                                                <img src="/blue-marker.svg" className="w-4" />
-                                            </div>
-                                            <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
-                                            <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
-                                        </div>
-                                        <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
-                                            <div>
-                                                MIN : {swap.minToken} {swap.swapType}
-                                            </div>
-                                            <div>
-                                                MAX : {swap.maxToken} {swap.swapType}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
-                                    {
-                                        (swap.status == "Upcoming") ? <div className="flex text-white dark:text-black w-full mt-2">
-                                            <p className="font-light w-1/4">STARTS IN  </p>
-                                            <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} />
-                                        </div> : <></>
-                                    }
-                                    <div className="flex pt-2">
-                                        <div className="dark:text-black text-white text-xxs pt-1.5">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS.</div>
-                                        <Button size="small" className="ml-4" onClick={(e) => {
-                                            if (session.session) {
-                                                navigate(navPaths.stake + "/" + boom_ledger_canisterId);
-                                                e.stopPropagation();
-                                            } else {
-                                                setIsOpenNavSidebar(true);
+                                        (canisterId) ? <div className="w-1/2">
+                                            {
+                                                (!isGeoInfoLoading && !isEligibilityLoading) ? <button className="w-11/12 gradient-bg-green rounded mt-2 text-sm py-2 font-semibold text-white " onClick={handleParticipate}>CONTRIBUTE</button> : <Loader className="w-10 mt-2 ml-20 mb-4"></Loader>
                                             }
-                                        }}>STAKE</Button>
+                                            <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantToken} {swap.swapType} required to Participate. </p>
+                                        </div> : <button className="w-1/2 gradient-bg-blue rounded mt-4 mb-2 text-sm py-2 font-semibold text-white " onClick={handleCardOnClick}>PARTICIPATE</button>
+                                    }
+                                    {
+                                        (isLoading) ? <Loader className="w-10"></Loader> :
+                                            (data?.[0] != "0" && canisterId) ?
+                                                <div className={cx("dark:text-black text-white text-xs mt-3 pl-2 font-light", (canisterId) ? "border-l-2" : "")}>
+                                                    <p>YOU HAVE ALREADY CONTRIBUTED</p>
+                                                    <div className="flex">
+                                                        <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-8 mt-0.5" />
+                                                        <p className="pt-2.5 font-semibold text-sm pl-2">{data?.[0]} {swap.swapType}</p>
+                                                    </div>
+                                                    <p className="mt-1">LIMIT PER USER : {swap.maxParticipantToken} {swap.swapType}</p>
+                                                </div> : <></>
+                                    }
+                                </div>
+                                <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
+                                <div className="pt-2">
+                                    <div className="flex text-white dark:text-black justify-between font-light text-sm">
+                                        <div>
+                                            PROGRESS : {swap.raisedToken} {swap.swapType}
+                                        </div>
+                                        <div className="">
+                                            <p>PARTICIPANTS : {swap.participants}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
+                                        <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                            <img src="/blue-marker.svg" className="w-4" />
+                                        </div>
+                                        <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
+                                        <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
+                                    </div>
+                                    <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
+                                        <div>
+                                            MIN : {swap.minToken} {swap.swapType}
+                                        </div>
+                                        <div>
+                                            MAX : {swap.maxToken} {swap.swapType}
+                                        </div>
                                     </div>
                                 </div>
+                                <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
+                                {
+                                    (swap.status == "Active") ? <div className="flex text-white dark:text-black w-full mt-2">
+                                        <p className="font-light w-1/4">ENDS IN  </p>
+                                        <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} />
+                                    </div> : <div className="text-white dark:text-black mt-2 w-full">
+                                        {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
+                                    </div>
+                                }
                             </div>
                         </div>
+                    </div> :
+                        (swap.status == "Inactive") ?
+                            <div className={
+                                cx(
+                                    "flex w-full bg-dark  dark:bg-white rounded-xl",
+                                    (!canisterId) ? "cursor-pointer" : ""
+                                )
+                            } onClick={handleCardOnClick}>
+                                <div className="w-7/12 p-2 relative">
+                                    <img src={project.bannerUrl} className="h-64 w-full object-cover rounded-xl" />
+                                    <div className="absolute bottom-4 text-white">
+                                        <p className="font-bold text-4xl px-5 pb-1">{project.name}</p>
+                                        <p className="w-9/12 px-5 text-xs">{project.description}</p>
+                                    </div>
+                                </div>
+                                <div className="w-5/12">
+                                    {
+                                        (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
+                                    }
+                                    <div className="p-5">
+                                        <div className="flex text-white dark:text-black justify-between">
+                                            <div>
+                                                <p className="font-light">TOKEN</p>
+                                                <div className="flex">
+                                                    <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
+                                                    <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="font-light">TOTAL RAISED</p>
+                                                <div className="flex">
+                                                    <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
+                                                    <p className="pt-1.5 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
+                                        <div className="pt-2">
+                                            <div className="flex text-white dark:text-black justify-between font-light text-sm">
+                                                <div>
+                                                    PROGRESS : {swap.raisedToken} {swap.swapType}
+                                                </div>
+                                                <div className="">
+                                                    <p>PARTICIPANTS : {swap.participants}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-2.5 relative">
+                                                <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                                    <img src="/blue-marker.svg" className="w-4" />
+                                                </div>
+                                                <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
+                                                <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
+                                            </div>
+                                            <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
+                                                <div>
+                                                    MIN : {swap.minToken} {swap.swapType}
+                                                </div>
+                                                <div>
+                                                    MAX : {swap.maxToken} {swap.swapType}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
+                                        {
+                                            (swap.status == "Inactive") ? <div className="text-white dark:text-black mt-2 w-full font-light">
+                                                {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
+                                            </div> : <></>
+                                        }
+                                    </div>
+                                </div>
+                            </div> :
+                            <div className={
+                                cx(
+                                    "flex w-full bg-dark  dark:bg-white rounded-xl",
+                                    (!canisterId) ? "cursor-pointer" : ""
+                                )
+                            } onClick={handleCardOnClick}>
+                                <div className="w-7/12 p-2 relative">
+                                    <img src={project.bannerUrl} className="h-96 w-full object-cover rounded-xl" />
+                                </div>
+                                <div className="w-5/12">
+                                    {
+                                        (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
+                                    }
+                                    <div className={cx(
+                                        "p-5 mt-10"
+                                    )} >
+                                        <div className="flex text-white dark:text-black justify-between">
+                                            <div>
+                                                <p className="font-light">TOKEN</p>
+                                                <div className="flex">
+                                                    <img className="w-10 h-10 rounded-primary border-2" src={token.logoUrl} />
+                                                    <p className="pt-2 pl-2 font-semibold">{token.symbol}</p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="font-light">TOTAL RAISED</p>
+                                                <div className="flex">
+                                                    <img src={(swap.swapType == "ICP") ? "/ICP.svg" : "/BOOM.svg"} className="w-10 h-10 rounded-primary border-2" />
+                                                    <p className="pt-2 pl-1 font-semibold">{swap.raisedToken} {swap.swapType}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
+                                        {
+                                            (canisterId) ? <div className="w-1/2">
+                                                <button className="w-11/12 gradient-bg-grey rounded mt-2 text-sm py-2 font-semibold text-white" disabled>CONTRIBUTE</button>
+                                                <p className="dark:text-black text-white text-xs mt-1 font-light">Minimum {swap.minParticipantToken} {swap.swapType} required to Participate. </p>
+                                            </div> : <button className="w-1/2 gradient-bg-blue rounded mt-4 mb-2 text-sm py-2 font-semibold text-white " onClick={handleCardOnClick}>PARTICIPATE</button>
+                                        }
+                                        <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
+                                        <div className="pt-2">
+                                            <div className="flex text-white dark:text-black justify-between font-light text-sm">
+                                                <div>
+                                                    PROGRESS : {swap.raisedToken} {swap.swapType}
+                                                </div>
+                                                <div className="">
+                                                    <p>PARTICIPANTS : {swap.participants}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
+                                                <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                                    <img src="/blue-marker.svg" className="w-4" />
+                                                </div>
+                                                <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
+                                                <div className="yellow-gradient-bg h-4 rounded-3xl absolute z-10" style={{ width: `${((100 * Number(swap.raisedToken) / Number(swap.maxToken)) >= 100) ? 100 : (100 * Number(swap.raisedToken) / Number(swap.maxToken))}%` }}></div>
+                                            </div>
+                                            <div className="flex text-white dark:text-black justify-between font-light text-xs pt-2">
+                                                <div>
+                                                    MIN : {swap.minToken} {swap.swapType}
+                                                </div>
+                                                <div>
+                                                    MAX : {swap.maxToken} {swap.swapType}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
+                                        {
+                                            (swap.status == "Upcoming") ? <div className="flex text-white dark:text-black w-full mt-2">
+                                                <p className="font-light w-1/4">STARTS IN  </p>
+                                                <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} />
+                                            </div> : <></>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                }
+            </Center>
+            {
+                (canisterId != undefined) ? <div className="mt-4 pt-2 text-center bg-white rounded-xl pt-5 pb-5">
+                    <div className="dark:text-black text-white text-xl font-bold">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS</div>
+                    {
+                        (isStakingTierLoading) ? <Loader className="w-8 h-8 mt-4 mx-auto"></Loader> :
+                            (stakingTier == "") ? <Button size="big" className="!mt-4 !rounded-xl yellow-red-gradient-bg !text-white !font-semibold !px-6" onClick={(e) => {
+                                if (session) {
+                                    navigate(navPaths.stake + "/" + boom_ledger_canisterId);
+                                    e.stopPropagation();
+                                } else {
+                                    setIsOpenNavSidebar(true);
+                                }
+                            }}>STAKE BOOM FOR EARLY SALE ACCESS</Button> :
+                                <p className="gradient-text text-lg font-semibold mt-4">YOU ARE IN THE {stakingTier} STAKING TIER</p>
+                    }
+                </div> : <></>
             }
-        </Center>
+        </>
     );
 };
 

@@ -1518,7 +1518,11 @@ export const useGetBoomStakeTier = (): UseQueryResult<string> => {
                 ok: undefined | string,
                 err: undefined | string
             };
-            return res.ok || "";
+            if(res.ok != undefined) {
+                return res.ok;
+            } else {
+                return "";
+            }
         },
     });
 };

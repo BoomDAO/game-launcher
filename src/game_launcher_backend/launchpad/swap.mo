@@ -74,7 +74,7 @@ actor SwapCanister {
       Helper.keyT(cid),
       Text.equal,
       {
-        running = false;
+        running = true;
         is_successfull = null;
       },
     ).0;
@@ -1438,6 +1438,11 @@ actor SwapCanister {
       inactive = Buffer.toArray(inactive);
       upcoming = Buffer.toArray(upcoming);
     });
+  };
+
+  public query func getTokenSwapConfigs(cid : Text) : async (Result.Result<Swap.TokenSwapConfigs, Text>) {
+    let ?res = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return #err("not found");
+    return #ok(res);
   };
 
   public query func getParticipationDetails(args : { participantId : Text; tokenCanisterId : Text }) : async (Result.Result<Swap.ParticipantDetails, Text>) {
