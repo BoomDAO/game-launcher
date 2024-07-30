@@ -544,7 +544,8 @@
       "staking": {
         "heading": "Stake BOOM Token",
         "success": "BOOM tokens staked successfully",
-        "error": ""
+        "error": "",
+        "delay_info_button": "When you want to unstake your BOOM, the Dissolve Delay is the amount of time you will have to wait for your tokens to become liquid after starting the dissolve process."
       }
     },
     "tab_2": {

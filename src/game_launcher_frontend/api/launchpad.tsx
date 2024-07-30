@@ -383,6 +383,7 @@ export const useGetParticipationDetails = (canisterId: string): UseQueryResult<[
 export const useParticipateTokenTransfer = (swapType: string) => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
+    let { session } = useAuthContext();
     return useMutation({
         mutationFn: async ({
             amount,
@@ -416,6 +417,26 @@ export const useParticipateTokenTransfer = (swapType: string) => {
                             toast.error("Please check minimum and maximum participation limits per user before participating.");
                             closeToast();
                             throw ("");
+                        } else {
+                            let participant_details = await swapCanister.actor[swapCanister.methods.getParticipationDetails]({ participantId : session?.address, tokenCanisterId : (canisterId != undefined) ? canisterId : "" }) as {
+                                ok : undefined | ParticipantDetails,
+                                err : undefined | string
+                            }
+                            if(participant_details.ok != undefined) {
+                                if(swapType == "boom") {
+                                    if(BigInt(amount_e8s) + BigInt(participant_details.ok.boom_e8s) > current_token_info.token_swap_configs.max_participant_token_e8s) {
+                                        toast.error("Please check minimum and maximum participation limits per user before participating.");
+                                        closeToast();
+                                        throw ("");
+                                    }
+                                } else if (swapType == "icp") {
+                                    if(BigInt(amount_e8s) + participant_details.ok.icp_e8s > current_token_info.token_swap_configs.max_participant_token_e8s) {
+                                        toast.error("Please check minimum and maximum participation limits per user before participating.");
+                                        closeToast();
+                                        throw ("");
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -501,13 +522,13 @@ export const useGetWhitelistDetails = (): UseQueryResult<WhitelistDetails> => {
                             pro: true,
                             public: true
                         }
-                    } else if (current_time_seconds + 10800n >= swap_time_seconds) {
+                    } else if (current_time_seconds + 43200n >= swap_time_seconds) {
                         res = {
                             elite: true,
                             pro: true,
                             public: false
                         }
-                    } else if (current_time_seconds + 21600n >= swap_time_seconds) {
+                    } else if (current_time_seconds + 86400n >= swap_time_seconds) {
                         res = {
                             elite: true,
                             pro: false,
@@ -557,13 +578,13 @@ export const useGetParticipationEligibility = (): UseQueryResult<boolean> => {
                             pro: true,
                             public: true
                         }
-                    } else if (current_time_seconds + 10800n >= swap_time_seconds) {
+                    } else if (current_time_seconds + 43200n >= swap_time_seconds) {
                         res = {
                             elite: true,
                             pro: true,
                             public: false
                         }
-                    } else if (current_time_seconds + 21600n >= swap_time_seconds) {
+                    } else if (current_time_seconds + 86400n >= swap_time_seconds) {
                         res = {
                             elite: true,
                             pro: false,

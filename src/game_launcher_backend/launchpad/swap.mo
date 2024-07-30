@@ -51,7 +51,7 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
-  public func updateSwapConfig(cid : Text, due_timestamp_seconds : Int, start : ?Int) : async () {
+  public func updateSwapConfig(cid : Text, due_timestamp_seconds : ?Int, start : ?Int, minimum : ?Nat64) : async () {
     let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
     _swap_configs := Trie.put(
       _swap_configs,
@@ -59,12 +59,12 @@ actor SwapCanister {
       Text.equal,
       {
         token_supply_configs = configs.token_supply_configs;
-        min_token_e8s = configs.min_token_e8s;
+        min_token_e8s = Option.get(minimum, configs.min_token_e8s);
         max_token_e8s = configs.max_token_e8s;
         min_participant_token_e8s = configs.min_participant_token_e8s;
         max_participant_token_e8s = configs.max_participant_token_e8s;
         swap_start_timestamp_seconds = Option.get(start, configs.swap_start_timestamp_seconds);
-        swap_due_timestamp_seconds = due_timestamp_seconds;
+        swap_due_timestamp_seconds = Option.get(due_timestamp_seconds, configs.swap_due_timestamp_seconds);
         swap_type = configs.swap_type;
       },
     ).0;
@@ -74,7 +74,7 @@ actor SwapCanister {
       Helper.keyT(cid),
       Text.equal,
       {
-        running = true;
+        running = false;
         is_successfull = null;
       },
     ).0;
@@ -150,10 +150,38 @@ actor SwapCanister {
     };
   };
 
-  private func isAmountValid_(arg : { canister_id : Text; amount : Nat64 }) : Bool {
+  // 1. Check if amount passed is between min and max constraints of Token Sale
+  // 2. Check if total participation of User is not surpassing maximum participation allowed to a user
+  private func isAmountValid_(arg : { canister_id : Text; amount : Nat64; participant : Text }) : Bool {
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
         if (arg.amount >= configs.min_participant_token_e8s and arg.amount <= configs.max_participant_token_e8s) {
+          switch (Trie.find(_swap_participants, Helper.keyT(arg.canister_id), Text.equal)) {
+            case (?all_participants) {
+              switch (Trie.find(all_participants, Helper.keyT(arg.participant), Text.equal)) {
+                case (?info) {
+                  switch (configs.swap_type) {
+                    case (#boom) {
+                      if (Nat64.fromNat(info.boom_e8s) + arg.amount > configs.max_participant_token_e8s) {
+                        return false;
+                      };
+                    };
+                    case (#icp) {
+                      if (info.icp_e8s + arg.amount > configs.max_participant_token_e8s) {
+                        return false;
+                      };
+                    };
+                  };
+                };
+                case _ {
+                  return true;
+                };
+              };
+            };
+            case _ {
+              return true;
+            };
+          };
           return true;
         } else {
           return false;
@@ -919,7 +947,7 @@ actor SwapCanister {
   };
 
   public shared ({ caller }) func start_token_swap(arg : { canister_id : Text }) : async (Result.Result<Text, Text>) {
-    let swap_time_for_elite_tier_in_seconds : Int = 21600; // 6 hours currently, will be adjusted later
+    let swap_time_for_elite_tier_in_seconds : Int = 86400; // 24 hours currently, might be adjusted later
     for ((i, v) in Trie.iter(_swap_status)) {
       if (v.running == true and i != arg.canister_id) {
         return #err("Other token swap is already running, wait for it to get over Or contact dev team.");
@@ -975,7 +1003,7 @@ actor SwapCanister {
               },
             ).0;
 
-            // Allocate tokens automatically and settle swap as well here only
+            // Allocate tokens automatically and settle swap as well, here only
             switch (await settle_swap_status_and_allocate_tokens_if_swap_successfull({ canister_id = arg.canister_id })) {
               case (#ok _) {
                 switch (await finalise_token_swap({ canister_id = arg.canister_id })) {
@@ -1004,8 +1032,8 @@ actor SwapCanister {
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
         let swap_start_time_seconds = configs.swap_start_timestamp_seconds;
-        let swap_time_for_elite_tier_in_seconds : Int = 21600; // 6 hours ELITE tier, will be adjusted later
-        let swap_time_for_pro_tier_in_seconds : Int = 10800; // 3 hours for PRO tier, will be adjusted later
+        let swap_time_for_elite_tier_in_seconds : Int = 86400; // 24 hours ELITE tier, will be adjusted later
+        let swap_time_for_pro_tier_in_seconds : Int = 43200; // 12 hours for PRO tier, will be adjusted later
         let gamingGuild = actor (ENV.GamingGuildsCanisterId) : actor {
           getUserBoomStakeTier : shared query (Text) -> async (Result.Result<Text, Text>);
         };
@@ -1034,14 +1062,13 @@ actor SwapCanister {
       };
     };
 
+    let swap_canister_id : Text = Principal.toText(Principal.fromActor(SwapCanister));
+    let participant_id : Text = Principal.toText(caller);
     // Check-1
-    if (isAmountValid_({ canister_id = arg.canister_id; amount = arg.amount }) == false) {
-
+    if (isAmountValid_({ canister_id = arg.canister_id; amount = arg.amount; participant = participant_id }) == false) {
       return #err("amount passed does not fullfill participants requirements of min/max tokens.");
     };
     // Check-2
-    let swap_canister_id : Text = Principal.toText(Principal.fromActor(SwapCanister));
-    let participant_id : Text = Principal.toText(caller);
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
         switch (configs.swap_type) {

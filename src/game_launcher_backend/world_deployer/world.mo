@@ -5171,6 +5171,32 @@ actor class WorldTemplate(owner : Principal) = this {
     };
   };
 
+  public query func getEliteStakeUsers() : async [Text] {
+    var b = Buffer.Buffer<Text>(0);
+    for((i, v) in Trie.iter(_boomStakes)) {
+      switch (v.kind) {
+        case (#elite) {
+          b.add(i);
+        };
+        case _ {};
+      }
+    };
+    return Buffer.toArray(b);
+  };
+
+  public query func getProStakeUsers() : async [Text] {
+    var b = Buffer.Buffer<Text>(0);
+    for((i, v) in Trie.iter(_boomStakes)) {
+      switch (v.kind) {
+        case (#pro) {
+          b.add(i);
+        };
+        case _ {};
+      }
+    };
+    return Buffer.toArray(b);
+  };
+
   // NFT Staking for Gaming Guild
   private stable var _extStakes : Trie.Trie<Text, TStaking.EXTStake> = Trie.empty(); // key -> (collection_canister_id + "|" + nft_index)
   //EXT tx verification checks

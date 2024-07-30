@@ -114,7 +114,12 @@ const LaunchCard = ({
                         <div className="w-7/12 p-2 relative">
                             <img src={project.bannerUrl} className="h-96 w-full object-cover rounded-xl" />
                             <div className="absolute text-white bottom-5">
-                                <div className="mb-48">
+                                <div className={
+                                    cx(
+                                        (!isWhitelistDetailsLoading && whitelistDetails?.public && whitelistDetails?.elite && whitelistDetails?.pro) ? "mb-48" :
+                                        (!isWhitelistDetailsLoading && !whitelistDetails?.public && whitelistDetails?.elite && whitelistDetails?.pro) ? "mb-56" : "mb-64"
+                                    )
+                                }>
                                     {
                                         (!isWhitelistDetailsLoading && whitelistDetails?.public) ? <div className="w-5/12 flex bg-sky-500 rounded-xl py-0.5 ml-4 mb-2">
                                             <img src="/live.svg" className="w-2 ml-2" />
@@ -175,7 +180,7 @@ const LaunchCard = ({
                                         </div> : <button className="w-1/2 gradient-bg-blue rounded mt-4 mb-2 text-sm py-2 font-semibold text-white " onClick={handleCardOnClick}>PARTICIPATE</button>
                                     }
                                     {
-                                        (isLoading) ? <Loader className="w-10"></Loader> :
+                                        (isLoading) ? <Loader className="w-10 mt-2"></Loader> :
                                             (data?.[0] != "0" && canisterId) ?
                                                 <div className={cx("dark:text-black text-white text-xs mt-3 pl-2 font-light", (canisterId) ? "border-l-2" : "")}>
                                                     <p>YOU HAVE ALREADY CONTRIBUTED</p>
@@ -184,7 +189,7 @@ const LaunchCard = ({
                                                         <p className="pt-2.5 font-semibold text-sm pl-2">{data?.[0]} {swap.swapType}</p>
                                                     </div>
                                                     <p className="mt-1">LIMIT PER USER : {swap.maxParticipantToken} {swap.swapType}</p>
-                                                </div> : <></>
+                                                </div> : (canisterId) ? <p className="mt-8 dark:text-black text-white text-xs">LIMIT PER USER : {swap.maxParticipantToken} {swap.swapType}</p> : <></>
                                     }
                                 </div>
                                 <div className="h-0.5 bg-white dark:bg-gray-300 mt-2"></div>
@@ -198,7 +203,7 @@ const LaunchCard = ({
                                         </div>
                                     </div>
                                     <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
-                                        <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                        <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4 -translate-x-2">
                                             <img src="/blue-marker.svg" className="w-4" />
                                         </div>
                                         <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
@@ -271,7 +276,7 @@ const LaunchCard = ({
                                                 </div>
                                             </div>
                                             <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-2.5 relative">
-                                                <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                                <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4 -translate-x-2">
                                                     <img src="/blue-marker.svg" className="w-4" />
                                                 </div>
                                                 <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
@@ -345,7 +350,7 @@ const LaunchCard = ({
                                                 </div>
                                             </div>
                                             <div className="flex w-full h-4 bg-gray-300/50 rounded-3xl mt-4 relative">
-                                                <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4">
+                                                <div style={{ marginLeft: `${(BigInt(swap.minToken) * 100n) / BigInt(swap.maxToken)}%` }} className="absolute z-30 -mt-4 -translate-x-2">
                                                     <img src="/blue-marker.svg" className="w-4" />
                                                 </div>
                                                 <div className="flex cursor-pointer text-sm z-20 absolute pl-5"></div>
@@ -374,7 +379,7 @@ const LaunchCard = ({
             </Center>
             {
                 (canisterId != undefined) ? <div className="mt-4 pt-2 text-center bg-white rounded-xl pt-5 pb-5">
-                    <div className="dark:text-black text-white text-xl font-bold">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS</div>
+                    <div className="dark:text-black text-white text-xl font-bold">SALE OPENS 24 HOUR EARLY FOR ELITE STAKERS AND 12 HOUR EARLY FOR PRO STAKERS</div>
                     {
                         (isStakingTierLoading) ? <Loader className="w-8 h-8 mt-4 mx-auto"></Loader> :
                             (stakingTier == "") ? <Button size="big" className="!mt-4 !rounded-xl yellow-red-gradient-bg !text-white !font-semibold !px-6" onClick={(e) => {

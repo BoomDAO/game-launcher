@@ -39,7 +39,7 @@ const Launchpad = () => {
         <>
             <div className="w-full text-center"><p className="gradient-text text-5xl font-semibold pb-10 mt-10">CROWDFUND YOUR GAMING PROJECT</p></div>
             <div className="pt-2 text-center bg-white rounded-xl pt-5 pb-5">
-                <div className="dark:text-black text-white text-xl font-bold">SALE OPENS 6 HOUR EARLY FOR ELITE STAKERS AND 3 HOUR EARLY FOR PRO STAKERS</div>
+                <div className="dark:text-black text-white text-xl font-bold">SALE OPENS 24 HOUR EARLY FOR ELITE STAKERS AND 12 HOUR EARLY FOR PRO STAKERS</div>
                 {
                     (isStakingTierLoading) ? <Loader className="w-8 h-8 mt-4 mx-auto"></Loader> :
                         (stakingTier == "") ? <Button size="large" className="!mt-4 !rounded-xl yellow-red-gradient-bg !text-white !font-semibold !px-6" onClick={(e) => {
