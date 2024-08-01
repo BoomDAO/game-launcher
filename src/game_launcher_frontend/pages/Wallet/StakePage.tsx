@@ -105,11 +105,11 @@ const StakePage = () => {
                                 <div className="pl-1">100 BOOM Tokens</div>
                             </div>
                             <div className="flex">
-                                <div className="flex font-semibold text-base">
-                                    <p>DELAY</p>
-                                    <div className="-translate-y-0.5"><Hint right>{t("wallet.tab_1.staking.delay_info_button")}</Hint></div>
+                                <div className="flex font-semibold text-base">DELAY : </div>
+                                <div className="flex pl-1">
+                                    <p>24 HOURS</p>
+                                    <div className="-translate-y-0.5 ml-1"><Hint right>{t("wallet.tab_1.staking.delay_info_button")}</Hint></div>    
                                 </div>
-                                <div className="pl-1">: 24 HOURS</div>
                             </div>
                             <div className="flex">
                                 <div className="flex font-semibold text-base">BENEFITS : </div>
@@ -134,11 +134,11 @@ const StakePage = () => {
                                 <div className="pl-1">50 BOOM Tokens</div>
                             </div>
                             <div className="flex">
-                                <div className="flex font-semibold text-base">
-                                    <p>DELAY</p>
-                                    <div className="-translate-y-0.5"><Hint>{t("wallet.tab_1.staking.delay_info_button")}</Hint></div>
+                                <div className="flex font-semibold text-base">DELAY : </div>
+                                <div className="flex pl-1">
+                                    <p>24 HOURS</p>
+                                    <div className="-translate-y-0.5 ml-1"><Hint>{t("wallet.tab_1.staking.delay_info_button")}</Hint></div>    
                                 </div>
-                                <div className="pl-1">: 24 HOURS</div>
                             </div>
                             <div className="flex">
                                 <div className="flex font-semibold text-base">BENEFITS : </div>

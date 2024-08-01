@@ -70,6 +70,28 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 let tokensInfo = tokensInfoRes.ok;
                 for (let i = 0; i < tokensInfo.active.length; i += 1) {
                     let current_token_info = tokensInfo.active[i];
+                    var whitelist_detail: WhitelistDetails = { elite: false, pro: false, public: false };
+                    let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
+                    let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
+                    if (current_time_seconds >= swap_time_seconds) {
+                        whitelist_detail = {
+                            elite: true,
+                            pro: true,
+                            public: true
+                        }
+                    } else if (current_time_seconds + 43200n >= swap_time_seconds) {
+                        whitelist_detail = {
+                            elite: true,
+                            pro: true,
+                            public: false
+                        }
+                    } else if (current_time_seconds + 86400n >= swap_time_seconds) {
+                        whitelist_detail = {
+                            elite: true,
+                            pro: false,
+                            public: false
+                        }
+                    }
                     if (current_token_info.token_canister_id == canisterId) {
                         token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                         let cardInfo: LaunchCardProps = {
@@ -91,7 +113,7 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
                                 maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                                 participants: "0",
-                                endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
+                                endTimestamp: (whitelist_detail.public) ? msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000) : msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                                 status: "Active",
                                 result: false
                             },
@@ -226,6 +248,28 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 let tokensInfo = tokensInfoRes.ok;
                 for (let i = 0; i < tokensInfo.active.length; i += 1) {
                     let current_token_info = tokensInfo.active[i];
+                    var whitelist_detail: WhitelistDetails = { elite: false, pro: false, public: false };
+                    let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
+                    let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
+                    if (current_time_seconds >= swap_time_seconds) {
+                        whitelist_detail = {
+                            elite: true,
+                            pro: true,
+                            public: true
+                        }
+                    } else if (current_time_seconds + 43200n >= swap_time_seconds) {
+                        whitelist_detail = {
+                            elite: true,
+                            pro: true,
+                            public: false
+                        }
+                    } else if (current_time_seconds + 86400n >= swap_time_seconds) {
+                        whitelist_detail = {
+                            elite: true,
+                            pro: false,
+                            public: false
+                        }
+                    }
                     token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
@@ -246,7 +290,7 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             minParticipantToken: String(Number(current_token_info.token_swap_configs.min_participant_token_e8s) / 100000000),
                             maxParticipantToken: String(Number(current_token_info.token_swap_configs.max_participant_token_e8s) / 100000000),
                             participants: "0",
-                            endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
+                            endTimestamp: (whitelist_detail.public) ? msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000) : msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                             status: "Active",
                             result: false
                         },
@@ -413,24 +457,24 @@ export const useParticipateTokenTransfer = (swapType: string) => {
                     let tokensInfo = tokensInfoRes.ok;
                     for (let i = 0; i < tokensInfo.active.length; i += 1) {
                         let current_token_info = tokensInfo.active[i];
-                        if(amount_e8s < current_token_info.token_swap_configs.min_participant_token_e8s || amount_e8s > current_token_info.token_swap_configs.max_participant_token_e8s) {
+                        if (amount_e8s < current_token_info.token_swap_configs.min_participant_token_e8s || amount_e8s > current_token_info.token_swap_configs.max_participant_token_e8s) {
                             toast.error("Please check minimum and maximum participation limits per user before participating.");
                             closeToast();
                             throw ("");
                         } else {
-                            let participant_details = await swapCanister.actor[swapCanister.methods.getParticipationDetails]({ participantId : session?.address, tokenCanisterId : (canisterId != undefined) ? canisterId : "" }) as {
-                                ok : undefined | ParticipantDetails,
-                                err : undefined | string
+                            let participant_details = await swapCanister.actor[swapCanister.methods.getParticipationDetails]({ participantId: session?.address, tokenCanisterId: (canisterId != undefined) ? canisterId : "" }) as {
+                                ok: undefined | ParticipantDetails,
+                                err: undefined | string
                             }
-                            if(participant_details.ok != undefined) {
-                                if(swapType == "boom") {
-                                    if(BigInt(amount_e8s) + BigInt(participant_details.ok.boom_e8s) > current_token_info.token_swap_configs.max_participant_token_e8s) {
+                            if (participant_details.ok != undefined) {
+                                if (swapType == "boom") {
+                                    if (BigInt(amount_e8s) + BigInt(participant_details.ok.boom_e8s) > current_token_info.token_swap_configs.max_participant_token_e8s) {
                                         toast.error("Please check minimum and maximum participation limits per user before participating.");
                                         closeToast();
                                         throw ("");
                                     }
                                 } else if (swapType == "icp") {
-                                    if(BigInt(amount_e8s) + participant_details.ok.icp_e8s > current_token_info.token_swap_configs.max_participant_token_e8s) {
+                                    if (BigInt(amount_e8s) + participant_details.ok.icp_e8s > current_token_info.token_swap_configs.max_participant_token_e8s) {
                                         toast.error("Please check minimum and maximum participation limits per user before participating.");
                                         closeToast();
                                         throw ("");
@@ -557,7 +601,7 @@ export const useGetParticipationEligibility = (): UseQueryResult<boolean> => {
                 }
             };
             let userStakeTier: string = "";
-            await Promise.all([actor[methods.getAllTokensInfo]() as Promise<{ ok: TokensInfo }>, gamingGuild.actor[gamingGuild.methods.getUserBoomStakeTier](session?.address) as Promise<{ ok: string | undefined, err: string | undefined }>]).then((res) => {
+            await Promise.all([actor[methods.getAllTokensInfo]() as Promise<{ ok: TokensInfo }>, gamingGuild.actor[gamingGuild.methods.getUserBoomStakeTier](session?.address || "") as Promise<{ ok: string | undefined, err: string | undefined }>]).then((res) => {
                 tokensInfoRes = res[0];
                 if (res[1].ok != undefined) {
                     userStakeTier = res[1].ok;

@@ -1,28 +1,14 @@
-import React from "react";
-import Form from "@/components/form/Form";
-import FormTextInput from "@/components/form/FormTextInput";
 import Button from "@/components/ui/Button";
 import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { useNavigate, useParams } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { navPaths } from "@/shared";
-import { useSubmitEmail } from "@/api/guilds";
-import Tokens from "../../locale/en/Tokens.json";
 import { useDisburseBoomStakes, useDissolveBoomStakes, useGetBoomStakeInfo, useGetTokensInfo } from "@/api/profile";
-import Space from "@/components/ui/Space";
-import H1 from "@/components/ui/H1";
-import SubHeading from "@/components/ui/SubHeading";
-import Divider from "@/components/ui/Divider";
 import { ErrorResult, LoadingResult, NoDataResult } from "@/components/Results";
-import Pagination from "@/components/Pagination";
 import toast from "react-hot-toast";
-import { useGetUserProfileDetail } from "@/api/profile";
 import { useAuthContext } from "@/context/authContext";
 import { AccountIdentifier } from "@dfinity/ledger-icp";
 import { Principal } from "@dfinity/principal";
-import Loader from "@/components/ui/Loader";
+import { useGetStakingTexts } from "@/api/common";
 
 const Token = () => {
     const { t } = useTranslation();
@@ -31,6 +17,7 @@ const Token = () => {
 
     const { data, isLoading, isError } = useGetTokensInfo();
     const { data: userStakeData, isLoading: isStakeLoading } = useGetBoomStakeInfo();
+    const { data: stakingText } = useGetStakingTexts();
 
     const { mutate: mutateDissolve, isLoading: isDissolveLoading } = useDissolveBoomStakes();
     const { mutate: mutateDisburse, isLoading: isDisburseLoading } = useDisburseBoomStakes();
@@ -52,6 +39,20 @@ const Token = () => {
                             <b>Account Identifier : </b>
                             <p className="">{String(AccountIdentifier.fromPrincipal({ principal: Principal.fromText(principal), subAccount: undefined }).toHex())}</p>
                         </div>
+                        <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
+                    </div>
+                </div>
+            </div>
+        ));
+    };
+
+    const onDissolveClick = () => {
+        toast.custom((t) => (
+            <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
+                <div className="w-2/3 rounded-3xl p-0.5 gradient-bg mt-48 inline-block">
+                    <div className="h-full w-auto dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
+                        <div className="px-4 font-semibold">{stakingText.staking.dissolve_warning}</div>
+                        <Button isLoading={isDissolveLoading} className="mx-auto mb-2 mt-3" onClick={() => mutateDissolve()}>PROCEED</Button>
                         <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
                     </div>
                 </div>
@@ -108,8 +109,8 @@ const Token = () => {
                                                                     <Button disabled className="mr-2 h-10 mt-2">
                                                                         Dissolve
                                                                     </Button> : (userStakeData?.dissolvedAt == 0n && userStakeData?.stakedAt != 0n) ?
-                                                                        <Button isLoading={isDissolveLoading} className="text-xs mr-2 h-10 mt-2" onClick={() => { mutateDissolve() }}>
-                                                                            Dissolve {(userStakeData?.amount == 100n) ? "ELITE" : "PRO"}
+                                                                        <Button className="text-xs mr-2 h-10 mt-2" onClick={() => { onDissolveClick() }}>
+                                                                            Dissolve {(userStakeData?.amount == 10000000000n) ? "ELITE" : "PRO"}
                                                                         </Button> :
                                                                         <Button isLoading={isDisburseLoading} className="mr-2 h-10 mt-2" onClick={() => { mutateDisburse() }}>
                                                                             Disburse

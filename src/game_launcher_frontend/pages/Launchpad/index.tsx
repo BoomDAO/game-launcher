@@ -44,7 +44,7 @@ const Launchpad = () => {
                     (isStakingTierLoading) ? <Loader className="w-8 h-8 mt-4 mx-auto"></Loader> :
                         (stakingTier == "") ? <Button size="large" className="!mt-4 !rounded-xl yellow-red-gradient-bg !text-white !font-semibold !px-6" onClick={(e) => {
                             if (session) {
-                                navigate(navPaths.stake + "/" + boom_ledger_canisterId);
+                                navigate(navPaths.launchpad_stake + "/" + boom_ledger_canisterId);
                                 e.stopPropagation();
                             } else {
                                 setIsOpenNavSidebar(true);

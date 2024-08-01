@@ -89,7 +89,16 @@ const LaunchCard = ({
                         <div className="w-full h-screen bg-black/50 text-center p-0 m-0">
                             <div className="w-2/3 rounded-3xl p-0.5 gradient-bg mt-48 inline-block">
                                 <div className="h-full w-auto dark:bg-white bg-dark rounded-3xl p-4 dark:text-black text-white text-center">
-                                    <div className="text-base py-8 px-8">Please wait for the Public Sale to open. Otherwise you can get early access to token sales by staking BOOM tokens in the Launchpad wallet to join a BOOM Staking Membership.</div>
+                                    <div className="font-semibold text-base pt-8 pb-2 px-8">Please wait for the Public Sale to open. Otherwise you can get early access to token sales by staking BOOM tokens, to join a BOOM Staking Membership.</div>
+                                    <Button size="big" className="mx-auto !text-base !py-2.5 !mt-1 !rounded-xl yellow-red-gradient-bg !text-white !font-semibold !px-6" onClick={(e) => {
+                                        if (session) {
+                                            navigate(navPaths.launchpad_stake + "/" + boom_ledger_canisterId);
+                                            toast.remove();
+                                            e.stopPropagation();
+                                        } else {
+                                            setIsOpenNavSidebar(true);
+                                        }
+                                    }}>STAKE BOOM FOR EARLY SALE ACCESS</Button>
                                     <Button onClick={() => toast.remove()} className="ml-auto">Close</Button>
                                 </div>
                             </div>
@@ -117,7 +126,7 @@ const LaunchCard = ({
                                 <div className={
                                     cx(
                                         (!isWhitelistDetailsLoading && whitelistDetails?.public && whitelistDetails?.elite && whitelistDetails?.pro) ? "mb-48" :
-                                        (!isWhitelistDetailsLoading && !whitelistDetails?.public && whitelistDetails?.elite && whitelistDetails?.pro) ? "mb-56" : "mb-64"
+                                            (!isWhitelistDetailsLoading && !whitelistDetails?.public && whitelistDetails?.elite && whitelistDetails?.pro) ? "mb-56" : "mb-64"
                                     )
                                 }>
                                     {
@@ -147,7 +156,7 @@ const LaunchCard = ({
                         </div>
                         <div className="w-5/12">
                             {
-                                (canisterId == undefined) ? <img className="w-4 float-right m-2" src="./arrow.svg" /> : <></>
+                                (canisterId == undefined) ? <img className="w-8 float-right m-2" src="./arrow.svg" /> : <></>
                             }
                             <div className={cx(
                                 "p-5",
@@ -220,12 +229,17 @@ const LaunchCard = ({
                                 </div>
                                 <div className="h-0.5 bg-white dark:bg-gray-300 mt-4"></div>
                                 {
-                                    (swap.status == "Active") ? <div className="flex text-white dark:text-black w-full mt-2">
+                                    (swap.status == "Active" && !isWhitelistDetailsLoading && whitelistDetails?.public) ? <div className="flex text-white dark:text-black w-full mt-2">
                                         <p className="font-light w-1/4">ENDS IN  </p>
                                         <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} />
-                                    </div> : <div className="text-white dark:text-black mt-2 w-full">
-                                        {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
-                                    </div>
+                                    </div> :
+                                        (swap.status == "Active" && !isWhitelistDetailsLoading && !whitelistDetails?.public) ? <div className="flex text-white dark:text-black w-full mt-2">
+                                            <p className="font-light w-1/4">STARTS IN  </p>
+                                            <FormattedDate days={swap.endTimestamp.days} hrs={swap.endTimestamp.hrs} mins={swap.endTimestamp.mins} />
+                                        </div> :
+                                            <div className="text-white dark:text-black mt-2 w-full">
+                                                {(swap.result) ? <p>STATUS : FUNDED</p> : <p>STATUS : FAILED</p>}
+                                            </div>
                                 }
                             </div>
                         </div>
@@ -382,9 +396,9 @@ const LaunchCard = ({
                     <div className="dark:text-black text-white text-xl font-bold">SALE OPENS 24 HOUR EARLY FOR ELITE STAKERS AND 12 HOUR EARLY FOR PRO STAKERS</div>
                     {
                         (isStakingTierLoading) ? <Loader className="w-8 h-8 mt-4 mx-auto"></Loader> :
-                            (stakingTier == "") ? <Button size="big" className="!mt-4 !rounded-xl yellow-red-gradient-bg !text-white !font-semibold !px-6" onClick={(e) => {
+                            (stakingTier == "") ? <Button size="big" className="mx-auto !text-base !py-2.5 !mt-4 !rounded-xl yellow-red-gradient-bg !text-white !font-semibold !px-6" onClick={(e) => {
                                 if (session) {
-                                    navigate(navPaths.stake + "/" + boom_ledger_canisterId);
+                                    navigate(navPaths.launchpad_stake + "/" + boom_ledger_canisterId);
                                     e.stopPropagation();
                                 } else {
                                     setIsOpenNavSidebar(true);

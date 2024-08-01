@@ -41,7 +41,6 @@ actor SwapCanister {
   // Stable memory
   private var dev_principal = Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe");
   private stable var _wasm_version_id : Nat32 = 0;
-  private stable var _participant_id : Nat = 0;
 
   private stable var _ledger_wasms : Trie.Trie<Nat32, [Nat8]> = Trie.empty(); // version_number <-> icrc_ledger_wasm
   private stable var _tokens : Trie.Trie<Text, Swap.Token> = Trie.empty(); // token_canister_id <-> Token detail
@@ -51,7 +50,7 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
-  public func updateSwapConfig(cid : Text, due_timestamp_seconds : ?Int, start : ?Int, minimum : ?Nat64) : async () {
+  public func updateSwapConfig(cid : Text, due_timestamp_seconds : ?Int, start : ?Int, minimum : ?Nat64, clear : ?Bool) : async () {
     let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
     _swap_configs := Trie.put(
       _swap_configs,
@@ -68,7 +67,12 @@ actor SwapCanister {
         swap_type = configs.swap_type;
       },
     ).0;
-
+    switch (clear) {
+      case (?true) {
+        _swap_participants := Trie.remove(_swap_participants, Helper.keyT(cid), Text.equal).0;
+      };
+      case _ {};
+    };
     _swap_status := Trie.put(
       _swap_status,
       Helper.keyT(cid),

@@ -36,6 +36,7 @@ import Participate from "./pages/Launchpad/Participate";
 import Iframe from "./pages/GamingGuilds/Iframe";
 import WalletStake from "./pages/Wallet/WalletStake";
 import GeoBlockedRoute from "./components/GeoBlockedRoute";
+import LaunchpadStake from "./pages/Wallet/LaunchpadStake";
 
 function App() {
   return (
@@ -138,6 +139,10 @@ function App() {
                 <Route
                   path={`${navPaths.stake}/:canisterId`}
                   element={<WalletStake />}
+                />
+                <Route
+                  path={`${navPaths.launchpad_stake}/:canisterId`}
+                  element={<LaunchpadStake />}
                 />
                 <Route
                   path={`${navPaths.nftTransfer}/:canisterId/:tokenid`}

@@ -4882,8 +4882,8 @@ actor class WorldTemplate(owner : Principal) = this {
   };
 
   // BOOM token staking for DAO
-  private var _proStake : Nat = 50;
-  private var _eliteStake : Nat = 100;
+  private var _proStake : Nat = 5000000000; 
+  private var _eliteStake : Nat = 10000000000;
   private stable var _boomStakes : Trie.Trie<Text, TStaking.ICRCStake> = Trie.empty(); // key -> (user principal id)
   //ICRC Stake verification checks and staking
   //1. If user already staked tokens, check for upgrading tier with token difference amount only (excess tokens will be transferred back) TO BE DECIDED
@@ -4968,25 +4968,77 @@ actor class WorldTemplate(owner : Principal) = this {
   public shared ({ caller }) func stakeBoomTokens(blockIndex : Nat, toPrincipal : Text, fromPrincipal : Text, amt : Nat, kind : TStaking.ICRCStakeKind) : async (Result.Result<Text, Text>) {
     assert (Principal.fromText(fromPrincipal) == caller);
     assert (Principal.fromText(toPrincipal) == WorldId());
+    assert (amt == _proStake or amt == _eliteStake or amt == (_eliteStake - _proStake));
     let _staker : Text = Principal.toText(caller);
     switch (Trie.find(_boomStakes, Utils.keyT(_staker), Text.equal)) {
       case (?stakeInfo) {
-        switch (stakeInfo.kind) {
-          case (#pro) {
-            let difference_for_tier_upgrade : Nat = _eliteStake - _proStake;
-            if (amt < difference_for_tier_upgrade) {
-              let _ = await transferBoom_(fromPrincipal, amt - 100000);
-              return #err("you are already PRO staker and the amount transferred is not sufficient to upgrade tier to ELITE.");
-            } else {
+        // Two cases to handle - 1. Upgrade 2. Re-Staking (after previous stakes got dissolved)
+        if (stakeInfo.dissolvedAt == 0) {
+          // Upgrade
+          switch (stakeInfo.kind) {
+            case (#pro) {
+              let difference_for_tier_upgrade : Nat = _eliteStake - _proStake;
+              if (amt < difference_for_tier_upgrade) {
+                let _ = await transferBoom_(fromPrincipal, amt - 100000);
+                return #err("you are already PRO staker and the amount transferred is not sufficient to upgrade tier to ELITE.");
+              } else {
+                switch (kind) {
+                  case (#pro) {
+                    let _ = await transferBoom_(fromPrincipal, amt - 100000);
+                    return #err("you are already a PRO Staker. If you want to upgrade to ELITE, clicke on ELITE BOOM staker.");
+                  };
+                  case (#elite) {
+                    switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                      case (#ok o) {
+                        let newStakeInfo : TStaking.ICRCStake = {
+                          staker = _staker;
+                          tokenCanisterId = ENV.BoomLedgerCanisterId;
+                          amount = _eliteStake;
+                          kind = #elite;
+                          stakedAt = Time.now();
+                          dissolvedAt = 0;
+                        };
+                        _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                      };
+                      case (#err e) {
+                        return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
+                      };
+                    };
+                  };
+                };
+              };
+            };
+            case (#elite) {
+              return #err("you are already a ELITE staker.");
+            };
+          };
+        } else if (stakeInfo.dissolvedAt != 0) {
+          // Re-Staking
+          switch (stakeInfo.kind) {
+            case (#pro) {
               switch (kind) {
                 case (#pro) {
-                  let _ = await transferBoom_(fromPrincipal, amt - 100000);
-                  return #err("you are already a PRO Staker. If you want to upgrade to ELITE, clicke on ELITE BOOM staker.");
+                  switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                    case (#ok o) {
+                      let newStakeInfo : TStaking.ICRCStake = {
+                        staker = _staker;
+                        tokenCanisterId = ENV.BoomLedgerCanisterId;
+                        amount = _proStake;
+                        kind = #pro;
+                        stakedAt = Time.now();
+                        dissolvedAt = 0;
+                      };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
+                      _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                    };
+                    case (#err e) {
+                      return #err("We could not verify $BOOM transfer for PRO re-staking, please contact dev team in discord.");
+                    };
+                  };
                 };
                 case (#elite) {
                   switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
                     case (#ok o) {
-                      let _ = await transferBoom_(fromPrincipal, amt - difference_for_tier_upgrade - 100000);
                       let newStakeInfo : TStaking.ICRCStake = {
                         staker = _staker;
                         tokenCanisterId = ENV.BoomLedgerCanisterId;
@@ -4995,18 +5047,58 @@ actor class WorldTemplate(owner : Principal) = this {
                         stakedAt = Time.now();
                         dissolvedAt = 0;
                       };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
                       _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
                     };
                     case (#err e) {
-                      return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
+                      return #err("We could not verify $BOOM transfer for ELITE re-staking, please contact dev team in discord.");
                     };
                   };
                 };
               };
             };
-          };
-          case (#elite) {
-            return #err("you are already a ELITE staker.");
+            case (#elite) {
+              switch (kind) {
+                case (#pro) {
+                  switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                    case (#ok o) {
+                      let newStakeInfo : TStaking.ICRCStake = {
+                        staker = _staker;
+                        tokenCanisterId = ENV.BoomLedgerCanisterId;
+                        amount = _proStake;
+                        kind = #pro;
+                        stakedAt = Time.now();
+                        dissolvedAt = 0;
+                      };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
+                      _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                    };
+                    case (#err e) {
+                      return #err("We could not verify $BOOM transfer for PRO re-staking, please contact dev team in discord.");
+                    };
+                  };
+                };
+                case (#elite) {
+                  switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                    case (#ok o) {
+                      let newStakeInfo : TStaking.ICRCStake = {
+                        staker = _staker;
+                        tokenCanisterId = ENV.BoomLedgerCanisterId;
+                        amount = _eliteStake;
+                        kind = #elite;
+                        stakedAt = Time.now();
+                        dissolvedAt = 0;
+                      };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
+                      _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                    };
+                    case (#err e) {
+                      return #err("We could not verify $BOOM transfer for ELITE re-staking, please contact dev team in discord.");
+                    };
+                  };
+                };
+              };
+            };
           };
         };
       };
@@ -5161,6 +5253,9 @@ actor class WorldTemplate(owner : Principal) = this {
 
   public query func getUserBoomStakeTier(uid : Text) : async (Result.Result<Text, Text>) {
     let ?stake = Trie.find(_boomStakes, Utils.keyT(uid), Text.equal) else return #err("User has no BOOM token stakes at BOOM DAO.");
+    if (stake.dissolvedAt != 0) {
+      return #err("User has already dissolved BOOM token stakes, Re-Stake BOOM tokens.");
+    };
     switch (stake.kind) {
       case (#pro) {
         return #ok("PRO");
@@ -5173,26 +5268,26 @@ actor class WorldTemplate(owner : Principal) = this {
 
   public query func getEliteStakeUsers() : async [Text] {
     var b = Buffer.Buffer<Text>(0);
-    for((i, v) in Trie.iter(_boomStakes)) {
+    for ((i, v) in Trie.iter(_boomStakes)) {
       switch (v.kind) {
         case (#elite) {
           b.add(i);
         };
         case _ {};
-      }
+      };
     };
     return Buffer.toArray(b);
   };
 
   public query func getProStakeUsers() : async [Text] {
     var b = Buffer.Buffer<Text>(0);
-    for((i, v) in Trie.iter(_boomStakes)) {
+    for ((i, v) in Trie.iter(_boomStakes)) {
       switch (v.kind) {
         case (#pro) {
           b.add(i);
         };
         case _ {};
-      }
+      };
     };
     return Buffer.toArray(b);
   };
