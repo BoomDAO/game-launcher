@@ -55,7 +55,7 @@ export class WalletChannel implements Channel {
 
 export class PlugTransport implements Transport {
     establishChannel(): Promise<Channel> {
-        const plugChannel = new WalletChannel({ sendMethod: (data : any) => (window as any).ic.plug.request(data) })
+        const plugChannel = new WalletChannel({ sendMethod: (data : any) => (window as any).ic.plug.request(data) });
         return Promise.resolve(plugChannel)
     }
 }

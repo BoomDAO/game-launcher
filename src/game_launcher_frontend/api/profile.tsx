@@ -1280,6 +1280,9 @@ export const useUpdateProfileUsername = () => {
             try {
                 const { actor, methods } = await useWorldHubClient();
                 let current_user_principal = session?.address;
+                console.log(current_user_principal);
+                console.log(session?.identity);
+                console.log(session?.identity?.getPrincipal().toString());
                 if (checkUsernameRegex(username) == false) {
                     toast.error("Username should be less than 15 characters and should not contain whiteSpaces. Try again!");
                     closeToast();
@@ -1287,6 +1290,7 @@ export const useUpdateProfileUsername = () => {
                 };
                 const guildCanister = await useGamingGuildsClient();
                 let res = await actor[methods.setUsername](current_user_principal, username) as { ok: string | undefined, err: string | undefined };
+                console.log(res);
                 if (res.ok == undefined) {
                     toast.error("Username not available, try different username.");
                     closeToast();

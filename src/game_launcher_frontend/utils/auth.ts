@@ -7,8 +7,10 @@ import { AuthClientStorage } from "@dfinity/auth-client/lib/cjs/storage";
 import { IdleOptions } from "@dfinity/auth-client";
 import { Signer, createDelegationPermissionScope, createAccountsPermissionScope, createCallCanisterPermissionScope } from "@slide-computer/signer";
 import { PlugTransport } from "./plugTransport";
-import { Transport } from "./transport";  
+import { Transport } from "./transport";
 import { Principal } from "@dfinity/principal";
+import { DelegationIdentity, Ed25519KeyIdentity } from "@dfinity/identity";
+import { gamingGuildsCanisterId, worldHubCanisterId } from "@/hooks";
 // import { MyStorage } from "./MyStorage";
 
 type NFIDConfig = {
@@ -22,6 +24,10 @@ type NFIDConfig = {
   keyType?: "ECDSA" | "ed25519" // default is "ECDSA"
   idleOptions?: IdleOptions;
 };
+type PlugPublicKey = {
+  rawKey: ArrayBuffer,
+  derKey: ArrayBuffer
+}
 
 var nfid: NFID | null = null;
 // let storage = new MyStorage();
@@ -65,25 +71,32 @@ export const nfidEmbedLogin = async (nfid: NFID) => {
   return delegationIdentity;
 };
 
-export const plugLogin = async () => {
-  // const publicKey = await window.ic.plug.requestConnect();
-  // console.log(publicKey);
-  const transport : Transport = new PlugTransport();
-  if (transport.connection && !transport.connection.connected) {
-    await transport.connection.connect();
+export const plugLogin = async (signer : Signer, publicKey : PlugPublicKey) => {
+  try {
+    console.log("plugLogin");
+    // const permissions = await signer.requestPermissions([createDelegationPermissionScope({})]);
+    console.log(signer);
+    console.log(publicKey.derKey);
+    const response = await signer.delegation({
+      publicKey: publicKey.derKey,
+      targets: [],
+      maxTimeToLive: undefined // 24 Hrs
+    });
+    console.log(response);
+    const newIdentity = DelegationIdentity.fromDelegation(publicKey as any, response);
+    console.log(newIdentity);
+    return newIdentity;
+  } catch (e) {
+    throw e;
   }
-  let signer = new Signer({transport});
-  const permissions = await signer.requestPermissions([createAccountsPermissionScope(), createDelegationPermissionScope({}), createCallCanisterPermissionScope()]);
-  console.log(permissions);
-  const accounts = await signer.accounts();
-  console.log(accounts);
-  // let delegation = await signer.delegation({
-  //   publicKey: publicKey.derKey,
-  //   targets: [],
-  //   maxTimeToLive: undefined
-  // });
-  // console.log(delegation);
 };
+
+export const getPlugSigner = async () => {
+  console.log("getPlugSigner");
+  const transport: Transport = new PlugTransport();
+  let signer = new Signer({ transport });
+  return signer;
+}
 
 export const getAuthClient = async () =>
   await AuthClient.create({
@@ -105,6 +118,21 @@ export const getNfid = async () => {
   });
   nfid = new_nfid;
   return new_nfid;
+};
+
+const onPlugConnectionUpdate = () => {
+  console.log((window as any).ic.plug.sessionManager.sessionData);
+}
+
+export const getPlugKey = async () => {
+  console.log("getPlugKey runned");
+  const pubKey = await (window as any).ic.plug.requestConnect({
+    whitelist: [gamingGuildsCanisterId, worldHubCanisterId],
+    host: undefined,
+    onPlugConnectionUpdate,
+    timeout: 50000
+  });
+  return pubKey;
 };
 
 export const getAgent = async (identity?: Identity) =>

@@ -42,7 +42,7 @@ const games_canisterId = "ltwhn-5iaaa-aaaao-askdq-cai";
 const minting_canisterId = "fbkar-zaaaa-aaaal-qbzca-cai"; 
 const token_deployerId = "pffwa-eiaaa-aaaam-abn5a-cai"; 
 const world_deployerId = "na2jz-uqaaa-aaaal-qbtfq-cai"; 
-const worldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
+export const worldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
 const guildsVerifierCanisterId = "yv22q-myaaa-aaaal-adeuq-cai"
 export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
 const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
@@ -73,9 +73,13 @@ const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
 export const useWorldDeployerClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
-  const agent = await getAgent(identity);
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
+
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
   return {
     actor: Actor.createActor(WorldDeployerFactory, {
       agent,
@@ -108,9 +112,13 @@ export const useWorldDeployerClient = async () => {
 export const useWorldHubClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
-  const agent = await getAgent(identity);
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
+
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
   return {
     actor: Actor.createActor(WorldHubFactory, {
       agent,
@@ -134,9 +142,13 @@ export const useWorldHubClient = async () => {
 export const useWorldClient = async (canisterId : string) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
-  const agent = await getAgent(identity);
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
+
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
   return {
     actor: Actor.createActor(WorldFactory, {
       agent,
@@ -160,10 +172,13 @@ export const useWorldClient = async (canisterId : string) => {
 export const useTokenDeployerClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(TokenDeployerFactory, {
@@ -188,10 +203,13 @@ export const useTokenDeployerClient = async () => {
 export const useTokenClient = async (token_canister_id : string) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(TokenFactory, {
@@ -212,10 +230,13 @@ export const useTokenClient = async (token_canister_id : string) => {
 export const useGameClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(GamesDeployerFactory, {
@@ -246,10 +267,13 @@ export const useGameClient = async () => {
 export const useAssetClient = async (canister_id: string) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(AssetFactory, {
@@ -268,10 +292,13 @@ export const useAssetClient = async (canister_id: string) => {
 export const useMintingDeployerClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(MintingDeployerFactory, {
@@ -299,10 +326,13 @@ export const useMintingDeployerClient = async () => {
 export const useLedgerClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(LedgerFactory, {
@@ -316,10 +346,13 @@ export const useLedgerClient = async () => {
 export const useExtClient = async (canister_id?: string) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(ExtFactory, {
@@ -340,10 +373,13 @@ export const useExtClient = async (canister_id?: string) => {
 export const useManagementClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(ManagementFactory, {
@@ -362,10 +398,13 @@ export const useManagementClient = async () => {
 export const useGuildsVerifierClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(GuildsVerifierFactory, {
@@ -384,10 +423,13 @@ export const useGuildsVerifierClient = async () => {
 export const useGamingGuildsClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(GamingGuildsFactory, {
@@ -419,10 +461,13 @@ export const useGamingGuildsClient = async () => {
 export const useGamingGuildsWorldNodeClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(GamingGuildsWorldNodeFactory, {
@@ -444,10 +489,13 @@ export const useGamingGuildsWorldNodeClient = async () => {
 export const useBoomLedgerClient = async () => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
 
-  const agent = await getAgent(identity);
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
 
   return {
     actor: Actor.createActor(BOOMLedgerFactory, {
@@ -464,9 +512,13 @@ export const useBoomLedgerClient = async () => {
 export const useICRCLedgerClient = async (canister_id: string) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
-  const agent = await getAgent(identity);
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
+  // const agent = await getAgent(identity);
+
+  const agent = (await (window as any).ic.plug.agent).agent;
+  
+
   return {
     actor: Actor.createActor(BOOMLedgerFactory, {
       agent,
