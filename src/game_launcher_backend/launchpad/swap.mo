@@ -39,7 +39,6 @@ import Hex "../utils/Hex";
 actor SwapCanister {
 
   // Stable memory
-  private var dev_principal = Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe");
   private stable var _wasm_version_id : Nat32 = 0;
 
   private stable var _ledger_wasms : Trie.Trie<Nat32, [Nat8]> = Trie.empty(); // version_number <-> icrc_ledger_wasm
@@ -50,38 +49,52 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
-  public func updateSwapConfig(cid : Text, due_timestamp_seconds : ?Int, start : ?Int, minimum : ?Nat64, clear : ?Bool) : async () {
-    let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
-    _swap_configs := Trie.put(
-      _swap_configs,
-      Helper.keyT(cid),
-      Text.equal,
-      {
-        token_supply_configs = configs.token_supply_configs;
-        min_token_e8s = Option.get(minimum, configs.min_token_e8s);
-        max_token_e8s = configs.max_token_e8s;
-        min_participant_token_e8s = configs.min_participant_token_e8s;
-        max_participant_token_e8s = configs.max_participant_token_e8s;
-        swap_start_timestamp_seconds = Option.get(start, configs.swap_start_timestamp_seconds);
-        swap_due_timestamp_seconds = Option.get(due_timestamp_seconds, configs.swap_due_timestamp_seconds);
-        swap_type = configs.swap_type;
-      },
-    ).0;
-    switch (clear) {
-      case (?true) {
-        _swap_participants := Trie.remove(_swap_participants, Helper.keyT(cid), Text.equal).0;
-      };
-      case _ {};
-    };
-    _swap_status := Trie.put(
-      _swap_status,
-      Helper.keyT(cid),
-      Text.equal,
-      {
-        running = false;
-        is_successfull = null;
-      },
-    ).0;
+  // public func updateSwapConfig(cid : Text, due_timestamp_seconds : ?Int, start : ?Int, minimum : ?Nat64, clear : ?Bool) : async () {
+  //   let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
+  //   _swap_configs := Trie.put(
+  //     _swap_configs,
+  //     Helper.keyT(cid),
+  //     Text.equal,
+  //     {
+  //       token_supply_configs = configs.token_supply_configs;
+  //       min_token_e8s = Option.get(minimum, configs.min_token_e8s);
+  //       max_token_e8s = configs.max_token_e8s;
+  //       min_participant_token_e8s = configs.min_participant_token_e8s;
+  //       max_participant_token_e8s = configs.max_participant_token_e8s;
+  //       swap_start_timestamp_seconds = Option.get(start, configs.swap_start_timestamp_seconds);
+  //       swap_due_timestamp_seconds = Option.get(due_timestamp_seconds, configs.swap_due_timestamp_seconds);
+  //       swap_type = configs.swap_type;
+  //     },
+  //   ).0;
+  //   switch (clear) {
+  //     case (?true) {
+  //       _swap_participants := Trie.remove(_swap_participants, Helper.keyT(cid), Text.equal).0;
+  //     };
+  //     case _ {};
+  //   };
+  //   _swap_status := Trie.put(
+  //     _swap_status,
+  //     Helper.keyT(cid),
+  //     Text.equal,
+  //     {
+  //       running = false;
+  //       is_successfull = null;
+  //     },
+  //   ).0;
+  // };
+
+  public func updateFAQ(cid : Text, arg : [(Text, Text)]) : async () {
+    let ?p = Trie.find(_projects, Helper.keyT(cid), Text.equal) else return ();
+    _projects := Trie.put(_projects, Helper.keyT(cid), Text.equal, {
+      name = p.name;
+        website = p.website;
+        bannerUrl = p.bannerUrl;
+        description = p.description;
+        metadata = arg;
+        creator = p.creator;
+        creatorAbout = p.creatorAbout;
+        creatorImageUrl = p.creatorImageUrl;
+    }).0;
   };
 
   // actor interfaces
@@ -216,9 +229,9 @@ actor SwapCanister {
         switch (op) {
           case (#Transfer { to; fee; from; amount }) {
             if (Hex.encode(Blob.toArray(to)) == toAccountId and Hex.encode(Blob.toArray(from)) == fromAccountId and amount == amt) {
-              return #ok("verified");
+              return #ok("valid tx");
             } else {
-              return #err("invalid tx");
+              return #err("tx not valid");
             };
           };
           case (#Burn {}) {
@@ -274,13 +287,13 @@ actor SwapCanister {
       switch (transfer) {
         case (?tt) {
           if (tt.from == from_ and tt.to == to_ and tt.amount == amt) {
-            return #ok("verified!");
+            return #ok("valid tx");
           } else {
-            return #err("tx transfer details mismatch!");
+            return #err("tx transfer details mismatch");
           };
         };
         case (null) {
-          return #err("tx transfer details not found!");
+          return #err("tx transfer details not found");
         };
       };
 
@@ -289,17 +302,17 @@ actor SwapCanister {
       switch (mint) {
         case (?tt) {
           if (tt.to == to_ and tt.amount == amt) {
-            return #ok("verified!");
+            return #ok("verified");
           } else {
-            return #err("tx mint details mismatch!");
+            return #err("tx mint details mismatch");
           };
         };
         case (null) {
-          return #err("tx mint details not found!");
+          return #err("tx mint details not found");
         };
       };
     } else {
-      return #err("not a transfer!");
+      return #err("not a transfer");
     };
   };
 
@@ -432,7 +445,6 @@ actor SwapCanister {
                 icp_e8s = info.icp_e8s;
                 boom_e8s = info.boom_e8s;
                 token_e8s = info.token_e8s;
-                refund_result = null;
                 icp_refund_result = null;
                 boom_refund_result = null;
                 mint_result = ?res;
@@ -870,12 +882,18 @@ actor SwapCanister {
   };
 
   // Update methods
+  // TODO : SNS : Protect this method for generic proposal
   public shared ({ caller }) func upload_ledger_wasm(arg : { ledger_wasm : [Nat8] }) : async () {
-    // assert (caller == dev_principal);
     _ledger_wasms := Trie.put(_ledger_wasms, Helper.key(_wasm_version_id), Nat32.equal, arg.ledger_wasm).0;
     _wasm_version_id := _wasm_version_id + 1;
   };
 
+  // TODO : SNS
+  public shared ({ caller }) func remove_ledger_wasm(arg : { version : Nat32 }) : async () {
+    _ledger_wasms := Trie.remove(_ledger_wasms, Helper.key(arg.version), Nat32.equal).0;
+  };
+
+  // TODO : SNS 
   public shared ({ caller }) func create_icrc_token(args : { project : Swap.TokenProject; token_init_arg : ICRC.InitArgs }) : async ({
     canister_id : Text;
   }) {
@@ -883,7 +901,7 @@ actor SwapCanister {
     let res = await management_canister.create_canister({
       settings = ?{
         freezing_threshold = null;
-        controllers = ?[dev_principal, Principal.fromActor(SwapCanister)];
+        controllers = ?[Principal.fromActor(SwapCanister)];
         memory_allocation = null;
         compute_allocation = null;
       };
@@ -932,13 +950,8 @@ actor SwapCanister {
     return { canister_id = Principal.toText(canister_id) };
   };
 
-  public shared ({ caller }) func list_icrc_token(token : Swap.Token) : async () {
-    // assert (caller == dev_principal);
-    _tokens := Trie.put(_tokens, Helper.keyT(token.token_canister_id), Text.equal, token).0;
-  };
-
+  // TODO : SNS
   public shared ({ caller }) func set_token_swap_configs(arg : { configs : Swap.TokenSwapConfigs; canister_id : Text }) : async (Result.Result<Swap.TokenSwapConfigs, Text>) {
-    // assert (caller == dev_principal);
     switch (Trie.find(_tokens, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?_) {
         _swap_configs := Trie.put(_swap_configs, Helper.keyT(arg.canister_id), Text.equal, arg.configs).0;
@@ -959,7 +972,7 @@ actor SwapCanister {
         return #err("Token swap already running.");
       };
     };
-    // Swap will get opened 6hours before for Stakers
+    // Swap will get opened 24 hours before for Stakers
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
         let current_time_in_seconds : Int = Time.now() / 1000000000;
@@ -1046,11 +1059,11 @@ actor SwapCanister {
           case (#ok tier) {
             if (tier == "PRO") {
               if (swap_start_time_seconds - swap_time_for_pro_tier_in_seconds > current_time_in_seconds) {
-                return #err("Being a PRO BOOM Staker you can only participate 3 hours before Token Swap becomes Public.");
+                return #err("Being a PRO BOOM Staker you can only participate 12 hours before Token Swap becomes Public.");
               };
             } else if (tier == "ELITE") {
               if (swap_start_time_seconds - swap_time_for_elite_tier_in_seconds > current_time_in_seconds) {
-                return #err("Being a ELITE BOOM Staker you can only participate 6 hours before Token Swap becomes Public.");
+                return #err("Being a ELITE BOOM Staker you can only participate 24 hours before Token Swap becomes Public.");
               };
             };
           };
@@ -1255,7 +1268,6 @@ actor SwapCanister {
   // 1. Sale timestamp is it over or not?
   // 2. total_icp/total_boom reached the goal?
   public shared ({ caller }) func settle_swap_status_and_allocate_tokens_if_swap_successfull(arg : { canister_id : Text }) : async (Result.Result<Text, Text>) {
-    // assert (caller == dev_principal);
     var swap_type : Swap.TokenSwapType = #boom;
     switch (Trie.find(_swap_configs, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?configs) {
@@ -1345,7 +1357,7 @@ actor SwapCanister {
               is_successfull = ?false;
             },
           ).0;
-          return #ok("token swap failed, icp will be refunded to participants.");
+          return #ok("token swap failed, icp/boom used to participate will be refunded to participants.");
         };
       };
       case _ {
@@ -1362,7 +1374,7 @@ actor SwapCanister {
           if (status.running) {
             return #err("token swap still running.");
           } else {
-            return #err("token swap stopped, but status not found.");
+            return #err("token swap stopped, but status not found. Contact dev team in discord.");
           };
         };
         if (is_successfull) {
@@ -1374,7 +1386,7 @@ actor SwapCanister {
         };
       };
       case _ {
-        return #err("token swap status not found.");
+        return #err("token swap status not found. Contact dev team in discord.");
       };
     };
   };
@@ -1405,10 +1417,6 @@ actor SwapCanister {
 
   public query func getTotalLedgerWasms() : async (Nat) {
     return Trie.size(_ledger_wasms);
-  };
-
-  public shared ({ caller }) func removeLedgerWasmVersion(arg : { version : Nat32 }) : async () {
-    _ledger_wasms := Trie.remove(_ledger_wasms, Helper.key(arg.version), Nat32.equal).0;
   };
 
   public query func cycleBalance() : async (Nat) {

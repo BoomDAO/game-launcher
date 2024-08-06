@@ -658,8 +658,7 @@ export interface TokenProject {
   'creator': string,
   'metadata': Array<[string, string]>,
   'name': string,
-  'description': { 'formattedText': string } |
-  { 'plainText': string },
+  'description': { 'formattedText': string } | { 'plainText': string },
   'website': string,
   'bannerUrl': string,
   'creatorImageUrl': string,
@@ -704,6 +703,7 @@ export interface SwapConfigs {
   };
   status: "Active" | "Inactive" | "Upcoming";
   result: boolean;
+  supply_configs: SupplyConfigs;
 }
 
 export interface ProjectConfigs {
@@ -714,6 +714,7 @@ export interface ProjectConfigs {
   creator: string;
   creatorAbout: string;
   creatorImageUrl: string;
+  faqs: [[string, string]];
 }
 
 export interface ICRCStake {

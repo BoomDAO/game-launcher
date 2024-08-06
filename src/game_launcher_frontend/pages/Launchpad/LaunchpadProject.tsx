@@ -16,8 +16,8 @@ const LaunchpadProject = () => {
     const { data: launchCards, isLoading, isError } = useGetTokenInfo();
     const [activeTab, setActiveTab] = React.useState(1);
     const tabItems = [
-        { id: 1, name: "About Project" },
-        { id: 2, name: "Token Allocations" },
+        { id: 1, name: "ABOUT PROJECT" },
+        { id: 2, name: "TOKEN ALLOCATIONS" },
         { id: 3, name: "FAQS" }
     ];
     return (
@@ -44,9 +44,9 @@ const LaunchpadProject = () => {
                                                     <div className="flex mt-20 w-full mb-10">
                                                         <div className="w-1/4">
                                                             <div><img src={project.creatorImageUrl} className="w-20 h-20 rounded-primary" /></div>
-                                                            <div>{project.creator}</div>
+                                                            <div className="text-base font-semibold">{project.creator}</div>
                                                         </div>
-                                                        <div className="w-3/4 pt-10 text-sm">
+                                                        <div className="w-3/4 pt-10 text-base">
                                                             {project.creatorAbout}
                                                         </div>
                                                     </div>
@@ -55,18 +55,45 @@ const LaunchpadProject = () => {
                                                         <div className="w-1/4 mt-10"><VerticalTabs tabs={tabItems} active={activeTab} setActive={setActiveTab} /></div>
                                                         <div className="w-3/4 mt-12 text-sm">
                                                             {activeTab === 1 && (
-                                                                <div className="">
+                                                                <div className="text-base">
                                                                     {project.description}
                                                                 </div>
                                                             )}
                                                             {activeTab === 2 && (
-                                                                <div className="">
-                                                                    Token Allocations
+                                                                <div className="text-base">
+                                                                    <div>
+                                                                    <div>Token Sale</div>
+                                                                    <div>{ (swap.swapType == "BOOM") ? String(swap.supply_configs.gaming_guilds.boom) + " BOOM" : String(swap.supply_configs.gaming_guilds.icp) + " ICP" }</div>
+                                                                    <div>{String(swap.supply_configs.gaming_guilds.icrc)} {token.symbol}</div>
+                                                                    </div>
+
+                                                                    <div>Gaming Guilds</div>
+                                                                    <div>{String(swap.supply_configs.gaming_guilds.boom)} BOOM</div>
+                                                                    <div>{String(swap.supply_configs.gaming_guilds.icp)} ICP</div>
+                                                                    <div>Project Team</div>
+                                                                    <div>{String(swap.supply_configs.team.boom)} BOOM</div>
+                                                                    <div>{String(swap.supply_configs.team.icp)} ICP</div>
+                                                                    <div>BOOM DAO Treasury</div>
+                                                                    <div>{String(swap.supply_configs.boom_dao_treasury.boom)} BOOM</div>
+                                                                    <div>{String(swap.supply_configs.boom_dao_treasury.icp)} ICP</div>
+                                                                    <div>Liquidity Pool</div>
+                                                                    <div>{String(swap.supply_configs.liquidity_pool.boom)} BOOM</div>
+                                                                    <div>{String(swap.supply_configs.liquidity_pool.icp)} ICP</div>
+                                                                    <div>Token Sale</div>
+                                                                    <div>{String(swap.supply_configs.gaming_guilds.boom)} BOOM</div>
+                                                                    <div>{String(swap.supply_configs.gaming_guilds.icp)} ICP</div>
                                                                 </div>
                                                             )}
                                                             {activeTab === 3 && (
                                                                 <div className="">
-                                                                    Hitesh Tripathi
+                                                                    {
+                                                                        (project.faqs.map((val) => (
+                                                                            <div className="mt-4" key={val[0]}>
+                                                                                <li className="text-lg font-semibold">{val[0]}</li>
+                                                                                <div className="text-base ml-7">{val[1]}</div>
+                                                                            </div>
+                                                                        )))
+                                                                    }
                                                                 </div>
                                                             )}
                                                         </div>

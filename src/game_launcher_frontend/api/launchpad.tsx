@@ -93,6 +93,13 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                         }
                     }
                     if (current_token_info.token_canister_id == canisterId) {
+                        // process FAQs from project metadata
+                        let _faqs = [];
+                        for (let i = 0; i < current_token_info.token_project_configs.metadata.length; i += 1) {
+                            if (current_token_info.token_project_configs.metadata[i][0].substring(0, 3) == "faq") {
+                                _faqs.push([current_token_info.token_project_configs.metadata[i][0].substring(4), current_token_info.token_project_configs.metadata[i][1]]);
+                            };
+                        };
                         token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                         let cardInfo: LaunchCardProps = {
                             id: current_token_info.token_canister_id,
@@ -103,7 +110,8 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 website: current_token_info.token_project_configs.website,
                                 creator: current_token_info.token_project_configs.creator,
                                 creatorAbout: current_token_info.token_project_configs.creatorAbout,
-                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl,
+                                faqs: _faqs as [[string, string]]
                             },
                             swap: {
                                 swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
@@ -115,7 +123,8 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 participants: "0",
                                 endTimestamp: (whitelist_detail.public) ? msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000) : msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                                 status: "Active",
-                                result: false
+                                result: false,
+                                supply_configs: current_token_info.token_swap_configs.token_supply_configs
                             },
                             token: {
                                 name: current_token_info.token_configs.name,
@@ -130,6 +139,13 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
                     let current_token_info = tokensInfo.inactive[i];
                     if (current_token_info.token_canister_id == canisterId) {
+                        // process FAQs from project metadata
+                        let _faqs = [];
+                        for (let i = 0; i < current_token_info.token_project_configs.metadata.length; i += 1) {
+                            if (current_token_info.token_project_configs.metadata[i][0].substring(0, 3) == "faq") {
+                                _faqs.push([current_token_info.token_project_configs.metadata[i][0].substring(4), current_token_info.token_project_configs.metadata[i][1]]);
+                            };
+                        };
                         token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                         let cardInfo: LaunchCardProps = {
                             id: current_token_info.token_canister_id,
@@ -140,7 +156,8 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 website: current_token_info.token_project_configs.website,
                                 creator: current_token_info.token_project_configs.creator,
                                 creatorAbout: current_token_info.token_project_configs.creatorAbout,
-                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl,
+                                faqs: _faqs as [[string, string]]
                             },
                             swap: {
                                 swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
@@ -152,7 +169,8 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 participants: "0",
                                 endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
                                 status: "Inactive",
-                                result: false
+                                result: false,
+                                supply_configs: current_token_info.token_swap_configs.token_supply_configs
                             },
                             token: {
                                 name: current_token_info.token_configs.name,
@@ -167,6 +185,13 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                 for (let i = 0; i < tokensInfo.upcoming.length; i += 1) {
                     let current_token_info = tokensInfo.upcoming[i];
                     if (current_token_info.token_canister_id == canisterId) {
+                        // process FAQs from project metadata
+                        let _faqs = [];
+                        for (let i = 0; i < current_token_info.token_project_configs.metadata.length; i += 1) {
+                            if (current_token_info.token_project_configs.metadata[i][0].substring(0, 3) == "faq") {
+                                _faqs.push([current_token_info.token_project_configs.metadata[i][0].substring(4), current_token_info.token_project_configs.metadata[i][1]]);
+                            };
+                        };
                         token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                         let cardInfo: LaunchCardProps = {
                             id: current_token_info.token_canister_id,
@@ -177,7 +202,8 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 website: current_token_info.token_project_configs.website,
                                 creator: current_token_info.token_project_configs.creator,
                                 creatorAbout: current_token_info.token_project_configs.creatorAbout,
-                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                                creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl,
+                                faqs: _faqs as [[string, string]]
                             },
                             swap: {
                                 swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
@@ -189,7 +215,8 @@ export const useGetTokenInfo = (): UseQueryResult<Array<LaunchCardProps>> => {
                                 participants: "0",
                                 endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                                 status: "Upcoming",
-                                result: false
+                                result: false,
+                                supply_configs: current_token_info.token_swap_configs.token_supply_configs
                             },
                             token: {
                                 name: current_token_info.token_configs.name,
@@ -270,6 +297,13 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             public: false
                         }
                     }
+                    // process FAQs from project metadata
+                    let _faqs = [];
+                    for(let i = 0; i < current_token_info.token_project_configs.metadata.length; i += 1) {
+                        if(current_token_info.token_project_configs.metadata[i][0].substring(0, 3) == "faq") {
+                            _faqs.push([current_token_info.token_project_configs.metadata[i][0].substring(4), current_token_info.token_project_configs.metadata[i][1]]);
+                        };
+                    };
                     token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
@@ -280,7 +314,8 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             website: current_token_info.token_project_configs.website,
                             creator: current_token_info.token_project_configs.creator,
                             creatorAbout: current_token_info.token_project_configs.creatorAbout,
-                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl,
+                            faqs: _faqs as [[string, string]]
                         },
                         swap: {
                             swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
@@ -292,7 +327,8 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             participants: "0",
                             endTimestamp: (whitelist_detail.public) ? msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000) : msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                             status: "Active",
-                            result: false
+                            result: false,
+                            supply_configs: current_token_info.token_swap_configs.token_supply_configs
                         },
                         token: {
                             name: current_token_info.token_configs.name,
@@ -305,6 +341,13 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 }
                 for (let i = 0; i < tokensInfo.inactive.length; i += 1) {
                     let current_token_info = tokensInfo.inactive[i];
+                    // process FAQs from project metadata
+                    let _faqs = [];
+                    for(let i = 0; i < current_token_info.token_project_configs.metadata.length; i += 1) {
+                        if(current_token_info.token_project_configs.metadata[i][0].substring(0, 3) == "faq") {
+                            _faqs.push([current_token_info.token_project_configs.metadata[i][0].substring(4), current_token_info.token_project_configs.metadata[i][1]]);
+                        };
+                    };
                     token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
@@ -315,7 +358,8 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             website: current_token_info.token_project_configs.website,
                             creator: current_token_info.token_project_configs.creator,
                             creatorAbout: current_token_info.token_project_configs.creatorAbout,
-                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl,
+                            faqs: _faqs as [[string, string]]
                         },
                         swap: {
                             swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
@@ -327,7 +371,8 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds + current_token_info.token_swap_configs.swap_due_timestamp_seconds) * 1000),
                             status: "Inactive",
-                            result: false
+                            result: false,
+                            supply_configs: current_token_info.token_swap_configs.token_supply_configs
                         },
                         token: {
                             name: current_token_info.token_configs.name,
@@ -340,6 +385,13 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                 }
                 for (let i = 0; i < tokensInfo.upcoming.length; i += 1) {
                     let current_token_info = tokensInfo.upcoming[i];
+                    // process FAQs from project metadata
+                    let _faqs = [];
+                    for(let i = 0; i < current_token_info.token_project_configs.metadata.length; i += 1) {
+                        if(current_token_info.token_project_configs.metadata[i][0].substring(0, 3) == "faq") {
+                            _faqs.push([current_token_info.token_project_configs.metadata[i][0].substring(4), current_token_info.token_project_configs.metadata[i][1]]);
+                        };
+                    };
                     token_canister_ids_and_swap_type.push([current_token_info.token_canister_id, isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP"]);
                     let cardInfo: LaunchCardProps = {
                         id: current_token_info.token_canister_id,
@@ -350,7 +402,8 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             website: current_token_info.token_project_configs.website,
                             creator: current_token_info.token_project_configs.creator,
                             creatorAbout: current_token_info.token_project_configs.creatorAbout,
-                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl
+                            creatorImageUrl: current_token_info.token_project_configs.creatorImageUrl,
+                            faqs: _faqs as [[string, string]]
                         },
                         swap: {
                             swapType: isTokenSwapTypeBOOM(current_token_info.token_swap_configs.swap_type) ? "BOOM" : "ICP",
@@ -362,7 +415,8 @@ export const useGetAllTokensInfo = (): UseQueryResult<Array<LaunchCardProps>> =>
                             participants: "0",
                             endTimestamp: msToTime(Number(current_token_info.token_swap_configs.swap_start_timestamp_seconds - BigInt(Math.floor(Date.now() / 1000))) * 1000),
                             status: "Upcoming",
-                            result: false
+                            result: false,
+                            supply_configs: current_token_info.token_swap_configs.token_supply_configs
                         },
                         token: {
                             name: current_token_info.token_configs.name,
