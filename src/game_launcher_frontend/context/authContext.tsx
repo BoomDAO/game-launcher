@@ -1,7 +1,7 @@
 import React from "react";
 import { Identity, SignIdentity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import { getAuthClient, nfidLogin, getNfid, nfidEmbedLogin, plugLogin, getPlugSigner, getPlugKey } from "@/utils";
+import { getAuthClient, nfidLogin, getNfid, nfidEmbedLogin, plugIdentity, getPlugKey } from "@/utils";
 import { NFID } from "@nfid/embed";
 import { PlugTransport } from "../utils/plugTransport";
 import { Signer, createDelegationPermissionScope, createAccountsPermissionScope, createCallCanisterPermissionScope } from "@slide-computer/signer";
@@ -28,18 +28,14 @@ export const AuthContext = React.createContext({} as AuthContext);
 export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [session, setSession] = React.useState<Session | null>(null);
-  const [pubKey, setPubKey] = React.useState<PlugPublicKey | null>(null);
-  const [plugIdentity, setPlugIdentity] = React.useState<Identity | null>(null);
+  const [logging, setLogging] = React.useState<boolean>(false);
+  const [plug, setPlug] = React.useState<Identity | null>(null);
 
   const signer = React.useMemo(() => {
     const transport = new PlugTransport();
-
     return new Signer({ transport });
   }, []);
-
-  const requestPermissions = React.useCallback(async () => {
-    const permissions = await signer.requestPermissions([createDelegationPermissionScope({}), createCallCanisterPermissionScope()])
-  }, [signer]);
+  console.log(signer);
 
   const assignSession = (nfid: NFID) => {
     const identity = nfid.getIdentity();
@@ -52,9 +48,9 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   };
 
   const assignPlugSession = (identity: Identity) => {
+    console.log(identity);
     const address = identity.getPrincipal().toString();
     console.log(address);
-    console.log(identity);
     setSession({
       identity,
       address
@@ -75,18 +71,13 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     };
   };
 
-  const checkPlugAuth = async () => {
+  const checkPlugAuth = () => {
     try {
-      const isConnected = await (window as any).ic.plug.isConnected();
-      if (!isConnected || !plugIdentity) {
-        console.log("check 1");
-        console.log(plugIdentity);
-        return;
+      if (plug) {
+        console.log("checkPlugAuth found identity");
+        assignPlugSession(plug);
       } else {
-        console.log("check 4");
-        setPubKey(pubKey);
-        setPlugIdentity(plugIdentity);
-        assignPlugSession(plugIdentity);
+        return;
       }
     } catch (e) {
       console.log("err while checking plug auth ", e);
@@ -105,8 +96,8 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     // const nfid = await getNfid();
     // await nfid.logout();
     setSession(null);
-    setPlugIdentity(null);
-    setPubKey(null);
+    setPlug(null);
+    sessionStorage.removeItem("plugIdentity");
   };
 
   const login = async () => {
@@ -118,20 +109,19 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     // return checkAuth();
 
     const isConnected = await (window as any).ic.plug.isConnected();
-    console.log(await (window as any).ic.plug);
-    if (isConnected && plugIdentity) {
-      console.log("check 2");
-      return checkPlugAuth();
+    let identityString = sessionStorage.getItem("plugIdentity");
+    if(isConnected && identityString != null) {
+      console.log("connected already");
+      let identity = JSON.parse(identityString);
+      setPlug(identity);
+      checkPlugAuth();
     } else {
-      console.log("check 3");
-      const pubKey = await getPlugKey();
-      setPubKey(pubKey);
-      await requestPermissions();
-      const identity = await plugLogin(signer, pubKey);
-      setPlugIdentity(identity);
-      assignPlugSession(identity);
-    }
-    return checkPlugAuth();
+      let publicKey = await getPlugKey();
+      let identity = await plugIdentity(signer, publicKey);
+      sessionStorage.setItem("plugIdentity", JSON.stringify(identity));
+      setPlug(identity);
+      checkPlugAuth();
+    };
   };
 
   const value = {

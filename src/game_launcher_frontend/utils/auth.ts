@@ -71,32 +71,23 @@ export const nfidEmbedLogin = async (nfid: NFID) => {
   return delegationIdentity;
 };
 
-export const plugLogin = async (signer : Signer, publicKey : PlugPublicKey) => {
+export const plugIdentity = async (signer : Signer, publicKey : PlugPublicKey) => {
   try {
-    console.log("plugLogin");
-    // const permissions = await signer.requestPermissions([createDelegationPermissionScope({})]);
-    console.log(signer);
-    console.log(publicKey.derKey);
+    console.log("plugIdentity called");
+    const _ = await signer.requestPermissions([createDelegationPermissionScope({})]);
+    console.log(_);
     const response = await signer.delegation({
       publicKey: publicKey.derKey,
-      targets: [],
+      targets: [Principal.fromText(gamingGuildsCanisterId), Principal.fromText(worldHubCanisterId)],
       maxTimeToLive: undefined // 24 Hrs
     });
-    console.log(response);
-    const newIdentity = DelegationIdentity.fromDelegation(publicKey as any, response);
+    const newIdentity = await DelegationIdentity.fromDelegation(publicKey as any, response);
     console.log(newIdentity);
     return newIdentity;
   } catch (e) {
     throw e;
   }
 };
-
-export const getPlugSigner = async () => {
-  console.log("getPlugSigner");
-  const transport: Transport = new PlugTransport();
-  let signer = new Signer({ transport });
-  return signer;
-}
 
 export const getAuthClient = async () =>
   await AuthClient.create({
@@ -126,12 +117,8 @@ const onPlugConnectionUpdate = () => {
 
 export const getPlugKey = async () => {
   console.log("getPlugKey runned");
-  const pubKey = await (window as any).ic.plug.requestConnect({
-    whitelist: [gamingGuildsCanisterId, worldHubCanisterId],
-    host: undefined,
-    onPlugConnectionUpdate,
-    timeout: 50000
-  });
+  const pubKey = await (window as any).ic.plug.requestConnect();
+  console.log(pubKey);
   return pubKey;
 };
 
