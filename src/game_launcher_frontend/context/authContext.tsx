@@ -1,7 +1,7 @@
 import React from "react";
 import { Identity, SignIdentity } from "@dfinity/agent";
 import { AuthClient } from "@dfinity/auth-client";
-import { getAuthClient, nfidLogin, getNfid, nfidEmbedLogin, plugIdentity, getPlugKey } from "@/utils";
+import { getAuthClient, nfidLogin, getNfid, nfidEmbedLogin, plugIdentity } from "@/utils";
 import { NFID } from "@nfid/embed";
 import { PlugTransport } from "../utils/plugTransport";
 import { Signer, createDelegationPermissionScope, createAccountsPermissionScope, createCallCanisterPermissionScope } from "@slide-computer/signer";
@@ -23,6 +23,8 @@ interface AuthContext {
   login: () => Promise<void>;
 }
 
+var identity : Identity | null = null;
+
 export const AuthContext = React.createContext({} as AuthContext);
 
 export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
@@ -35,7 +37,6 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     const transport = new PlugTransport();
     return new Signer({ transport });
   }, []);
-  console.log(signer);
 
   const assignSession = (nfid: NFID) => {
     const identity = nfid.getIdentity();
@@ -47,8 +48,7 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     });
   };
 
-  const assignPlugSession = (identity: Identity) => {
-    console.log(identity);
+  const assignPlugSession = async (identity: Identity) => {
     const address = identity.getPrincipal().toString();
     console.log(address);
     setSession({
@@ -71,12 +71,14 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     };
   };
 
-  const checkPlugAuth = () => {
+  const checkPlugAuth = async () => {
     try {
-      if (plug) {
-        console.log("checkPlugAuth found identity");
-        assignPlugSession(plug);
+      if (identity != null) {
+        console.log(identity);
+        await assignPlugSession(identity);
       } else {
+        identity = await plugIdentity(signer);
+        assignPlugSession(identity);
         return;
       }
     } catch (e) {
@@ -95,9 +97,10 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
   const logout = async () => {
     // const nfid = await getNfid();
     // await nfid.logout();
+
     setSession(null);
     setPlug(null);
-    sessionStorage.removeItem("plugIdentity");
+    identity = null;
   };
 
   const login = async () => {
@@ -108,20 +111,16 @@ export const AuthContextProvider = ({ children }: React.PropsWithChildren) => {
     // window.location.reload();
     // return checkAuth();
 
-    const isConnected = await (window as any).ic.plug.isConnected();
-    let identityString = sessionStorage.getItem("plugIdentity");
-    if(isConnected && identityString != null) {
+    if (identity != null) {
       console.log("connected already");
-      let identity = JSON.parse(identityString);
       setPlug(identity);
-      checkPlugAuth();
+      console.log(identity);
     } else {
-      let publicKey = await getPlugKey();
-      let identity = await plugIdentity(signer, publicKey);
-      sessionStorage.setItem("plugIdentity", JSON.stringify(identity));
+      let newIdentity = await plugIdentity(signer);
+      identity = newIdentity;
       setPlug(identity);
-      checkPlugAuth();
     };
+    await checkPlugAuth();
   };
 
   const value = {

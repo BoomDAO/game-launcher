@@ -489,7 +489,7 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
     return useQuery({
         queryKey: [queryKeys.profile],
         queryFn: async () => {
-            let current_user_principal = ((session?.identity?.getPrincipal())?.toString() != undefined) ? (session?.identity?.getPrincipal())?.toString() : "";
+            let current_user_principal = (session?.address != null) ? session?.address : "";
             let response: UserProfile = {
                 uid: current_user_principal ? current_user_principal : "",
                 username: current_user_principal ? (current_user_principal).substring(0, 10) + "..." : "",
@@ -532,7 +532,7 @@ export const useGetUserCompleteDetail = (): UseQueryResult<UserCompleteDetail> =
     return useQuery({
         queryKey: [queryKeys.user_complete_detail],
         queryFn: async () => {
-            let current_user_principal = ((session?.identity?.getPrincipal())?.toString() != undefined) ? (session?.identity?.getPrincipal())?.toString() : "";
+            let current_user_principal = (session?.address != null) ? session?.address : "";
             let response: UserCompleteDetail = {
                 uid: current_user_principal ? current_user_principal : "",
                 username: current_user_principal ? (current_user_principal).substring(0, 10) + "..." : "",
@@ -597,7 +597,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
     return useQuery({
         queryKey: [queryKeys.all_quests_info],
         queryFn: async () => {
-            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
+            let current_user_principal = (session?.address != null) ? session?.address : "2vxsx-fae";
             const { actor, methods } = await useGamingGuildsClient();
             const worldNode = await useGamingGuildsWorldNodeClient();
             const worldHub = await useWorldHubClient();
@@ -1089,7 +1089,7 @@ export const useGetUserVerifiedStatus = (): UseQueryResult<VerifiedStatus> => {
         queryKey: [queryKeys.verified_status],
         queryFn: async () => {
             const { actor, methods } = await useGamingGuildsClient();
-            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
+            let current_user_principal = (session?.address != null) ? session?.address : "2vxsx-fae";
             var res: VerifiedStatus = {
                 emailVerified: false,
                 phoneVerified: false
@@ -1128,7 +1128,7 @@ export const useClaimReward = () => {
                 const { actor, methods } = await useGamingGuildsClient();
                 if (aid.includes("twitter") && !aid.includes("twitter_login")) {
                     const worldHub = await useWorldHubClient();
-                    let current_user_principal = ((session?.identity?.getPrincipal())?.toString() != undefined) ? (session?.identity?.getPrincipal())?.toString() : "";
+                    let current_user_principal = (session?.address != null) ? session?.address : "";
                     const user_twitter: [string, string] = await worldHub.actor[worldHub.methods.getUserTwitterDetails](current_user_principal) as [string, string];
                     const response = await axios.post(ENV.TWITTER_QUEST_STATUS_URL, {}, {
                         headers: {

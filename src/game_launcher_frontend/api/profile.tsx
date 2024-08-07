@@ -138,7 +138,7 @@ export const getConfigsData = (configIds: configId[]): UseQueryResult<ConfigData
     return useQuery({
         queryKey: [],
         queryFn: async () => {
-            const { actor, methods } = await useGamingGuildsClient();
+            const { actor, methods } = await useGamingGuildsClient(session?.identity || undefined);
             let response: ConfigData[] = [];
             let configs = await actor[methods.getAllConfigs]() as StableConfig[];
             for (let id = 0; id < configIds.length; id += 1) {
@@ -198,8 +198,8 @@ export const useGetAllMembersInfo = (page: number = 1, leaderboardOf: string): U
                 totalMembers: "",
                 members: [],
             };
-            const { actor, methods } = await useGamingGuildsWorldNodeClient();
-            const worldHub = await useWorldHubClient();
+            const { actor, methods } = await useGamingGuildsWorldNodeClient(session?.identity || undefined);
+            const worldHub = await useWorldHubClient(session?.identity || undefined);
             // fetching totalMembers
             let totalMembersEntity: { ok: StableEntity[] } = { ok: [] };
             let entities: { ok: StableEntity[] } = { ok: [] };
@@ -289,10 +289,10 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
     return useQuery({
         queryKey: [queryKeys.all_quests_info],
         queryFn: async () => {
-            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
-            const { actor, methods } = await useGamingGuildsClient();
-            const worldNode = await useGamingGuildsWorldNodeClient();
-            const worldHub = await useWorldHubClient();
+            let current_user_principal = session?.address? session.address : "2vxsx-fae";
+            const { actor, methods } = await useGamingGuildsClient(session?.identity || undefined);
+            const worldNode = await useGamingGuildsWorldNodeClient(session?.identity || undefined);
+            const worldHub = await useWorldHubClient(session?.identity || undefined);
 
             let configs: GuildConfig[] = [];
             let actions: Action[] = [];
@@ -347,7 +347,7 @@ export const useGetAllQuestsInfo = (): UseQueryResult<GuildCard[]> => {
             };
             total_world_configs = world_ids.length;
             for (let i = 0; i < world_ids.length; i += 1) {
-                let world = await useWorldClient(world_ids[i]);
+                let world = await useWorldClient(world_ids[i], session?.identity || undefined);
                 all_promises.push(world.actor[world.methods.getAllConfigs]() as Promise<GuildConfig[]>);
             };
 
@@ -755,15 +755,16 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
     return useQuery({
         queryKey: [queryKeys.profile],
         queryFn: async () => {
-            let current_user_principal = ((session?.identity?.getPrincipal())?.toString() != undefined) ? (session?.identity?.getPrincipal())?.toString() : "";
+            let current_user_principal = session?.identity?.getPrincipal().toString();
+            console.log(current_user_principal);
             let response: UserProfile = {
                 uid: current_user_principal ? current_user_principal : "",
                 username: current_user_principal ? (current_user_principal).substring(0, 10) + "..." : "",
                 xp: "0",
                 image: "/usericon.png"
             };
-            const { actor, methods } = await useGamingGuildsWorldNodeClient();
-            const worldHub = await useWorldHubClient();
+            const { actor, methods } = await useGamingGuildsWorldNodeClient(session?.identity || undefined);
+            const worldHub = await useWorldHubClient(session?.identity ? session.identity : undefined);
             let UserEntity: Result_5 = { ok: [] };
             let profile: { uid: string; username: string; image: string; } = { uid: "", username: "", image: "" };
             await Promise.all(
@@ -788,6 +789,7 @@ export const useGetUserProfileDetail = (): UseQueryResult<UserProfile> => {
                 xp: response.xp,
                 image: (profile.image != "") ? profile.image : "/usericon.png"
             };
+            console.log(response);
             return response;
         },
     });
@@ -808,7 +810,7 @@ export const useGetTokensInfo = (): UseQueryResult<Profile> => {
     return useQuery({
         queryKey: [queryKeys.wallet],
         queryFn: async () => {
-            const { actor, methods } = await useWorldHubClient();
+            const { actor, methods } = await useWorldHubClient(session?.identity || undefined);
             let res: Profile = {
                 principal: (session!.address) ? (session!.address) : "",
                 username: "",
@@ -817,7 +819,7 @@ export const useGetTokensInfo = (): UseQueryResult<Profile> => {
             };
             let user_token_balances = [];
             for (let i = 0; i < Tokens.tokens.length; i += 1) {
-                const icrc_ledger = await useICRCLedgerClient(Tokens.tokens[i].ledger);
+                const icrc_ledger = await useICRCLedgerClient(Tokens.tokens[i].ledger, session?.identity || undefined);
                 user_token_balances.push(icrc_ledger.actor[icrc_ledger.methods.icrc1_balance_of]({
                     owner: Principal.fromText(res.principal),
                     subaccount: [],
@@ -870,13 +872,13 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
     return useQuery({
         queryKey: [queryKeys.user_nfts],
         queryFn: async () => {
-            const { actor, methods } = await useGamingGuildsClient();
-            let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
+            const { actor, methods } = await useGamingGuildsClient(session?.identity || undefined);
+            let current_user_principal = (session?.address)? session.address : "2vxsx-fae";
             let res: UserNftInfo[] = [];
             let registries = [];
             let stakedRegistries : [[string, EXTStake]] = await actor[methods.getUserExtStakesInfo](current_user_principal) as [[string, EXTStake]];
             for (let i = 0; i < Nfts.nfts.length; i += 1) {
-                const nft_canister = await useExtClient(Nfts.nfts[i].canister);
+                const nft_canister = await useExtClient(session?.identity || undefined, Nfts.nfts[i].canister);
                 registries.push(nft_canister.actor[nft_canister.methods.getRegistry]());
             };
             await Promise.all(registries).then(
@@ -954,10 +956,10 @@ export const useStakeNft = () => {
             id: string
         }) => {
             try {
-                const { actor, methods } = await useGamingGuildsClient();
+                const { actor, methods } = await useGamingGuildsClient(session?.identity || undefined);
                 const current_user_principal = (session?.address) ? (session?.address) : "";
 
-                const extCanister = await useExtClient(collectionCanisterId);
+                const extCanister = await useExtClient(session?.identity || undefined, collectionCanisterId);
                 let req = {
                     to: {
                         principal: Principal.fromText(gamingGuildsCanisterId)
@@ -1021,7 +1023,7 @@ export const useDissolveNft = () => {
             index: Number,
         }) => {
             try {
-                const { actor, methods } = await useGamingGuildsClient();
+                const { actor, methods } = await useGamingGuildsClient(session?.identity || undefined);
                 const current_user_principal = (session?.address) ? (session?.address) : "";
                 let res = await actor[methods.dissolveExtNft](collectionCanisterId, index) as {
                     ok: string,
@@ -1064,7 +1066,7 @@ export const useDisburseNft = () => {
             index: Number,
         }) => {
             try {
-                const { actor, methods } = await useGamingGuildsClient();
+                const { actor, methods } = await useGamingGuildsClient(session?.identity || undefined);
                 const current_user_principal = (session?.address) ? (session?.address) : "";
                 let res = await actor[methods.disburseExtNft](collectionCanisterId, index) as {
                     ok: string,
@@ -1109,7 +1111,7 @@ export const useNftTransfer = () => {
             tokenid?: string;
         }) => {
             try {
-                const { actor, methods } = await useExtClient((canisterId != undefined) ? canisterId : "");
+                const { actor, methods } = await useExtClient(session?.identity || undefined, (canisterId != undefined) ? canisterId : "");
                 const current_user_principal = (session?.address) ? (session?.address) : "";
                 let req = {
                     to: {
@@ -1149,6 +1151,7 @@ export const useNftTransfer = () => {
 export const useIcrcTransfer = () => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
+    const { session } = useAuthContext();
     return useMutation({
         mutationFn: async ({
             principal,
@@ -1160,7 +1163,7 @@ export const useIcrcTransfer = () => {
             canisterId?: string;
         }) => {
             try {
-                const { actor, methods } = await useICRCLedgerClient((canisterId != undefined) ? canisterId : "");
+                const { actor, methods } = await useICRCLedgerClient((canisterId != undefined) ? canisterId : "", session?.identity || undefined);
                 let fee = 0;
                 for (let i = 0; i < Tokens.tokens.length; i += 1) {
                     if (Tokens.tokens[i].ledger == canisterId) {
@@ -1225,9 +1228,10 @@ export const useUpdateProfileImage = () => {
             image: string
         }) => {
             try {
-                const { actor, methods } = await useWorldHubClient();
-                const guildCanister = await useGamingGuildsClient();
+                const { actor, methods } = await useWorldHubClient(session?.identity ? session.identity : undefined);
+                const guildCanister = await useGamingGuildsClient(session?.identity || undefined);
                 let current_user_principal = session?.address;
+                console.log(current_user_principal);
                 let res = await actor[methods.uploadProfilePicture]({ uid: current_user_principal, image: image });
                 let processActionResponse = await guildCanister.actor[guildCanister.methods.processActionAwait]({
                     fields: [],
@@ -1278,17 +1282,14 @@ export const useUpdateProfileUsername = () => {
             username: string
         }) => {
             try {
-                const { actor, methods } = await useWorldHubClient();
+                const { actor, methods } = await useWorldHubClient(session?.identity ? session.identity : undefined);
                 let current_user_principal = session?.address;
-                console.log(current_user_principal);
-                console.log(session?.identity);
-                console.log(session?.identity?.getPrincipal().toString());
                 if (checkUsernameRegex(username) == false) {
                     toast.error("Username should be less than 15 characters and should not contain whiteSpaces. Try again!");
                     closeToast();
                     throw ("");
                 };
-                const guildCanister = await useGamingGuildsClient();
+                const guildCanister = await useGamingGuildsClient(session?.identity || undefined);
                 let res = await actor[methods.setUsername](current_user_principal, username) as { ok: string | undefined, err: string | undefined };
                 console.log(res);
                 if (res.ok == undefined) {

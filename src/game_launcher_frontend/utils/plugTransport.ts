@@ -70,6 +70,6 @@ export default function Index() {
     }, [])
 
     const requestPermissions = useCallback(async () => {
-        const permissions = await signer.requestPermissions([createAccountsPermissionScope(), createDelegationPermissionScope({})])
+        const permissions = await signer.requestPermissions([createAccountsPermissionScope(), createDelegationPermissionScope({}), createCallCanisterPermissionScope()])
     }, [signer])
 }

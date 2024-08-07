@@ -64,25 +64,26 @@ export const nfidEmbedLogin = async (nfid: NFID) => {
     return nfid.getIdentity();
   };
   const delegationIdentity: Identity = await nfid.getDelegation({
-    targets: [],
-    derivationOrigin: "https://7p3gx-jaaaa-aaaal-acbda-cai.ic0.app",
+    targets: ["aqxsc-zaaaa-aaaal-qdloa-cai"],
+    // derivationOrigin: "https://7p3gx-jaaaa-aaaal-acbda-cai.ic0.app",
     maxTimeToLive: BigInt(24) * BigInt(3_600_000_000_000) // 24 hrs
   });
   return delegationIdentity;
 };
 
-export const plugIdentity = async (signer : Signer, publicKey : PlugPublicKey) => {
+export const plugIdentity = async (signer : Signer) => {
   try {
     console.log("plugIdentity called");
-    const _ = await signer.requestPermissions([createDelegationPermissionScope({})]);
-    console.log(_);
+    // const _ = await signer.requestPermissions([createDelegationPermissionScope({}), createAccountsPermissionScope(), createCallCanisterPermissionScope()]);
+    const newKeyPair = Ed25519KeyIdentity.generate();
     const response = await signer.delegation({
-      publicKey: publicKey.derKey,
-      targets: [Principal.fromText(gamingGuildsCanisterId), Principal.fromText(worldHubCanisterId)],
-      maxTimeToLive: undefined // 24 Hrs
+      publicKey: newKeyPair.getPublicKey().derKey,
+      targets: undefined,
+      maxTimeToLive: 500000n // 24 Hrs
     });
-    const newIdentity = await DelegationIdentity.fromDelegation(publicKey as any, response);
+    const newIdentity = DelegationIdentity.fromDelegation(newKeyPair, response);
     console.log(newIdentity);
+    console.log(newIdentity.getPrincipal().toString());
     return newIdentity;
   } catch (e) {
     throw e;
@@ -109,17 +110,6 @@ export const getNfid = async () => {
   });
   nfid = new_nfid;
   return new_nfid;
-};
-
-const onPlugConnectionUpdate = () => {
-  console.log((window as any).ic.plug.sessionManager.sessionData);
-}
-
-export const getPlugKey = async () => {
-  console.log("getPlugKey runned");
-  const pubKey = await (window as any).ic.plug.requestConnect();
-  console.log(pubKey);
-  return pubKey;
 };
 
 export const getAgent = async (identity?: Identity) =>

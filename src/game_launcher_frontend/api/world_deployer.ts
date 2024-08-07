@@ -510,6 +510,7 @@ export const useRemoveAdmin = () => {
 
 export const useAddTrustedOrigin = () => {
   const { t } = useTranslation();
+  const { session } = useAuthContext();
 
   return useMutation({
     mutationFn: async ({
@@ -520,7 +521,7 @@ export const useAddTrustedOrigin = () => {
       canisterId?: string;
     }) => {
       try {
-        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "");
+        const { actor, methods } = await useWorldClient((canisterId != undefined) ? canisterId : "", session?.identity || undefined);
 
         return await actor[methods.addTrustedOrigin](url);
       } catch (error) {

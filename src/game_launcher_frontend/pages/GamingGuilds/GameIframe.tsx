@@ -21,8 +21,12 @@ const GameIframe = () => {
     const gameUrl = "https://" + canisterId + ".raw.icp0.io";
 
     window.addEventListener("message", (event) => {
+        console.log("identity request");
+        console.log(session?.identity);
+        console.log(JSON.stringify(session?.identity));
         var iframe = document.getElementById('iframe') as HTMLIFrameElement;
         if (event.data === "identity_request") {
+            console.log("identity requested");
             iframe.contentWindow?.postMessage(JSON.stringify(session?.identity), gameUrl);
         }
     });

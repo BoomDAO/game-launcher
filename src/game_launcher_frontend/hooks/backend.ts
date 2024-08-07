@@ -1,4 +1,4 @@
-import { Actor } from "@dfinity/agent";
+import { Actor, Identity } from "@dfinity/agent";
 import { getAgent, getAuthClient, getNfid } from "@/utils";
 // @ts-ignore
 import { idlFactory as AssetFactory } from "../dids/asset.did.js";
@@ -70,11 +70,11 @@ const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
 // const gamingGuildsWorldNodeCanisterId = "7e7tu-caaaa-aaaap-ahdxq-cai";
 
 
-export const useWorldDeployerClient = async () => {
+export const useWorldDeployerClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -109,14 +109,12 @@ export const useWorldDeployerClient = async () => {
   }
 };
 
-export const useWorldHubClient = async () => {
+export const useWorldHubClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
-
-  // const agent = (await (window as any).ic.plug.agent).agent;
   
 
   return {
@@ -139,11 +137,11 @@ export const useWorldHubClient = async () => {
   }
 };
 
-export const useWorldClient = async (canisterId : string) => {
+export const useWorldClient = async (canisterId : string, identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -169,11 +167,11 @@ export const useWorldClient = async (canisterId : string) => {
   }
 };
 
-export const useTokenDeployerClient = async () => {
+export const useTokenDeployerClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -200,11 +198,11 @@ export const useTokenDeployerClient = async () => {
   }
 }
 
-export const useTokenClient = async (token_canister_id : string) => {
+export const useTokenClient = async (token_canister_id : string, identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -227,11 +225,11 @@ export const useTokenClient = async (token_canister_id : string) => {
   }
 }
 
-export const useGameClient = async () => {
+export const useGameClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -264,11 +262,11 @@ export const useGameClient = async () => {
   };
 };
 
-export const useAssetClient = async (canister_id: string) => {
+export const useAssetClient = async (canister_id: string, identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -289,11 +287,11 @@ export const useAssetClient = async (canister_id: string) => {
   };
 };
 
-export const useMintingDeployerClient = async () => {
+export const useMintingDeployerClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -323,11 +321,11 @@ export const useMintingDeployerClient = async () => {
   };
 };
 
-export const useLedgerClient = async () => {
+export const useLedgerClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -343,11 +341,11 @@ export const useLedgerClient = async () => {
   };
 };
 
-export const useExtClient = async (canister_id?: string) => {
+export const useExtClient = async (identity : Identity | undefined, canister_id?: string) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -370,11 +368,11 @@ export const useExtClient = async (canister_id?: string) => {
   };
 };
 
-export const useManagementClient = async () => {
+export const useManagementClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -395,11 +393,11 @@ export const useManagementClient = async () => {
 };
 
 
-export const useGuildsVerifierClient = async () => {
+export const useGuildsVerifierClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -420,11 +418,11 @@ export const useGuildsVerifierClient = async () => {
   };
 };
 
-export const useGamingGuildsClient = async () => {
+export const useGamingGuildsClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -458,11 +456,11 @@ export const useGamingGuildsClient = async () => {
   };
 };
 
-export const useGamingGuildsWorldNodeClient = async () => {
+export const useGamingGuildsWorldNodeClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -486,11 +484,11 @@ export const useGamingGuildsWorldNodeClient = async () => {
   };
 };
 
-export const useBoomLedgerClient = async () => {
+export const useBoomLedgerClient = async (identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
@@ -509,11 +507,11 @@ export const useBoomLedgerClient = async () => {
 };
 
 
-export const useICRCLedgerClient = async (canister_id: string) => {
+export const useICRCLedgerClient = async (canister_id: string, identity : Identity | undefined) => {
   // const authClient = await getAuthClient();
   // const identity = authClient?.getIdentity();
-  const nfidClient = await getNfid();
-  const identity = nfidClient.getIdentity();
+  // const nfidClient = await getNfid();
+  // const identity = nfidClient.getIdentity();
   const agent = await getAgent(identity);
 
   // const agent = (await (window as any).ic.plug.agent).agent;
