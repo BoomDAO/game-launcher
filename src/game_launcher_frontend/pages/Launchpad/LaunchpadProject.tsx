@@ -94,6 +94,8 @@ const LaunchpadProject = () => {
                                                         )}
                                                         {activeTab === 2 && (
                                                             <div className="text-base">
+                                                                <div className="mb-8">{project.tokenAllocation}</div>
+                                                                <div className="mb-4 text-lg font-semibold underline">Below is the percentage token allocation :-</div>
                                                                 <div className="mb-4">
                                                                     <div className="font-semibold text-lg">Token Sale Allocation</div>
                                                                     <div>

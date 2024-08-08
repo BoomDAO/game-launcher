@@ -715,6 +715,7 @@ export interface ProjectConfigs {
   creatorAbout: string;
   creatorImageUrl: string;
   faqs: [[string, string]];
+  tokenAllocation: string;
 }
 
 export interface ICRCStake {
