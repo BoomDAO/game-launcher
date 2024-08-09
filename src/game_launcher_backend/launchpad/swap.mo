@@ -40,7 +40,6 @@ actor SwapCanister {
 
   // Stable memory
   private stable var _wasm_version_id : Nat32 = 0;
-
   private stable var _ledger_wasms : Trie.Trie<Nat32, [Nat8]> = Trie.empty(); // version_number <-> icrc_ledger_wasm
   private stable var _tokens : Trie.Trie<Text, Swap.Token> = Trie.empty(); // token_canister_id <-> Token detail
   private stable var _projects : Trie.Trie<Text, Swap.TokenProject> = Trie.empty(); // // token_canister_id <-> Token Project detail
@@ -83,19 +82,19 @@ actor SwapCanister {
   //   ).0;
   // };
 
-  public func updateFAQ(cid : Text, arg : [(Text, Text)]) : async () {
-    let ?p = Trie.find(_projects, Helper.keyT(cid), Text.equal) else return ();
-    _projects := Trie.put(_projects, Helper.keyT(cid), Text.equal, {
-      name = p.name;
-        website = p.website;
-        bannerUrl = p.bannerUrl;
-        description = p.description;
-        metadata = arg;
-        creator = p.creator;
-        creatorAbout = p.creatorAbout;
-        creatorImageUrl = p.creatorImageUrl;
-    }).0;
-  };
+  // public func updateFAQ(cid : Text, arg : [(Text, Text)]) : async () {
+  //   let ?p = Trie.find(_projects, Helper.keyT(cid), Text.equal) else return ();
+  //   _projects := Trie.put(_projects, Helper.keyT(cid), Text.equal, {
+  //     name = p.name;
+  //       website = p.website;
+  //       bannerUrl = p.bannerUrl;
+  //       description = p.description;
+  //       metadata = arg;
+  //       creator = p.creator;
+  //       creatorAbout = p.creatorAbout;
+  //       creatorImageUrl = p.creatorImageUrl;
+  //   }).0;
+  // };
 
   // actor interfaces
   let management_canister : Management.Self = actor (ENV.IC_Management);
@@ -881,22 +880,41 @@ actor SwapCanister {
     };
   };
 
-  // Update methods
-  // TODO : SNS : Protect this method for generic proposal
+  // SNS Update methods
+  public shared ({ caller }) func validate_upload_ledger_wasm(arg : { ledger_wasm : [Nat8] }) : async ({
+    #Ok : Text;
+    #Err : Text;
+  }) {
+    return #Ok("validated_ledger_wasm_upload");
+  };
   public shared ({ caller }) func upload_ledger_wasm(arg : { ledger_wasm : [Nat8] }) : async () {
+    assert (caller == Principal.fromText("xomae-vyaaa-aaaaq-aabhq-cai")); //Only SNS governance canister can call generic methods via proposal
     _ledger_wasms := Trie.put(_ledger_wasms, Helper.key(_wasm_version_id), Nat32.equal, arg.ledger_wasm).0;
     _wasm_version_id := _wasm_version_id + 1;
   };
-
-  // TODO : SNS
+  public shared ({ caller }) func validate_remove_ledger_wasm(arg : { version : Nat32 }) : async ({
+    #Ok : Text;
+    #Err : Text;
+  }) {
+    let latest_available_wasm_version : Nat32 = _wasm_version_id - 1;
+    if(latest_available_wasm_version == arg.version) {
+      return #Err("Latest wasm available in Swap canister cannot be removed");
+    };
+    return #Ok("validated_remove_ledger_wasm");
+  };
   public shared ({ caller }) func remove_ledger_wasm(arg : { version : Nat32 }) : async () {
+    assert (caller == Principal.fromText("xomae-vyaaa-aaaaq-aabhq-cai")); //Only SNS governance canister can call generic methods via proposal
     _ledger_wasms := Trie.remove(_ledger_wasms, Helper.key(arg.version), Nat32.equal).0;
   };
-
-  // TODO : SNS 
-  public shared ({ caller }) func create_icrc_token(args : { project : Swap.TokenProject; token_init_arg : ICRC.InitArgs }) : async ({
-    canister_id : Text;
+  public shared ({ caller }) func validate_create_icrc_token(args : { project : Swap.TokenProject; token_init_arg : ICRC.InitArgs }) : async ({
+    #Ok : Text;
+    #Err : Text;
   }) {
+    // TODO - SNS, Here we can place all the default value checks in case we want any checks over args passed.
+    return #Ok("validated_create_icrc_token");
+  };
+  public shared ({ caller }) func create_icrc_token(args : { project : Swap.TokenProject; token_init_arg : ICRC.InitArgs }) : async () {
+    assert (caller == Principal.fromText("xomae-vyaaa-aaaaq-aabhq-cai")); //Only SNS governance canister can call generic methods via proposal
     Cycles.add(2000000000000);
     let res = await management_canister.create_canister({
       settings = ?{
@@ -947,22 +965,32 @@ actor SwapCanister {
     };
     _tokens := Trie.put(_tokens, Helper.keyT(Principal.toText(canister_id)), Text.equal, token).0;
     _projects := Trie.put(_projects, Helper.keyT(Principal.toText(canister_id)), Text.equal, args.project).0;
-    return { canister_id = Principal.toText(canister_id) };
   };
-
-  // TODO : SNS
-  public shared ({ caller }) func set_token_swap_configs(arg : { configs : Swap.TokenSwapConfigs; canister_id : Text }) : async (Result.Result<Swap.TokenSwapConfigs, Text>) {
+  public shared ({ caller }) func validate_set_token_swap_configs(arg : { configs : Swap.TokenSwapConfigs; canister_id : Text }) : async ({
+    #Ok : Text;
+    #Err : Text;
+  }) {
+    // Checks : 
+    // 1. swap start timestamp should be greater than now + 4 days
+    let minimum_swap_start_timestamp_seconds = (Time.now() / 1000000000)  + (86400 * 4); 
+    if(arg.configs.swap_start_timestamp_seconds >= minimum_swap_start_timestamp_seconds) {
+      return #Err("set swap_start_timestamp_seconds value must be 4 days from now.");
+    };
     switch (Trie.find(_tokens, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?_) {
-        _swap_configs := Trie.put(_swap_configs, Helper.keyT(arg.canister_id), Text.equal, arg.configs).0;
-        return #ok(arg.configs);
+        return #Ok("validated_set_token_swap_configs");
       };
       case _ {
-        return #err("token not authorised to token swap via BOOM DAO.");
+        return #Err("token canister id not authorised to token swap via BOOM DAO Launchpad.");
       };
     };
   };
+  public shared ({ caller }) func set_token_swap_configs(arg : { configs : Swap.TokenSwapConfigs; canister_id : Text }) : async () {
+    assert (caller == Principal.fromText("xomae-vyaaa-aaaaq-aabhq-cai")); //Only SNS governance canister can call generic methods via proposal
+    _swap_configs := Trie.put(_swap_configs, Helper.keyT(arg.canister_id), Text.equal, arg.configs).0;
+  };
 
+  // Update methods
   public shared ({ caller }) func start_token_swap(arg : { canister_id : Text }) : async (Result.Result<Text, Text>) {
     let swap_time_for_elite_tier_in_seconds : Int = 86400; // 24 hours currently, might be adjusted later
     for ((i, v) in Trie.iter(_swap_status)) {
@@ -996,7 +1024,6 @@ actor SwapCanister {
       };
     };
   };
-
   // Checks :
   // 1. Is Swap Running?
   // 2. Is ICP BlockIndex Legit? / Is BOOM BlockIndex Legit?
@@ -1263,7 +1290,6 @@ actor SwapCanister {
       };
     };
   };
-
   // Checks :
   // 1. Sale timestamp is it over or not?
   // 2. total_icp/total_boom reached the goal?
@@ -1365,7 +1391,6 @@ actor SwapCanister {
       };
     };
   };
-
   public shared ({ caller }) func finalise_token_swap(arg : { canister_id : Text }) : async (Result.Result<Text, Text>) {
     // assert (caller == dev_principal);
     switch (Trie.find(_swap_status, Helper.keyT(arg.canister_id), Text.equal)) {
@@ -1391,6 +1416,7 @@ actor SwapCanister {
     };
   };
 
+  // Query methods
   public query func getTokenSwapType(tokenCanisterId : Text) : async (Text) {
     let ?swap_configs = Trie.find(_swap_configs, Helper.keyT(tokenCanisterId), Text.equal) else return "";
     switch (swap_configs.swap_type) {
@@ -1398,7 +1424,6 @@ actor SwapCanister {
       case (#icp) return "ICP";
     };
   };
-
   public query func getAllTokenDetails() : async [(Text, Swap.Token)] {
     var b = Buffer.Buffer<(Text, Swap.Token)>(0);
     for ((i, v) in Trie.iter(_tokens)) {
@@ -1406,7 +1431,6 @@ actor SwapCanister {
     };
     return Buffer.toArray(b);
   };
-
   public query func getLedgerWasmDetails() : async [(Nat32, [Nat8])] {
     var b = Buffer.Buffer<(Nat32, [Nat8])>(0);
     for ((i, v) in Trie.iter(_ledger_wasms)) {
@@ -1414,15 +1438,12 @@ actor SwapCanister {
     };
     return Buffer.toArray(b);
   };
-
   public query func getTotalLedgerWasms() : async (Nat) {
     return Trie.size(_ledger_wasms);
   };
-
   public query func cycleBalance() : async (Nat) {
     return Cycles.balance();
   };
-
   public query func getAllTokensInfo() : async (Result.Result<Swap.TokensInfo, Text>) {
     var active = Buffer.Buffer<Swap.TokenInfo>(0);
     var inactive = Buffer.Buffer<Swap.TokenInfo>(0);
@@ -1478,12 +1499,10 @@ actor SwapCanister {
       upcoming = Buffer.toArray(upcoming);
     });
   };
-
   public query func getTokenSwapConfigs(cid : Text) : async (Result.Result<Swap.TokenSwapConfigs, Text>) {
     let ?res = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return #err("not found");
     return #ok(res);
   };
-
   public query func getParticipationDetails(args : { participantId : Text; tokenCanisterId : Text }) : async (Result.Result<Swap.ParticipantDetails, Text>) {
     let ?allParticipants = Trie.find(_swap_participants, Helper.keyT(args.tokenCanisterId), Text.equal) else {
       return #err("There are no swap participants yet.");
@@ -1493,7 +1512,6 @@ actor SwapCanister {
     };
     return #ok(details);
   };
-
   public query func getAllParticipantsDetails(args : { tokenCanisterId : Text }) : async (Result.Result<[Swap.ParticipantDetails], Text>) {
     var b = Buffer.Buffer<Swap.ParticipantDetails>(0);
     let ?allParticipants = Trie.find(_swap_participants, Helper.keyT(args.tokenCanisterId), Text.equal) else {
@@ -1504,5 +1522,4 @@ actor SwapCanister {
     };
     return #ok(Buffer.toArray(b));
   };
-
 };
