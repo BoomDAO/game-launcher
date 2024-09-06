@@ -9,7 +9,7 @@ import { Signer, createDelegationPermissionScope, createAccountsPermissionScope,
 import { PlugTransport } from "./plugTransport";
 import { Transport } from "./transport";
 import { Principal } from "@dfinity/principal";
-import { DelegationIdentity, Ed25519KeyIdentity } from "@dfinity/identity";
+import { DelegationChain, DelegationIdentity, Ed25519KeyIdentity } from "@dfinity/identity";
 import { gamingGuildsCanisterId, worldHubCanisterId } from "@/hooks";
 // import { MyStorage } from "./MyStorage";
 
@@ -71,24 +71,24 @@ export const nfidEmbedLogin = async (nfid: NFID) => {
   return delegationIdentity;
 };
 
-export const plugIdentity = async (signer : Signer) => {
-  try {
-    console.log("plugIdentity called");
-    // const _ = await signer.requestPermissions([createDelegationPermissionScope({}), createAccountsPermissionScope(), createCallCanisterPermissionScope()]);
-    const newKeyPair = Ed25519KeyIdentity.generate();
-    const response = await signer.delegation({
-      publicKey: newKeyPair.getPublicKey().derKey,
-      targets: undefined,
-      maxTimeToLive: 500000n // 24 Hrs
-    });
-    const newIdentity = DelegationIdentity.fromDelegation(newKeyPair, response);
-    console.log(newIdentity);
-    console.log(newIdentity.getPrincipal().toString());
-    return newIdentity;
-  } catch (e) {
-    throw e;
-  }
-};
+// export const plugIdentity = async (signer : Signer) => {
+//   try {
+//     console.log("plugIdentity called");
+//     // const _ = await signer.requestPermissions([createDelegationPermissionScope({}), createAccountsPermissionScope(), createCallCanisterPermissionScope()]);
+//     const newKeyPair = Ed25519KeyIdentity.generate();
+//     const delegation = await signer.delegation({
+//       publicKey: newKeyPair.getPublicKey().derKey,
+//       targets: undefined,
+//       maxTimeToLive: 500000n // 24 Hrs
+//     });
+//     const newIdentity = DelegationIdentity.fromDelegation(newKeyPair, delegation);
+//     console.log(newIdentity);
+//     console.log(newIdentity.getPrincipal().toString());
+//     return [newIdentity, delegation] as [DelegationIdentity, DelegationChain];
+//   } catch (e) {
+//     throw e;
+//   }
+// };
 
 export const getAuthClient = async () =>
   await AuthClient.create({
