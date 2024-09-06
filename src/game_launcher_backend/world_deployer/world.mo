@@ -4094,6 +4094,14 @@ actor class WorldTemplate(owner : Principal) = this {
     return trusted_origins;
   };
 
+  public shared ({ caller }) func icrc28_trusted_origins() : async ({
+    trusted_origins : [Text];
+  }) {
+    return {
+      trusted_origins = trusted_origins;
+    };
+  };
+
   public shared ({ caller }) func addTrustedOrigins(args : { originUrl : Text }) : async () {
     var b : Buffer.Buffer<Text> = Buffer.fromArray(trusted_origins);
     b.add(args.originUrl);
@@ -4882,7 +4890,7 @@ actor class WorldTemplate(owner : Principal) = this {
   };
 
   // BOOM token staking for DAO
-  private var _proStake : Nat = 5000000000; 
+  private var _proStake : Nat = 5000000000;
   private var _eliteStake : Nat = 10000000000;
   private stable var _boomStakes : Trie.Trie<Text, TStaking.ICRCStake> = Trie.empty(); // key -> (user principal id)
   //ICRC Stake verification checks and staking
