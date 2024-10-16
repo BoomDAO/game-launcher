@@ -36,6 +36,8 @@ const Members = () => {
                         <option value="elementum_airdrop_pts_leaderboard">ELEMENTUM</option>
                         <option value="plethora_airdrop_pts_leaderboard">PLETHORA</option>
                         <option value="toyoworld_airdrop_pts_leaderboard">TOYOWORLD</option>
+                        <option value="domiwilliuminati_leaderboard">DOMIWILLIUMINATI</option>
+                        <option value="alphadaddydom_leaderboard">ALPHA DADDY DOM</option>
                     </select>
                     </div>
                 </div>
@@ -47,8 +49,10 @@ const Members = () => {
             <div className="w-full flex justify-around">
                 <p className="w-20 text-xl">Rank</p>
                 <p className="w-72 text-xl">User</p>
-                { (leaderboard == "boom_leaderboard") ? <p className="w-40 text-xl">Guild XP</p> : <></> }
-                { (leaderboard == "boom_leaderboard") ? <p className="w-44 text-xl">Rewards</p> : <p className="w-44 text-xl">Airdrop Points</p> }
+                { (leaderboard == "boom_leaderboard") ? <p className="w-40 text-xl">XP</p> : <></> }
+                { (leaderboard == "boom_leaderboard") ? <p className="w-44 text-xl">Rewards</p> :
+                    (leaderboard.includes("airdrop_pts_leaderboard")) ? <p className="w-44 text-xl">Airdrop Points</p> : 
+                    <p className="w-44 text-xl">{`$` + (leaderboard.substring(0, leaderboard.length - 12).toUpperCase())}</p> }
                 <p className="w-40 text-xl">Join Date</p>
             </div>
             {/* <Space/> */}
@@ -73,7 +77,7 @@ const Members = () => {
                                                 (leaderboard == "boom_leaderboard") ? <p className="w-40 font-light pl-1 pt-2">{guilds}</p> : <></>
                                             }
                                             {
-                                                (leaderboard == "boom_leaderboard") ? <p className="w-44 font-light pl-1 pt-2">{reward} BOOM</p> : <p className="w-44 font-light pl-1 pt-2">{reward} Pts</p>
+                                                (leaderboard == "boom_leaderboard") ? <p className="w-44 font-light pl-1 pt-2">{reward} BOOM</p> : <p className="w-44 font-light pl-1 pt-2">{reward} {(leaderboard.includes("airdrop_pts_leaderboard")) ? "Pts" : "Tokens"}</p>
                                             }
                                             <p className="w-40 font-light pl-1 pt-2">{joinDate}</p>
                                         </div>
