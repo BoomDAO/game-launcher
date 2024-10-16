@@ -5096,6 +5096,41 @@ actor class WorldTemplate(owner : Principal) = this {
         return Buffer.toArray(b);
     };
 
+    public query func getAllExtStakesInfo() : async [(Text, TStaking.EXTStake)] {
+        var b = Buffer.Buffer<(Text, TStaking.EXTStake)>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            b.add((i, v));
+        };
+        return Buffer.toArray(b);
+    };
+
+    public query func getAllSpecificCollectionExtStakesInfo(collectionCanisterId : Text) : async [(Text, TStaking.EXTStake)] {
+        var b = Buffer.Buffer<(Text, TStaking.EXTStake)>(0);
+        for ((i, v) in Trie.iter(_extStakes)) {
+            let key = Iter.toArray(Text.tokens(i, #text("|")));
+            if (key[0] == collectionCanisterId) {
+                b.add((i, v));
+            };
+        };
+        return Buffer.toArray(b);
+    };
+
+    public shared ({ caller }) func settleExtStakesErr(arg : { collectionCanisterId : Text; tokenIndex : Nat32; staker : Text }) : async EXTCORE.TransferResponse {
+        assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe"));
+        var _req : EXTCORE.TransferRequest = {
+            from = #principal(WorldId());
+            to = #principal(Principal.fromText(arg.staker));
+            token = EXTCORE.TokenIdentifier.fromText(arg.collectionCanisterId, arg.tokenIndex);
+            amount = 1;
+            memo = Text.encodeUtf8("BGG-NFT-Unlocking");
+            notify = false;
+            subaccount = null;
+        };
+        let EXT : Ledger.EXT = actor (arg.collectionCanisterId);
+        var res : EXTCORE.TransferResponse = await EXT.transfer(_req);
+        return res;
+    };
+
     // DAU tracking for BGG Games
     private stable var _dau : Trie.Trie<Text, Nat> = Trie.empty();
 
