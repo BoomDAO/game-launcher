@@ -386,4 +386,25 @@ actor Deployer {
     };
   };
 
+  public shared ({ caller }) func updateWorldCanisterSettings(args : { world_id : Text; settings : [Text] }) : async () {
+    assert (caller == Principal.fromText("2ot7t-idkzt-murdg-in2md-bmj2w-urej7-ft6wa-i4bd3-zglmv-pf42b-zqe")); 
+    let cid = Principal.fromText(args.world_id);
+    var controllers = Buffer.Buffer<Principal>(0);
+    for(i in args.settings.vals()) {
+      controllers.add(Principal.fromText(i));
+    };
+    await (
+      IC.update_settings({
+        canister_id = cid;
+        settings = {
+          controllers = ?Buffer.toArray(controllers);
+          compute_allocation = null;
+          memory_allocation = null;
+          freezing_threshold = ?31_540_000;
+        };
+        sender_canister_version = null;
+      })
+    );
+  };
+
 };

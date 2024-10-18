@@ -31,6 +31,7 @@ import Trie2D "mo:base/Trie";
 
 module {
     public let IcpLedgerCanisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai"; //ICP Ledger canister_id
+    public let BoomLedgerCanisterId = "vtrom-gqaaa-aaaaq-aabia-cai"; //BOOM Ledger canister_id
     public let IC_Management = "aaaaa-aa"; //IC Management canister_id
     public let ICRC1_Ledger = "mxzaz-hqaaa-aaaar-qaada-cai"; //ckBTC as ICRC-1 Token
 
