@@ -50,7 +50,6 @@ export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
 const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
 export const swapCanisterId = "w73yo-siaaa-aaaak-qib2q-cai";
 
-
 //Production
 
 // const games_canisterId = "6rvbl-uqaaa-aaaal-ab24a-cai"; 
