@@ -28,8 +28,12 @@ export const navPaths = {
   transfer: "/wallet/transfer",
   nftTransfer: "/wallet/transfer/nft",
   twitterPost: "gaming-guilds/onboarding-quests/twitter-post",
+  launchpad: "/launchpad",
+  launchpad_participate: "/launchpad/participate",
   browse_games: "/browse-games",
-  game_iframe: "/game-iframe"
+  game_iframe: "/game-iframe",
+  stake: "/stake",
+  launchpad_stake: "/launchpad/stake"
 };
 
 export const platform_types: SelectOption[] = [

@@ -36,6 +36,9 @@
   .gradient-bg {
     @apply bg-gradient-to-r from-darkPrimary to-lightPrimary;
   }
+  .yellow-red-gradient-bg {
+    @apply bg-gradient-to-r from-amber-300 to-orange-500;
+  }
   .yellow-gradient-bg {
     @apply bg-gradient-to-r from-amber-300 to-amber-400;
   }
@@ -50,6 +53,9 @@
   }
   .gradient-bg-green {
     @apply bg-gradient-to-r from-green-400 to-green-800
+  }
+  .gradient-bg-blue {
+    @apply bg-gradient-to-r from-sky-400 to-sky-700
   }
   .gradient-bg-grey {
     @apply bg-gradient-to-r from-gray-400 to-gray-400

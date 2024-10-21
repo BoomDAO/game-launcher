@@ -38,13 +38,18 @@ module {
 
     public type AccountIdentifier = Text;
 
-    public type TokenInfo = {
+    public type TokenProject = {
         name: Text;
-        symbol: Text;
-        decimals: Nat8;
-        fee: Nat;
-        init_total_supply: Nat64;
-        token_canister_id: Text;
+        website: Text;
+        bannerUrl: Text;
+        description: {
+            #plainText: Text;
+            #formattedText: Text;
+        };
+        metadata: [(Text, Text)];
+        creator: Text;
+        creatorAbout: Text;
+        creatorImageUrl: Text;
     };
 
     public type Token = {
@@ -61,8 +66,10 @@ module {
         gaming_guilds: {
             account: Account;
             icp: Nat64;
+            boom: Nat;
             icrc: Nat;
-            icp_result: ?ICP.Result;
+            icp_result: ?ICP.Icrc1TransferResult;
+            boom_result: ?ICRC.TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
         participants: {
@@ -71,35 +78,56 @@ module {
         team: {
             account: Account;
             icp: Nat64;
+            boom: Nat;
             icrc: Nat;
-            icp_result: ?ICP.Result;
+            icp_result: ?ICP.Icrc1TransferResult;
+            boom_result: ?ICRC.TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
-        boom_dao: {
+        boom_dao_treasury: {
             icp_account: AccountIdentifier;
             icrc_account: Account;
             icp: Nat64;
+            boom: Nat;
             icrc: Nat;
-            icp_result: ?ICP.Result_5;
+            icp_result: ?ICP.TransferResult;
+            boom_result: ?ICRC.TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
         liquidity_pool: {
             account: Account;
             icp: Nat64;
+            boom: Nat;
             icrc: Nat;
-            icp_result: ?ICP.Result;
+            icp_result: ?ICP.Icrc1TransferResult;
+            boom_result: ?ICRC.TransferResult;
+            icrc_result: ?ICRC.TransferResult;
+        };
+        other: ?{ // For more flexibility in case there are other peoples for token allocation
+            account: Account;
+            icp: Nat64;
+            boom: Nat;
+            icrc: Nat;
+            icp_result: ?ICP.Icrc1TransferResult;
+            boom_result: ?ICRC.TransferResult;
             icrc_result: ?ICRC.TransferResult;
         };
     };
 
+    public type TokenSwapType = {
+        #icp;
+        #boom;
+    };
+
     public type TokenSwapConfigs = {
         token_supply_configs: SupplyConfigs;
-        min_icp_e8s: Nat64;
-        max_icp_e8s: Nat64;
-        min_participant_icp_e8s: Nat64;
-        max_participant_icp_e8s: Nat64;
+        min_token_e8s: Nat64;
+        max_token_e8s: Nat64;
+        min_participant_token_e8s: Nat64;
+        max_participant_token_e8s: Nat64;
         swap_start_timestamp_seconds: Int;
         swap_due_timestamp_seconds: Int;
+        swap_type: TokenSwapType;
     };
 
     public type TokenSwapStatus = {
@@ -110,8 +138,24 @@ module {
     public type ParticipantDetails = {
         account: Account;
         icp_e8s: Nat64;
+        boom_e8s: Nat;
         token_e8s: ?Nat;           
-        refund_result: ?ICP.Result;
+        icp_refund_result: ?ICP.Icrc1TransferResult;
+        boom_refund_result: ?ICRC.TransferResult;
         mint_result: ?ICRC.TransferResult;
     };
+
+    public type TokenInfo = {
+        token_canister_id: Text;
+        token_configs: Token;
+        token_project_configs: TokenProject;
+        token_swap_configs: TokenSwapConfigs;
+    };
+
+    public type TokensInfo = {
+        active: [TokenInfo];
+        inactive: [TokenInfo];
+        upcoming: [TokenInfo];
+    };
+
 }

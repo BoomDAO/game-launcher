@@ -8,5 +8,9 @@
   "guild_card": {
     "setup_detail": "",
     "setup_warning": ""
+  },
+  "blocked_country_info": {
+    "codes": [],
+    "geo_blocking_info": ""
   }
 }

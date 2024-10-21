@@ -21,9 +21,6 @@ import DeployToken from "./pages/TokenDeployer/DeployToken";
 import Token from "./pages/TokenDeployer/Token/Token";
 import Game from "./pages/UploadGames/Games/Game";
 import ManageWorlds from "./pages/WorldDeployer/ManageWorlds";
-import GamingGuilds from "./pages/GamingGuilds";
-import VerifyPage from "./pages/GamingGuilds/VerifyOtpPage";
-import EmailPage from "./pages/GamingGuilds/EmailPage";
 import VerifyOtpPage from "./pages/GamingGuilds/VerifyOtpPage";
 import VerifyEmailPage from "./pages/GamingGuilds/VerifyEmailPage";
 import VerifyPhoneOtpPage from "./pages/GamingGuilds/VerifyPhoneOtpPage";
@@ -32,9 +29,14 @@ import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import WalletTransfer from "./pages/Wallet/WalletTransfer";
 import NftWalletTransfer from "./pages/Wallet/NftWalletTransfer";
-import QuestTwitterPost from "./pages/GamingGuilds/QuestTwitterPost";
 import BrowseGames from "./pages/BrowseGames";
+import Launchpad from "./pages/Launchpad";
+import LaunchpadProject from "./pages/Launchpad/LaunchpadProject";
+import Participate from "./pages/Launchpad/Participate";
 import Iframe from "./pages/GamingGuilds/Iframe";
+import WalletStake from "./pages/Wallet/WalletStake";
+import GeoBlockedRoute from "./components/GeoBlockedRoute";
+import LaunchpadStake from "./pages/Wallet/LaunchpadStake";
 
 function App() {
   return (
@@ -50,9 +52,12 @@ function App() {
                 path={`${navPaths.browse_games}`}
                 element={<BrowseGames />}
               />
-
+              <Route path={navPaths.launchpad} element={<Launchpad />} />
+              <Route path={`${navPaths.launchpad}/:canisterId`} element={<LaunchpadProject />} />
               <Route element={<ProtectedRoute />}>
-              <Route path={navPaths.twitterPost} element={<QuestTwitterPost/>} />
+                <Route element={<GeoBlockedRoute />}>
+                  <Route path={`${navPaths.launchpad_participate}/:swapType/:canisterId`} element={<Participate />} />
+                </Route>
                 <Route path={navPaths.upload_games} element={<UploadGames />} />
                 <Route
                   path={`${navPaths.upload_games_new}`}
@@ -113,15 +118,15 @@ function App() {
                 />
                 <Route
                   path={`${navPaths.profile_picture}`}
-                  element={<Profile activeTab="Picture"/>}
+                  element={<Profile activeTab="Picture" />}
                 />
                 <Route
                   path={`${navPaths.profile_username}`}
-                  element={<Profile activeTab="Username"/>}
+                  element={<Profile activeTab="Username" />}
                 />
                 <Route
                   path={`${navPaths.wallet_tokens}`}
-                  element={<Wallet activeTab="Tokens"/>}
+                  element={<Wallet activeTab="Tokens" />}
                 />
                 <Route
                   path={`${navPaths.wallet_nfts}`}
@@ -129,15 +134,23 @@ function App() {
                 />
                 <Route
                   path={`${navPaths.transfer}/:canisterId`}
-                  element={<WalletTransfer/>}
+                  element={<WalletTransfer />}
+                />
+                <Route
+                  path={`${navPaths.stake}/:canisterId`}
+                  element={<WalletStake />}
+                />
+                <Route
+                  path={`${navPaths.launchpad_stake}/:canisterId`}
+                  element={<LaunchpadStake />}
                 />
                 <Route
                   path={`${navPaths.nftTransfer}/:canisterId/:tokenid`}
-                  element={<NftWalletTransfer/>}
+                  element={<NftWalletTransfer />}
                 />
                 <Route
                   path={`${navPaths.game_iframe}/:canisterId`}
-                  element={<Iframe/>}
+                  element={<Iframe />}
                 />
               </Route>
 

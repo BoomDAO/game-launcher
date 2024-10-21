@@ -9,10 +9,10 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useWorldClient, useICRCLedgerClient, useWorldHubClient } from "@/hooks";
+import { gamingGuildsCanisterId, useBoomLedgerClient, useExtClient, useGamingGuildsClient, useGamingGuildsWorldNodeClient, useGuildsVerifierClient, useWorldClient, useICRCLedgerClient, useWorldHubClient, useSwapCanisterClient } from "@/hooks";
 import { navPaths, serverErrorMsg } from "@/shared";
 import { useAuthContext } from "@/context/authContext";
-import { Profile, UserNftInfo, GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState, UpdateAction, ActionOutcomeHistory, ActionStatusReturn, configId, StableConfig, ConfigData, QuestGamersInfo, Result_6, Result_7, Result_5, EXTStake } from "@/types";
+import { Profile, UserNftInfo, GuildConfig, GuildCard, StableEntity, Field, Action, Member, MembersInfo, ActionReturn, VerifiedStatus, UserProfile, UpdateEntity, TransferIcrc, MintNft, SetNumber, IncrementNumber, DecrementNumber, NftTransfer, ActionState, UpdateAction, ActionOutcomeHistory, ActionStatusReturn, configId, StableConfig, ConfigData, QuestGamersInfo, Result_6, Result_7, Result_5, EXTStake, ICRCStake, ParticipantDetails, WhitelistDetails, TokensInfo } from "@/types";
 import DialogProvider from "@/components/DialogProvider";
 import Button from "@/components/ui/Button";
 import Tokens from "../locale/en/Tokens.json";
@@ -28,7 +28,13 @@ export const queryKeys = {
     user_nfts: "user_nfts",
     all_quests_info: "all_quests_info",
     all_guild_members_info: "all_guild_members_info",
-    page: "page"
+    page: "page",
+    stake_info: "stake_info",
+    stake_tier: "stake_tier",
+    participant_details: "participant_details",
+    swap_type: "swap_type",
+    whitelist_details: "whitelist_details",
+    participation_eligibility: "participation_eligibility"
 };
 
 function closeToast() {
@@ -802,7 +808,6 @@ export const getTokenSymbol = (canisterId?: string) => {
     return "";
 };
 
-
 export const useGetTokensInfo = (): UseQueryResult<Profile> => {
     const { session } = useAuthContext();
     return useQuery({
@@ -874,7 +879,7 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
             let current_user_principal = (session?.identity?.getPrincipal()) ? ((session?.identity?.getPrincipal()).toString()) : "2vxsx-fae";
             let res: UserNftInfo[] = [];
             let registries = [];
-            let stakedRegistries : [[string, EXTStake]] = await actor[methods.getUserExtStakesInfo](current_user_principal) as [[string, EXTStake]];
+            let stakedRegistries: [[string, EXTStake]] = await actor[methods.getUserExtStakesInfo](current_user_principal) as [[string, EXTStake]];
             for (let i = 0; i < Nfts.nfts.length; i += 1) {
                 const nft_canister = await useExtClient(Nfts.nfts[i].canister);
                 registries.push(nft_canister.actor[nft_canister.methods.getRegistry]());
@@ -908,18 +913,18 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
                             entry.balance = _nfts.length.toString();
                             entry.unstakedNfts = _nfts as [[string, Number]];
                         };
-                        for(let j = 0; j < stakedRegistries.length; j += 1) {
+                        for (let j = 0; j < stakedRegistries.length; j += 1) {
                             let r = stakedRegistries[j][0].split("|");
                             let collectionCanisterId = r[0];
                             let tokenIndex = r[1];
-                            if(collectionCanisterId == Nfts.nfts[k].canister && stakedRegistries[j][1].dissolvedAt == BigInt(0)) {
+                            if (collectionCanisterId == Nfts.nfts[k].canister && stakedRegistries[j][1].dissolvedAt == BigInt(0)) {
                                 _stakedNfts.push([getTokenIdentifier(Nfts.nfts[k].canister, Number(tokenIndex)), Number(tokenIndex)]);
-                            } else if(collectionCanisterId == Nfts.nfts[k].canister && stakedRegistries[j][1].dissolvedAt != BigInt(0)) {
+                            } else if (collectionCanisterId == Nfts.nfts[k].canister && stakedRegistries[j][1].dissolvedAt != BigInt(0)) {
                                 let delay = 86400000; // 24hrs - ms
                                 let dissolveAt = Number(stakedRegistries[j][1].dissolvedAt / BigInt(1000000));
                                 let current = Date.now();
                                 let remained = Math.max(Math.floor((delay + dissolveAt - current)), 0);
-                                let time_remained = (remained > 0)? String(msToTime(remained)) : "0";
+                                let time_remained = (remained > 0) ? String(msToTime(remained)) : "0";
                                 _dissolvedNfts.push([getTokenIdentifier(Nfts.nfts[k].canister, Number(tokenIndex)), Number(tokenIndex), time_remained]);
                             }
                         }
@@ -934,7 +939,6 @@ export const useGetUserNftsInfo = (): UseQueryResult<UserNftInfo[]> => {
                     registries = response;
                 }
             );
-            console.log(res);
             return res;
         },
     });
@@ -976,7 +980,7 @@ export const useStakeNft = () => {
                     ok: string,
                     err: string
                 };
-                if(transfer_res.ok == undefined) {
+                if (transfer_res.ok == undefined) {
                     toast.error("some error occured while transferring your NFT to BOOM Gaming Guild for staking, You can still manually transfer your NFT and then Stake it here otherwise contact dev team in discord.");
                 } else {
                     toast.success("NFT transferred successfully, do not close before it get staked!");
@@ -985,7 +989,7 @@ export const useStakeNft = () => {
                     ok: string,
                     err: string
                 };
-                if(res.err != undefined) {
+                if (res.err != undefined) {
                     toast.error(res.err);
                     throw res.err;
                 } else {
@@ -1028,7 +1032,7 @@ export const useDissolveNft = () => {
                     ok: string,
                     err: string
                 };
-                if(res.err != undefined) {
+                if (res.err != undefined) {
                     toast.error(res.err);
                     throw res.err;
                 } else {
@@ -1071,7 +1075,7 @@ export const useDisburseNft = () => {
                     ok: string,
                     err: string
                 };
-                if(res.err != undefined) {
+                if (res.err != undefined) {
                     toast.error(res.err);
                     throw res.err;
                 } else {
@@ -1320,3 +1324,423 @@ export const useUpdateProfileUsername = () => {
         },
     });
 };
+
+export const useEliteStakeBoomTokens = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async ({
+            balance
+        }: {
+            balance: BigInt
+        }) => {
+            try {
+                const { actor, methods } = await useGamingGuildsClient();
+                const swap = await useSwapCanisterClient();
+                const boom_ledger = await useBoomLedgerClient();
+                let amount_e8s: BigInt = 8000000000000n;
+                let userStakeTier = await actor[methods.getUserBoomStakeTier](session?.address || "") as { ok: string | undefined, err: string | undefined };
+                if(userStakeTier.ok != undefined && userStakeTier.ok == "PRO") {
+                    amount_e8s = 4000000000000n;
+                }
+                if (balance < amount_e8s) {
+                    toast.error("Insufficient balance to become ELITE BOOM Staker.");
+                    closeToast();
+                    throw ("");
+                };
+                let req = {
+                    to: {
+                        owner: Principal.fromText(gamingGuildsCanisterId),
+                        subaccount: [],
+                    },
+                    fee: [100000],
+                    memo: [],
+                    from_subaccount: [],
+                    created_at_time: [],
+                    amount: amount_e8s,
+                };
+                let res = await boom_ledger.actor[boom_ledger.methods.icrc1_transfer](req) as {
+                    Ok: number | undefined, Err: {
+                        InsufficientFunds: {} | undefined
+                    } | undefined
+                };
+                if (res.Ok == undefined) {
+                    if (res.Err?.InsufficientFunds == undefined) {
+                        toast.error("ICRC1 Transfer error. Contact dev team in discord.");
+                        closeToast();
+                    } else {
+                        toast.error("Insufficient funds. Contact dev team in discord.");
+                        closeToast();
+                    }
+                    throw (res.Err);
+                } else {
+                    let blockIndex = res.Ok;
+                    let stakeKind: { 'pro': null } | { 'elite': null } = { 'elite': null };
+                    let res2 = await actor[methods.stakeBoomTokens](blockIndex, gamingGuildsCanisterId, session?.address, amount_e8s, stakeKind) as {
+                        ok: string | undefined,
+                        err: string | undefined
+                    };
+                    if (res2.ok == undefined) {
+                        toast.error(res2.err ? res2.err : "some error occoured in staking $BOOM, contact dev team in discord.");
+                        closeToast();
+                        throw (res2.err ? res2.err : "");
+                    } else {
+                        return res2;
+                    }
+                };
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+        },
+        onSuccess: () => {
+            toast.success(t("wallet.tab_1.staking.success"));
+            queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.participation_eligibility] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.participant_details] });
+            closeToast();
+        },
+    });
+};
+
+export const useProStakeBoomTokens = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async ({
+            balance
+        }: {
+            balance: BigInt
+        }) => {
+            try {
+                const { actor, methods } = await useGamingGuildsClient();
+                const boom_ledger = await useBoomLedgerClient();
+                let amount_e8s: BigInt = 4000000000000n;
+                if (balance < amount_e8s) {
+                    toast.error("Insufficient balance to become PRO BOOM Staker.");
+                    closeToast();
+                    throw ("");
+                };
+                let req = {
+                    to: {
+                        owner: Principal.fromText(gamingGuildsCanisterId),
+                        subaccount: [],
+                    },
+                    fee: [100000],
+                    memo: [],
+                    from_subaccount: [],
+                    created_at_time: [],
+                    amount: amount_e8s,
+                };
+                let res = await boom_ledger.actor[boom_ledger.methods.icrc1_transfer](req) as {
+                    Ok: number | undefined, Err: {
+                        InsufficientFunds: {} | undefined
+                    } | undefined
+                };
+                if (res.Ok == undefined) {
+                    if (res.Err?.InsufficientFunds == undefined) {
+                        toast.error("ICRC1 Transfer error. Contact dev team in discord.");
+                        closeToast();
+                    } else {
+                        toast.error("Insufficient funds. Contact dev team in discord.");
+                        closeToast();
+                    }
+                    throw (res.Err);
+                } else {
+                    let blockIndex = res.Ok;
+                    let stakeKind: { 'pro': null } | { 'elite': null } = { 'pro': null };
+                    let res2 = await actor[methods.stakeBoomTokens](blockIndex, gamingGuildsCanisterId, session?.address, amount_e8s, stakeKind) as {
+                        ok: string | undefined,
+                        err: string | undefined
+                    };
+                    if (res2.ok == undefined) {
+                        toast.error(res2.err ? res2.err : "some error occoured in staking $BOOM, contact dev team in discord.");
+                        closeToast();
+                        throw (res2.err ? res2.err : "");
+                    } else {
+                        return res2;
+                    }
+                };
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+        },
+        onSuccess: () => {
+            toast.success(t("wallet.tab_1.staking.success"));
+            queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.participation_eligibility] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.participant_details] });
+            closeToast();
+        },
+    });
+};
+
+export const useGetBoomStakeInfo = (): UseQueryResult<ICRCStake> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.stake_info],
+        queryFn: async () => {
+            const { actor, methods } = await useGamingGuildsClient();
+            let res = await actor[methods.getUserBoomStakeInfo](session?.address || "") as {
+                ok: undefined | ICRCStake,
+                err: undefined | string
+            };
+            if (res.ok == undefined) {
+                return {
+                    'staker': session?.address,
+                    'dissolvedAt': 0,
+                    'stakedAt': 0,
+                    'kind': {},
+                    'tokenCanisterId': "",
+                    'amount': 0,
+                };
+            } else {
+                return res.ok;
+            }
+        },
+    });
+};
+
+export const useGetBoomStakeTier = (): UseQueryResult<string> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.stake_tier],
+        queryFn: async () => {
+            const { actor, methods } = await useGamingGuildsClient();
+            let res = await actor[methods.getUserBoomStakeTier](session?.address || "") as {
+                ok: undefined | string,
+                err: undefined | string
+            };
+            if(res.ok != undefined) {
+                return res.ok;
+            } else {
+                return "";
+            }
+        },
+    });
+};
+
+export const useDissolveBoomStakes = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async () => {
+            try {
+                const { actor, methods } = await useGamingGuildsClient();
+                let res = await actor[methods.dissolveBoomStake]() as {
+                    ok : string | undefined,
+                    err : string | undefined
+                };
+                if(res.ok == undefined) {
+                    toast.error((res.err != undefined) ? res.err : "some error occured on dissolving your stake, contact dev team in discord.");
+                    throw ("");
+                } else {
+                    toast.success(res.ok);
+                    closeToast();
+                };
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
+            closeToast();
+        },
+    });
+};
+
+export const useDisburseBoomStakes = () => {
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
+    const { session } = useAuthContext();
+    return useMutation({
+        mutationFn: async () => {
+            try {
+                const { actor, methods } = await useGamingGuildsClient();
+                let res = await actor[methods.disburseBOOMStake]() as {
+                    ok : string | undefined,
+                    err : string | undefined
+                };
+                if(res.ok == undefined) {
+                    toast.error((res.err != undefined) ? res.err : "some error occured on disbursing your staked tokens to your account, contact dev team in discord.");
+                    throw ("");
+                } else {
+                    toast.success(res.ok);
+                    closeToast();
+                };
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw error.message;
+                }
+                throw serverErrorMsg;
+            }
+        },
+        onError: () => {
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: [queryKeys.wallet] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_info] });
+            queryClient.refetchQueries({ queryKey: [queryKeys.stake_tier] });
+            closeToast();
+        },
+    });
+};
+
+export const useGetWhitelistDetails = (): UseQueryResult<WhitelistDetails> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.whitelist_details],
+        queryFn: async () => {
+            const { actor, methods } = await useSwapCanisterClient();
+            let tokensInfoRes = await actor[methods.getAllTokensInfo]() as {
+                ok: TokensInfo
+            };
+            var res: WhitelistDetails = { elite: false, pro: false, public: false };
+            if (tokensInfoRes.ok) {
+                let tokensInfo = tokensInfoRes.ok;
+                for (let i = 0; i < tokensInfo.active.length; i += 1) {
+                    let current_token_info = tokensInfo.active[i];
+                    let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
+                    let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
+                    if (current_time_seconds >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: true
+                        }
+                    } else if (current_time_seconds + 43200n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: false
+                        }
+                    } else if (current_time_seconds + 86400n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: false,
+                            public: false
+                        }
+                    }
+                }
+            };
+            return res;
+        },
+    });
+};
+
+export const useGetParticipationEligibility = (): UseQueryResult<boolean> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.participation_eligibility],
+        queryFn: async () => {
+            const { actor, methods } = await useSwapCanisterClient();
+            const gamingGuild = await useGamingGuildsClient();
+            let tokensInfoRes: { ok: TokensInfo } = {
+                ok: {
+                    active: [],
+                    inactive: [],
+                    upcoming: []
+                }
+            };
+            let userStakeTier: string = "";
+            await Promise.all([actor[methods.getAllTokensInfo]() as Promise<{ ok: TokensInfo }>, gamingGuild.actor[gamingGuild.methods.getUserBoomStakeTier](session?.address || "") as Promise<{ ok: string | undefined, err: string | undefined }>]).then((res) => {
+                tokensInfoRes = res[0];
+                if (res[1].ok != undefined) {
+                    userStakeTier = res[1].ok;
+                } else {
+                    userStakeTier = "PUBLIC";
+                }
+            });
+            var res: WhitelistDetails = { elite: false, pro: false, public: false };
+            if (tokensInfoRes?.ok) {
+                let tokensInfo = tokensInfoRes?.ok;
+                for (let i = 0; i < tokensInfo.active.length; i += 1) {
+                    let current_token_info = tokensInfo.active[i];
+                    let swap_time_seconds = current_token_info.token_swap_configs.swap_start_timestamp_seconds;
+                    let current_time_seconds = BigInt(Math.floor(Date.now() / 1000));
+                    if (current_time_seconds >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: true
+                        }
+                    } else if (current_time_seconds + 43200n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: true,
+                            public: false
+                        }
+                    } else if (current_time_seconds + 86400n >= swap_time_seconds) {
+                        res = {
+                            elite: true,
+                            pro: false,
+                            public: false
+                        }
+                    }
+                }
+            };
+            let finalRes = false;
+            if (userStakeTier == "ELITE" && res.elite) {
+                finalRes = true;
+            } else if (userStakeTier == "PRO" && res.pro) {
+                finalRes = true
+            } else if (userStakeTier == "PUBLIC" && res.public) {
+                finalRes = true;
+            }
+            return finalRes;
+        },
+    });
+};
+
+export const useGetParticipationDetails = (canisterId: string): UseQueryResult<[String, String]> => {
+    const { session } = useAuthContext();
+    return useQuery({
+        queryKey: [queryKeys.participant_details, canisterId],
+        queryFn: async () => {
+            const { actor, methods } = await useSwapCanisterClient();
+            let finalRes = ["", ""];
+            await Promise.all([actor[methods.getParticipationDetails]({ tokenCanisterId: canisterId, participantId: (session) ? session.address : "2vxsx-fae" }) as Promise<{ ok: ParticipantDetails }>,
+            actor[methods.getTokenSwapType](canisterId) as Promise<string>]).then((res) => {
+                let details = res[0] as { ok: ParticipantDetails | undefined, err: undefined | string };
+                let swapType = res[1];
+                finalRes[1] = (swapType == "BOOM") ? "boom" : "icp";
+                if (details.ok == undefined) {
+                    finalRes[0] = "0";
+                } else {
+                    if (swapType == "ICP") {
+                        let amt = Number(details.ok.icp_e8s * 100000000n / 100000000n) / 100000000;
+                        finalRes[0] = String(amt);
+                    } else {
+                        let amt = Number(details.ok.boom_e8s * 100000000n / 100000000n) / 100000000;
+                        finalRes[0] = String(amt);
+                    }
+                }
+            })
+            return finalRes;
+        },
+    });
+};
+

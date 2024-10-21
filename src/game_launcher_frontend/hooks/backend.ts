@@ -30,11 +30,13 @@ import { idlFactory as GamingGuildsFactory } from "../dids/gaming_guilds.did.js"
 import { idlFactory as BOOMLedgerFactory } from "../dids/boom_ledger.did.js"
 // @ts-ignore
 import { idlFactory as GamingGuildsWorldNodeFactory } from "../dids/gaming_guilds_worldnode.did.js";
+// @ts-ignore
+import { idlFactory as SwapCanisterFactory } from "../dids/swap.did.js";
 
-const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+export const ledger_canisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 const managenemt_canisterId = "aaaaa-aa";
 const ext_canisterId = "4qmvs-qyaaa-aaaal-ab2rq-cai";
-const boom_ledger_canisterId = "vtrom-gqaaa-aaaaq-aabia-cai";
+export const boom_ledger_canisterId = "vtrom-gqaaa-aaaaq-aabia-cai";
 
 //Staging
 
@@ -46,6 +48,7 @@ const worldHubCanisterId = "c5moj-piaaa-aaaal-qdhoq-cai";
 const guildsVerifierCanisterId = "yv22q-myaaa-aaaal-adeuq-cai"
 export const gamingGuildsCanisterId = "6ehny-oaaaa-aaaal-qclyq-cai";
 const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
+export const swapCanisterId = "w73yo-siaaa-aaaak-qib2q-cai";
 
 //Production
 
@@ -57,6 +60,7 @@ const gamingGuildsWorldNodeCanisterId = "hiu7q-siaaa-aaaal-qdhqq-cai";
 // const guildsVerifierCanisterId = "jvcsg-6aaaa-aaaan-qeqvq-cai"
 // export const gamingGuildsCanisterId = "erej6-riaaa-aaaap-ab4ma-cai";
 // const gamingGuildsWorldNodeCanisterId = "ewfpk-4qaaa-aaaap-ab4mq-cai";
+// export const swapCanisterId = "d6dgo-aaaaa-aaaap-akpqq-cai";
 
 //Development
 
@@ -309,7 +313,11 @@ export const useLedgerClient = async () => {
       agent,
       canisterId: ledger_canisterId,
     }),
-    methods: {},
+    methods: {
+      icrc1_balance_of: "icrc1_balance_of",
+      icrc1_transfer: "icrc1_transfer",
+      icrc1_fee: "icrc1_fee"
+    },
   };
 };
 
@@ -411,7 +419,12 @@ export const useGamingGuildsClient = async () => {
       stakeExtNft: "stakeExtNft",
       getUserExtStakesInfo: "getUserExtStakesInfo",
       disburseExtNft: "disburseExtNft",
-      dissolveExtNft: "dissolveExtNft"
+      dissolveExtNft: "dissolveExtNft",
+      stakeBoomTokens: "stakeBoomTokens",
+      dissolveBoomStake: "dissolveBoomStake",
+      disburseBOOMStake: "disburseBOOMStake",
+      getUserBoomStakeTier: "getUserBoomStakeTier",
+      getUserBoomStakeInfo: "getUserBoomStakeInfo"
     },
   };
 };
@@ -455,7 +468,9 @@ export const useBoomLedgerClient = async () => {
       canisterId: boom_ledger_canisterId,
     }),
     methods: {
-      icrc1_balance_of: "icrc1_balance_of"
+      icrc1_balance_of: "icrc1_balance_of",
+      icrc1_fee: "icrc1_fee",
+      icrc1_transfer: "icrc1_transfer"
     },
   };
 };
@@ -476,6 +491,27 @@ export const useICRCLedgerClient = async (canister_id: string) => {
       icrc1_balance_of: "icrc1_balance_of",
       icrc1_transfer: "icrc1_transfer",
       icrc1_fee: "icrc1_fee"
+    },
+  };
+};
+
+export const useSwapCanisterClient = async () => {
+  // const authClient = await getAuthClient();
+  // const identity = authClient?.getIdentity();
+  const nfidClient = await getNfid();
+  const identity = nfidClient.getIdentity();
+  const agent = await getAgent(identity);
+  return {
+    actor: Actor.createActor(SwapCanisterFactory, {
+      agent,
+      canisterId: swapCanisterId,
+    }),
+    methods: {
+      getAllTokensInfo: "getAllTokensInfo",
+      total_token_contributed_e8s_and_total_participants: "total_token_contributed_e8s_and_total_participants",
+      getParticipationDetails: "getParticipationDetails",
+      participate_in_token_swap: "participate_in_token_swap",
+      getTokenSwapType: "getTokenSwapType"
     },
   };
 };

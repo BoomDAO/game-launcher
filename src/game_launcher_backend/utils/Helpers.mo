@@ -109,6 +109,10 @@ module {
         return Float.fromInt(nat);
     };
 
+    public func natToFloat(num : Nat) : (Float) {
+        return Float.fromInt(num);
+    };
+
     public func intToNat(num : Int) : Nat{
         let int_text : Text = Int.toText(num);
         return textToNat(int_text);

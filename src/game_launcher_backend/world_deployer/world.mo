@@ -103,6 +103,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
   let worldHub : WorldHub = actor (ENV.WorldHubCanisterId);
   let ICP_Ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);
+  let BOOM_Ledger : ICRC.Self = actor (ENV.BoomLedgerCanisterId);
 
   //# INTERFACES
   type UserNode = actor {
@@ -3708,7 +3709,6 @@ actor class WorldTemplate(owner : Principal) = this {
                 if (Text.contains(fieldValue1, #text uid)) {
 
                   let users = Text.split(fieldValue1, #char ',');
-
                   return #ok(Iter.toArray(users));
                 };
               };
@@ -3757,6 +3757,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     return #ok("imported");
   };
+
   public shared ({ caller }) func importAllActionsOfWorld(args : { ofWorldId : Text }) : async (Result.Result<Text, Text>) {
     assert (caller == owner);
     let world = actor (args.ofWorldId) : actor {
@@ -4408,6 +4409,224 @@ actor class WorldTemplate(owner : Principal) = this {
             switch (t.actionExpirationTimestamp) {
               case (?actionExpirationTimestamp) {
                 if (actionExpirationTimestamp < Time.now()) {
+                  //FAILURE: ACTION IS EXPIRED
+                  returnValue := {
+                    isValid = false;
+                    timeStatus = {
+                      nextAvailableTimestamp = null;
+                      actionsLeft = null;
+                    };
+                    actionHistoryStatus = returnValue.actionHistoryStatus;
+                    entitiesStatus = returnValue.entitiesStatus;
+                  };
+                };
+              };
+              case _ {};
+            };
+
+            let actionHistoryConstraint = t.actionHistory;
+
+            // ACTION HISTORY CONSTRAINTS
+            var history_outcomes = actionHistory;
+
+            for (expected in actionHistoryConstraint.vals()) {
+              switch (expected) {
+                case (#updateEntity outcome) {
+                  let _entityId = outcome.eid;
+                  var _fieldName = "";
+                  for (update in outcome.updates.vals()) {
+                    switch (update) {
+                      case (#incrementNumber iv) {
+                        _fieldName := iv.fieldName;
+                        // Query history outcomes and validate
+                        var updated_value : Float = 0.0;
+                        for (i in history_outcomes.vals()) {
+                          if (i.appliedAt >= last_action_time) {
+                            switch (i.option) {
+                              case (#updateEntity history_outcome) {
+                                if (history_outcome.eid == _entityId) {
+                                  for (history_update in history_outcome.updates.vals()) {
+                                    switch (history_update) {
+                                      case (#incrementNumber val) {
+                                        if (val.fieldName == _fieldName) {
+                                          switch (val.fieldValue) {
+                                            case (#number n) {
+                                              updated_value := updated_value + n;
+                                            };
+                                            case (#formula _) {};
+                                          };
+                                        };
+                                      };
+                                      case _ {};
+                                    };
+                                  };
+                                };
+                              };
+                              case _ {};
+                            };
+                          };
+                        };
+                        // check
+                        switch (iv.fieldValue) {
+                          case (#number n) {
+                            //ADD ACTION HISTORY STATUS
+                            actionHistoryStatusBuffer.add({
+                              eid = _entityId;
+                              fieldName = iv.fieldName;
+                              currentValue = Float.toText(updated_value);
+                              expectedValue = Float.toText(n);
+                            });
+
+                            if (n > updated_value) {
+                              //FAILURE: ACTION HISTORY CONDITION DID NOT MET
+                              returnValue := {
+                                isValid = false;
+                                timeStatus = returnValue.timeStatus;
+                                actionHistoryStatus = returnValue.actionHistoryStatus;
+                                entitiesStatus = returnValue.entitiesStatus;
+                              };
+                            };
+                          };
+                          case _ {};
+                        };
+                      };
+                      case _ {};
+                    };
+                  };
+                };
+                case _ {}; // other action history will be handled later
+              };
+            };
+          };
+          case _ {};
+        };
+
+        //ENTITY CONSTRAINTS
+        for (e in constraints.entityConstraint.vals()) {
+
+          var wid = Option.get(e.wid, worldPrincipalId());
+
+          switch (e.entityConstraintType) {
+            case (#greaterThanNumber val) {
+              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
+                case (?currentVal) {
+                  let current_val_in_float = Utils.textToFloat(currentVal);
+
+                  if (current_val_in_float < val.value) {
+                    //FAILURE: ENTITY CONSTRAINT CONDITION DID NOT MET
+                    returnValue := {
+                      isValid = false;
+                      timeStatus = returnValue.timeStatus;
+                      actionHistoryStatus = returnValue.actionHistoryStatus;
+                      entitiesStatus = returnValue.entitiesStatus;
+                    };
+                  };
+                  //ADD ACTION HISTORY STATUS
+                  entitiesStatusBuffer.add({
+                    eid = e.eid;
+                    fieldName = val.fieldName;
+                    currentValue = currentVal;
+                    expectedValue = Float.toText(val.value);
+                  });
+                };
+                case _ {
+                  //ADD ACTION HISTORY STATUS
+                  entitiesStatusBuffer.add({
+                    eid = e.eid;
+                    fieldName = val.fieldName;
+                    currentValue = "0";
+                    expectedValue = Float.toText(val.value);
+                  });
+                };
+              };
+            };
+            case (#lessThanNumber val) {
+              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
+                case (?currentVal) {
+                  let current_val_in_float = Utils.textToFloat(currentVal);
+                  if (current_val_in_float >= val.value) {
+                    returnValue := {
+                      isValid = false;
+                      timeStatus = returnValue.timeStatus;
+                      actionHistoryStatus = returnValue.actionHistoryStatus;
+                      entitiesStatus = returnValue.entitiesStatus;
+                    };
+                  };
+                  //ADD ACTION HISTORY STATUS
+                  entitiesStatusBuffer.add({
+                    eid = e.eid;
+                    fieldName = val.fieldName;
+                    currentValue = currentVal;
+                    expectedValue = Float.toText(val.value);
+                  });
+                };
+                case _ {
+                  //ADD ACTION HISTORY STATUS
+                  entitiesStatusBuffer.add({
+                    eid = e.eid;
+                    fieldName = val.fieldName;
+                    currentValue = "0";
+                    expectedValue = Float.toText(val.value);
+                  });
+                };
+              };
+
+            };
+            case (#equalToNumber val) {
+              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
+                case (?currentVal) {
+                  let current_val_in_float = Utils.textToFloat(currentVal);
+                  if (val.equal) {
+                    if (current_val_in_float != val.value) {
+                      returnValue := {
+                        isValid = false;
+                        timeStatus = returnValue.timeStatus;
+                        actionHistoryStatus = returnValue.actionHistoryStatus;
+                        entitiesStatus = returnValue.entitiesStatus;
+                      };
+                    };
+                  } else {
+                    if (current_val_in_float == val.value) {
+                      returnValue := {
+                        isValid = false;
+                        timeStatus = returnValue.timeStatus;
+                        actionHistoryStatus = returnValue.actionHistoryStatus;
+                        entitiesStatus = returnValue.entitiesStatus;
+                      };
+                    };
+                  };
+                  entitiesStatusBuffer.add({
+                    eid = e.eid;
+                    fieldName = val.fieldName;
+                    currentValue = currentVal;
+                    expectedValue = Float.toText(val.value);
+                  });
+                };
+                case _ {
+                  if (val.equal) {
+                    returnValue := {
+                      isValid = false;
+                      timeStatus = returnValue.timeStatus;
+                      actionHistoryStatus = returnValue.actionHistoryStatus;
+                      entitiesStatus = returnValue.entitiesStatus;
+                    };
+                    entitiesStatusBuffer.add({
+                      eid = e.eid;
+                      fieldName = val.fieldName;
+                      currentValue = "0";
+                      expectedValue = Float.toText(val.value);
+                    });
+                  };
+                };
+              };
+
+            };
+            case (#equalToText val) {
+
+              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
+                case (?currentVal) {
+                  if (val.equal) {
+                    if (currentVal != val.value) {
 
                   //FAILURE: ACTION IS EXPIRED
                   returnValue := {
@@ -4692,15 +4911,28 @@ actor class WorldTemplate(owner : Principal) = this {
                   };
                 };
               };
-
             };
             case (#greaterThanNowTimestamp val) {
-
+              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
+                case (?currentVal) {
+                  let current_val_in_Nat = Utils.textToNat(currentVal);
+                  if (current_val_in_Nat < Time.now()) {
+                    returnValue := {
+                      isValid = false;
+                      timeStatus = returnValue.timeStatus;
+                      actionHistoryStatus = returnValue.actionHistoryStatus;
+                      entitiesStatus = returnValue.entitiesStatus;
+                    };
+                  };
+                };
+              };
+            };
+            case (#lessThanNowTimestamp val) {
               switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                 case (?currentVal) {
 
                   let current_val_in_Nat = Utils.textToNat(currentVal);
-                  if (current_val_in_Nat < Time.now()) {
+                  if (current_val_in_Nat > Time.now()) {
                     returnValue := {
                       isValid = false;
                       timeStatus = returnValue.timeStatus;
@@ -4720,30 +4952,7 @@ actor class WorldTemplate(owner : Principal) = this {
               };
 
             };
-            case (#lessThanNowTimestamp val) {
-
-              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
-                case (?currentVal) {
-
-                  let current_val_in_Nat = Utils.textToNat(currentVal);
-                  if (current_val_in_Nat > Time.now()) {
-                    returnValue := {
-                      isValid = false;
-                      timeStatus = returnValue.timeStatus;
-                      actionHistoryStatus = returnValue.actionHistoryStatus;
-                      entitiesStatus = returnValue.entitiesStatus;
-                    };
-                  };
-                };
-                case _ {
-                  //We are not longer returning false if entity or field doesnt exist
-                  //return #err(("You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
-                };
-              };
-
-            };
             case (#greaterThanEqualToNumber val) {
-
               switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                 case (?currentVal) {
                   let current_val_in_float = Utils.textToFloat(currentVal);
@@ -4778,10 +4987,8 @@ actor class WorldTemplate(owner : Principal) = this {
                   });
                 };
               };
-
             };
             case (#lessThanEqualToNumber val) {
-
               switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                 case (?currentVal) {
 
@@ -4807,13 +5014,10 @@ actor class WorldTemplate(owner : Principal) = this {
                   // return #err(("You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                 };
               };
-
             };
             case (#existField val) {
-
               switch (getEntity_(entityData, wid, e.eid)) {
                 case (?entity) {
-
                   switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                     case (?currentVal) {
                       if (val.value == false) {
@@ -4863,7 +5067,6 @@ actor class WorldTemplate(owner : Principal) = this {
       actionHistoryStatus = Buffer.toArray(actionHistoryStatusBuffer);
       entitiesStatus = Buffer.toArray(entitiesStatusBuffer);
     };
-
     //
     return #ok(returnValue);
   };
@@ -4878,6 +5081,418 @@ actor class WorldTemplate(owner : Principal) = this {
       };
       case _ {};
     };
+  };
+
+  // BOOM token staking for DAO
+  private var _proStake : Nat = 4000000000000;
+  private var _eliteStake : Nat = 8000000000000;
+  private stable var _boomStakes : Trie.Trie<Text, TStaking.ICRCStake> = Trie.empty(); // key -> (user principal id)
+  //ICRC Stake verification checks and staking
+  //1. If user already staked tokens, check for upgrading tier with token difference amount only (excess tokens will be transferred back) TO BE DECIDED
+  //2. query token tx from ledger
+  //3. init user stakes
+  //4. Grant user an entity in DB for corresponding tier
+  private func queryIcrcTx_(blockIndex : Nat, toPrincipal : Text, fromPrincipal : Text, amt : Nat, tokenCanisterId : Text) : async (Result.Result<Text, Text>) {
+    var _req : ICRC.GetTransactionsRequest = {
+      start = blockIndex;
+      length = blockIndex + 1;
+    };
+
+    var to_ : ICRC.Account = {
+      owner = Principal.fromText(toPrincipal);
+      subaccount = null;
+    };
+    var from_ : ICRC.Account = {
+      owner = Principal.fromText(fromPrincipal);
+      subaccount = null;
+    };
+    let ICRC_Ledger : ICRC.Self = actor (tokenCanisterId);
+    var t : ICRC.GetTransactionsResponse = {
+      first_index = 0;
+      log_length = 0;
+      transactions = [];
+      archived_transactions = [];
+    };
+    t := await ICRC_Ledger.get_transactions(_req);
+
+    if ((t.transactions).size() == 0) {
+      return #err("tx blockIndex does not exist");
+    };
+    let tx = t.transactions[0];
+    if (tx.kind == "transfer") {
+      let transfer = tx.transfer;
+      switch (transfer) {
+        case (?tt) {
+          if (tt.from == from_ and tt.to == to_ and tt.amount == amt) {
+            return #ok("verified!");
+          } else {
+            return #err("tx transfer details mismatch!");
+          };
+        };
+        case (null) {
+          return #err("tx transfer details not found!");
+        };
+      };
+    } else if (tx.kind == "mint") {
+      let mint = tx.mint;
+      switch (mint) {
+        case (?tt) {
+          if (tt.to == to_ and tt.amount == amt) {
+            return #ok("verified!");
+          } else {
+            return #err("tx mint details mismatch!");
+          };
+        };
+        case (null) {
+          return #err("tx mint details not found!");
+        };
+      };
+    } else {
+      return #err("not a transfer!");
+    };
+  };
+
+  private func transferBoom_(toPrincipal : Text, amt : Nat) : async (ICRC.TransferResult) {
+    let req : ICRC.TransferArg = {
+      to = {
+        owner = Principal.fromText(toPrincipal);
+        subaccount = null;
+      };
+      fee = ?100000;
+      memo = ?Text.encodeUtf8("BOOM-Token-locking/unlocking");
+      from_subaccount = null;
+      created_at_time = null;
+      amount = amt;
+    };
+    return (await BOOM_Ledger.icrc1_transfer(req));
+  };
+
+  public shared ({ caller }) func stakeBoomTokens(blockIndex : Nat, toPrincipal : Text, fromPrincipal : Text, amt : Nat, kind : TStaking.ICRCStakeKind) : async (Result.Result<Text, Text>) {
+    assert (Principal.fromText(fromPrincipal) == caller);
+    assert (Principal.fromText(toPrincipal) == WorldId());
+    assert (amt == _proStake or amt == _eliteStake or amt == (_eliteStake - _proStake));
+    let _staker : Text = Principal.toText(caller);
+    switch (Trie.find(_boomStakes, Utils.keyT(_staker), Text.equal)) {
+      case (?stakeInfo) {
+        // Two cases to handle - 1. Upgrade 2. Re-Staking (after previous stakes got dissolved)
+        if (stakeInfo.dissolvedAt == 0) {
+          // Upgrade
+          switch (stakeInfo.kind) {
+            case (#pro) {
+              let difference_for_tier_upgrade : Nat = _eliteStake - _proStake;
+              if (amt < difference_for_tier_upgrade) {
+                let _ = await transferBoom_(fromPrincipal, amt - 100000);
+                return #err("you are already PRO staker and the amount transferred is not sufficient to upgrade tier to ELITE.");
+              } else {
+                switch (kind) {
+                  case (#pro) {
+                    let _ = await transferBoom_(fromPrincipal, amt - 100000);
+                    return #err("you are already a PRO Staker. If you want to upgrade to ELITE, clicke on ELITE BOOM staker.");
+                  };
+                  case (#elite) {
+                    switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                      case (#ok o) {
+                        let newStakeInfo : TStaking.ICRCStake = {
+                          staker = _staker;
+                          tokenCanisterId = ENV.BoomLedgerCanisterId;
+                          amount = _eliteStake;
+                          kind = #elite;
+                          stakedAt = Time.now();
+                          dissolvedAt = 0;
+                        };
+                        _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                      };
+                      case (#err e) {
+                        return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
+                      };
+                    };
+                  };
+                };
+              };
+            };
+            case (#elite) {
+              return #err("you are already a ELITE staker.");
+            };
+          };
+        } else if (stakeInfo.dissolvedAt != 0) {
+          // Re-Staking
+          switch (stakeInfo.kind) {
+            case (#pro) {
+              switch (kind) {
+                case (#pro) {
+                  switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                    case (#ok o) {
+                      let newStakeInfo : TStaking.ICRCStake = {
+                        staker = _staker;
+                        tokenCanisterId = ENV.BoomLedgerCanisterId;
+                        amount = _proStake;
+                        kind = #pro;
+                        stakedAt = Time.now();
+                        dissolvedAt = 0;
+                      };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
+                      _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                    };
+                    case (#err e) {
+                      return #err("We could not verify $BOOM transfer for PRO re-staking, please contact dev team in discord.");
+                    };
+                  };
+                };
+                case (#elite) {
+                  switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                    case (#ok o) {
+                      let newStakeInfo : TStaking.ICRCStake = {
+                        staker = _staker;
+                        tokenCanisterId = ENV.BoomLedgerCanisterId;
+                        amount = _eliteStake;
+                        kind = #elite;
+                        stakedAt = Time.now();
+                        dissolvedAt = 0;
+                      };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
+                      _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                    };
+                    case (#err e) {
+                      return #err("We could not verify $BOOM transfer for ELITE re-staking, please contact dev team in discord.");
+                    };
+                  };
+                };
+              };
+            };
+            case (#elite) {
+              switch (kind) {
+                case (#pro) {
+                  switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                    case (#ok o) {
+                      let newStakeInfo : TStaking.ICRCStake = {
+                        staker = _staker;
+                        tokenCanisterId = ENV.BoomLedgerCanisterId;
+                        amount = _proStake;
+                        kind = #pro;
+                        stakedAt = Time.now();
+                        dissolvedAt = 0;
+                      };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
+                      _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                    };
+                    case (#err e) {
+                      return #err("We could not verify $BOOM transfer for PRO re-staking, please contact dev team in discord.");
+                    };
+                  };
+                };
+                case (#elite) {
+                  switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                    case (#ok o) {
+                      let newStakeInfo : TStaking.ICRCStake = {
+                        staker = _staker;
+                        tokenCanisterId = ENV.BoomLedgerCanisterId;
+                        amount = _eliteStake;
+                        kind = #elite;
+                        stakedAt = Time.now();
+                        dissolvedAt = 0;
+                      };
+                      let _ = await transferBoom_(fromPrincipal, stakeInfo.amount - 100000);
+                      _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                    };
+                    case (#err e) {
+                      return #err("We could not verify $BOOM transfer for ELITE re-staking, please contact dev team in discord.");
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+      case _ {
+        switch (kind) {
+          case (#pro) {
+            if (amt < _proStake) {
+              return #err("amount transferred is not sufficient to become a PRO staker.");
+            } else {
+              switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                case (#ok o) {
+                  let newStakeInfo : TStaking.ICRCStake = {
+                    staker = _staker;
+                    tokenCanisterId = ENV.BoomLedgerCanisterId;
+                    amount = _proStake;
+                    kind = #pro;
+                    stakedAt = Time.now();
+                    dissolvedAt = 0;
+                  };
+                  _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                };
+                case (#err e) {
+                  return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
+                };
+              };
+            };
+          };
+          case (#elite) {
+            if (amt < _eliteStake) {
+              return #err("amount transferred is not sufficient to become a ELITE staker.");
+            } else {
+              switch (await queryIcrcTx_(blockIndex, toPrincipal, fromPrincipal, amt, ENV.BoomLedgerCanisterId)) {
+                case (#ok o) {
+                  let newStakeInfo : TStaking.ICRCStake = {
+                    staker = _staker;
+                    tokenCanisterId = ENV.BoomLedgerCanisterId;
+                    amount = _eliteStake;
+                    kind = #elite;
+                    stakedAt = Time.now();
+                    dissolvedAt = 0;
+                  };
+                  _boomStakes := Trie.put(_boomStakes, Utils.keyT(_staker), Text.equal, newStakeInfo).0;
+                };
+                case (#err e) {
+                  return #err("We could not verify $BOOM transfer for staking, please contact dev team in discord.");
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    // update stakes entity value
+    switch (kind) {
+      case (#pro) {
+        switch (await createEntity({ uid = fromPrincipal; eid = "PRO:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "1.0" }] })) {
+          case (#ok _) {};
+          case _ {
+            return #err("BOOM tokens staked successfully but some error occured on granting stake entity, contact dev team in discord.");
+          };
+        };
+        switch (await createEntity({ uid = fromPrincipal; eid = "ELITE:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "0.0" }] })) {
+          case (#ok _) {};
+          case _ {
+            return #err("BOOM tokens staked successfully but some error occured on granting stake entity, contact dev team in discord.");
+          };
+        };
+        return #ok("BOOM tokens staked successfully.");
+      };
+      case (#elite) {
+        switch (await createEntity({ uid = fromPrincipal; eid = "PRO:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "0.0" }] })) {
+          case (#ok _) {};
+          case _ {
+            return #err("BOOM tokens staked successfully but some error occured on granting stake entity, contact dev team in discord.");
+          };
+        };
+        switch (await createEntity({ uid = fromPrincipal; eid = "ELITE:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "1.0" }] })) {
+          case (#ok _) {};
+          case _ {
+            return #err("BOOM tokens staked successfully but some error occured on granting stake entity, contact dev team in discord.");
+          };
+        };
+        return #ok("BOOM tokens staked successfully.");
+      };
+    };
+  };
+
+  public shared ({ caller }) func dissolveBoomStake() : async (Result.Result<Text, Text>) {
+    let user : Text = Principal.toText(caller);
+    switch (Trie.find(_boomStakes, Utils.keyT(user), Text.equal)) {
+      case (?stake) {
+        var e : TStaking.ICRCStake = {
+          staker = stake.staker;
+          tokenCanisterId = stake.tokenCanisterId;
+          amount = stake.amount;
+          kind = stake.kind;
+          stakedAt = stake.stakedAt;
+          dissolvedAt = Time.now();
+        };
+        _boomStakes := Trie.put(_boomStakes, Utils.keyT(user), Text.equal, e).0;
+        // update BOOM stake entity value when stake is already dissolved
+        switch (await createEntity({ uid = user; eid = "PRO:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "0.0" }] })) {
+          case (#ok _) {};
+          case _ {
+            return #err("$BOOM dissolved successfully but some error occured, contact dev team in discord.");
+          };
+        };
+        switch (await createEntity({ uid = user; eid = "ELITE:BoomStake"; fields = [{ fieldName = "quantity"; fieldValue = "0.0" }] })) {
+          case (#ok _) {};
+          case _ {
+            return #err("$BOOM dissolved successfully but some error occured, contact dev team in discord.");
+          };
+        };
+        return #ok("$BOOM Stakes dissolved, now wait for 24 Hours to disburse $BOOM to your account.");
+      };
+      case _ {
+        return #err("You do not have any $BOOM staked at BOOM DAO.");
+      };
+    };
+  };
+
+  public shared ({ caller }) func disburseBOOMStake() : async Result.Result<Text, Text> {
+    // transfer boom tokens back to user after checking time-period
+    let delay : Int = 86400000000000 * 30; // 30 Days dissolve delay
+    let user : Text = Principal.toText(caller);
+    switch (Trie.find(_boomStakes, Utils.keyT(user), Text.equal)) {
+      case (?stake) {
+        if (stake.dissolvedAt != 0 and stake.dissolvedAt + delay <= Time.now()) {
+          switch (await transferBoom_(user, stake.amount)) {
+            case (#Ok _) {
+              _boomStakes := Trie.remove(_boomStakes, Utils.keyT(user), Text.equal).0;
+              return #ok("BOOM tokens transferred back successfully.");
+            };
+            case (#Err e) {
+              return #err("some error occured while transferring BOOM tokens from BOOM DAO vault back to user, contact dev team in discord.");
+            };
+          };
+        } else {
+          return #err("unfortunately you can not disburse your BOOM tokens before 30 days, after dissolving it.");
+        };
+      };
+      case _ {
+        return #err("You do not have BOOM tokens staked with BOOM DAO.");
+      };
+    };
+  };
+
+  public query func getUserBoomStakeInfo(uid : Text) : async Result.Result<TStaking.ICRCStake, Text> {
+    let ?stake = Trie.find(_boomStakes, Utils.keyT(uid), Text.equal) else return #err("User has no BOOM token stakes at BOOM DAO.");
+    return #ok(stake);
+  };
+
+  public query func getUserBoomStakeTier(uid : Text) : async (Result.Result<Text, Text>) {
+    let ?stake = Trie.find(_boomStakes, Utils.keyT(uid), Text.equal) else return #err("User has no BOOM token stakes at BOOM DAO.");
+    if (stake.dissolvedAt != 0) {
+      return #err("User has already dissolved BOOM token stakes, Re-Stake BOOM tokens.");
+    };
+    switch (stake.kind) {
+      case (#pro) {
+        return #ok("PRO");
+      };
+      case (#elite) {
+        return #ok("ELITE");
+      };
+    };
+  };
+
+  public query func getEliteStakeUsers() : async [Text] {
+    var b = Buffer.Buffer<Text>(0);
+    for ((i, v) in Trie.iter(_boomStakes)) {
+      switch (v.kind) {
+        case (#elite) {
+          b.add(i);
+        };
+        case _ {};
+    };
+
+    //
+    return #ok(returnValue);
+  };
+
+  public query func getProStakeUsers() : async [Text] {
+    var b = Buffer.Buffer<Text>(0);
+    for ((i, v) in Trie.iter(_boomStakes)) {
+      switch (v.kind) {
+        case (#pro) {
+          b.add(i);
+        };
+        case _ {};
+      };
+    };
+    return Buffer.toArray(b);
   };
 
   // NFT Staking for Gaming Guild
@@ -5071,9 +5686,7 @@ actor class WorldTemplate(owner : Principal) = this {
           b.add(key[1]);
         };
       };
-    };
-    return Buffer.toArray(b);
-  };
+   };
 
   public query func getUserExtStakes(uid : Text) : async [(Text, Text)] {
     var b = Buffer.Buffer<(Text, Text)>(0);
@@ -5161,416 +5774,4 @@ actor class WorldTemplate(owner : Principal) = this {
     return Trie.size(_dau);
   };
 
-  // func send_app_message(client_principal : IcWebSocketCdk.ClientPrincipal, msg : WSSentArg) : async () {
-  //     // here we call the ws_send from the CDK!!
-  //     switch (await IcWebSocketCdk.send(ws_state, client_principal, to_candid (msg))) {
-  //         case (#Err(errMsg)) {
-  //             debugLog("Websocket Error -> " #errMsg);
-  //         };
-  //         case (_) {};
-  //     };
-  // };
-
-  // func on_open(args : IcWebSocketCdk.OnOpenCallbackArgs) : async () {
-
-  //     let uid = Principal.toText(args.client_principal);
-
-  //     ignore tryBroadcastFetchUsersDataRequest_(uid);
-  // };
-
-  // func on_message(args : IcWebSocketCdk.OnMessageCallbackArgs) : async () {};
-
-  // func on_close(args : IcWebSocketCdk.OnCloseCallbackArgs) : async () {
-  //     let uid = Principal.toText(args.client_principal);
-
-  //     //CHECK IF USER IS IN ANY ROOM
-  //     switch (await isUserInRoom_(uid)) {
-  //         case (#ok(room)) {
-
-  //             //TRY RECREATE FIELDS WHERE USER IS REMOVED FROM USERS FIELD
-  //             //WE DONT ADD USERS FIELD TO THE BUFFER UNTIL THE END
-  //             var newFields = Buffer.Buffer<TGlobal.Field>(0);
-
-  //             var newUsersValue : ?Text = null;
-  //             label fieldsLoop for (field in Iter.fromArray(room.fields)) {
-
-  //                 let fieldName = field.fieldName;
-  //                 let fieldValue = field.fieldValue;
-
-  //                 if (fieldName == "tag") {
-
-  //                     if (fieldValue == "room") {
-
-  //                         for (field1 in Iter.fromArray(room.fields)) {
-
-  //                             let fieldName1 = field1.fieldName;
-  //                             let fieldValue1 = field1.fieldValue;
-
-  //                             if (fieldName == "users") {
-
-  //                                 if (Text.contains(fieldValue, #text uid)) {
-
-  //                                     let users = Text.split(fieldValue, #char ',');
-
-  //                                     var elementRemoved = false;
-
-  //                                     label usersLoop for (e in users) {
-
-  //                                         if (elementRemoved == false) {
-
-  //                                             if (e == uid) {
-  //                                                 elementRemoved := true;
-  //                                                 continue usersLoop;
-  //                                             };
-  //                                         };
-
-  //                                         if (newUsersValue != ?"") {
-  //                                             newUsersValue := ?(Option.get(newUsersValue, "") # "," #e);
-  //                                         } else newUsersValue := ?e;
-  //                                     };
-
-  //                                     continue fieldsLoop;
-  //                                 };
-  //                             };
-  //                         };
-  //                     };
-  //                 };
-
-  //                 newFields.add({
-  //                     fieldName = fieldName;
-  //                     fieldValue = fieldValue;
-  //                 });
-  //             };
-
-  //             //THIS IS TO CHECK IF THERE IS ANY USER IN THE ROOM OR WHETHER OR NOT THE ROOM REALLY EXIST
-  //             switch (newUsersValue) {
-  //                 case (?users) {
-  //                     //HERE WE ADD THE USERS FIELD
-  //                     newFields.add({
-  //                         fieldName = "users";
-  //                         fieldValue = users;
-  //                     });
-
-  //                     ignore editEntity_({
-  //                         uid = worldPrincipalId();
-  //                         eid = room.eid;
-  //                         fields = Buffer.toArray(newFields);
-  //                     });
-  //                 };
-  //                 case _ {} // No need to do anything here
-  //             };
-  //         };
-  //         case (#err errMsg) {
-  //             debugLog("Websocket Error -> " #errMsg);
-  //         };
-  //     };
-  // };
-
-  // let params = IcWebSocketCdkTypes.WsInitParams(
-  //     null,
-  //     null,
-  // );
-
-  // let ws_state = IcWebSocketCdkState.IcWebSocketState(params);
-
-  // let handlers = IcWebSocketCdkTypes.WsHandlers(
-  //     ?on_open,
-  //     ?on_message,
-  //     ?on_close
-  // );
-
-  // var ws = IcWebSocketCdk.IcWebSocket(ws_state, params, handlers);
-
-  // // method called by the WS Gateway after receiving FirstMessage from the client
-  // public shared ({ caller }) func ws_open(args : IcWebSocketCdk.CanisterWsOpenArguments) : async IcWebSocketCdk.CanisterWsOpenResult {
-  //     await ws.ws_open(caller, args);
-  // };
-
-  // // method called by the Ws Gateway when closing the IcWebSocket connection
-  // public shared ({ caller }) func ws_close(args : IcWebSocketCdk.CanisterWsCloseArguments) : async IcWebSocketCdk.CanisterWsCloseResult {
-  //     await ws.ws_close(caller, args);
-  // };
-
-  // // method called by the frontend SDK to send a message to the canister
-  // public shared ({ caller }) func ws_message(args : IcWebSocketCdk.CanisterWsMessageArguments, msg : ?WSSentArg) : async IcWebSocketCdk.CanisterWsMessageResult {
-  //     await ws.ws_message(caller, args, msg);
-  // };
-
-  // // method called by the WS Gateway to get messages for all the clients it serves
-  // public shared query ({ caller }) func ws_get_messages(args : IcWebSocketCdk.CanisterWsGetMessagesArguments) : async IcWebSocketCdk.CanisterWsGetMessagesResult {
-  //     ws.ws_get_messages(caller, args);
-  // };
-
-  // method to validate Entities and EntityConstraints for User Quest Status
-
-  // public query func validateEntityConstraints(callerPrincipalId : Text, entities : [TEntity.StableEntity], entityConstraints : [TConstraints.EntityConstraint]) : async (Result.Result<(), [TConstraints.EntityConstraint]>) {
-
-  //     var invalidConstraint = Buffer.Buffer<TConstraints.EntityConstraint>(0);
-
-  //     label constraintLoop for (e in entityConstraints.vals()) {
-
-  //         var wid = Option.get(e.wid, worldPrincipalId());
-
-  //         switch (e.entityConstraintType) {
-  //             case (#greaterThanNumber val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         let current_val_in_float = Utils.textToFloat(currentVal);
-
-  //                         if (current_val_in_float <= val.value) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         invalidConstraint.add(e);
-  //                         continue constraintLoop;
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#lessThanNumber val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         let current_val_in_float = Utils.textToFloat(currentVal);
-
-  //                         if (current_val_in_float >= val.value) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         //We are not longer returning false if entity or field doesnt exist
-  //                         //return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#equalToNumber val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         let current_val_in_float = Utils.textToFloat(currentVal);
-
-  //                         if (val.equal) {
-  //                             if (current_val_in_float != val.value) {
-  //                                 invalidConstraint.add(e);
-  //                                 continue constraintLoop;
-  //                             }
-  //                         } else {
-  //                             if (current_val_in_float == val.value) {
-  //                                 invalidConstraint.add(e);
-  //                                 continue constraintLoop;
-  //                             }
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         if (val.equal) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         }
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#equalToText val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         if (val.equal) {
-  //                             if (currentVal != val.value) {
-  //                                 invalidConstraint.add(e);
-  //                                 continue constraintLoop;
-  //                             }
-  //                         } else {
-  //                             if (currentVal == val.value) {
-  //                                 invalidConstraint.add(e);
-  //                                 continue constraintLoop;
-  //                             }
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         if (val.equal) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         }
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#containsText val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         if (val.contains) {
-
-  //                             if (Text.contains(currentVal, #text(val.value)) == false) {
-  //                                 invalidConstraint.add(e);
-  //                                 continue constraintLoop;
-  //                             };
-  //                         } else {
-
-  //                             if (Text.contains(currentVal, #text(val.value))) {
-  //                                 invalidConstraint.add(e);
-  //                                 continue constraintLoop;
-  //                             };
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         if (val.contains) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         }
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#greaterThanNowTimestamp val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         let current_val_in_Nat = Utils.textToNat(currentVal);
-  //                         if (current_val_in_Nat < Time.now()) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         invalidConstraint.add(e);
-  //                         continue constraintLoop;
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#lessThanNowTimestamp val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         let current_val_in_Nat = Utils.textToNat(currentVal);
-  //                         if (current_val_in_Nat > Time.now()) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         //We are not longer returning false if entity or field doesnt exist
-  //                         //return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#greaterThanEqualToNumber val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         let current_val_in_float = Utils.textToFloat(currentVal);
-
-  //                         if (current_val_in_float < val.value) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         invalidConstraint.add(e);
-  //                         continue constraintLoop;
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#lessThanEqualToNumber val) {
-
-  //                 switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                     case (?currentVal) {
-
-  //                         let current_val_in_float = Utils.textToFloat(currentVal);
-
-  //                         if (current_val_in_float > val.value) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         //We are not longer returning false if entity or field doesnt exist
-  //                         // return #err(("You don't have entity of id: " #e.eid # " or field with key : " #val.fieldName # " therefore, does not exist in respected entity to match entity constraints."));
-  //                     };
-  //                 };
-
-  //             };
-  //             case (#existField val) {
-
-  //                 switch (getEntity_(entities, wid, e.eid)) {
-  //                     case (?entity) {
-
-  //                         switch (getEntityField_(entities, wid, e.eid, val.fieldName)) {
-  //                             case (?currentVal) {
-  //                                 if (val.value == false) {
-  //                                     invalidConstraint.add(e);
-  //                                     continue constraintLoop;
-  //                                 }
-  //                             };
-  //                             case _ {
-  //                                 if (val.value) {
-  //                                     invalidConstraint.add(e);
-  //                                     continue constraintLoop;
-  //                                 }
-  //                             };
-  //                         };
-
-  //                     };
-  //                     case _ {
-  //                         if (val.value) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         }
-  //                     };
-  //                 };
-  //             };
-  //             case (#exist val) {
-  //                 var _eid = e.eid;
-  //                 if(_eid == "$caller") {
-  //                     _eid := callerPrincipalId;
-  //                 };
-  //                 switch (getEntity_(entities, wid, _eid)) {
-  //                     case (?entity) {
-  //                         if (val.value == false) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         }
-  //                     };
-  //                     case _ {
-  //                         if (val.value) {
-  //                             invalidConstraint.add(e);
-  //                             continue constraintLoop;
-  //                         }
-  //                     };
-  //                 };
-  //             };
-  //         };
-
-  //     };
-
-  //     if(invalidConstraint.size() == 0){
-  //         return #ok();
-  //     }
-  //     else return #err(Buffer.toArray(invalidConstraint));
-  // };
 };
