@@ -48,54 +48,6 @@ actor SwapCanister {
   private stable var _swap_participants : Trie.Trie<Text, Trie.Trie<Text, Swap.ParticipantDetails>> = Trie.empty(); // token_canister_id <-> [participant_id <-> Participant details]
   private stable var _swap_status : Trie.Trie<Text, Swap.TokenSwapStatus> = Trie.empty(); // token_canister_id <-> True/False
 
-  // public func updateSwapConfig(cid : Text, due_timestamp_seconds : ?Int, start : ?Int, minimum : ?Nat64, clear : ?Bool) : async () {
-  //   let ?configs = Trie.find(_swap_configs, Helper.keyT(cid), Text.equal) else return ();
-  //   _swap_configs := Trie.put(
-  //     _swap_configs,
-  //     Helper.keyT(cid),
-  //     Text.equal,
-  //     {
-  //       token_supply_configs = configs.token_supply_configs;
-  //       min_token_e8s = Option.get(minimum, configs.min_token_e8s);
-  //       max_token_e8s = configs.max_token_e8s;
-  //       min_participant_token_e8s = configs.min_participant_token_e8s;
-  //       max_participant_token_e8s = configs.max_participant_token_e8s;
-  //       swap_start_timestamp_seconds = Option.get(start, configs.swap_start_timestamp_seconds);
-  //       swap_due_timestamp_seconds = Option.get(due_timestamp_seconds, configs.swap_due_timestamp_seconds);
-  //       swap_type = configs.swap_type;
-  //     },
-  //   ).0;
-  //   switch (clear) {
-  //     case (?true) {
-  //       _swap_participants := Trie.remove(_swap_participants, Helper.keyT(cid), Text.equal).0;
-  //     };
-  //     case _ {};
-  //   };
-  //   _swap_status := Trie.put(
-  //     _swap_status,
-  //     Helper.keyT(cid),
-  //     Text.equal,
-  //     {
-  //       running = false;
-  //       is_successfull = null;
-  //     },
-  //   ).0;
-  // };
-
-  // public func updateFAQ(cid : Text, arg : [(Text, Text)]) : async () {
-  //   let ?p = Trie.find(_projects, Helper.keyT(cid), Text.equal) else return ();
-  //   _projects := Trie.put(_projects, Helper.keyT(cid), Text.equal, {
-  //     name = p.name;
-  //       website = p.website;
-  //       bannerUrl = p.bannerUrl;
-  //       description = p.description;
-  //       metadata = arg;
-  //       creator = p.creator;
-  //       creatorAbout = p.creatorAbout;
-  //       creatorImageUrl = p.creatorImageUrl;
-  //   }).0;
-  // };
-
   // actor interfaces
   let management_canister : Management.Self = actor (ENV.IC_Management);
   let icp_ledger : ICP.Self = actor (ENV.IcpLedgerCanisterId);
@@ -897,7 +849,7 @@ actor SwapCanister {
     #Err : Text;
   }) {
     let latest_available_wasm_version : Nat32 = _wasm_version_id - 1;
-    if(latest_available_wasm_version == arg.version) {
+    if (latest_available_wasm_version == arg.version) {
       return #Err("Latest wasm available in Swap canister cannot be removed");
     };
     return #Ok("validated_remove_ledger_wasm");
@@ -970,11 +922,11 @@ actor SwapCanister {
     #Ok : Text;
     #Err : Text;
   }) {
-    // Checks : 
-    // 1. swap start timestamp should be greater than now + 4 days
-    let minimum_swap_start_timestamp_seconds = (Time.now() / 1000000000)  + (86400 * 4); 
-    if(arg.configs.swap_start_timestamp_seconds >= minimum_swap_start_timestamp_seconds) {
-      return #Err("set swap_start_timestamp_seconds value must be 4 days from now.");
+    // Checks :
+    // 1. swap start timestamp should be greater than now + 2 days
+    let minimum_swap_start_timestamp_seconds = (Time.now() / 1000000000) + (86400 * 2);
+    if (arg.configs.swap_start_timestamp_seconds >= minimum_swap_start_timestamp_seconds) {
+      return #Err("set swap_start_timestamp_seconds value must be 2 days from now.");
     };
     switch (Trie.find(_tokens, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?_) {
@@ -1392,7 +1344,6 @@ actor SwapCanister {
     };
   };
   public shared ({ caller }) func finalise_token_swap(arg : { canister_id : Text }) : async (Result.Result<Text, Text>) {
-    // assert (caller == dev_principal);
     switch (Trie.find(_swap_status, Helper.keyT(arg.canister_id), Text.equal)) {
       case (?status) {
         let ?is_successfull = status.is_successfull else {

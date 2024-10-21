@@ -102,12 +102,12 @@ const StakePage = () => {
                         <div className="w-auto inline-block mt-8">
                             <div className="flex">
                                 <div className="flex font-semibold text-base">STAKE : </div>
-                                <div className="pl-1">100 BOOM Tokens</div>
+                                <div className="pl-1">80,000 BOOM Tokens</div>
                             </div>
                             <div className="flex">
                                 <div className="flex font-semibold text-base">DELAY : </div>
                                 <div className="flex pl-1">
-                                    <p>24 HOURS</p>
+                                    <p>30 DAYS</p>
                                     <div className="-translate-y-0.5 ml-1"><Hint right>{t("wallet.tab_1.staking.delay_info_button")}</Hint></div>    
                                 </div>
                             </div>
@@ -131,12 +131,12 @@ const StakePage = () => {
                         <div className="w-auto inline-block mt-8">
                             <div className="flex">
                                 <div className="flex font-semibold text-base">STAKE : </div>
-                                <div className="pl-1">50 BOOM Tokens</div>
+                                <div className="pl-1">40,000 BOOM Tokens</div>
                             </div>
                             <div className="flex">
                                 <div className="flex font-semibold text-base">DELAY : </div>
                                 <div className="flex pl-1">
-                                    <p>24 HOURS</p>
+                                    <p>30 DAYS</p>
                                     <div className="-translate-y-0.5 ml-1"><Hint>{t("wallet.tab_1.staking.delay_info_button")}</Hint></div>    
                                 </div>
                             </div>

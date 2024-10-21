@@ -61,6 +61,7 @@ export const swapCanisterId = "w73yo-siaaa-aaaak-qib2q-cai";
 // const guildsVerifierCanisterId = "jvcsg-6aaaa-aaaan-qeqvq-cai"
 // export const gamingGuildsCanisterId = "erej6-riaaa-aaaap-ab4ma-cai";
 // const gamingGuildsWorldNodeCanisterId = "ewfpk-4qaaa-aaaap-ab4mq-cai";
+// export const swapCanisterId = "d6dgo-aaaaa-aaaap-akpqq-cai";
 
 //Development
 

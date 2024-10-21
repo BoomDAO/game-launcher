@@ -1339,10 +1339,10 @@ export const useEliteStakeBoomTokens = () => {
                 const { actor, methods } = await useGamingGuildsClient();
                 const swap = await useSwapCanisterClient();
                 const boom_ledger = await useBoomLedgerClient();
-                let amount_e8s: BigInt = 10000000000n;
+                let amount_e8s: BigInt = 8000000000000n;
                 let userStakeTier = await actor[methods.getUserBoomStakeTier](session?.address || "") as { ok: string | undefined, err: string | undefined };
                 if(userStakeTier.ok != undefined && userStakeTier.ok == "PRO") {
-                    amount_e8s = 5000000000n;
+                    amount_e8s = 4000000000000n;
                 }
                 if (balance < amount_e8s) {
                     toast.error("Insufficient balance to become ELITE BOOM Staker.");
@@ -1423,7 +1423,7 @@ export const useProStakeBoomTokens = () => {
             try {
                 const { actor, methods } = await useGamingGuildsClient();
                 const boom_ledger = await useBoomLedgerClient();
-                let amount_e8s: BigInt = 5000000000n;
+                let amount_e8s: BigInt = 4000000000000n;
                 if (balance < amount_e8s) {
                     toast.error("Insufficient balance to become PRO BOOM Staker.");
                     closeToast();

@@ -1,17 +1,35 @@
 {
   "game-launcher": {
-    "ic": "awcae-maaaa-aaaam-abmyq-cai",
-    "stag": "n7z64-2yaaa-aaaam-abnsa-cai",
     "dev": "t2qzd-6qaaa-aaaak-qdbdq-cai",
-    "lp": "a2uwe-eiaaa-aaaal-qjf7q-cai"
+    "ic": "awcae-maaaa-aaaam-abmyq-cai",
+    "lp": "a2uwe-eiaaa-aaaal-qjf7q-cai",
+    "stag": "n7z64-2yaaa-aaaam-abnsa-cai"
   },
   "game_deployer": {
     "ic": "6rvbl-uqaaa-aaaal-ab24a-cai",
     "stag": "ltwhn-5iaaa-aaaao-askdq-cai"
   },
+  "gaming_guilds": {
+    "dev": "7d6va-pyaaa-aaaap-ahdxa-cai",
+    "ic": "erej6-riaaa-aaaap-ab4ma-cai",
+    "stag": "6ehny-oaaaa-aaaal-qclyq-cai"
+  },
+  "guilds_verifier": {
+    "ic": "jvcsg-6aaaa-aaaan-qeqvq-cai",
+    "stag": "yv22q-myaaa-aaaal-adeuq-cai"
+  },
+  "icrc_ledger": {
+    "dev": "",
+    "ic": "",
+    "stag": "x3wx4-liaaa-aaaak-qib4q-cai"
+  },
   "nfts_deployer": {
     "ic": "j474s-uqaaa-aaaap-abf6q-cai",
     "stag": "fbkar-zaaaa-aaaal-qbzca-cai"
+  },
+  "swap": {
+    "ic": "d6dgo-aaaaa-aaaap-akpqq-cai",
+    "stag": "w73yo-siaaa-aaaak-qib2q-cai"
   },
   "token_deployer": {
     "ic": "jv4xo-cyaaa-aaaap-abf7a-cai",
@@ -20,22 +38,5 @@
   "world_deployer": {
     "ic": "js5r2-paaaa-aaaap-abf7q-cai",
     "stag": "na2jz-uqaaa-aaaal-qbtfq-cai"
-  },
-  "guilds_verifier": {
-    "stag": "yv22q-myaaa-aaaal-adeuq-cai",
-    "ic": "jvcsg-6aaaa-aaaan-qeqvq-cai"
-  },
-  "gaming_guilds": {
-    "stag": "6ehny-oaaaa-aaaal-qclyq-cai",
-    "ic": "erej6-riaaa-aaaap-ab4ma-cai",
-    "dev": "7d6va-pyaaa-aaaap-ahdxa-cai"
-  },
-  "swap": {
-    "stag": "w73yo-siaaa-aaaak-qib2q-cai"
-  },
-  "icrc_ledger": {
-    "stag": "x3wx4-liaaa-aaaak-qib4q-cai",
-    "ic": "",
-    "dev": ""
   }
 }

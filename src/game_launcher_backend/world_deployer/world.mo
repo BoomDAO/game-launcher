@@ -3758,6 +3758,7 @@ actor class WorldTemplate(owner : Principal) = this {
     };
     return #ok("imported");
   };
+
   public shared ({ caller }) func importAllActionsOfWorld(args : { ofWorldId : Text }) : async (Result.Result<Text, Text>) {
     assert (caller == owner);
     let world = actor (args.ofWorldId) : actor {
@@ -4890,8 +4891,8 @@ actor class WorldTemplate(owner : Principal) = this {
   };
 
   // BOOM token staking for DAO
-  private var _proStake : Nat = 5000000000;
-  private var _eliteStake : Nat = 10000000000;
+  private var _proStake : Nat = 4000000000000;
+  private var _eliteStake : Nat = 8000000000000;
   private stable var _boomStakes : Trie.Trie<Text, TStaking.ICRCStake> = Trie.empty(); // key -> (user principal id)
   //ICRC Stake verification checks and staking
   //1. If user already staked tokens, check for upgrading tier with token difference amount only (excess tokens will be transferred back) TO BE DECIDED
@@ -5230,7 +5231,7 @@ actor class WorldTemplate(owner : Principal) = this {
 
   public shared ({ caller }) func disburseBOOMStake() : async Result.Result<Text, Text> {
     // transfer boom tokens back to user after checking time-period
-    let delay : Int = 86400000000000;
+    let delay : Int = 86400000000000 * 30; // 30 Days dissolve delay
     let user : Text = Principal.toText(caller);
     switch (Trie.find(_boomStakes, Utils.keyT(user), Text.equal)) {
       case (?stake) {
@@ -5245,7 +5246,7 @@ actor class WorldTemplate(owner : Principal) = this {
             };
           };
         } else {
-          return #err("unfortunately you can not disburse your BOOM tokens before 24hrs, after dissolving it.");
+          return #err("unfortunately you can not disburse your BOOM tokens before 30 days, after dissolving it.");
         };
       };
       case _ {
