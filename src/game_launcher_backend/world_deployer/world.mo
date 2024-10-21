@@ -4409,224 +4409,6 @@ actor class WorldTemplate(owner : Principal) = this {
             switch (t.actionExpirationTimestamp) {
               case (?actionExpirationTimestamp) {
                 if (actionExpirationTimestamp < Time.now()) {
-                  //FAILURE: ACTION IS EXPIRED
-                  returnValue := {
-                    isValid = false;
-                    timeStatus = {
-                      nextAvailableTimestamp = null;
-                      actionsLeft = null;
-                    };
-                    actionHistoryStatus = returnValue.actionHistoryStatus;
-                    entitiesStatus = returnValue.entitiesStatus;
-                  };
-                };
-              };
-              case _ {};
-            };
-
-            let actionHistoryConstraint = t.actionHistory;
-
-            // ACTION HISTORY CONSTRAINTS
-            var history_outcomes = actionHistory;
-
-            for (expected in actionHistoryConstraint.vals()) {
-              switch (expected) {
-                case (#updateEntity outcome) {
-                  let _entityId = outcome.eid;
-                  var _fieldName = "";
-                  for (update in outcome.updates.vals()) {
-                    switch (update) {
-                      case (#incrementNumber iv) {
-                        _fieldName := iv.fieldName;
-                        // Query history outcomes and validate
-                        var updated_value : Float = 0.0;
-                        for (i in history_outcomes.vals()) {
-                          if (i.appliedAt >= last_action_time) {
-                            switch (i.option) {
-                              case (#updateEntity history_outcome) {
-                                if (history_outcome.eid == _entityId) {
-                                  for (history_update in history_outcome.updates.vals()) {
-                                    switch (history_update) {
-                                      case (#incrementNumber val) {
-                                        if (val.fieldName == _fieldName) {
-                                          switch (val.fieldValue) {
-                                            case (#number n) {
-                                              updated_value := updated_value + n;
-                                            };
-                                            case (#formula _) {};
-                                          };
-                                        };
-                                      };
-                                      case _ {};
-                                    };
-                                  };
-                                };
-                              };
-                              case _ {};
-                            };
-                          };
-                        };
-                        // check
-                        switch (iv.fieldValue) {
-                          case (#number n) {
-                            //ADD ACTION HISTORY STATUS
-                            actionHistoryStatusBuffer.add({
-                              eid = _entityId;
-                              fieldName = iv.fieldName;
-                              currentValue = Float.toText(updated_value);
-                              expectedValue = Float.toText(n);
-                            });
-
-                            if (n > updated_value) {
-                              //FAILURE: ACTION HISTORY CONDITION DID NOT MET
-                              returnValue := {
-                                isValid = false;
-                                timeStatus = returnValue.timeStatus;
-                                actionHistoryStatus = returnValue.actionHistoryStatus;
-                                entitiesStatus = returnValue.entitiesStatus;
-                              };
-                            };
-                          };
-                          case _ {};
-                        };
-                      };
-                      case _ {};
-                    };
-                  };
-                };
-                case _ {}; // other action history will be handled later
-              };
-            };
-          };
-          case _ {};
-        };
-
-        //ENTITY CONSTRAINTS
-        for (e in constraints.entityConstraint.vals()) {
-
-          var wid = Option.get(e.wid, worldPrincipalId());
-
-          switch (e.entityConstraintType) {
-            case (#greaterThanNumber val) {
-              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
-                case (?currentVal) {
-                  let current_val_in_float = Utils.textToFloat(currentVal);
-
-                  if (current_val_in_float < val.value) {
-                    //FAILURE: ENTITY CONSTRAINT CONDITION DID NOT MET
-                    returnValue := {
-                      isValid = false;
-                      timeStatus = returnValue.timeStatus;
-                      actionHistoryStatus = returnValue.actionHistoryStatus;
-                      entitiesStatus = returnValue.entitiesStatus;
-                    };
-                  };
-                  //ADD ACTION HISTORY STATUS
-                  entitiesStatusBuffer.add({
-                    eid = e.eid;
-                    fieldName = val.fieldName;
-                    currentValue = currentVal;
-                    expectedValue = Float.toText(val.value);
-                  });
-                };
-                case _ {
-                  //ADD ACTION HISTORY STATUS
-                  entitiesStatusBuffer.add({
-                    eid = e.eid;
-                    fieldName = val.fieldName;
-                    currentValue = "0";
-                    expectedValue = Float.toText(val.value);
-                  });
-                };
-              };
-            };
-            case (#lessThanNumber val) {
-              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
-                case (?currentVal) {
-                  let current_val_in_float = Utils.textToFloat(currentVal);
-                  if (current_val_in_float >= val.value) {
-                    returnValue := {
-                      isValid = false;
-                      timeStatus = returnValue.timeStatus;
-                      actionHistoryStatus = returnValue.actionHistoryStatus;
-                      entitiesStatus = returnValue.entitiesStatus;
-                    };
-                  };
-                  //ADD ACTION HISTORY STATUS
-                  entitiesStatusBuffer.add({
-                    eid = e.eid;
-                    fieldName = val.fieldName;
-                    currentValue = currentVal;
-                    expectedValue = Float.toText(val.value);
-                  });
-                };
-                case _ {
-                  //ADD ACTION HISTORY STATUS
-                  entitiesStatusBuffer.add({
-                    eid = e.eid;
-                    fieldName = val.fieldName;
-                    currentValue = "0";
-                    expectedValue = Float.toText(val.value);
-                  });
-                };
-              };
-
-            };
-            case (#equalToNumber val) {
-              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
-                case (?currentVal) {
-                  let current_val_in_float = Utils.textToFloat(currentVal);
-                  if (val.equal) {
-                    if (current_val_in_float != val.value) {
-                      returnValue := {
-                        isValid = false;
-                        timeStatus = returnValue.timeStatus;
-                        actionHistoryStatus = returnValue.actionHistoryStatus;
-                        entitiesStatus = returnValue.entitiesStatus;
-                      };
-                    };
-                  } else {
-                    if (current_val_in_float == val.value) {
-                      returnValue := {
-                        isValid = false;
-                        timeStatus = returnValue.timeStatus;
-                        actionHistoryStatus = returnValue.actionHistoryStatus;
-                        entitiesStatus = returnValue.entitiesStatus;
-                      };
-                    };
-                  };
-                  entitiesStatusBuffer.add({
-                    eid = e.eid;
-                    fieldName = val.fieldName;
-                    currentValue = currentVal;
-                    expectedValue = Float.toText(val.value);
-                  });
-                };
-                case _ {
-                  if (val.equal) {
-                    returnValue := {
-                      isValid = false;
-                      timeStatus = returnValue.timeStatus;
-                      actionHistoryStatus = returnValue.actionHistoryStatus;
-                      entitiesStatus = returnValue.entitiesStatus;
-                    };
-                    entitiesStatusBuffer.add({
-                      eid = e.eid;
-                      fieldName = val.fieldName;
-                      currentValue = "0";
-                      expectedValue = Float.toText(val.value);
-                    });
-                  };
-                };
-              };
-
-            };
-            case (#equalToText val) {
-
-              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
-                case (?currentVal) {
-                  if (val.equal) {
-                    if (currentVal != val.value) {
 
                   //FAILURE: ACTION IS EXPIRED
                   returnValue := {
@@ -4911,28 +4693,15 @@ actor class WorldTemplate(owner : Principal) = this {
                   };
                 };
               };
+
             };
             case (#greaterThanNowTimestamp val) {
-              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
-                case (?currentVal) {
-                  let current_val_in_Nat = Utils.textToNat(currentVal);
-                  if (current_val_in_Nat < Time.now()) {
-                    returnValue := {
-                      isValid = false;
-                      timeStatus = returnValue.timeStatus;
-                      actionHistoryStatus = returnValue.actionHistoryStatus;
-                      entitiesStatus = returnValue.entitiesStatus;
-                    };
-                  };
-                };
-              };
-            };
-            case (#lessThanNowTimestamp val) {
+
               switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                 case (?currentVal) {
 
                   let current_val_in_Nat = Utils.textToNat(currentVal);
-                  if (current_val_in_Nat > Time.now()) {
+                  if (current_val_in_Nat < Time.now()) {
                     returnValue := {
                       isValid = false;
                       timeStatus = returnValue.timeStatus;
@@ -4952,7 +4721,30 @@ actor class WorldTemplate(owner : Principal) = this {
               };
 
             };
+            case (#lessThanNowTimestamp val) {
+
+              switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
+                case (?currentVal) {
+
+                  let current_val_in_Nat = Utils.textToNat(currentVal);
+                  if (current_val_in_Nat > Time.now()) {
+                    returnValue := {
+                      isValid = false;
+                      timeStatus = returnValue.timeStatus;
+                      actionHistoryStatus = returnValue.actionHistoryStatus;
+                      entitiesStatus = returnValue.entitiesStatus;
+                    };
+                  };
+                };
+                case _ {
+                  //We are not longer returning false if entity or field doesnt exist
+                  //return #err(("You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
+                };
+              };
+
+            };
             case (#greaterThanEqualToNumber val) {
+
               switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                 case (?currentVal) {
                   let current_val_in_float = Utils.textToFloat(currentVal);
@@ -4987,8 +4779,10 @@ actor class WorldTemplate(owner : Principal) = this {
                   });
                 };
               };
+
             };
             case (#lessThanEqualToNumber val) {
+
               switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                 case (?currentVal) {
 
@@ -5014,10 +4808,13 @@ actor class WorldTemplate(owner : Principal) = this {
                   // return #err(("You don't have entity of id: " #e.eid # " or field with key : \"" #val.fieldName # "\" therefore, does not exist in respected entity to match entity constraints."));
                 };
               };
+
             };
             case (#existField val) {
+
               switch (getEntity_(entityData, wid, e.eid)) {
                 case (?entity) {
+
                   switch (getEntityField_(entityData, wid, e.eid, val.fieldName)) {
                     case (?currentVal) {
                       if (val.value == false) {
@@ -5067,6 +4864,7 @@ actor class WorldTemplate(owner : Principal) = this {
       actionHistoryStatus = Buffer.toArray(actionHistoryStatusBuffer);
       entitiesStatus = Buffer.toArray(entitiesStatusBuffer);
     };
+
     //
     return #ok(returnValue);
   };
@@ -5476,10 +5274,9 @@ actor class WorldTemplate(owner : Principal) = this {
           b.add(i);
         };
         case _ {};
+      };
     };
-
-    //
-    return #ok(returnValue);
+    return Buffer.toArray(b);
   };
 
   public query func getProStakeUsers() : async [Text] {
@@ -5686,7 +5483,9 @@ actor class WorldTemplate(owner : Principal) = this {
           b.add(key[1]);
         };
       };
-   };
+    };
+    return Buffer.toArray(b);
+  };
 
   public query func getUserExtStakes(uid : Text) : async [(Text, Text)] {
     var b = Buffer.Buffer<(Text, Text)>(0);
